@@ -24,9 +24,9 @@
                               <Font name="System Bold" size="14.0" />
                            </font>
                         </Label>
-                        <RadioButton layoutX="20.0" layoutY="90.0" mnemonicParsing="false" text="Stands" />
+                        <RadioButton fx:id="standsRadioButton" layoutX="20.0" layoutY="90.0" mnemonicParsing="false" text="Stands" />
                         <Button layoutX="15.0" layoutY="150.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="165.0" text="Solve System" />
-                        <RadioButton layoutX="20.0" layoutY="50.0" mnemonicParsing="false" text="Floating" />
+                        <RadioButton fx:id="floatingRadioButton" layoutX="20.0" layoutY="50.0" mnemonicParsing="false" text="Floating" />
                      </children>
                   </AnchorPane>
                   <AnchorPane layoutX="235.0" layoutY="25.0" prefHeight="200.0" prefWidth="640.0">
@@ -40,22 +40,21 @@
                         <Label layoutX="15.0" layoutY="85.0" text="Location:" />
                         <Label layoutX="15.0" layoutY="120.0" text="Direction:" />
                         <Button layoutX="15.0" layoutY="150.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="250.0" text="Add Point Load" />
-                        <TextField layoutX="85.0" layoutY="45.0" prefHeight="26.0" prefWidth="85.0" />
-                        <TextField layoutX="85.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
-                        <ComboBox layoutX="85.0" layoutY="115.0" prefHeight="25.0" prefWidth="85.0" />
-                        <ComboBox layoutX="180.0" layoutY="45.0" prefHeight="25.0" prefWidth="85.0" />
-                        <ComboBox layoutX="180.0" layoutY="81.0" prefHeight="25.0" prefWidth="85.0" />
+                        <TextField fx:id="pointLoadMagnitudeTextField" layoutX="85.0" layoutY="45.0" prefHeight="26.0" prefWidth="85.0" />
+                        <TextField fx:id="pointLoadLocationTextField" layoutX="85.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
+                        <ComboBox fx:id="pointDirectionComboBox" layoutX="85.0" layoutY="115.0" prefHeight="25.0" prefWidth="85.0" />
+                        <ComboBox fx:id="pointMagnitudeComboBox" layoutX="180.0" layoutY="45.0" prefHeight="25.0" prefWidth="85.0" />
+                        <ComboBox fx:id="pointLocationComboBox" layoutX="180.0" layoutY="81.0" prefHeight="25.0" prefWidth="85.0" />
                         <Button layoutX="280.0" layoutY="150.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="340.0" text="Add Uniformly Distributed Load" />
                         <Label layoutX="280.0" layoutY="50.0" text="Magnitude:" />
                         <Label layoutX="280.0" layoutY="85.0" text="Interval:" />
                         <Label layoutX="280.0" layoutY="120.0" text="Direction:" />
-                        <TextField layoutX="350.0" layoutY="45.0" prefHeight="25.0" prefWidth="85.0" />
-                        <TextField layoutX="350.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
-                        <TextField layoutX="442.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
-                        <ComboBox layoutX="534.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
-                        <ComboBox layoutX="350.0" layoutY="116.0" prefHeight="25.0" prefWidth="85.0" />
-                        <ComboBox layoutX="442.0" layoutY="45.0" prefHeight="25.0" prefWidth="85.0" />
-                        <ComboBox layoutX="534.0" layoutY="45.0" prefHeight="25.0" prefWidth="85.0" />
+                        <TextField fx:id="uniformLoadMagnitudeTextField" layoutX="350.0" layoutY="45.0" prefHeight="25.0" prefWidth="85.0" />
+                        <TextField fx:id="uniformLoadIntervalTextFieldL" layoutX="350.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
+                        <TextField fx:id="uniformLoadIntervalTextFieldR" layoutX="442.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
+                        <ComboBox fx:id="distributedIntervalComboBox" layoutX="534.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
+                        <ComboBox fx:id="distributedDirectionComboBox" layoutX="350.0" layoutY="116.0" prefHeight="25.0" prefWidth="85.0" />
+                        <ComboBox fx:id="distributedMagnitudeComboBox" layoutX="442.0" layoutY="45.0" prefHeight="25.0" prefWidth="85.0" />
                         <Label layoutX="280.0" layoutY="14.0" text="Uniformly Distributed Load">
                            <font>
                               <Font name="System Bold" size="14.0" />
@@ -66,11 +65,11 @@
                   <AnchorPane fx:id="lowerRightAnchorPane" layoutX="235.0" layoutY="235.0" prefHeight="310.0" prefWidth="640.0">
                      <children>
                         <ImageView fx:id="beamImageView" fitHeight="100.0" fitWidth="580.0" layoutX="30.0" layoutY="80.0" pickOnBounds="true" preserveRatio="true" />
-                        <Label layoutX="30.0" layoutY="275.0" text="Canoe Length:" />
-                        <TextField layoutX="115.0" layoutY="270.0" prefHeight="25.0" prefWidth="85.0" />
-                        <ComboBox layoutX="205.0" layoutY="270.0" prefHeight="25.0" prefWidth="50.0" />
-                        <Button layoutX="410.0" layoutY="270.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="213.0" text="Generate SFD / BMD" />
-                        <Button layoutX="260.0" layoutY="269.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="85.0" text="Set Length" />
+                        <Label layoutX="10.0" layoutY="273.0" text="Canoe Length:" />
+                        <TextField fx:id="canoeLengthTextField" layoutX="95.0" layoutY="270.0" prefHeight="25.0" prefWidth="85.0" />
+                        <ComboBox fx:id="canoeLengthComboBox" layoutX="185.0" layoutY="270.0" prefHeight="25.0" prefWidth="60.0" />
+                        <Button layoutX="410.0" layoutY="270.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="210.0" text="Generate SFD / BMD" />
+                        <Button layoutX="250.0" layoutY="270.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="85.0" text="Set Length" />
                      </children></AnchorPane>
                   <AnchorPane fx:id="lowerLeftAnchorPane" layoutX="25.0" layoutY="235.0" prefHeight="310.0" prefWidth="200.0" />
                </children></AnchorPane>
