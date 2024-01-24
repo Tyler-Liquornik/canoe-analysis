@@ -3,6 +3,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
@@ -25,7 +26,7 @@
                            </font>
                         </Label>
                         <RadioButton fx:id="standsRadioButton" layoutX="20.0" layoutY="90.0" mnemonicParsing="false" text="Stands" />
-                        <Button layoutX="15.0" layoutY="150.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="165.0" text="Solve System" />
+                        <Button fx:id="solveSystemButton" layoutX="15.0" layoutY="150.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="165.0" text="Solve System" />
                         <RadioButton fx:id="floatingRadioButton" layoutX="20.0" layoutY="50.0" mnemonicParsing="false" text="Floating" />
                      </children>
                   </AnchorPane>
@@ -39,19 +40,19 @@
                         <Label layoutX="15.0" layoutY="50.0" text="Magnitude:" />
                         <Label layoutX="15.0" layoutY="85.0" text="Location:" />
                         <Label layoutX="15.0" layoutY="120.0" text="Direction:" />
-                        <Button layoutX="15.0" layoutY="150.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="250.0" text="Add Point Load" />
-                        <TextField fx:id="pointLoadMagnitudeTextField" layoutX="85.0" layoutY="45.0" prefHeight="26.0" prefWidth="85.0" />
-                        <TextField fx:id="pointLoadLocationTextField" layoutX="85.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
+                        <Button fx:id="pointLoadButton" layoutX="15.0" layoutY="150.0" mnemonicParsing="false" onAction="#addPointLoad" prefHeight="25.0" prefWidth="250.0" text="Add Point Load" />
+                        <TextField fx:id="pointMagnitudeTextField" layoutX="85.0" layoutY="45.0" prefHeight="26.0" prefWidth="85.0" />
+                        <TextField fx:id="pointLocationTextField" layoutX="85.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
                         <ComboBox fx:id="pointDirectionComboBox" layoutX="85.0" layoutY="115.0" prefHeight="25.0" prefWidth="85.0" />
                         <ComboBox fx:id="pointMagnitudeComboBox" layoutX="180.0" layoutY="45.0" prefHeight="25.0" prefWidth="85.0" />
                         <ComboBox fx:id="pointLocationComboBox" layoutX="180.0" layoutY="81.0" prefHeight="25.0" prefWidth="85.0" />
-                        <Button layoutX="280.0" layoutY="150.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="340.0" text="Add Uniformly Distributed Load" />
+                        <Button fx:id="uniformLoadButton" layoutX="280.0" layoutY="150.0" mnemonicParsing="false" onAction="#addDistributedLoad" prefHeight="25.0" prefWidth="340.0" text="Add Uniformly Distributed Load" />
                         <Label layoutX="280.0" layoutY="50.0" text="Magnitude:" />
                         <Label layoutX="280.0" layoutY="85.0" text="Interval:" />
                         <Label layoutX="280.0" layoutY="120.0" text="Direction:" />
-                        <TextField fx:id="uniformLoadMagnitudeTextField" layoutX="350.0" layoutY="45.0" prefHeight="25.0" prefWidth="85.0" />
-                        <TextField fx:id="uniformLoadIntervalTextFieldL" layoutX="350.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
-                        <TextField fx:id="uniformLoadIntervalTextFieldR" layoutX="442.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
+                        <TextField fx:id="distributedMagnitudeTextField" layoutX="350.0" layoutY="45.0" prefHeight="25.0" prefWidth="85.0" />
+                        <TextField fx:id="distributedIntervalTextFieldL" layoutX="350.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
+                        <TextField fx:id="distributedIntervalTextFieldR" layoutX="442.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
                         <ComboBox fx:id="distributedIntervalComboBox" layoutX="534.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
                         <ComboBox fx:id="distributedDirectionComboBox" layoutX="350.0" layoutY="116.0" prefHeight="25.0" prefWidth="85.0" />
                         <ComboBox fx:id="distributedMagnitudeComboBox" layoutX="442.0" layoutY="45.0" prefHeight="25.0" prefWidth="85.0" />
@@ -68,10 +69,10 @@
                         <Label layoutX="10.0" layoutY="273.0" text="Canoe Length:" />
                         <TextField fx:id="canoeLengthTextField" layoutX="95.0" layoutY="270.0" prefHeight="25.0" prefWidth="85.0" />
                         <ComboBox fx:id="canoeLengthComboBox" layoutX="185.0" layoutY="270.0" prefHeight="25.0" prefWidth="60.0" />
-                        <Button layoutX="410.0" layoutY="270.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="210.0" text="Generate SFD / BMD" />
-                        <Button layoutX="250.0" layoutY="270.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="85.0" text="Set Length" />
+                        <Button fx:id="generateGraphsButton" layoutX="410.0" layoutY="270.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="210.0" text="Generate SFD / BMD" />
+                        <Button fx:id="setCanoeLengthButton" layoutX="250.0" layoutY="270.0" mnemonicParsing="false" onAction="#setCanoeLength" prefHeight="25.0" prefWidth="85.0" text="Set Length" />
                      </children></AnchorPane>
-                  <AnchorPane fx:id="lowerLeftAnchorPane" layoutX="25.0" layoutY="235.0" prefHeight="310.0" prefWidth="200.0" />
+                  <ListView fx:id="loadList" layoutX="25.0" layoutY="235.0" prefHeight="310.0" prefWidth="200.0" />
                </children></AnchorPane>
       </content>
     </Tab>
