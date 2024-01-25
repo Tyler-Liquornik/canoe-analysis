@@ -24,6 +24,42 @@ public class Canoe
     public ArrayList<PointLoad> getPLoads() {return pLoads;}
     public ArrayList<UniformDistributedLoad> getDLoads() {return dLoads;}
 
+
+    public double getMaxPLoad()
+    {
+        double max = 0;
+
+        for (PointLoad p : pLoads)
+        {
+            double mag = Math.abs(p.getMag());
+
+            if (mag > max)
+            {
+                max = mag;
+            }
+        }
+
+        return max;
+    }
+
+    public double getMinPLoad()
+    {
+        double min = Integer.MAX_VALUE;
+
+        for (PointLoad p : pLoads)
+        {
+            double mag = Math.abs(p.getMag());
+
+            if (mag < min)
+            {
+                min = mag;
+            }
+        }
+
+        return min;
+    }
+
+
     // Set of endpoints sections with unique equations on the SFD/BMD
     public Set<Double> getSectionEndPoints()
     {
