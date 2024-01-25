@@ -7,6 +7,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.paint.Color;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -36,11 +37,6 @@ public class CanoeAnalysisController implements Initializable
 
     private Canoe canoe;
 
-//
-//    // Free variables for logarithmic scaling, f(x) = m * ln(n * x)
-//    private double logM = 0;
-//    private double logN = 0;
-
     private final double E = 0.3048; // conversion factor ft to m
     private final double F = 0.45359237; // conversion factor lb to kg
     private final double G = 9.80665; // gravity on earth
@@ -64,8 +60,8 @@ public class CanoeAnalysisController implements Initializable
         r[i].setSelected(true);
     }
 
-    // ComboBox set items with a default selected item
-    public <T> void setAllWithDefault(ComboBox<T> c, T[] a, int i)
+    // ComboBox default item showing (used on initialization)
+    public void setAllWithDefault(ComboBox<String> c, String[] a, int i)
     {
         c.setItems(FXCollections.observableArrayList(a));
         c.getSelectionModel().select(i);
@@ -84,6 +80,31 @@ public class CanoeAnalysisController implements Initializable
             return false;
         }
     }
+
+    // With only point loads, the order of the ListView items matches insertion order
+    // This is not the case with uniformly distributed loads right now
+    // This will also complicate this method as more arrows are introduced
+
+    // Highlight the arrow selected on the ListView red
+    public void highlightArrow()
+    {
+        // Add 1 as the first child of beamContainer is the imageview for beam.png
+        int selectedIndex = loadList.getSelectionModel().getSelectedIndex() + 1;
+        Arrow selected = (Arrow) beamContainer.getChildren().get(selectedIndex);
+
+        // Make the selected arrow red
+        selected.setFill(Color.RED);
+
+        for (int i = 1; i < beamContainer.getChildren().size(); i++)
+        {
+            // Don't repaint the selected arrow black
+            if (i != selectedIndex)
+            {
+                ((Arrow) beamContainer.getChildren().get(i)).setFill(Color.BLACK);
+            }
+        }
+    }
+
 
     public void setCanoeLength()
     {
@@ -105,6 +126,7 @@ public class CanoeAnalysisController implements Initializable
 
 
     // Convert entered location value to m (assumes already validated as double)
+    // Todo: validate in the method, return some flag if invalid -> need to refactor some of the dependent code when done
     public double getDistanceConverted(ComboBox<String> c, TextField t)
     {
         String unit = c.getSelectionModel().getSelectedItem();
@@ -145,16 +167,10 @@ public class CanoeAnalysisController implements Initializable
         }
     }
 
-    // Dynamic rescaling on a logarithmic scale
-    // Logarithm function recalculated based on largest and smallest load present
-    public void getFreeVariables(double min, double max)
-    {
-
-    }
-
+    // Rescale arrows, max magnitude gets the max height, all others scale down to size
     public void rescaleArrowsFromMax(double maxMag)
     {
-        // Clear beam container (index 1 is the imageview)
+        // Clear beam container of all arrows (index 1 is the imageview, gets skipped)
         beamContainer.getChildren().subList(1, beamContainer.getChildren().size()).clear();
 
         // Find max magnitude load in list of loads
@@ -163,13 +179,13 @@ public class CanoeAnalysisController implements Initializable
         {
             PointLoad p = canoe.getPLoads().get(i);
 
+            // Found a new max, get its index to reference later (avoids issues with 2 equal maxes)
             if (Math.abs(p.getMag()) == maxMag && !chosenMax)
             {
                 maxIndex = i;
                 chosenMax = true;
 
-                System.out.println("*");
-
+                // Render the max at max size
                 int startY = p.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
                 int endY = p.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
 
@@ -178,14 +194,15 @@ public class CanoeAnalysisController implements Initializable
             }
         }
 
+        // Render all forces not marked as the max scaled to size
         for (int i = 0; i < canoe.getPLoads().size(); i++)
         {
             PointLoad p = canoe.getPLoads().get(i);
 
-            // Don't re-add the maximum
+            // Skip the max, already been dealt with
             if (i != maxIndex)
             {
-                System.out.println("~");
+                // Render at scaled size (deltaY calculates the downscaling factor)
                 int endY = p.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
                 int deltaY = (int) ((acceptedArrowHeightRange[1] - acceptedArrowHeightRange[0]) * (Math.abs(p.getMag()) / maxMag));
                 int startY = p.getMag() < 0 ? acceptedArrowHeightRange[1] - deltaY : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight() + deltaY;
@@ -221,26 +238,25 @@ public class CanoeAnalysisController implements Initializable
                 // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
                 int endY = mag < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
 
-                Arrow arrow;
-                if (canoe.getPLoads().size() < 2) // Only 1 arrow, height exactly halfway
+                // First load, arrow max height
+                if (canoe.getPLoads().size() < 2)
                 {
                     int startY = mag < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
-                    arrow = new Arrow(scaledX, startY, scaledX, endY);
+                    Arrow arrow = new Arrow(scaledX, startY, scaledX, endY);
                     beamContainer.getChildren().add(arrow);
                 }
 
                 else
                 {
-                    // Gone past scale, apply logarithmic scaling
-                    if (canoe.getMaxPLoad() / canoe.getMinPLoad() > (double) acceptedArrowHeightRange[1] / (double) acceptedArrowHeightRange[0])
+                    // Stay within the limits of the accepted height range (based on pixel spacing in the GUI)
+                    if (!(canoe.getMaxPLoad() / canoe.getMinPLoad() > (double) acceptedArrowHeightRange[1] / (double) acceptedArrowHeightRange[0]))
                     {
-                        // do log rescaling
+                        rescaleArrowsFromMax(canoe.getMaxPLoad());
                     }
 
                     else
                     {
-                        rescaleArrowsFromMax(canoe.getMaxPLoad());
-                        System.out.println("?");
+                        // currently: after getting here and trying to add another load you can't add any more arrows
                     }
                 }
 
@@ -257,25 +273,24 @@ public class CanoeAnalysisController implements Initializable
         if (validateTextAsDouble(distributedMagnitudeTextField.getText())
                 && validateTextAsDouble(distributedIntervalTextFieldL.getText())
                     && validateTextAsDouble(distributedIntervalTextFieldR.getText()))
-        {
-            double l = getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldL);
-            double r = getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldR);
-            double mag = getLoadConverted(distributedMagnitudeComboBox, distributedMagnitudeTextField);
-            String direction = distributedDirectionComboBox.getSelectionModel().getSelectedItem();
-
-            // Apply direction
-            if (direction == "Down") {mag *= -1;}
-
-            // Validate the load is being added within the length of the canoe, and the magnitude is in the acceptable range
-            // Validate the right bound of the interval is greater than the left
-            if (0 <= l && l <= canoe.getLen() && r <= canoe.getLen() && r > l
-                    && acceptedMagRange[0] <= mag && mag <= acceptedMagRange[1])
             {
-                // Add the load to canoe
-                canoe.addDLoad(new UniformDistributedLoad(l, r, mag));
-            }
-        }
+                double l = getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldL);
+                double r = getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldR);
+                double mag = getLoadConverted(distributedMagnitudeComboBox, distributedMagnitudeTextField);
+                String direction = distributedDirectionComboBox.getSelectionModel().getSelectedItem();
 
+                // Apply direction
+                if (direction == "Down") {mag *= -1;}
+
+                // Validate the load is being added within the length of the canoe, and the magnitude is in the acceptable range
+                // Validate the right bound of the interval is greater than the left
+                if (0 <= l && l <= canoe.getLen() && r <= canoe.getLen() && r > l
+                        && acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1])
+                    {
+                        // Add the load to canoe
+                        canoe.addDLoad(new UniformDistributedLoad(l, r, mag));
+                    }
+            }
         updateLoadList();
     }
 
@@ -318,20 +333,5 @@ public class CanoeAnalysisController implements Initializable
         TextField[] tfs = new TextField[]{pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
                 distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField};
         for (TextField tf : tfs) {tf.setText("0.00");}
-
-        // Force Arrows
-
-        // 84 px above and below the beam to work with
-        // Relative vertical scale based on current forces on the canoe
-        // 42 px default size for the first arrow
-        // Minimum arrow size 14px, maximum size 80px
-        // Range from 0.05kN to 10kN
-
-        // scale length to 580px horizontal
-
-        // Make it so clicking items on the listView will highlight the arrow red
-
-//        Arrow arrow = new Arrow(0, 70, 0, 84);
-//        beamContainer.getChildren().add(arrow);
     }
 }
