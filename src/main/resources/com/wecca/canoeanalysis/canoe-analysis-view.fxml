@@ -15,7 +15,7 @@
 
 <TabPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="900.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.CanoeAnalysisController">
   <tabs>
-    <Tab text="Beam Analysis">
+    <Tab text="Longitudinal Analysis">
       <content>
         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="600.0" prefWidth="900.0">
                <children>
@@ -26,9 +26,10 @@
                               <Font name="System Bold" size="14.0" />
                            </font>
                         </Label>
-                        <RadioButton fx:id="standsRadioButton" layoutX="20.0" layoutY="90.0" mnemonicParsing="false" text="Stands" />
+                        <RadioButton fx:id="standsRadioButton" layoutX="20.0" layoutY="80.0" mnemonicParsing="false" text="Stands" />
                         <Button fx:id="solveSystemButton" layoutX="15.0" layoutY="150.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="165.0" text="Solve System" />
-                        <RadioButton fx:id="floatingRadioButton" layoutX="20.0" layoutY="50.0" mnemonicParsing="false" text="Floating" />
+                        <RadioButton fx:id="floatingRadioButton" layoutX="20.0" layoutY="45.0" mnemonicParsing="false" text="Floating" />
+                        <RadioButton fx:id="submergedRadioButton" layoutX="20.0" layoutY="115.0" mnemonicParsing="false" text="Submerged" />
                      </children>
                   </AnchorPane>
                   <AnchorPane layoutX="235.0" layoutY="25.0" prefHeight="200.0" prefWidth="640.0">

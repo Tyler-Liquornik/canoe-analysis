@@ -6,7 +6,6 @@ public class PointLoad
 
     private double x; // force position on the canoe (m)
 
-    private Arrow arrow;
 
     public PointLoad(double mag, double x)
     {
@@ -15,11 +14,9 @@ public class PointLoad
 
     public double getMag() {return mag;}
     public double getX() {return x;}
-    public Arrow getArrow() {return arrow;}
 
     public void setMag(double mag) {this.mag = mag;}
     public void setX(double x) {this.x = x;}
-    public void setArrow(Arrow arrow) {this.arrow = arrow;}
 
     // Scaled on the canoe to the size of the canoe (beam) container in pixels on the GUI
     public double getXScaled(double containerWidth, double canoeLength)

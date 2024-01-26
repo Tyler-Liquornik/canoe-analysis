@@ -12,14 +12,15 @@ public class Canoe
     public Canoe(double len, ArrayList<PointLoad> pLoads, ArrayList<UniformDistributedLoad> dLoads)
     {
         this.len = len;
-        this.pLoads = pLoads;
-        this.dLoads = dLoads;
+        this.pLoads = pLoads; pLoads.sort(new PointLoadComparator());
+        this.dLoads = dLoads; // implemented sorting for dLoads later
     }
 
     public double getLen() {return len;}
     public void setLen(double len) {this.len = len;}
 
-    public void addPLoad(PointLoad p) {pLoads.add(p);}
+    // Keep the ArrayList sorted
+    public void addPLoad(PointLoad p) {pLoads.add(p); pLoads.sort(new PointLoadComparator());}
     public void addDLoad(UniformDistributedLoad d) {dLoads.add(d);}
     public ArrayList<PointLoad> getPLoads() {return pLoads;}
     public ArrayList<UniformDistributedLoad> getDLoads() {return dLoads;}

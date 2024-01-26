@@ -11,8 +11,10 @@ import javafx.scene.paint.Color;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 public class CanoeAnalysisController implements Initializable
 {
@@ -29,7 +31,7 @@ public class CanoeAnalysisController implements Initializable
     private ComboBox<String> pointDirectionComboBox, pointMagnitudeComboBox, pointLocationComboBox, distributedIntervalComboBox,
             distributedDirectionComboBox, distributedMagnitudeComboBox, canoeLengthComboBox;
     @FXML
-    private RadioButton standsRadioButton, floatingRadioButton;
+    private RadioButton standsRadioButton, floatingRadioButton, submergedRadioButton;
     @FXML
     private ImageView beamImageView;
     @FXML
@@ -86,21 +88,27 @@ public class CanoeAnalysisController implements Initializable
     // This will also complicate this method as more arrows are introduced
 
     // Highlight the arrow selected on the ListView red
+    // The order of the arrows as children of the beamContainer doesn't match the listview
+    // So we need to get the information from the listview and match it to the arrow
     public void highlightArrow()
     {
         // Add 1 as the first child of beamContainer is the imageview for beam.png
         int selectedIndex = loadList.getSelectionModel().getSelectedIndex() + 1;
-        Arrow selected = (Arrow) beamContainer.getChildren().get(selectedIndex);
-
-        // Make the selected arrow red
-        selected.setFill(Color.RED);
 
         for (int i = 1; i < beamContainer.getChildren().size(); i++)
         {
             // Don't repaint the selected arrow black
-            if (i != selectedIndex)
+            if (i !=selectedIndex)
             {
                 ((Arrow) beamContainer.getChildren().get(i)).setFill(Color.BLACK);
+            }
+
+            else
+            {
+                Arrow selected = (Arrow) beamContainer.getChildren().get(selectedIndex);
+
+                // Make the selected arrow red
+                selected.setFill(Color.RED);
             }
         }
     }
@@ -184,13 +192,6 @@ public class CanoeAnalysisController implements Initializable
             {
                 maxIndex = i;
                 chosenMax = true;
-
-                // Render the max at max size
-                int startY = p.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
-                int endY = p.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
-
-                Arrow arrow = new Arrow(p.getXScaled(beamContainer.getWidth(), canoe.getLen()), startY, p.getXScaled(beamContainer.getWidth(), canoe.getLen()), endY);
-                beamContainer.getChildren().add(arrow);
             }
         }
 
@@ -199,8 +200,19 @@ public class CanoeAnalysisController implements Initializable
         {
             PointLoad p = canoe.getPLoads().get(i);
 
+            // Deal with the max separately
+            if (i == maxIndex)
+            {
+                // Render the max at max size
+                int startY = p.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
+                int endY = p.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
+
+                Arrow arrow = new Arrow(p.getXScaled(beamContainer.getWidth(), canoe.getLen()), startY, p.getXScaled(beamContainer.getWidth(), canoe.getLen()), endY);
+                beamContainer.getChildren().add(arrow);
+            }
+
             // Skip the max, already been dealt with
-            if (i != maxIndex)
+            else
             {
                 // Render at scaled size (deltaY calculates the downscaling factor)
                 int endY = p.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
@@ -209,6 +221,14 @@ public class CanoeAnalysisController implements Initializable
                 beamContainer.getChildren().add(new Arrow(p.getXScaled(beamContainer.getWidth(), canoe.getLen()), startY, p.getXScaled(beamContainer.getWidth(), canoe.getLen()), endY));
             }
         }
+
+        // Sort the arrows as children of the beam container so that the order matches the canoe pLoads
+        List<Arrow> arrowList = new ArrayList<>(beamContainer.getChildren().subList(1, beamContainer.getChildren().size()).stream().map(node -> (Arrow) node).toList());
+        arrowList.sort(new ArrowComparator());
+
+        // Clear the original children and add the sorted arrows back to the beamContainer
+        beamContainer.getChildren().subList(1, beamContainer.getChildren().size()).clear();
+        beamContainer.getChildren().addAll(arrowList);
     }
 
     public void addPointLoad()
@@ -259,8 +279,6 @@ public class CanoeAnalysisController implements Initializable
                         // currently: after getting here and trying to add another load you can't add any more arrows
                     }
                 }
-
-
             }
         }
 
@@ -312,7 +330,7 @@ public class CanoeAnalysisController implements Initializable
 
         // Setting RadioButton Toggle Group
         ToggleGroup canoeSupportToggleGroup = new ToggleGroup();
-        RadioButton[] canoeSupportRButtons = new RadioButton[]{floatingRadioButton, standsRadioButton};
+        RadioButton[] canoeSupportRButtons = new RadioButton[]{floatingRadioButton, standsRadioButton, submergedRadioButton};
         setAllToggleGroup(canoeSupportToggleGroup, canoeSupportRButtons, 0);
 
         // Populate ComboBoxes
