@@ -96,7 +96,7 @@
                            </children>
                         </AnchorPane>
                      </children></AnchorPane>
-                  <ListView fx:id="loadList" layoutX="25.0" layoutY="235.0" onContextMenuRequested="#highlightArrow" onMouseClicked="#highlightArrow" onMousePressed="#highlightArrow" prefHeight="310.0" prefWidth="200.0" />
+                  <ListView fx:id="loadList" layoutX="25.0" layoutY="235.0" onContextMenuRequested="#highlightLoad" onMouseClicked="#highlightLoad" onMousePressed="#highlightLoad" prefHeight="310.0" prefWidth="200.0" />
                </children></AnchorPane>
       </content>
     </Tab>

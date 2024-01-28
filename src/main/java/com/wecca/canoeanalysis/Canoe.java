@@ -60,6 +60,40 @@ public class Canoe
         return min;
     }
 
+    public double getMaxDLoad()
+    {
+        double max = 0;
+
+        for (UniformDistributedLoad d : dLoads)
+        {
+            double mag = Math.abs(d.getW());
+
+            if (mag > max)
+            {
+                max = mag;
+            }
+        }
+
+        return max;
+    }
+
+    public double getMinDLoad()
+    {
+        double min = Integer.MAX_VALUE;
+
+        for (UniformDistributedLoad d : dLoads)
+        {
+            double mag = Math.abs(d.getW());
+
+            if (mag < min)
+            {
+                min = mag;
+            }
+        }
+
+        return min;
+    }
+
 
     // Set of endpoints sections with unique equations on the SFD/BMD
     public Set<Double> getSectionEndPoints()

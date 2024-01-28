@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -83,36 +84,44 @@ public class CanoeAnalysisController implements Initializable
         }
     }
 
-    // With only point loads, the order of the ListView items matches insertion order
-    // This is not the case with uniformly distributed loads right now
-    // This will also complicate this method as more arrows are introduced
-
-    // Highlight the arrow selected on the ListView red
-    // The order of the arrows as children of the beamContainer doesn't match the listview
-    // So we need to get the information from the listview and match it to the arrow
-    public void highlightArrow()
+    // Highlight the load selected on the ListView red
+    public void highlightLoad()
     {
         // Add 1 as the first child of beamContainer is the imageview for beam.png
         int selectedIndex = loadList.getSelectionModel().getSelectedIndex() + 1;
 
         for (int i = 1; i < beamContainer.getChildren().size(); i++)
         {
-            // Don't repaint the selected arrow black
+            // Paint all but the selected load black
             if (i !=selectedIndex)
             {
-                ((Arrow) beamContainer.getChildren().get(i)).setFill(Color.BLACK);
+                // Deal with pLoads and dLoads separately
+                if (i < canoe.getPLoads().size() + 1)
+                    ((Arrow) beamContainer.getChildren().get(i)).setFill(Color.BLACK);
+                else
+                {
+                    ((ArrowBox) beamContainer.getChildren().get(i)).getLArrow().setFill(Color.BLACK);
+                    ((ArrowBox) beamContainer.getChildren().get(i)).getRArrow().setFill(Color.BLACK);
+                    ((ArrowBox) beamContainer.getChildren().get(i)).getBorderLine().setStroke(Color.BLACK);
+                    ((ArrowBox) beamContainer.getChildren().get(i)).getBox().setFill(Color.LIGHTGREY);
+                }
             }
 
+            // Paint the selected load red
             else
             {
-                Arrow selected = (Arrow) beamContainer.getChildren().get(selectedIndex);
-
-                // Make the selected arrow red
-                selected.setFill(Color.RED);
+                if (i < canoe.getPLoads().size() + 1)
+                    ((Arrow) beamContainer.getChildren().get(selectedIndex)).setFill(Color.RED);
+                else
+                {
+                    ((ArrowBox) beamContainer.getChildren().get(i)).getLArrow().setFill(Color.RED);
+                    ((ArrowBox) beamContainer.getChildren().get(i)).getRArrow().setFill(Color.RED);
+                    ((ArrowBox) beamContainer.getChildren().get(i)).getBorderLine().setStroke(Color.RED);
+                    ((ArrowBox) beamContainer.getChildren().get(i)).getBox().setFill(Color.LIGHTPINK);
+                }
             }
         }
     }
-
 
     public void setCanoeLength()
     {
@@ -175,27 +184,54 @@ public class CanoeAnalysisController implements Initializable
         }
     }
 
-    // Rescale arrows, max magnitude gets the max height, all others scale down to size
-    public void rescaleArrowsFromMax(double maxMag)
+    // Rescale Arrows and ArrowBoxes, max magnitude gets the max height, all others scale down to size
+    public void rescaleFromMax(double maxMag)
     {
         // Clear beam container of all arrows (index 1 is the imageview, gets skipped)
         beamContainer.getChildren().subList(1, beamContainer.getChildren().size()).clear();
 
         // Find max magnitude load in list of loads
-        int maxIndex = 0; boolean chosenMax = false; // If there's a tie, don't choose another max
+        int maxPIndex = 0; boolean chosenPMax = false; // If there's a tie, don't choose another max
         for (int i = 0; i < canoe.getPLoads().size(); i++)
         {
             PointLoad p = canoe.getPLoads().get(i);
 
             // Found a new max, get its index to reference later (avoids issues with 2 equal maxes)
-            if (Math.abs(p.getMag()) == maxMag && !chosenMax)
+            if (Math.abs(p.getMag()) == maxMag && !chosenPMax)
             {
-                maxIndex = i;
-                chosenMax = true;
+                maxPIndex = i;
+                chosenPMax = true;
             }
         }
 
-        // Render all forces not marked as the max scaled to size
+        int maxDIndex = 0; boolean chosenDMax = false;
+        for (int i = 0; i < canoe.getDLoads().size(); i++)
+        {
+            UniformDistributedLoad d = canoe.getDLoads().get(i);
+
+            // Found a new max, get its index to reference later (avoids issues with 2 equal maxes)
+            if (Math.abs(d.getW()) == maxMag && !chosenDMax)
+            {
+                // Adjustment factor because pLoads coming before dLoads in the ListView
+                maxDIndex = i;
+                chosenDMax = true;
+            }
+        }
+
+        // Max load between pLoads ands dLoads, dLoads index adjustment factor as dLoads come after pLoads as ListView items
+        int maxIndex = 0;
+        if (canoe.getPLoads().size() > 0 && canoe.getDLoads().size() > 0)
+            maxIndex = canoe.getMaxPLoad() > canoe.getMaxDLoad() ? maxPIndex : maxDIndex + canoe.getPLoads().size();
+        else if (canoe.getPLoads().size() == 0)
+            maxIndex = maxDIndex + canoe.getPLoads().size();
+        else if (canoe.getDLoads().size() == 0)
+            maxIndex = maxPIndex;
+
+        // List of Arrows and ArrowBoxes
+        ArrayList<Arrow> arrowList = new ArrayList<>();
+        ArrayList<ArrowBox> arrowBoxList = new ArrayList<>();
+
+        // Render all arrows not marked as the max scaled to size
         for (int i = 0; i < canoe.getPLoads().size(); i++)
         {
             PointLoad p = canoe.getPLoads().get(i);
@@ -208,27 +244,53 @@ public class CanoeAnalysisController implements Initializable
                 int endY = p.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
 
                 Arrow arrow = new Arrow(p.getXScaled(beamContainer.getWidth(), canoe.getLen()), startY, p.getXScaled(beamContainer.getWidth(), canoe.getLen()), endY);
-                beamContainer.getChildren().add(arrow);
+                arrowList.add(arrow);
             }
 
-            // Skip the max, already been dealt with
             else
             {
                 // Render at scaled size (deltaY calculates the downscaling factor)
                 int endY = p.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
                 int deltaY = (int) ((acceptedArrowHeightRange[1] - acceptedArrowHeightRange[0]) * (Math.abs(p.getMag()) / maxMag));
                 int startY = p.getMag() < 0 ? acceptedArrowHeightRange[1] - deltaY : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight() + deltaY;
-                beamContainer.getChildren().add(new Arrow(p.getXScaled(beamContainer.getWidth(), canoe.getLen()), startY, p.getXScaled(beamContainer.getWidth(), canoe.getLen()), endY));
+                Arrow arrow = new Arrow(p.getXScaled(beamContainer.getWidth(), canoe.getLen()), startY, p.getXScaled(beamContainer.getWidth(), canoe.getLen()), endY);
+                arrowList.add(arrow);
             }
         }
 
-        // Sort the arrows as children of the beam container so that the order matches the canoe pLoads
-        List<Arrow> arrowList = new ArrayList<>(beamContainer.getChildren().subList(1, beamContainer.getChildren().size()).stream().map(node -> (Arrow) node).toList());
-        arrowList.sort(new ArrowComparator());
+        // Render all arrowBoxes not marked as the max scaled to size, dLoads index adjustment factor as dLoads come after pLoads as ListView items
+        for (int i = canoe.getPLoads().size(); i < canoe.getPLoads().size() + canoe.getDLoads().size(); i++)
+        {
+            UniformDistributedLoad d = canoe.getDLoads().get(i - canoe.getPLoads().size());
 
-        // Clear the original children and add the sorted arrows back to the beamContainer
-        beamContainer.getChildren().subList(1, beamContainer.getChildren().size()).clear();
+            // Deal with the max separately
+            if (i == maxIndex)
+            {
+                // Render the max at max size
+                int startY = d.getW() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
+                int endY = d.getW() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
+
+                ArrowBox arrowBox = new ArrowBox(d.getLXScaled(beamContainer.getWidth(), canoe.getLen()), startY, d.getRXScaled(beamContainer.getWidth(), canoe.getLen()), endY);
+                arrowBoxList.add(arrowBox);
+            }
+
+            else
+            {
+                // Render at scaled size (deltaY calculates the downscaling factor)
+                int endY = d.getW() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
+                int deltaY = (int) ((acceptedArrowHeightRange[1] - acceptedArrowHeightRange[0]) * (Math.abs(d.getW()) / maxMag));
+                int startY = d.getW() < 0 ? acceptedArrowHeightRange[1] - deltaY : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight() + deltaY;
+
+                ArrowBox arrowBox = new ArrowBox(d.getLXScaled(beamContainer.getWidth(), canoe.getLen()), startY, d.getRXScaled(beamContainer.getWidth(), canoe.getLen()), endY);
+                arrowBoxList.add(arrowBox);
+            }
+        }
+
+        // Add sorted Arrows and ArrowBoxes to the beamContainer
+        arrowList.sort(new ArrowComparator());
+        arrowBoxList.sort(new ArrowBoxComparator());
         beamContainer.getChildren().addAll(arrowList);
+        beamContainer.getChildren().addAll(arrowBoxList);
     }
 
     public void addPointLoad()
@@ -258,8 +320,8 @@ public class CanoeAnalysisController implements Initializable
                 // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
                 int endY = mag < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
 
-                // First load, arrow max height
-                if (canoe.getPLoads().size() < 2)
+                // Only 1 load, always at max height
+                if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2)
                 {
                     int startY = mag < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
                     Arrow arrow = new Arrow(scaledX, startY, scaledX, endY);
@@ -271,7 +333,7 @@ public class CanoeAnalysisController implements Initializable
                     // Stay within the limits of the accepted height range (based on pixel spacing in the GUI)
                     if (!(canoe.getMaxPLoad() / canoe.getMinPLoad() > (double) acceptedArrowHeightRange[1] / (double) acceptedArrowHeightRange[0]))
                     {
-                        rescaleArrowsFromMax(canoe.getMaxPLoad());
+                        rescaleFromMax(canoe.getMaxPLoad());
                     }
 
                     else
@@ -306,7 +368,37 @@ public class CanoeAnalysisController implements Initializable
                         && acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1])
                     {
                         // Add the load to canoe
+                        UniformDistributedLoad d = new UniformDistributedLoad(l, r, mag);
                         canoe.addDLoad(new UniformDistributedLoad(l, r, mag));
+
+                        // x coordinates of arrows in beamContainer for ArrowBox
+                        double scaledLX = d.getLXScaled(beamContainer.getWidth(), canoe.getLen());
+                        double scaledRX = d.getRXScaled(beamContainer.getWidth(), canoe.getLen());
+
+                        // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
+                        int endY = mag < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
+
+                        // Only 1 load, always at max height
+                        if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2)
+                        {
+                            int startY = mag < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
+                            ArrowBox arrowBox = new ArrowBox(scaledLX, startY, scaledRX, endY);
+                            beamContainer.getChildren().add(arrowBox);
+                        }
+
+                        else
+                        {
+                            // Stay within the limits of the accepted height range (based on pixel spacing in the GUI)
+                            if (!(canoe.getMaxDLoad() / canoe.getMinDLoad() > (double) acceptedArrowHeightRange[1] / (double) acceptedArrowHeightRange[0]))
+                            {
+                                rescaleFromMax(canoe.getMaxDLoad());
+                            }
+
+                            else
+                            {
+                                // currently: after getting here and trying to add another load you can't add any more arrows
+                            }
+                        }
                     }
             }
         updateLoadList();
@@ -316,9 +408,9 @@ public class CanoeAnalysisController implements Initializable
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
         // Instantiate the canoe
-        ArrayList<PointLoad> p = new ArrayList<>();
-        ArrayList<UniformDistributedLoad> d = new ArrayList<>();
-        canoe = new Canoe(0, p, d);
+        ArrayList<PointLoad> pLoads = new ArrayList<>();
+        ArrayList<UniformDistributedLoad> dLoads = new ArrayList<>();
+        canoe = new Canoe(0, pLoads, dLoads);
 
         // Set Black Borders
         loadList.setStyle("-fx-border-color: black");
