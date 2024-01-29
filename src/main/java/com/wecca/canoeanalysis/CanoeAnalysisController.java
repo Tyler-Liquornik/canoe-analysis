@@ -190,7 +190,7 @@ public class CanoeAnalysisController implements Initializable
         // Clear beam container of all arrows (index 1 is the imageview, gets skipped)
         beamContainer.getChildren().subList(1, beamContainer.getChildren().size()).clear();
 
-        // Find max magnitude load in list of loads
+        // Find max magnitude pLoad in list of pLoads
         int maxPIndex = 0; boolean chosenPMax = false; // If there's a tie, don't choose another max
         for (int i = 0; i < canoe.getPLoads().size(); i++)
         {
@@ -204,6 +204,7 @@ public class CanoeAnalysisController implements Initializable
             }
         }
 
+        // Find max magnitude dLoad in list of dLoads
         int maxDIndex = 0; boolean chosenDMax = false;
         for (int i = 0; i < canoe.getDLoads().size(); i++)
         {
@@ -243,7 +244,7 @@ public class CanoeAnalysisController implements Initializable
                 int startY = p.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
                 int endY = p.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
 
-                Arrow arrow = new Arrow(p.getXScaled(beamContainer.getWidth(), canoe.getLen()), startY, p.getXScaled(beamContainer.getWidth(), canoe.getLen()), endY);
+                Arrow arrow = new Arrow(p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()), startY, p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()), endY);
                 arrowList.add(arrow);
             }
 
@@ -253,7 +254,7 @@ public class CanoeAnalysisController implements Initializable
                 int endY = p.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
                 int deltaY = (int) ((acceptedArrowHeightRange[1] - acceptedArrowHeightRange[0]) * (Math.abs(p.getMag()) / maxMag));
                 int startY = p.getMag() < 0 ? acceptedArrowHeightRange[1] - deltaY : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight() + deltaY;
-                Arrow arrow = new Arrow(p.getXScaled(beamContainer.getWidth(), canoe.getLen()), startY, p.getXScaled(beamContainer.getWidth(), canoe.getLen()), endY);
+                Arrow arrow = new Arrow(p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()), startY, p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()), endY);
                 arrowList.add(arrow);
             }
         }
@@ -270,7 +271,7 @@ public class CanoeAnalysisController implements Initializable
                 int startY = d.getW() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
                 int endY = d.getW() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
 
-                ArrowBox arrowBox = new ArrowBox(d.getLXScaled(beamContainer.getWidth(), canoe.getLen()), startY, d.getRXScaled(beamContainer.getWidth(), canoe.getLen()), endY);
+                ArrowBox arrowBox = new ArrowBox(d.getLXScaled(beamImageView.getFitWidth(), canoe.getLen()), startY, d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen()), endY);
                 arrowBoxList.add(arrowBox);
             }
 
@@ -281,7 +282,7 @@ public class CanoeAnalysisController implements Initializable
                 int deltaY = (int) ((acceptedArrowHeightRange[1] - acceptedArrowHeightRange[0]) * (Math.abs(d.getW()) / maxMag));
                 int startY = d.getW() < 0 ? acceptedArrowHeightRange[1] - deltaY : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight() + deltaY;
 
-                ArrowBox arrowBox = new ArrowBox(d.getLXScaled(beamContainer.getWidth(), canoe.getLen()), startY, d.getRXScaled(beamContainer.getWidth(), canoe.getLen()), endY);
+                ArrowBox arrowBox = new ArrowBox(d.getLXScaled(beamImageView.getFitWidth(), canoe.getLen()), startY, d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen()), endY);
                 arrowBoxList.add(arrowBox);
             }
         }
@@ -315,7 +316,7 @@ public class CanoeAnalysisController implements Initializable
                 canoe.addPLoad(p);
 
                 // x coordinate in beamContainer for load arrow
-                double scaledX = p.getXScaled(beamContainer.getWidth(), canoe.getLen()); // x position in the beamContainer
+                double scaledX = p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()); // x position in the beamContainer
 
                 // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
                 int endY = mag < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
@@ -333,7 +334,8 @@ public class CanoeAnalysisController implements Initializable
                     // Stay within the limits of the accepted height range (based on pixel spacing in the GUI)
                     if (!(canoe.getMaxPLoad() / canoe.getMinPLoad() > (double) acceptedArrowHeightRange[1] / (double) acceptedArrowHeightRange[0]))
                     {
-                        rescaleFromMax(canoe.getMaxPLoad());
+                        System.out.println("*");
+                        rescaleFromMax(Math.max(canoe.getMaxPLoad(), canoe.getMaxDLoad()));
                     }
 
                     else
@@ -372,8 +374,8 @@ public class CanoeAnalysisController implements Initializable
                         canoe.addDLoad(new UniformDistributedLoad(l, r, mag));
 
                         // x coordinates of arrows in beamContainer for ArrowBox
-                        double scaledLX = d.getLXScaled(beamContainer.getWidth(), canoe.getLen());
-                        double scaledRX = d.getRXScaled(beamContainer.getWidth(), canoe.getLen());
+                        double scaledLX = d.getLXScaled(beamImageView.getFitWidth(), canoe.getLen());
+                        double scaledRX = d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen());
 
                         // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
                         int endY = mag < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
@@ -391,7 +393,7 @@ public class CanoeAnalysisController implements Initializable
                             // Stay within the limits of the accepted height range (based on pixel spacing in the GUI)
                             if (!(canoe.getMaxDLoad() / canoe.getMinDLoad() > (double) acceptedArrowHeightRange[1] / (double) acceptedArrowHeightRange[0]))
                             {
-                                rescaleFromMax(canoe.getMaxDLoad());
+                                rescaleFromMax(Math.max(canoe.getMaxPLoad(), canoe.getMaxDLoad()));
                             }
 
                             else

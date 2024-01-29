@@ -29,7 +29,7 @@
                         <RadioButton fx:id="standsRadioButton" layoutX="20.0" layoutY="80.0" mnemonicParsing="false" text="Stands" />
                         <Button fx:id="solveSystemButton" layoutX="15.0" layoutY="150.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="165.0" text="Solve System" />
                         <RadioButton fx:id="floatingRadioButton" layoutX="20.0" layoutY="45.0" mnemonicParsing="false" text="Floating" />
-                        <RadioButton fx:id="submergedRadioButton" layoutX="20.0" layoutY="115.0" mnemonicParsing="false" text="Submerged" />
+                        <RadioButton fx:id="submergedRadioButton" layoutX="20.0" layoutY="115.0" mnemonicParsing="false" prefHeight="17.0" prefWidth="91.0" text="Submerged" />
                      </children>
                   </AnchorPane>
                   <AnchorPane layoutX="235.0" layoutY="25.0" prefHeight="200.0" prefWidth="640.0">
@@ -90,7 +90,7 @@
                               <Font size="10.0" />
                            </font>
                         </Label>
-                        <AnchorPane fx:id="beamContainer" layoutX="30.0" layoutY="10.0" prefHeight="210.0" prefWidth="580.0">
+                        <AnchorPane fx:id="beamContainer" layoutX="25.0" layoutY="10.0" prefHeight="210.0" prefWidth="590.0">
                            <children>
                               <ImageView fx:id="beamImageView" fitHeight="42.0" fitWidth="580.0" layoutY="84.0" pickOnBounds="true" preserveRatio="true" />
                            </children>

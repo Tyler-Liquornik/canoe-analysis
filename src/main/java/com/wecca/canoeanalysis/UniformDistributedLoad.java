@@ -11,8 +11,8 @@ public class UniformDistributedLoad
         this.lX = l; this.rX = r; this.w = w;
     }
 
-    public double getL() {return lX;}
-    public double getR() {return rX;}
+    public double getLX() {return lX;}
+    public double getRX() {return rX;}
     public double getW() {return w;}
     public void setL(double l) {this.lX = l;}
     public void setR(double r) {this.rX = r;}

@@ -13,7 +13,7 @@ public class Canoe
     {
         this.len = len;
         this.pLoads = pLoads; pLoads.sort(new PointLoadComparator());
-        this.dLoads = dLoads; // implemented sorting for dLoads later
+        this.dLoads = dLoads; dLoads.sort(new UniformDistributedLoadComparator());
     }
 
     public double getLen() {return len;}
@@ -21,7 +21,7 @@ public class Canoe
 
     // Keep the ArrayList sorted
     public void addPLoad(PointLoad p) {pLoads.add(p); pLoads.sort(new PointLoadComparator());}
-    public void addDLoad(UniformDistributedLoad d) {dLoads.add(d);}
+    public void addDLoad(UniformDistributedLoad d) {dLoads.add(d); dLoads.sort(new UniformDistributedLoadComparator());}
     public ArrayList<PointLoad> getPLoads() {return pLoads;}
     public ArrayList<UniformDistributedLoad> getDLoads() {return dLoads;}
 
@@ -101,7 +101,7 @@ public class Canoe
         Set<Double> s = new HashSet<>();
 
         for (PointLoad p : pLoads) {s.add(p.getX());}
-        for (UniformDistributedLoad d : dLoads) {s.add(d.getL()); s.add(d.getR());}
+        for (UniformDistributedLoad d : dLoads) {s.add(d.getLX()); s.add(d.getRX());}
 
         return s;
     }
