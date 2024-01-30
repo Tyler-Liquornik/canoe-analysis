@@ -450,7 +450,7 @@ public class CanoeAnalysisController implements Initializable
         setAllWithDefault(distributedMagnitudeComboBox, distributedLoadUnits, 0);
         setAllWithDefault(canoeLengthComboBox, distanceUnits, 0);
 
-        // Populate TextFields with default values
+        // Populate the TextFields with default values
         TextField[] tfs = new TextField[]{pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
                 distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField};
         for (TextField tf : tfs) {tf.setText("0.00");}
