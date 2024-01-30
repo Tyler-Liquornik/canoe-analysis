@@ -92,7 +92,7 @@
                         </Label>
                         <AnchorPane fx:id="beamContainer" layoutX="25.0" layoutY="10.0" prefHeight="210.0" prefWidth="590.0">
                            <children>
-                              <ImageView fx:id="beamImageView" fitHeight="42.0" fitWidth="580.0" layoutY="84.0" pickOnBounds="true" preserveRatio="true" />
+                              <ImageView fx:id="beamImageView" fitHeight="42.0" fitWidth="580.0" layoutX="5.0" layoutY="84.0" pickOnBounds="true" preserveRatio="true" />
                            </children>
                         </AnchorPane>
                      </children></AnchorPane>

@@ -45,10 +45,14 @@ public class CanoeAnalysisController implements Initializable
     private final double G = 9.80665; // gravity on earth
 
     private final double[] acceptedMagRange = new double[] {0.05, 10}; // Acceptable magnitude range (kN)
+
+    private final double[] acceptedLengthRange = new double[] {0.05, 20}; // Acceptable canoe length range (m)
     private final int[] acceptedArrowHeightRange = new int[] {14, 84}; // Acceptable arrow height range (px)
     // Cannot get this from imageView, it hasn't been instantiated until initialize is called
     // Is there a workaround to this that doesn't require adding the imageView manually in code
     // Also this is awkward to add it in with all the fields at the top
+
+    private final double adjFactor = 5; // beamImageView not at x = 5 in beamContainer
 
     private boolean canoeLengthSet = false; // update to prevent resetting canoe length
 
@@ -125,20 +129,25 @@ public class CanoeAnalysisController implements Initializable
 
     public void setCanoeLength()
     {
-        // Can only set the canoe length once (avoids forces off of the canoe)
-        if (!canoeLengthSet)
+        double len = getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
+
+        if (len >= acceptedLengthRange[0] && len <= acceptedLengthRange[1])
         {
-            canoe.setLen(getDistanceConverted(canoeLengthComboBox, canoeLengthTextField));
-            canoeLengthSet = true;
+            // Can only set the canoe length once (avoids forces off of the canoe)
+            if (!canoeLengthSet)
+            {
+                canoe.setLen(len);
+                canoeLengthSet = true;
+            }
+
+            // Change the label on the scale
+            lengthLabelRTemp.setText("");
+            lengthLabelR.setText(String.format("%.2f m", canoe.getLen()));
+
+            // Disable the length text field (can only set length once)
+            canoeLengthTextField.setText("");
+            canoeLengthTextField.setDisable(true);
         }
-
-        // Change the label on the scale
-        lengthLabelRTemp.setText("");
-        lengthLabelR.setText(String.format("%.2f m", canoe.getLen()));
-
-        // Disable the length text field (can only set length once)
-        canoeLengthTextField.setText("");
-        canoeLengthTextField.setDisable(true);
     }
 
 
@@ -244,7 +253,7 @@ public class CanoeAnalysisController implements Initializable
                 int startY = p.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
                 int endY = p.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
 
-                Arrow arrow = new Arrow(p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()), startY, p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()), endY);
+                Arrow arrow = new Arrow(p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, startY, p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, endY);
                 arrowList.add(arrow);
             }
 
@@ -254,7 +263,7 @@ public class CanoeAnalysisController implements Initializable
                 int endY = p.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
                 int deltaY = (int) ((acceptedArrowHeightRange[1] - acceptedArrowHeightRange[0]) * (Math.abs(p.getMag()) / maxMag));
                 int startY = p.getMag() < 0 ? acceptedArrowHeightRange[1] - deltaY : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight() + deltaY;
-                Arrow arrow = new Arrow(p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()), startY, p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()), endY);
+                Arrow arrow = new Arrow(p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, startY, p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, endY);
                 arrowList.add(arrow);
             }
         }
@@ -271,7 +280,7 @@ public class CanoeAnalysisController implements Initializable
                 int startY = d.getW() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
                 int endY = d.getW() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
 
-                ArrowBox arrowBox = new ArrowBox(d.getLXScaled(beamImageView.getFitWidth(), canoe.getLen()), startY, d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen()), endY);
+                ArrowBox arrowBox = new ArrowBox(d.getLXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, startY, d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, endY);
                 arrowBoxList.add(arrowBox);
             }
 
@@ -282,7 +291,7 @@ public class CanoeAnalysisController implements Initializable
                 int deltaY = (int) ((acceptedArrowHeightRange[1] - acceptedArrowHeightRange[0]) * (Math.abs(d.getW()) / maxMag));
                 int startY = d.getW() < 0 ? acceptedArrowHeightRange[1] - deltaY : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight() + deltaY;
 
-                ArrowBox arrowBox = new ArrowBox(d.getLXScaled(beamImageView.getFitWidth(), canoe.getLen()), startY, d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen()), endY);
+                ArrowBox arrowBox = new ArrowBox(d.getLXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, startY, d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, endY);
                 arrowBoxList.add(arrowBox);
             }
         }
@@ -325,7 +334,7 @@ public class CanoeAnalysisController implements Initializable
                 if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2)
                 {
                     int startY = mag < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
-                    Arrow arrow = new Arrow(scaledX, startY, scaledX, endY);
+                    Arrow arrow = new Arrow(scaledX + adjFactor, startY, scaledX + adjFactor, endY);
                     beamContainer.getChildren().add(arrow);
                 }
 
@@ -384,7 +393,7 @@ public class CanoeAnalysisController implements Initializable
                         if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2)
                         {
                             int startY = mag < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
-                            ArrowBox arrowBox = new ArrowBox(scaledLX, startY, scaledRX, endY);
+                            ArrowBox arrowBox = new ArrowBox(scaledLX + adjFactor, startY, scaledRX + adjFactor, endY);
                             beamContainer.getChildren().add(arrowBox);
                         }
 
