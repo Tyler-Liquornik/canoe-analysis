@@ -473,7 +473,7 @@ public class CanoeAnalysisController implements Initializable
         // Instantiate the canoe
         ArrayList<PointLoad> pLoads = new ArrayList<>();
         ArrayList<UniformDistributedLoad> dLoads = new ArrayList<>();
-        canoe = new Canoe(0, pLoads, dLoads);
+        canoe = Canoe.getInstance();
 
         // Set Black Borders
         loadList.setStyle("-fx-border-color: black");

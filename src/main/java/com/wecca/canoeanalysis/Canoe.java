@@ -2,18 +2,32 @@ package com.wecca.canoeanalysis;
 
 import java.util.*;
 
-public class Canoe
+/**
+ * Singleton class representing the canoe for the application.
+ */
+public final class Canoe
 {
+    private static Canoe canoe = null;
     double len; // canoe length
     ArrayList<PointLoad> pLoads; // point loads on the canoe
     ArrayList<UniformDistributedLoad> dLoads; // uniformly distributed loads on the canoe
     double m; // canoe mass (able to calculate this from exported solidworks data instead of manually?)
 
-    public Canoe(double len, ArrayList<PointLoad> pLoads, ArrayList<UniformDistributedLoad> dLoads)
-    {
-        this.len = len;
-        this.pLoads = pLoads; pLoads.sort(new PointLoadComparator());
-        this.dLoads = dLoads; dLoads.sort(new UniformDistributedLoadComparator());
+    private Canoe() {
+        this.len = 0;
+        this.pLoads = new ArrayList<>();
+        this.dLoads = new ArrayList<>();
+    }
+
+    /**
+     * Get the Canoe singleton instance. Use this rather than a constructor.
+     * @return the Canoe singleton.
+     */
+    public static Canoe getInstance() {
+        if (canoe == null) {
+            canoe = new Canoe();
+        }
+        return canoe;
     }
 
     public double getLen() {return len;}
