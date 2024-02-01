@@ -11,10 +11,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CanoeAnalysisController implements Initializable
@@ -306,9 +303,7 @@ public class CanoeAnalysisController implements Initializable
     public void addPointLoad()
     {
         // Validate the entered numbers are doubles
-        if (validateTextAsDouble(pointLocationTextField.getText())
-        && validateTextAsDouble(pointMagnitudeTextField.getText()))
-        {
+        if (allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField))) {
             double x = getDistanceConverted(pointLocationComboBox, pointLocationTextField);
             double mag = getLoadConverted(pointMagnitudeComboBox, pointMagnitudeTextField);
             String direction = pointDirectionComboBox.getSelectionModel().getSelectedItem();
@@ -316,42 +311,12 @@ public class CanoeAnalysisController implements Initializable
             // Apply direction
             if (direction == "Down") {mag *= -1;}
 
-
             // Validate the load is being added within the length of the canoe, and is of acceptable magnitude range
             if (0 <= x && x <= canoe.getLen() && acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1])
             {
                 // Add the load to canoe, and the load arrow on the GUI
                 PointLoad p = new PointLoad(mag, x);
-                canoe.addPLoad(p);
-
-                // x coordinate in beamContainer for load arrow
-                double scaledX = p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()); // x position in the beamContainer
-
-                // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
-                int endY = mag < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
-
-                // Only 1 load, always at max height
-                if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2)
-                {
-                    int startY = mag < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
-                    Arrow arrow = new Arrow(scaledX + adjFactor, startY, scaledX + adjFactor, endY);
-                    beamContainer.getChildren().add(arrow);
-                }
-
-                else
-                {
-                    // Stay within the limits of the accepted height range (based on pixel spacing in the GUI)
-                    if (!(canoe.getMaxPLoad() / canoe.getMinPLoad() > (double) acceptedArrowHeightRange[1] / (double) acceptedArrowHeightRange[0]))
-                    {
-                        System.out.println("*");
-                        rescaleFromMax(Math.max(canoe.getMaxPLoad(), canoe.getMaxDLoad()));
-                    }
-
-                    else
-                    {
-                        // currently: after getting here and trying to add another load you can't add any more arrows
-                    }
-                }
+                addPointLoadToCanoe(p);
             }
         }
 
@@ -361,58 +326,145 @@ public class CanoeAnalysisController implements Initializable
     public void addDistributedLoad()
     {
         // Validate the entered numbers are doubles
-        if (validateTextAsDouble(distributedMagnitudeTextField.getText())
-                && validateTextAsDouble(distributedIntervalTextFieldL.getText())
-                    && validateTextAsDouble(distributedIntervalTextFieldR.getText()))
-            {
-                double l = getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldL);
-                double r = getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldR);
-                double mag = getLoadConverted(distributedMagnitudeComboBox, distributedMagnitudeTextField);
-                String direction = distributedDirectionComboBox.getSelectionModel().getSelectedItem();
+        if (allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
+                distributedIntervalTextFieldR))) {
+            double l = getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldL);
+            double r = getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldR);
+            double mag = getLoadConverted(distributedMagnitudeComboBox, distributedMagnitudeTextField);
+            String direction = distributedDirectionComboBox.getSelectionModel().getSelectedItem();
 
-                // Apply direction
-                if (direction == "Down") {mag *= -1;}
+            // Apply direction
+            if (direction == "Down") {mag *= -1;}
 
-                // Validate the load is being added within the length of the canoe, and the magnitude is in the acceptable range
-                // Validate the right bound of the interval is greater than the left
-                if (0 <= l && l <= canoe.getLen() && r <= canoe.getLen() && r > l
-                        && acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1])
-                    {
-                        // Add the load to canoe
-                        UniformDistributedLoad d = new UniformDistributedLoad(l, r, mag);
-                        canoe.addDLoad(new UniformDistributedLoad(l, r, mag));
-
-                        // x coordinates of arrows in beamContainer for ArrowBox
-                        double scaledLX = d.getLXScaled(beamImageView.getFitWidth(), canoe.getLen());
-                        double scaledRX = d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen());
-
-                        // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
-                        int endY = mag < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
-
-                        // Only 1 load, always at max height
-                        if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2)
-                        {
-                            int startY = mag < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
-                            ArrowBox arrowBox = new ArrowBox(scaledLX + adjFactor, startY, scaledRX + adjFactor, endY);
-                            beamContainer.getChildren().add(arrowBox);
-                        }
-
-                        else
-                        {
-                            // Stay within the limits of the accepted height range (based on pixel spacing in the GUI)
-                            if (!(canoe.getMaxDLoad() / canoe.getMinDLoad() > (double) acceptedArrowHeightRange[1] / (double) acceptedArrowHeightRange[0]))
-                            {
-                                rescaleFromMax(Math.max(canoe.getMaxPLoad(), canoe.getMaxDLoad()));
-                            }
-
-                            else
-                            {
-                                // currently: after getting here and trying to add another load you can't add any more arrows
-                            }
-                        }
-                    }
+            // Validate the load is being added within the length of the canoe, and the magnitude is in the acceptable range
+            // Validate the right bound of the interval is greater than the left
+            if (0 <= l && l <= canoe.getLen() && r <= canoe.getLen() && r > l
+                    && acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1])
+                {
+                    // Add the load to canoe
+                    UniformDistributedLoad d = new UniformDistributedLoad(l, r, mag);
+                    addDistributedLoadToCanoe(d);
+                }
             }
+
         updateLoadList();
+    }
+
+    /**
+     * Add a distributed load to the canoe object and JavaFX UI.
+     * This method was extracted to allow for reuse in system solver methods.
+     * @param load the load to be added.
+     */
+    private void addDistributedLoadToCanoe(UniformDistributedLoad load) {
+        canoe.addDLoad(load);
+
+        // x coordinates of arrows in beamContainer for ArrowBox
+        double scaledLX = load.getLXScaled(beamImageView.getFitWidth(), canoe.getLen());
+        double scaledRX = load.getRXScaled(beamImageView.getFitWidth(), canoe.getLen());
+
+        // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
+        int endY = load.getW() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
+
+        // Only 1 load, always at max height
+        if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2)
+        {
+            int startY = load.getW() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
+            ArrowBox arrowBox = new ArrowBox(scaledLX + adjFactor, startY, scaledRX + adjFactor, endY);
+            beamContainer.getChildren().add(arrowBox);
+        }
+
+        else
+        {
+            // Stay within the limits of the accepted height range (based on pixel spacing in the GUI)
+            if (!(canoe.getMaxDLoad() / canoe.getMinDLoad() > (double) acceptedArrowHeightRange[1] / (double) acceptedArrowHeightRange[0]))
+            {
+                rescaleFromMax(Math.max(canoe.getMaxPLoad(), canoe.getMaxDLoad()));
+            }
+
+            else
+            {
+                // currently: after getting here and trying to add another load you can't add any more arrows
+            }
+        }
+    }
+
+    /**
+     * Add a point load to the canoe object and JavaFX UI.
+     * This method was extracted to allow for reuse in system solver methods.
+     * @param load the load to be added.
+     */
+    private void addPointLoadToCanoe(PointLoad load) {
+        AddPointLoadResult addResult = canoe.addPLoad(load);
+
+        // x coordinate in beamContainer for load arrow
+        double scaledX = load.getXScaled(beamImageView.getFitWidth(), canoe.getLen()); // x position in the beamContainer
+
+        // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
+        int endY = load.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
+
+        // Only 1 load, always at max height
+        if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2 && addResult != AddPointLoadResult.REMOVED)
+        {
+            int startY = load.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
+            Arrow arrow = new Arrow(scaledX + adjFactor, startY, scaledX + adjFactor, endY);
+            beamContainer.getChildren().add(arrow);
+        }
+
+        else
+        {
+            // Stay within the limits of the accepted height range (based on pixel spacing in the GUI)
+            if (!(canoe.getMaxPLoad() / canoe.getMinPLoad() > (double) acceptedArrowHeightRange[1] / (double) acceptedArrowHeightRange[0]))
+            {
+                System.out.println("*");
+                rescaleFromMax(Math.max(canoe.getMaxPLoad(), canoe.getMaxDLoad()));
+            }
+
+            else
+            {
+                // TODO: throw an error
+                // currently: after getting here and trying to add another load you can't add any more arrows
+            }
+        }
+    }
+
+    /**
+     * Check if a list of text fields all contain double values.
+     * @param fields list of text fields to check.
+     * @return whether each text field contains a double value.
+     */
+    private boolean allTextFieldsAreDouble(List<TextField> fields) {
+        for (TextField field : fields) {
+            if (!validateTextAsDouble(field.getText())) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Handler for the "solve system" button.
+     * Distributes call to appropriate method and re-renders loads.
+     */
+    public void solveSystem() {
+        if (standsRadioButton.isSelected()) {
+            solveStandSystem();
+        } else if (floatingRadioButton.isSelected()) {
+            // Solve floating case
+        } else if (submergedRadioButton.isSelected()) {
+            // Solve submerged case
+        } else {
+            // throw error
+        }
+
+        updateLoadList();
+    }
+
+    /**
+     * Solve and display the result of the "stand" system load case.
+     */
+    private void solveStandSystem() {
+        List<PointLoad> newLoads = SystemSolver.solveStandSystem(canoe);
+        for (PointLoad load : newLoads) {
+            addPointLoadToCanoe(load);
+        }
     }
 
     @Override

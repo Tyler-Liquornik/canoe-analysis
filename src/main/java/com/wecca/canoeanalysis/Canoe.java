@@ -19,8 +19,30 @@ public class Canoe
     public double getLen() {return len;}
     public void setLen(double len) {this.len = len;}
 
-    // Keep the ArrayList sorted
-    public void addPLoad(PointLoad p) {pLoads.add(p); pLoads.sort(new PointLoadComparator());}
+    public double getM() {
+        return m;
+    }
+    public void setM(double m) {
+        this.m = m;
+    }
+
+    public AddPointLoadResult addPLoad(PointLoad p) {
+        //Search for other loads at the same position, and combine their magnitudes
+        for (PointLoad pLoad : pLoads) {
+            if (pLoad.getX() == p.getX()) {
+                pLoad.setMag(pLoad.getMag() + p.getMag());
+                if (pLoad.getMag() == 0) {
+                    pLoads.remove(pLoad);
+                    return AddPointLoadResult.REMOVED;
+                }
+                return AddPointLoadResult.COMBINED;
+            }
+        }
+
+        pLoads.add(p);
+        pLoads.sort(new PointLoadComparator()); // Keep the ArrayList sorted
+        return AddPointLoadResult.ADDED;
+    }
     public void addDLoad(UniformDistributedLoad d) {dLoads.add(d); dLoads.sort(new UniformDistributedLoadComparator());}
     public ArrayList<PointLoad> getPLoads() {return pLoads;}
     public ArrayList<UniformDistributedLoad> getDLoads() {return dLoads;}
