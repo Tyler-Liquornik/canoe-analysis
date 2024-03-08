@@ -144,16 +144,18 @@ public final class Diagram {
                 slope += distributedLoadStartMap.get(x).getW();
                 prevX = x;
                 magnitude = 0;
+            }
             //If a distributed load ends here
-            } else if (distributedLoadEndMap.containsKey(x)) {
+            if (distributedLoadEndMap.containsKey(x)) {
                 //Apply the magnitude and the rolling slope
                 intervals.add(new Interval(prevX, x, magnitude, slope));
                 //Decrement the slope, set the x coordinate, and clear the magnitude
                 slope -= distributedLoadEndMap.get(x).getW();
                 prevX = x;
                 magnitude = 0;
+            }
             //If a point load occurs here
-            } else if (pointLoadMap.containsKey(x)) {
+            if (pointLoadMap.containsKey(x)) {
                 //Apply the magnitude and the rolling slope
                 intervals.add(new Interval(prevX, x, magnitude, slope));
                 //Reset the magnitude and set the x coordinate
