@@ -1,18 +1,24 @@
 package com.wecca.canoeanalysis;
 
+import com.wecca.canoeanalysis.diagrams.Diagram;
+import com.wecca.canoeanalysis.diagrams.DiagramPoint;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 
 import java.net.URL;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class CanoeAnalysisController implements Initializable
 {
@@ -455,6 +461,46 @@ public class CanoeAnalysisController implements Initializable
         }
 
         updateLoadList();
+    }
+
+    /**
+     * Generates a diagram based on the canoe's load state.
+     * TODO: handle other diagram types -- currently only SFD
+     */
+    public void generateDiagram() {
+        Stage popupStage = new Stage();
+        popupStage.setTitle("Shear Force Diagram");
+
+        Pane chartPane = new Pane();
+        chartPane.setPrefSize(900, 600);
+
+        List<DiagramPoint> points = Diagram.generateSfdPoints(canoe);
+        NumberAxis yAxis = new NumberAxis();
+        NumberAxis xAxis = new NumberAxis();
+
+        xAxis.setAutoRanging(false);
+        xAxis.setLabel("Distance [m]");
+        yAxis.setLabel("Force [kN]");
+
+        xAxis.setLowerBound(-0.05);
+        xAxis.setUpperBound(canoe.getLen() + 0.05);
+
+        LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
+        chart.setTitle("Shear Force Diagram");
+        chart.setPrefSize(900, 600);
+
+        XYChart.Series series = new XYChart.Series();
+        for (DiagramPoint point : points) {
+            series.getData().add(new XYChart.Data<>(point.getX(), point.getY()));
+        }
+        series.setName("Force [kN]");
+
+        chart.getData().add(series);
+
+        chartPane.getChildren().add(chart);
+        Scene scene = new Scene(chartPane, 900, 600);
+        popupStage.setScene(scene);
+        popupStage.show();
     }
 
     /**

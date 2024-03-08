@@ -16,6 +16,24 @@ public final class SystemSolver {
     private SystemSolver() {}
 
     /**
+     * Convert a list of UniformDistributedLoads to a list of PointLoads.
+     * @param loads list of distributed loads.
+     * @return list of point loads.
+     */
+    private static List<PointLoad> distributedToPoint(List<UniformDistributedLoad> loads) {
+        List<PointLoad> pointLoads = new ArrayList<>();
+
+        for (UniformDistributedLoad load : loads) {
+            double dLoadLength = load.getRX() - load.getLX();
+            double pLoadMagnitude = load.getW() * dLoadLength;
+            double pLoadPosition = load.getLX() + (dLoadLength / 2);
+            pointLoads.add(new PointLoad(pLoadMagnitude, pLoadPosition));
+        }
+
+        return pointLoads;
+    }
+
+    /**
      * Solve the "stand" system to find point loads at ends of canoe, assuming loads already on canoe.
      * Note: the weight of the canoe must be added as one/more distributed load(s).
      * @param canoe the canoe system to solve.
@@ -24,12 +42,7 @@ public final class SystemSolver {
     public static List<PointLoad> solveStandSystem(Canoe canoe) {
         List<PointLoad> pointLoads = new ArrayList<>();
         //Transform the distributed loads into point loads
-        for (UniformDistributedLoad dLoad : canoe.dLoads) {
-            double dLoadLength = dLoad.getRX() - dLoad.getLX();
-            double pLoadMagnitude = dLoad.getW() * dLoadLength;
-            double pLoadPosition = dLoad.getLX() + (dLoadLength / 2);
-            pointLoads.add(new PointLoad(pLoadMagnitude, pLoadPosition));
-        }
+        pointLoads.addAll(distributedToPoint(canoe.dLoads));
         pointLoads.addAll(canoe.pLoads);
 
         //Find the sum of moments from the start and the total magnitude of combined point loads
@@ -49,6 +62,15 @@ public final class SystemSolver {
         PointLoad pLoadEnd = new PointLoad(forceEnd, canoe.getLen() - STAND_OFFSET);
         pointLoads.clear();
         pointLoads.addAll(Arrays.asList(pLoadStart, pLoadEnd));
+
+        return pointLoads;
+    }
+
+    //TODO: later
+    public static List<PointLoad> solveFloatingSystem(Canoe canoe) {
+        List<PointLoad> pointLoads = new ArrayList<>();
+        pointLoads.addAll(distributedToPoint(canoe.dLoads));
+        pointLoads.addAll(canoe.pLoads);
 
         return pointLoads;
     }
