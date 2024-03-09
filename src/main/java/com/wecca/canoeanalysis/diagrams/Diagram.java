@@ -116,6 +116,62 @@ public final class Diagram {
     }
 
     /**
+     * Calculate the area of a section (assume it is a right triangle above a rectangle).
+     * @param xLow the min x point.
+     * @param xHigh the max x point.
+     * @param yLow the min y point.
+     * @param yHigh the max y point.
+     * @return the area within the section.
+     */
+    private static double calculateArea(double xLow, double xHigh, double yLow, double yHigh) {
+        double deltaX = xHigh - xLow;
+        return deltaX * yLow + deltaX * 0.5 * (yHigh - yLow);
+    }
+
+    /**
+     * Round a double to x digits.
+     * @param num the number to round.
+     * @param numDigits the number of digits to round to.
+     * @return the rounded double.
+     */
+    private static double roundXDigits(double num, int numDigits) {
+        return (double) ((int) (num * Math.pow(10, numDigits))) / Math.pow(10, numDigits);
+    }
+
+    /**
+     * Generate a series of points for a parabola.
+     * @param start the start point of the interval from the SFD.
+     * @param end the end point of the interval from the SFD.
+     * @param startY the baseline y value for the parabola.
+     * @return the list of generated points along the parabola.
+     */
+    private static List<DiagramPoint> generateParabolicPoints(DiagramPoint start, DiagramPoint end, double startY) {
+        List<DiagramPoint> points = new ArrayList<>();
+
+        //Record the prevX, x, prevY, and y for the dy and dx
+        double prevX;
+        double prevY;
+        double x = start.getX();
+        double y = start.getY();
+        //Record the length and slope of the SFD section
+        double len = end.getX() - start.getX();
+        double slope = (end.getY() - start.getY()) / len;
+        //Iterate through each x point in the section
+        while (x <= end.getX()) {
+            prevX = x;
+            x += 0.005;
+            prevY = y;
+            y += (x - prevX) * slope;
+            //Calculate the area of the section (integral) and set the BMD value at x to this area
+            double sectionArea = calculateArea(prevX, x, Math.min(prevY, y), Math.max(prevY, y));
+            points.add(new DiagramPoint(roundXDigits(x, 3), roundXDigits(startY + sectionArea, 4)));
+            startY += sectionArea;
+        }
+
+        return points;
+    }
+
+    /**
      * Generate a list of points to comprise the Shear Force Diagram.
      * @param canoe the canoe object with loads.
      * @return the list of points to render for the SFD.
@@ -170,5 +226,39 @@ public final class Diagram {
         intervals.sort((a, b) -> Double.compare(a.startX, b.startX));
         Map<String, DiagramPoint> diagramPoints = getDiagramPointMap(intervals, canoe.getLen());
         return new ArrayList<>(diagramPoints.values());
+    }
+
+    /**
+     * Generate a list of points to comprise the Bending Moment Diagram.
+     * @param canoe the canoe object with loads.
+     * @return the list of points to render for the BMD.
+     */
+    public static List<DiagramPoint> generateBmdPoints(Canoe canoe) {
+        //Gets the SFD points for the canoe
+        List<DiagramPoint> sfdPoints = generateSfdPoints(canoe);
+        List<DiagramPoint> bmdPoints = new ArrayList<>();
+        DiagramPoint firstPoint = sfdPoints.get(0);
+
+        bmdPoints.add(new DiagramPoint(0,0));
+        double currY = 0;
+        for (int i = 1; i < sfdPoints.size(); i++) {
+            DiagramPoint curr = sfdPoints.get(i);
+            //If the two consecutive points are on the same vertical line, create a diagonal line for the BMD
+            if (curr.getY() == firstPoint.getY()) {
+                bmdPoints.add(new DiagramPoint(roundXDigits(curr.getX(), 3), roundXDigits(currY + firstPoint.getY() * (curr.getX() - firstPoint.getX()), 4)));
+            }
+            //If the two consecutive points are connected via a diagonal line, create a parabola for the BMD
+            if (curr.getX() != firstPoint.getX() && curr.getY() != firstPoint.getY()) {
+                bmdPoints.addAll(generateParabolicPoints(firstPoint, curr, currY));
+            }
+
+            firstPoint = curr;
+            if (!bmdPoints.isEmpty()) {
+                currY = bmdPoints.get(bmdPoints.size() - 1).getY();
+            }
+        }
+        bmdPoints.add(new DiagramPoint(canoe.getLen(),0));
+
+        return bmdPoints;
     }
 }

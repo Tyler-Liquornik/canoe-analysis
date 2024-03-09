@@ -464,43 +464,59 @@ public class CanoeAnalysisController implements Initializable
     }
 
     /**
-     * Generates a diagram based on the canoe's load state.
-     * TODO: handle other diagram types -- currently only SFD
+     * Set up the canvas/pane for a diagram.
+     * @param points the points to render on the diagram.
+     * @param title the title of the diagram.
+     * @param yUnits the units of the y-axis on the diagram.
      */
-    public void generateDiagram() {
+    private void setupDiagram(List<DiagramPoint> points, String title, String yUnits) {
         Stage popupStage = new Stage();
-        popupStage.setTitle("Shear Force Diagram");
+        popupStage.setTitle(title);
 
         Pane chartPane = new Pane();
-        chartPane.setPrefSize(900, 600);
+        chartPane.setPrefSize(1125, 750);
 
-        List<DiagramPoint> points = Diagram.generateSfdPoints(canoe);
         NumberAxis yAxis = new NumberAxis();
         NumberAxis xAxis = new NumberAxis();
 
         xAxis.setAutoRanging(false);
         xAxis.setLabel("Distance [m]");
-        yAxis.setLabel("Force [kN]");
+        yAxis.setLabel(yUnits);
 
         xAxis.setLowerBound(-0.05);
         xAxis.setUpperBound(canoe.getLen() + 0.05);
 
         LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
-        chart.setTitle("Shear Force Diagram");
-        chart.setPrefSize(900, 600);
+        chart.setTitle(title);
+        chart.setPrefSize(1125, 750);
 
         XYChart.Series series = new XYChart.Series();
         for (DiagramPoint point : points) {
             series.getData().add(new XYChart.Data<>(point.getX(), point.getY()));
         }
-        series.setName("Force [kN]");
+        series.setName(yUnits);
 
         chart.getData().add(series);
 
         chartPane.getChildren().add(chart);
-        Scene scene = new Scene(chartPane, 900, 600);
+        Scene scene = new Scene(chartPane, 1125, 750);
+
+        for (XYChart.Series<Number, Number> s : chart.getData()) {
+            for (Object data : s.getData()) {
+                ((XYChart.Data<Number, Number>) data).getNode().setStyle("-fx-background-radius: 1px; -fx-padding: 0px;");
+            }
+        }
+
         popupStage.setScene(scene);
         popupStage.show();
+    }
+
+    /**
+     * Generates an SFD and BMD based on the canoe's load state.
+     */
+    public void generateDiagram() {
+        setupDiagram(Diagram.generateSfdPoints(canoe), "Shear Force Diagram", "Force [kN]");
+        setupDiagram(Diagram.generateBmdPoints(canoe), "Bending Moment Diagram", "Force [kN·m]");
     }
 
     /**
