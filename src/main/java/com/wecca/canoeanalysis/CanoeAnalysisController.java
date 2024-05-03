@@ -23,7 +23,8 @@ import java.util.*;
 public class CanoeAnalysisController implements Initializable
 {
     @FXML
-    private Label lengthLabelL, lengthLabelRTemp, lengthLabelR;
+    private Label lengthLabelL, lengthLabelRTemp, lengthLabelR, lengthAlertLabel, boundsAlertLabel, magnitudeAlertLabel,
+            intervalAlertLabel, distributedMagnitudeAlertLabel;
     @FXML
     private ListView<String> loadList;
     @FXML
@@ -43,9 +44,9 @@ public class CanoeAnalysisController implements Initializable
 
     private Canoe canoe;
 
-    private final double E = 0.3048; // conversion factor ft to m
-    private final double F = 0.45359237; // conversion factor lb to kg
-    private final double G = 9.80665; // gravity on earth
+    private final double FEET_TO_METRES = 0.3048; // conversion factor ft to m
+    private final double POUNDS_TO_KG = 0.45359237; // conversion factor lb to kg
+    private final double GRAVITY = 9.80665; // gravity on earth
 
     private final double[] acceptedMagRange = new double[] {0.05, 10}; // Acceptable magnitude range (kN)
 
@@ -57,7 +58,6 @@ public class CanoeAnalysisController implements Initializable
 
     private final double adjFactor = 5; // beamImageView not at x = 5 in beamContainer
 
-    private boolean canoeLengthSet = false; // update to prevent resetting canoe length
 
 
     // Set all buttons to a ToggleGroup, with a default selected button
@@ -130,26 +130,33 @@ public class CanoeAnalysisController implements Initializable
         }
     }
 
+    // Tied to "Set Length" button
     public void setCanoeLength()
     {
+        // Convert to metric
         double len = getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
 
+        // Only allow lengths in the specified range
         if (len >= acceptedLengthRange[0] && len <= acceptedLengthRange[1])
         {
-            // Can only set the canoe length once (avoids forces off of the canoe)
-            if (!canoeLengthSet)
-            {
-                canoe.setLen(len);
-                canoeLengthSet = true;
-            }
+            // Update the canoe model
+            canoe.setLen(len);
 
             // Change the label on the scale
             lengthLabelRTemp.setText("");
             lengthLabelR.setText(String.format("%.2f m", canoe.getLen()));
 
-            // Disable the length text field (can only set length once)
-            canoeLengthTextField.setText("");
+            // Clear potential alert and reset access to controls
+            lengthAlertLabel.setText("");
+            disableInitialize(false);
             canoeLengthTextField.setDisable(true);
+            canoeLengthComboBox.setDisable(true);
+            setCanoeLengthButton.setDisable(true);
+        }
+        // Populate the alert telling the user the length they've entered is out of the allowed range
+        else
+        {
+            lengthAlertLabel.setText("Length must be between 0.05m and 20m");
         }
     }
 
@@ -161,8 +168,8 @@ public class CanoeAnalysisController implements Initializable
         String unit = c.getSelectionModel().getSelectedItem();
         double d = Double.parseDouble(t.getText());
 
-        if (unit == "m") {return d;}
-        else {return d * E;}
+        if (Objects.equals(unit, "m")) {return d;}
+        else {return d * FEET_TO_METRES;}
     }
 
     // Convert entered value to kN or kN/m (assumes already validated as double)
@@ -171,13 +178,14 @@ public class CanoeAnalysisController implements Initializable
         String unit = c.getSelectionModel().getSelectedItem();
         double d = Double.parseDouble(t.getText());
 
-        if (unit == "kN" || unit == "kN/m") {return d;}
-        else if (unit == "N" || unit == "N/m") {return d / 1000.0;}
-        else if (unit == "kg" || unit == "kg/m") {return (d * G) / 1000.0;}
-        else if (unit == "lb") {return (d * F * G) / 1000.0;}
-        else {return (d * F * G) / (1000.0 * E);} // lb/ft option
+        if (Objects.equals(unit, "kN") || Objects.equals(unit, "kN/m")) {return d;}
+        else if (Objects.equals(unit, "N") || Objects.equals(unit, "N/m")) {return d / 1000.0;}
+        else if (Objects.equals(unit, "kg") || Objects.equals(unit, "kg/m")) {return (d * GRAVITY) / 1000.0;}
+        else if (Objects.equals(unit, "lb")) {return (d * POUNDS_TO_KG * GRAVITY) / 1000.0;}
+        else {return (d * POUNDS_TO_KG * GRAVITY) / (1000.0 * FEET_TO_METRES);} // lb/ft option
     }
 
+    // Load list consists of pLoads before dLoads
     public void updateLoadList()
     {
         // Clear current ListView
@@ -199,45 +207,45 @@ public class CanoeAnalysisController implements Initializable
     // Rescale Arrows and ArrowBoxes, max magnitude gets the max height, all others scale down to size
     public void rescaleFromMax(double maxMag)
     {
-        // Clear beam container of all arrows (index 1 is the imageview, gets skipped)
+        // Clear beam container of all arrows (index 0 is the imageview, gets skipped)
         beamContainer.getChildren().subList(1, beamContainer.getChildren().size()).clear();
 
         // Find max magnitude pLoad in list of pLoads
-        int maxPIndex = 0; boolean chosenPMax = false; // If there's a tie, don't choose another max
+        int maxPIndex = 0;
         for (int i = 0; i < canoe.getPLoads().size(); i++)
         {
             PointLoad p = canoe.getPLoads().get(i);
 
             // Found a new max, get its index to reference later (avoids issues with 2 equal maxes)
-            if (Math.abs(p.getMag()) == maxMag && !chosenPMax)
+            if (Math.abs(p.getMag()) == maxMag)
             {
                 maxPIndex = i;
-                chosenPMax = true;
+                break;
             }
         }
 
         // Find max magnitude dLoad in list of dLoads
-        int maxDIndex = 0; boolean chosenDMax = false;
+        int maxDIndex = 0;
         for (int i = 0; i < canoe.getDLoads().size(); i++)
         {
             UniformDistributedLoad d = canoe.getDLoads().get(i);
 
             // Found a new max, get its index to reference later (avoids issues with 2 equal maxes)
-            if (Math.abs(d.getW()) == maxMag && !chosenDMax)
+            if (Math.abs(d.getW()) == maxMag)
             {
                 // Adjustment factor because pLoads coming before dLoads in the ListView
                 maxDIndex = i;
-                chosenDMax = true;
+                break;
             }
         }
 
         // Max load between pLoads ands dLoads, dLoads index adjustment factor as dLoads come after pLoads as ListView items
-        int maxIndex = 0;
+        int maxIndex;
         if (canoe.getPLoads().size() > 0 && canoe.getDLoads().size() > 0)
             maxIndex = canoe.getMaxPLoad() > canoe.getMaxDLoad() ? maxPIndex : maxDIndex + canoe.getPLoads().size();
         else if (canoe.getPLoads().size() == 0)
-            maxIndex = maxDIndex + canoe.getPLoads().size();
-        else if (canoe.getDLoads().size() == 0)
+            maxIndex = maxDIndex;
+        else
             maxIndex = maxPIndex;
 
         // List of Arrows and ArrowBoxes
@@ -314,16 +322,26 @@ public class CanoeAnalysisController implements Initializable
             double mag = getLoadConverted(pointMagnitudeComboBox, pointMagnitudeTextField);
             String direction = pointDirectionComboBox.getSelectionModel().getSelectedItem();
 
-            // Apply direction
-            if (direction == "Down") {mag *= -1;}
+            // Clear previous alert labels
+            boundsAlertLabel.setText("");
+            magnitudeAlertLabel.setText("");
 
-            // Validate the load is being added within the length of the canoe, and is of acceptable magnitude range
-            if (0 <= x && x <= canoe.getLen() && acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1])
+            // Apply direction
+            if (Objects.equals(direction, "Down")) {mag *= -1;}
+            // Validate the load is being added within the length of the canoe
+            if (!(0 <= x && x <= canoe.getLen()))
+                boundsAlertLabel.setText("Load must be contained within the canoe's length");
+            // Validate the load is in the accepted magnitude range
+            else if (!(acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1]))
+                magnitudeAlertLabel.setText("Load must be between 0.05kN and 10kN");
+
+            else
             {
                 // Add the load to canoe, and the load arrow on the GUI
                 PointLoad p = new PointLoad(mag, x);
                 addPointLoadToCanoe(p);
             }
+
         }
 
         updateLoadList();
@@ -340,12 +358,22 @@ public class CanoeAnalysisController implements Initializable
             String direction = distributedDirectionComboBox.getSelectionModel().getSelectedItem();
 
             // Apply direction
-            if (direction == "Down") {mag *= -1;}
+            if (Objects.equals(direction, "Down")) {mag *= -1;}
 
-            // Validate the load is being added within the length of the canoe, and the magnitude is in the acceptable range
-            // Validate the right bound of the interval is greater than the left
-            if (0 <= l && l <= canoe.getLen() && r <= canoe.getLen() && r > l
-                    && acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1])
+            // Clear previous alert labels
+            boundsAlertLabel.setText("");
+            intervalAlertLabel.setText("");
+            distributedMagnitudeAlertLabel.setText("");
+
+            // User entry validations
+            if (!(0 <= l && r <= canoe.getLen()))
+                boundsAlertLabel.setText("Load must be contained within the canoe's length");
+            else if (!(r > l))
+                intervalAlertLabel.setText("Right interval bound must be greater than the left bound");
+            else if (!(acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1]))
+                distributedMagnitudeAlertLabel.setText("Load must be between 0.05kN/m and 10kN/m");
+
+            else
                 {
                     // Add the load to canoe
                     UniformDistributedLoad d = new UniformDistributedLoad(l, r, mag);
@@ -450,6 +478,9 @@ public class CanoeAnalysisController implements Initializable
      * Distributes call to appropriate method and re-renders loads.
      */
     public void solveSystem() {
+
+        generateGraphsButton.setDisable(false);
+
         if (standsRadioButton.isSelected()) {
             solveStandSystem();
         } else if (floatingRadioButton.isSelected()) {
@@ -529,6 +560,28 @@ public class CanoeAnalysisController implements Initializable
         }
     }
 
+    // Most controls are disabled on initialization so the user doesn't use the controls in the wrong order
+    private void disableInitialize(boolean b)
+    {
+        solveSystemButton.setDisable(b);
+        pointLoadButton.setDisable(b);
+        uniformLoadButton.setDisable(b);
+        floatingRadioButton.setDisable(b);
+        standsRadioButton.setDisable(b);
+        submergedRadioButton.setDisable(b);
+        distributedMagnitudeComboBox.setDisable(b);
+        distributedMagnitudeTextField.setDisable(b);
+        pointMagnitudeComboBox.setDisable(b);
+        pointMagnitudeTextField.setDisable(b);
+        pointLocationTextField.setDisable(b);
+        pointLocationComboBox.setDisable(b);
+        pointDirectionComboBox.setDisable(b);
+        distributedIntervalTextFieldL.setDisable(b);
+        distributedIntervalTextFieldR.setDisable(b);
+        distributedIntervalComboBox.setDisable(b);
+        distributedDirectionComboBox.setDisable(b);
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
@@ -536,6 +589,10 @@ public class CanoeAnalysisController implements Initializable
         ArrayList<PointLoad> pLoads = new ArrayList<>();
         ArrayList<UniformDistributedLoad> dLoads = new ArrayList<>();
         canoe = Canoe.getInstance();
+
+        // Disable most buttons on startup to prevent inputs in the wrong order
+        disableInitialize(true);
+        generateGraphsButton.setDisable(true);
 
         // Set Black Borders
         loadList.setStyle("-fx-border-color: black");
