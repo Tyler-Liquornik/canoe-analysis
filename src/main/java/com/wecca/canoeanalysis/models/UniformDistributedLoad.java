@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis;
+package com.wecca.canoeanalysis.models;
 
 public class UniformDistributedLoad
 {

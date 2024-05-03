@@ -1,5 +1,6 @@
-package com.wecca.canoeanalysis;
+package com.wecca.canoeanalysis.customUI;
 
+import com.wecca.canoeanalysis.customUI.Arrow;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;

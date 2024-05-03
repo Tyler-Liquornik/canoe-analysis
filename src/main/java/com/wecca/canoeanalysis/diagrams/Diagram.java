@@ -1,8 +1,8 @@
 package com.wecca.canoeanalysis.diagrams;
 
-import com.wecca.canoeanalysis.Canoe;
-import com.wecca.canoeanalysis.PointLoad;
-import com.wecca.canoeanalysis.UniformDistributedLoad;
+import com.wecca.canoeanalysis.models.Canoe;
+import com.wecca.canoeanalysis.models.PointLoad;
+import com.wecca.canoeanalysis.models.UniformDistributedLoad;
 
 import java.util.*;
 

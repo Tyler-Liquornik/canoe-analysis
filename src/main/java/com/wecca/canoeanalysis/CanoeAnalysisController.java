@@ -1,7 +1,16 @@
 package com.wecca.canoeanalysis;
 
+import com.wecca.canoeanalysis.customUI.Arrow;
+import com.wecca.canoeanalysis.customUI.ArrowBox;
+import com.wecca.canoeanalysis.customUI.ArrowBoxComparator;
+import com.wecca.canoeanalysis.customUI.ArrowComparator;
 import com.wecca.canoeanalysis.diagrams.Diagram;
 import com.wecca.canoeanalysis.diagrams.DiagramPoint;
+import com.wecca.canoeanalysis.models.Canoe;
+import com.wecca.canoeanalysis.models.PointLoad;
+import com.wecca.canoeanalysis.models.UniformDistributedLoad;
+import com.wecca.canoeanalysis.utility.AddPointLoadResult;
+import com.wecca.canoeanalysis.utility.SystemSolver;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
