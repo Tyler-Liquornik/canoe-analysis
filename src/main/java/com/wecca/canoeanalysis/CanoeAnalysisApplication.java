@@ -8,10 +8,12 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class CanoeAnalysisApplication extends Application {
+
+    // The entry point of the application
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("canoe-analysis-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 900, 600);
+        Scene scene = new Scene(fxmlLoader.load(), 900, 625);
         stage.setTitle("Canoe Structural Analysis");
         stage.setScene(scene);
         stage.show();
