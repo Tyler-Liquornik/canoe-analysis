@@ -1,4 +1,6 @@
-package com.wecca.canoeanalysis;
+package com.wecca.canoeanalysis.models;
+
+import com.wecca.canoeanalysis.utility.AddPointLoadResult;
 
 import java.util.*;
 
@@ -8,10 +10,10 @@ import java.util.*;
 public final class Canoe
 {
     private static Canoe canoe = null;
-    double len; // canoe length
-    ArrayList<PointLoad> pLoads; // point loads on the canoe
-    ArrayList<UniformDistributedLoad> dLoads; // uniformly distributed loads on the canoe
-    double m; // canoe mass (able to calculate this from exported solidworks data instead of manually?)
+    private double len; // canoe length
+    private ArrayList<PointLoad> pLoads; // point loads on the canoe
+    private ArrayList<UniformDistributedLoad> dLoads; // uniformly distributed loads on the canoe
+    private double m; // canoe mass (able to calculate this from exported solidworks data instead of manually?)
 
     private Canoe() {
         this.len = 0;

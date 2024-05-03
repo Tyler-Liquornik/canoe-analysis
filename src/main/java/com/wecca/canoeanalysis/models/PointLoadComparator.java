@@ -1,4 +1,6 @@
-package com.wecca.canoeanalysis;
+package com.wecca.canoeanalysis.models;
+
+import com.wecca.canoeanalysis.models.PointLoad;
 
 import java.util.Comparator;
 

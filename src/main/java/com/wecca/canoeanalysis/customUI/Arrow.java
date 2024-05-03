@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis;
+package com.wecca.canoeanalysis.customUI;
 
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;

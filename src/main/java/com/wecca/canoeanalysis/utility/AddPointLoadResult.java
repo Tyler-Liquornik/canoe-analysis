@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis;
+package com.wecca.canoeanalysis.utility;
 
 public enum AddPointLoadResult {
     ADDED,      //The load was directly added to the canoe
