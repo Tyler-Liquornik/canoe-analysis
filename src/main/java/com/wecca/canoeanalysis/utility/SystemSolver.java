@@ -47,8 +47,8 @@ public final class SystemSolver {
     public static List<PointLoad> solveStandSystem(Canoe canoe) {
         List<PointLoad> pointLoads = new ArrayList<>();
         // Transform the distributed loads into point loads
-        pointLoads.addAll(distributedToPoint(canoe.dLoads));
-        pointLoads.addAll(canoe.pLoads);
+        pointLoads.addAll(distributedToPoint(canoe.getDLoads()));
+        pointLoads.addAll(canoe.getPLoads());
 
         // Find the sum of moments from the start and the total magnitude of combined point loads
         double momentSum = 0;
@@ -74,8 +74,8 @@ public final class SystemSolver {
     //TODO: later
     public static List<PointLoad> solveFloatingSystem(Canoe canoe) {
         List<PointLoad> pointLoads = new ArrayList<>();
-        pointLoads.addAll(distributedToPoint(canoe.dLoads));
-        pointLoads.addAll(canoe.pLoads);
+        pointLoads.addAll(distributedToPoint(canoe.getDLoads()));
+        pointLoads.addAll(canoe.getPLoads());
 
         return pointLoads;
     }
