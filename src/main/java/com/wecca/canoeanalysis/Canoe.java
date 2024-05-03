@@ -41,7 +41,7 @@ public final class Canoe
     }
 
     public AddPointLoadResult addPLoad(PointLoad p) {
-        //Search for other loads at the same position, and combine their magnitudes
+        // Search for other loads at the same position, and combine their magnitudes
         for (PointLoad pLoad : pLoads) {
             if (pLoad.getX() == p.getX()) {
                 pLoad.setMag(pLoad.getMag() + p.getMag());

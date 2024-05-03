@@ -20,12 +20,12 @@ import javafx.stage.Stage;
 import java.net.URL;
 import java.util.*;
 
-// Test commit
+
 public class CanoeAnalysisController implements Initializable
 {
     @FXML
     private Label lengthLabelL, lengthLabelRTemp, lengthLabelR, lengthAlertLabel, boundsAlertLabel, magnitudeAlertLabel,
-            intervalAlertLabel, distributedMagnitudeAlertLabel;
+            intervalAlertLabel, distributedMagnitudeAlertLabel, combinedAlertLabel, failedDoubleParseAlertLabel;
     @FXML
     private ListView<String> loadList;
     @FXML
@@ -43,7 +43,7 @@ public class CanoeAnalysisController implements Initializable
     @FXML
     private AnchorPane lowerRightAnchorPane, beamContainer;
 
-    private Canoe canoe;
+    private Canoe canoe; // entity class that models the canoe as a beam
 
     private final double FEET_TO_METRES = 0.3048; // conversion factor ft to m
     private final double POUNDS_TO_KG = 0.45359237; // conversion factor lb to kg
@@ -60,25 +60,39 @@ public class CanoeAnalysisController implements Initializable
     private final double adjFactor = 5; // beamImageView not at x = 5 in beamContainer
 
 
-
-    // Set all buttons to a ToggleGroup, with a default selected button
-    public void setAllToggleGroup(ToggleGroup t, RadioButton[] r, int i)
+    /**
+     * Put a group of radio buttons into a toggle group (only allow one to be sleected at a time)
+     * Have one of the buttons be selected by default
+     * @param group for the buttons to be added to
+     * @param buttons the radio buttons to add to the group
+     * @param selectedIndex the index in buttons to be selected on initialization
+     */
+    public void setAllToggleGroup(ToggleGroup group, RadioButton[] buttons, int selectedIndex)
     {
-        for (RadioButton b : r) {
-            b.setToggleGroup(t);
+        for (RadioButton b : buttons) {
+            b.setToggleGroup(group);
         }
 
-        r[i].setSelected(true);
+        buttons[selectedIndex].setSelected(true);
     }
 
-    // ComboBox default item showing (used on initialization)
-    public void setAllWithDefault(ComboBox<String> c, String[] a, int i)
+    /**
+     * Populate a combo box and set a default item to show
+     * @param comboBox the combo box to populate
+     * @param options the list of options to populate the combo box with
+     * @param selectedIndex the index in the list of options to display on initialization
+     */
+    public void setAllWithDefault(ComboBox<String> comboBox, String[] options, int selectedIndex)
     {
-        c.setItems(FXCollections.observableArrayList(a));
-        c.getSelectionModel().select(i);
+        comboBox.setItems(FXCollections.observableArrayList(options));
+        comboBox.getSelectionModel().select(selectedIndex);
     }
 
-    // Checks if a string can be converted into a double
+    /**
+     * Checks if a string can be parsed as a double
+     * @param s the string to be checked
+     * @return whether the string is a stringified double
+     */
     public boolean validateTextAsDouble(String s)
     {
         try
@@ -92,7 +106,10 @@ public class CanoeAnalysisController implements Initializable
         }
     }
 
-    // Highlight the load selected on the ListView red
+    /**
+     * Highlights the selected load red in the UI
+     * Called by the list view of loads when a load is selected
+     */
     public void highlightLoad()
     {
         // Add 1 as the first child of beamContainer is the imageview for beam.png
@@ -131,7 +148,10 @@ public class CanoeAnalysisController implements Initializable
         }
     }
 
-    // Tied to "Set Length" button
+    /**
+     * Called by the "Set Length" button
+     * Updates both the model and the UI, showing the length of the canoe
+     */
     public void setCanoeLength()
     {
         // Convert to metric
@@ -162,8 +182,13 @@ public class CanoeAnalysisController implements Initializable
     }
 
 
-    // Convert entered location value to m (assumes already validated as double)
-    // Todo: validate in the method, return some flag if invalid -> need to refactor some of the dependent code when done
+    /**
+     * Convert the distance in the text field to m from the unit selected in the combo box
+     * Assumes the value in the text field already validated as double
+     * @param c the combo box with the selected unit to convert from
+     * @param t the text field with the value to convert
+     * @return the value converted to m
+     */
     public double getDistanceConverted(ComboBox<String> c, TextField t)
     {
         String unit = c.getSelectionModel().getSelectedItem();
@@ -173,7 +198,13 @@ public class CanoeAnalysisController implements Initializable
         else {return d * FEET_TO_METRES;}
     }
 
-    // Convert entered value to kN or kN/m (assumes already validated as double)
+    /**
+     * Convert the load in the text field to kN or kN/m from the unit selected in the combo box
+     * Assumes the value in the text field already validated as double
+     * @param c the combo box with the selected unit to convert from
+     * @param t the text field with the value to convert
+     * @return the value converted to kN (point load) or kN/m (distributed load)
+     */
     public double getLoadConverted(ComboBox<String> c, TextField t)
     {
         String unit = c.getSelectionModel().getSelectedItem();
@@ -186,7 +217,9 @@ public class CanoeAnalysisController implements Initializable
         else {return (d * POUNDS_TO_KG * GRAVITY) / (1000.0 * FEET_TO_METRES);} // lb/ft option
     }
 
-    // Load list consists of pLoads before dLoads
+    /**
+     * Update the ListView displaying loads to the user to match the canoe model
+     */
     public void updateLoadList()
     {
         // Clear current ListView
@@ -205,7 +238,11 @@ public class CanoeAnalysisController implements Initializable
         }
     }
 
-    // Rescale Arrows and ArrowBoxes, max magnitude gets the max height, all others scale down to size
+    /**
+     * Rescales all point loads (arrows) and distributed loads (arrow boxes) based on the load with the highest mag.
+     * Point and distrubted load magnitudes are compared although their units differ (Force vs. Force / Length)
+     * @param maxMag the maximum magnitude which all other loads are scaled down based off of
+     */
     public void rescaleFromMax(double maxMag)
     {
         // Clear beam container of all arrows (index 0 is the imageview, gets skipped)
@@ -315,20 +352,29 @@ public class CanoeAnalysisController implements Initializable
         beamContainer.getChildren().addAll(arrowBoxList);
     }
 
+    /**
+     * Called by the "Add Point Load" button
+     * Deals with parsing and validation user input.
+     * Main logic handled in addPointLoadToCanoe method
+     */
     public void addPointLoad()
     {
+        // Clear previous alert labels
+        boundsAlertLabel.setText("");
+        magnitudeAlertLabel.setText("");
+        failedDoubleParseAlertLabel.setText("");
+
         // Validate the entered numbers are doubles
-        if (allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField))) {
+        if (allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField)))
+        {
             double x = getDistanceConverted(pointLocationComboBox, pointLocationTextField);
             double mag = getLoadConverted(pointMagnitudeComboBox, pointMagnitudeTextField);
             String direction = pointDirectionComboBox.getSelectionModel().getSelectedItem();
 
-            // Clear previous alert labels
-            boundsAlertLabel.setText("");
-            magnitudeAlertLabel.setText("");
-
             // Apply direction
             if (Objects.equals(direction, "Down")) {mag *= -1;}
+
+
             // Validate the load is being added within the length of the canoe
             if (!(0 <= x && x <= canoe.getLen()))
                 boundsAlertLabel.setText("Load must be contained within the canoe's length");
@@ -341,18 +387,31 @@ public class CanoeAnalysisController implements Initializable
                 // Add the load to canoe, and the load arrow on the GUI
                 PointLoad p = new PointLoad(mag, x);
                 addPointLoadToCanoe(p);
+                updateLoadList();
             }
 
         }
-
-        updateLoadList();
+        else
+            failedDoubleParseAlertLabel.setText("One or more entered values are not numbers");
     }
 
+    /**
+     * Called by the "Add Uniformly Distributed Load" button
+     * Deals with parsing and validation user input.
+     * Main logic handled in addDistributedLoadToCanoe method
+     */
     public void addDistributedLoad()
     {
+        // Clear previous alert labels
+        boundsAlertLabel.setText("");
+        intervalAlertLabel.setText("");
+        distributedMagnitudeAlertLabel.setText("");
+        failedDoubleParseAlertLabel.setText("");
+
         // Validate the entered numbers are doubles
         if (allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
-                distributedIntervalTextFieldR))) {
+                distributedIntervalTextFieldR)))
+        {
             double l = getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldL);
             double r = getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldR);
             double mag = getLoadConverted(distributedMagnitudeComboBox, distributedMagnitudeTextField);
@@ -360,11 +419,6 @@ public class CanoeAnalysisController implements Initializable
 
             // Apply direction
             if (Objects.equals(direction, "Down")) {mag *= -1;}
-
-            // Clear previous alert labels
-            boundsAlertLabel.setText("");
-            intervalAlertLabel.setText("");
-            distributedMagnitudeAlertLabel.setText("");
 
             // User entry validations
             if (!(0 <= l && r <= canoe.getLen()))
@@ -376,34 +430,39 @@ public class CanoeAnalysisController implements Initializable
 
             else
                 {
-                    // Add the load to canoe
+                    // Add the load to canoe, and update the ListView
                     UniformDistributedLoad d = new UniformDistributedLoad(l, r, mag);
                     addDistributedLoadToCanoe(d);
+                    updateLoadList();
                 }
-            }
+        }
+        else
+            failedDoubleParseAlertLabel.setText("One or more entered values are not numbers");
 
-        updateLoadList();
     }
 
     /**
      * Add a distributed load to the canoe object and JavaFX UI.
      * This method was extracted to allow for reuse in system solver methods.
-     * @param load the load to be added.
+     * @param dLoad the distributed load to be added.
      */
-    private void addDistributedLoadToCanoe(UniformDistributedLoad load) {
-        canoe.addDLoad(load);
+    private void addDistributedLoadToCanoe(UniformDistributedLoad dLoad) {
+        // Label reset
+        combinedAlertLabel.setText("");
+
+        canoe.addDLoad(dLoad);
 
         // x coordinates of arrows in beamContainer for ArrowBox
-        double scaledLX = load.getLXScaled(beamImageView.getFitWidth(), canoe.getLen());
-        double scaledRX = load.getRXScaled(beamImageView.getFitWidth(), canoe.getLen());
+        double scaledLX = dLoad.getLXScaled(beamImageView.getFitWidth(), canoe.getLen());
+        double scaledRX = dLoad.getRXScaled(beamImageView.getFitWidth(), canoe.getLen());
 
         // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
-        int endY = load.getW() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
+        int endY = dLoad.getW() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
 
         // Only 1 load, always at max height
         if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2)
         {
-            int startY = load.getW() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
+            int startY = dLoad.getW() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
             ArrowBox arrowBox = new ArrowBox(scaledLX + adjFactor, startY, scaledRX + adjFactor, endY);
             beamContainer.getChildren().add(arrowBox);
         }
@@ -418,6 +477,7 @@ public class CanoeAnalysisController implements Initializable
 
             else
             {
+                // TODO
                 // currently: after getting here and trying to add another load you can't add any more arrows
             }
         }
@@ -426,21 +486,28 @@ public class CanoeAnalysisController implements Initializable
     /**
      * Add a point load to the canoe object and JavaFX UI.
      * This method was extracted to allow for reuse in system solver methods.
-     * @param load the load to be added.
+     * @param pLoad the point load to be added.
      */
-    private void addPointLoadToCanoe(PointLoad load) {
-        AddPointLoadResult addResult = canoe.addPLoad(load);
+    private void addPointLoadToCanoe(PointLoad pLoad) {
+        AddPointLoadResult addResult = canoe.addPLoad(pLoad);
 
         // x coordinate in beamContainer for load arrow
-        double scaledX = load.getXScaled(beamImageView.getFitWidth(), canoe.getLen()); // x position in the beamContainer
+        double scaledX = pLoad.getXScaled(beamImageView.getFitWidth(), canoe.getLen()); // x position in the beamContainer
 
         // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
-        int endY = load.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
+        int endY = pLoad.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
+
+        // Notify the user regarding point loads combining or cancelling
+        combinedAlertLabel.setText("");
+        if (addResult == AddPointLoadResult.COMBINED)
+            combinedAlertLabel.setText("Point load magnitudes combined");
+        else if (addResult == AddPointLoadResult.REMOVED)
+            combinedAlertLabel.setText("Point load magnitudes cancelled");
 
         // Only 1 load, always at max height
         if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2 && addResult != AddPointLoadResult.REMOVED)
         {
-            int startY = load.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
+            int startY = pLoad.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
             Arrow arrow = new Arrow(scaledX + adjFactor, startY, scaledX + adjFactor, endY);
             beamContainer.getChildren().add(arrow);
         }
@@ -450,7 +517,6 @@ public class CanoeAnalysisController implements Initializable
             // Stay within the limits of the accepted height range (based on pixel spacing in the GUI)
             if (!(canoe.getMaxPLoad() / canoe.getMinPLoad() > (double) acceptedArrowHeightRange[1] / (double) acceptedArrowHeightRange[0]))
             {
-                System.out.println("*");
                 rescaleFromMax(Math.max(canoe.getMaxPLoad(), canoe.getMaxDLoad()));
             }
 
@@ -492,7 +558,7 @@ public class CanoeAnalysisController implements Initializable
             // throw error
         }
 
-        updateLoadList();
+        updateLoadList(); // TODO: change to support icons
     }
 
     /**
@@ -515,6 +581,7 @@ public class CanoeAnalysisController implements Initializable
         xAxis.setLabel("Distance [m]");
         yAxis.setLabel(yUnits);
 
+        // TODO: When all debugging is complete remove the +-0.05 buffer
         xAxis.setLowerBound(-0.05);
         xAxis.setUpperBound(canoe.getLen() + 0.05);
 

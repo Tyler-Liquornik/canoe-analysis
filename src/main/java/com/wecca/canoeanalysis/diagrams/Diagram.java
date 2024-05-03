@@ -6,7 +6,7 @@ import com.wecca.canoeanalysis.UniformDistributedLoad;
 
 import java.util.*;
 
-//Utility class for generating diagrams
+// Utility class for generating diagrams
 public final class Diagram {
     public Diagram() {}
 
