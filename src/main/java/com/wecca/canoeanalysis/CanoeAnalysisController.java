@@ -1,9 +1,9 @@
 package com.wecca.canoeanalysis;
 
-import com.wecca.canoeanalysis.customUI.Arrow;
-import com.wecca.canoeanalysis.customUI.ArrowBox;
-import com.wecca.canoeanalysis.customUI.ArrowBoxComparator;
-import com.wecca.canoeanalysis.customUI.ArrowComparator;
+import com.wecca.canoeanalysis.graphics.Arrow;
+import com.wecca.canoeanalysis.graphics.ArrowBox;
+import com.wecca.canoeanalysis.graphics.ArrowBoxComparator;
+import com.wecca.canoeanalysis.graphics.ArrowComparator;
 import com.wecca.canoeanalysis.diagrams.Diagram;
 import com.wecca.canoeanalysis.diagrams.DiagramPoint;
 import com.wecca.canoeanalysis.models.Canoe;
@@ -77,12 +77,13 @@ public class CanoeAnalysisController implements Initializable
      * @return the rounded double.
      */
     public static double roundXDigits(double num, int numDigits) {
-        return (double) ((int) (num * Math.pow(10, numDigits))) / Math.pow(10, numDigits);
+        double factor = Math.pow(10, numDigits);
+        return Math.round(num * factor) / factor;
     }
 
 
     /**
-     * Put a group of radio buttons into a toggle group (only allow one to be sleected at a time)
+     * Put a group of radio buttons into a toggle group (only allow one to be selected at a time)
      * Have one of the buttons be selected by default
      * @param group for the buttons to be added to
      * @param buttons the radio buttons to add to the group
@@ -261,7 +262,7 @@ public class CanoeAnalysisController implements Initializable
 
     /**
      * Rescales all point loads (arrows) and distributed loads (arrow boxes) based on the load with the highest mag.
-     * Point and distrubted load magnitudes are compared although their units differ (Force vs. Force / Length)
+     * Point and distributed load magnitudes are compared although their units differ (Force vs. Force / Length)
      * @param maxMag the maximum magnitude which all other loads are scaled down based off of
      */
     public void rescaleFromMax(double maxMag)
@@ -583,51 +584,158 @@ public class CanoeAnalysisController implements Initializable
     }
 
     /**
+     * Set up the canvas/pane for a diagram.
+     * @param points the points to render on the diagram.
+     * @param title the title of the diagram.
+     * @param yUnits the units of the y-axis on the diagram.
+     * @return a list of series where each series is a section of the overall piecewise function
+     */
+    private List<XYChart.Series> setupDiagram(List<DiagramPoint> points, String title, String yUnits)
+    {
+        // Initializing the stage and main pane
+        Stage popupStage = new Stage();
+        popupStage.setTitle(title);
+        Pane chartPane = new Pane();
+        chartPane.setPrefSize(1125, 750);
+
+        // Adding Logo Icon
+        Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/canoe.png");
+        popupStage.getIcons().add(icon);
+
+        // Setting the axes of the chart
+        NumberAxis yAxis = new NumberAxis();
+        NumberAxis xAxis = new NumberAxis();
+        xAxis.setAutoRanging(false);
+        xAxis.setLabel("Distance [m]");
+        yAxis.setLabel(yUnits);
+        xAxis.setLowerBound(0);
+        xAxis.setUpperBound(canoe.getLen());
+
+        // Creating and styling the line chart
+        AreaChart<Number, Number> chart = new AreaChart<>(xAxis, yAxis);
+        chart.setTitle(title);
+        chart.setPrefSize(1125, 750);
+        chart.setLegendVisible(false);
+        chart.getStylesheets().add(getClass().getResource("chart.css").toExternalForm());
+
+        // Adding the sections of the pseudo piecewise function separately
+        boolean set = false; // only need to set the name of the series once since its really one piecewise function
+        TreeSet<Double> criticalPoints = canoe.getSectionEndPoints();
+        List<List<DiagramPoint>> intervals = partitionPoints(points, criticalPoints);
+        List<XYChart.Series> intervalsAsSeries = new ArrayList<>();
+        for (List<DiagramPoint> interval : intervals)
+        {
+            XYChart.Series series = new XYChart.Series();
+            for (DiagramPoint point : interval)
+            {
+                series.getData().add(new XYChart.Data<>(point.getX(), point.getY()));
+
+                System.out.println("Point added to chart " + title + ": " + point);
+            }
+
+            if (!set)
+            {
+                series.setName(yUnits);
+                set = true;
+            }
+            series.setName(yUnits);
+            chart.getData().add(series);
+            intervalsAsSeries.add(series);
+        }
+
+        // Creating the scene and adding the chart to it
+        chartPane.getChildren().add(chart);
+        Scene scene = new Scene(chartPane, 1125, 750);
+        popupStage.setScene(scene);
+        popupStage.show();
+
+        return intervalsAsSeries;
+    }
+
+    /**
+     * Generates an SFD and BMD based on the canoe's load state.
+     */
+    public void generateDiagram()
+    {
+        // Testing
+        for (DiagramPoint sfdPoint : Diagram.generateSfdPoints(canoe))
+        {
+            System.out.println("sfdPoint generated: " + sfdPoint);
+        }
+
+        setupDiagram(Diagram.generateSfdPoints(canoe), "Shear Force Diagram", "Force [kN]");
+
+        // Testing
+        for (DiagramPoint bmdPoint : Diagram.generateBmdPoints(canoe))
+        {
+            System.out.println("bmdPoint generated: " + bmdPoint);
+        }
+
+        setupDiagram(Diagram.generateBmdPoints(canoe), "Bending Moment Diagram", "Moment [kN·m]");
+    }
+
+    /**
      * Consider the list of points is a "pseudo piecewise function" (pseudo as discrete points are defined rather than a continuous function)
      * This method breaks it into a set of "pseudo functions"
      * @param points act together as a piecewise function
      * @param partitions the locations where the form of the piecewise changes
      * @return a set containing each section of the piecewise pseudo functions with unique form
      */
-    private List<List<DiagramPoint>> partitionPoints(List<DiagramPoint> points, Set<Double> partitions)
+    private List<List<DiagramPoint>> partitionPoints(List<DiagramPoint> points, TreeSet<Double> partitions)
     {
+        // For testing
+        System.out.println("\nWorking with partitions:");
+        for (double partitionPoint : partitions)
+        {
+            System.out.println("x = " + partitionPoint);
+        }
 
+        // Initializing lists
         List<List<DiagramPoint>> partitionedIntervals = new ArrayList<>();
         List<Double> partitionsList = new ArrayList<>(partitions);
 
-        // (canoe_len, 0) is not required. There will always be a duplicate point it is actually required
-//        points.remove(0);
-          points.remove(points.size() - 1);
-//     6
-
-        // If the first point is doubled up due to a jump discontinuity then throw away the first points (0, 0)
+        // If the first point is doubled up due to a jump discontinuity then throw away the first point (0, 0)
+        // By "doubled up" I mean two points at the same x coordinate
         if (points.get(0).getX() == 0 && points.get(1).getX() == 0)
             points.remove(0);
 
-        // Convention adopted for left interval endpoint to be within the interval starting from 0 as the leftmost endpoint
+        // Same idea for last two points if they double up
+        if (points.get(points.size() - 1).getX() == canoe.getLen() && points.get(points.size() - 2).getX() == canoe.getLen())
+            points.remove(points.size() - 1);
+
+        // Remove zero from the partition list (always first as the TreeSet was sorted ascending)
+        if (partitionsList.get(0) == 0)
+            partitionsList.remove(0);
+
+        // Keep track of intervals and points that partition them
         int partitionIndex = 0;
         List<DiagramPoint> interval = new ArrayList<>();
+
+        // Put all the points into intervals
         for (int i = 0; i < points.size(); i++)
         {
             // Get the current point
             DiagramPoint point = points.get(i);
 
             // Keep adding points to the interval until the partition index reached
-            // Rounding prevents numerical errors (specifically comes up with non-linear function approximation)
-            if ((roundXDigits(point.getX(), 2) != roundXDigits(partitionsList.get(partitionIndex), 2)))
+            // Empty interval means this is the first point to be included
+            if (point.getX() != partitionsList.get(partitionIndex) || interval.isEmpty())
                 interval.add(point);
 
             // Add the interval to the list of partitioned intervals and prepare for the next interval
             else
             {
-                // If no jump discontinuity, need to create a duplicate point to act as the left endpoint of the next interval
+                interval.add(point); // this is the partition point, which acts as the right endpoint of the interval
+
+                System.out.println("Added partition point x = " + point.getX());
+
+                // If not at the right boundary of the beam
                 if (i != points.size() - 1)
                 {
+                    // If no jump discontinuity, create a duplicate point to act as the left endpoint of the next interval
                     if (point.getX() != points.get(i + 1).getX())
-                        points.add(i + 1, new DiagramPoint(point.getX(), point.getY()));
+                        i--;
                 }
-
-                interval.add(point); // this point is the right endpoint
                 partitionIndex++;
                 partitionedIntervals.add(new ArrayList<>(interval)); // add a copy of the interval to the intervals list
                 interval.clear();
@@ -713,123 +821,30 @@ public class CanoeAnalysisController implements Initializable
 
        double m = coefficients[0];
        double c = coefficients[1];
-
-       double x1 = l;
        double y1 = m * l + c;
-       double x2 = r;
        double y2 = m * r + c;
 
        if (y1 >= y2)
-           critical.put(x1, y1);
+           critical.put(l, y1);
        else
-           critical.put(x2, y2);
+           critical.put(r, y2);
 
        return critical;
     }
 
-
-    /**
-     * Set up the canvas/pane for a diagram.
-     * @param points the points to render on the diagram.
-     * @param title the title of the diagram.
-     * @param yUnits the units of the y-axis on the diagram.
-     * @return a list of series where each series is a section of the overall piecewise function
-     */
-    private List<XYChart.Series> setupDiagram(List<DiagramPoint> points, String title, String yUnits)
-    {
-        // Initializing the stage and main pane
-        Stage popupStage = new Stage();
-        popupStage.setTitle(title);
-        Pane chartPane = new Pane();
-        chartPane.setPrefSize(1125, 750);
-
-        // Adding Logo Icon
-        Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/canoe.png");
-        popupStage.getIcons().add(icon);
-
-        // TODO: Fix buffer on ends?
-        // Setting the axes of the chart
-        NumberAxis yAxis = new NumberAxis();
-        NumberAxis xAxis = new NumberAxis();
-        xAxis.setAutoRanging(false);
-        xAxis.setLabel("Distance [m]");
-        yAxis.setLabel(yUnits);
-        xAxis.setLowerBound(0);
-        xAxis.setUpperBound(canoe.getLen());
-
-        // Creating and styling the line chart
-        AreaChart<Number, Number> chart = new AreaChart<>(xAxis, yAxis);
-        chart.setTitle(title);
-        chart.setPrefSize(1125, 750);
-        chart.setLegendVisible(false);
-        chart.getStylesheets().add(getClass().getResource("chart.css").toExternalForm());
-
-        // Adding the sections of the pseudo piecewise function separately
-        boolean set = false; // only need to set the name of the series once since its really one piecewise function
-        Set<Double> criticalPoints = canoe.getSectionEndPoints();
-        List<List<DiagramPoint>> intervals = partitionPoints(points, criticalPoints);
-        List<XYChart.Series> intervalsAsSeries = new ArrayList<>();
-        for (List<DiagramPoint> interval : intervals)
-        {
-            XYChart.Series series = new XYChart.Series();
-            for (DiagramPoint point : interval)
-            {
-                series.getData().add(new XYChart.Data<>(point.getX(), point.getY()));
-
-                System.out.println("Point added to chart " + title + ": " + point);
-            }
-
-            if (!set)
-            {
-                series.setName(yUnits);
-                set = true;
-            }
-            series.setName(yUnits);
-            chart.getData().add(series);
-            intervalsAsSeries.add(series);
-        }
-
-        // Creating the scene and adding the chart to it
-        chartPane.getChildren().add(chart);
-        Scene scene = new Scene(chartPane, 1125, 750);
-        popupStage.setScene(scene);
-        popupStage.show();
-
-        return intervalsAsSeries;
-    }
-
-    /**
-     * Generates an SFD and BMD based on the canoe's load state.
-     */
-    public void generateDiagram() {
-        setupDiagram(Diagram.generateSfdPoints(canoe), "Shear Force Diagram", "Force [kN]");
-
-        // Testing
-        for (DiagramPoint sfdPoint : Diagram.generateSfdPoints(canoe))
-        {
-            System.out.println("sfdPoint generated: " + sfdPoint);
-        }
-
-        for (DiagramPoint bmdPoint : Diagram.generateBmdPoints(canoe))
-        {
-            System.out.println("bmdPoint generated: " + bmdPoint);
-        }
-
-        setupDiagram(Diagram.generateBmdPoints(canoe), "Bending Moment Diagram", "Moment [kN·m]");
-    }
-
     /**
      * Solve and display the result of the "stand" system load case.
+     * This entails two supports at each end of the canoe, symmetrically offset from the beam bounds
+     * This interval is currently hardcoded as 0 in SystemSolver, so supports on beam endpoints
      */
-    private void solveStandSystem() {
+    private void solveStandSystem()
+    {
         List<PointLoad> newLoads = SystemSolver.solveStandSystem(canoe);
-        for (PointLoad load : newLoads) {
-            addPointLoadToCanoe(load);
-        }
+        for (PointLoad load : newLoads) {addPointLoadToCanoe(load);}
     }
 
     /**
-     * bulk package to toggle enabling all the controls related to loading
+     * Bulk package to toggle enabling all the controls related to loading
      * @param b disables controls
      */
     private void disableInitialize(boolean b)
