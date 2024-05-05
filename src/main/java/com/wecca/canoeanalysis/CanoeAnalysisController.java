@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis;
 
+import com.wecca.canoeanalysis.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.graphics.Arrow;
 import com.wecca.canoeanalysis.graphics.ArrowBox;
 import com.wecca.canoeanalysis.graphics.ArrowBoxComparator;
@@ -517,7 +518,7 @@ public class CanoeAnalysisController implements Initializable
         double scaledX = pLoad.getXScaled(beamImageView.getFitWidth(), canoe.getLen()); // x position in the beamContainer
 
         // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
-        int endY = pLoad.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
+        int endY = pLoad.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 126
 
         // Notify the user regarding point loads combining or cancelling
         combinedAlertLabel.setText("");
@@ -604,7 +605,8 @@ public class CanoeAnalysisController implements Initializable
 
         // Setting the axes of the chart
         NumberAxis yAxis = new NumberAxis();
-        NumberAxis xAxis = new NumberAxis();
+        TreeSet<Double> criticalPoints = canoe.getSectionEndPoints();
+        FixedTicksNumberAxis xAxis = new FixedTicksNumberAxis(new ArrayList<>(criticalPoints));
         xAxis.setAutoRanging(false);
         xAxis.setLabel("Distance [m]");
         yAxis.setLabel(yUnits);
@@ -620,7 +622,6 @@ public class CanoeAnalysisController implements Initializable
 
         // Adding the sections of the pseudo piecewise function separately
         boolean set = false; // only need to set the name of the series once since its really one piecewise function
-        TreeSet<Double> criticalPoints = canoe.getSectionEndPoints();
         List<List<DiagramPoint>> intervals = partitionPoints(points, criticalPoints);
         List<XYChart.Series> intervalsAsSeries = new ArrayList<>();
         for (List<DiagramPoint> interval : intervals)
@@ -683,11 +684,11 @@ public class CanoeAnalysisController implements Initializable
      */
     private List<List<DiagramPoint>> partitionPoints(List<DiagramPoint> points, TreeSet<Double> partitions)
     {
-        // For testing
-        System.out.println("\nWorking with partitions:");
-        for (double partitionPoint : partitions)
+        // Testing
+        System.out.println("\nPartition Points:");
+        for (double point : partitions)
         {
-            System.out.println("x = " + partitionPoint);
+            System.out.println("point = " + point);
         }
 
         // Initializing lists
@@ -703,7 +704,7 @@ public class CanoeAnalysisController implements Initializable
         if (points.get(points.size() - 1).getX() == canoe.getLen() && points.get(points.size() - 2).getX() == canoe.getLen())
             points.remove(points.size() - 1);
 
-        // Remove zero from the partition list (always first as the TreeSet was sorted ascending)
+        // Remove zero from the partition list (always first as the TreeSet is sorted ascending)
         if (partitionsList.get(0) == 0)
             partitionsList.remove(0);
 
@@ -727,8 +728,6 @@ public class CanoeAnalysisController implements Initializable
             {
                 interval.add(point); // this is the partition point, which acts as the right endpoint of the interval
 
-                System.out.println("Added partition point x = " + point.getX());
-
                 // If not at the right boundary of the beam
                 if (i != points.size() - 1)
                 {
@@ -736,11 +735,12 @@ public class CanoeAnalysisController implements Initializable
                     if (point.getX() != points.get(i + 1).getX())
                         i--;
                 }
+
+                // Add a copy of the interval to the intervals list, and prep for the next interval
                 partitionIndex++;
-                partitionedIntervals.add(new ArrayList<>(interval)); // add a copy of the interval to the intervals list
+                partitionedIntervals.add(new ArrayList<>(interval));
                 interval.clear();
             }
-
         }
 
         return partitionedIntervals;
@@ -763,7 +763,7 @@ public class CanoeAnalysisController implements Initializable
         double denom = (x1 - x2) * (x1 - x3) * (x2 - x3);
         double a    = (x3 * (y2 - y1) + x2 * (y1 - y3) + x1 * (y3 - y2)) / denom;
         double b    = (x3*x3 * (y1 - y2) + x2*x2 * (y3 - y1) + x1*x1 * (y2 - y3)) / denom;
-        double c     = (x2 * x3 * (x2 - x3) * y1 + x3 * x1 * (x3 - x1) * y2 + x1 * x2 * (x1 - x2) * y3) / denom;
+        double c    = (x2 * x3 * (x2 - x3) * y1 + x3 * x1 * (x3 - x1) * y2 + x1 * x2 * (x1 - x2) * y3) / denom;
 
         return new double[]{a, b, c};
     }

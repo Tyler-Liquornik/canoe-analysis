@@ -134,13 +134,12 @@ public final class Canoe
 
 
     /**
-     * Gets x values that separate sections with unique equations on the SFD/BMD
-     * Also thought of as "critical points" on the diagram
+     * Gets x values that separate piecewise intervals with unique equations on the SFD/BMD
      * @return the set of points as x values along the length of the canoe
      */
     public TreeSet<Double> getSectionEndPoints()
     {
-        // Tree ensure sorting and prevents duplicates
+        // Tree ensures sorting, set prevents duplicates
         TreeSet<Double> s = new TreeSet<>();
 
         // Points included are the locations of point loads and interval boundaries of distributed loads

@@ -17,6 +17,12 @@
     -fx-font-family: 'Arial', sans-serif;
 }
 
+.chart-title {
+    -fx-font-weight: bold;
+    -fx-text-fill: #333;
+    -fx-font-family: 'Arial', sans-serif;
+}
+
 .chart-series-area-line {
     -fx-stroke: #0CAFFF;
     -fx-stroke-width: 2px;

@@ -14,7 +14,7 @@ public class CanoeAnalysisApplication extends Application {
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("canoe-analysis-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 900, 625);
-        stage.setTitle("Canoe Structural Analysis");
+        stage.setTitle("PADDL");
         stage.setScene(scene);
         stage.show();
 

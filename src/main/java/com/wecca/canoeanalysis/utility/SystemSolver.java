@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Utility class for solving system equations
  */
-public final class SystemSolver {
+public class SystemSolver {
 
     // Offset of the stands from either end of the canoe (assume equal offset on either side)
     // Hard coded for now with stands right on the edges (0 offset), subject to change later
