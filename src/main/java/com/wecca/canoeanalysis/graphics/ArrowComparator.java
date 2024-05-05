@@ -1,6 +1,4 @@
-package com.wecca.canoeanalysis.customUI;
-
-import com.wecca.canoeanalysis.customUI.Arrow;
+package com.wecca.canoeanalysis.graphics;
 
 import java.util.Comparator;
 

@@ -7,8 +7,8 @@ module com.wecca.canoeanalysis {
     exports com.wecca.canoeanalysis;
     exports com.wecca.canoeanalysis.diagrams;
     opens com.wecca.canoeanalysis.diagrams to javafx.fxml;
-    exports com.wecca.canoeanalysis.customUI;
-    opens com.wecca.canoeanalysis.customUI to javafx.fxml;
+    exports com.wecca.canoeanalysis.graphics;
+    opens com.wecca.canoeanalysis.graphics to javafx.fxml;
     exports com.wecca.canoeanalysis.models;
     opens com.wecca.canoeanalysis.models to javafx.fxml;
     exports com.wecca.canoeanalysis.utility;

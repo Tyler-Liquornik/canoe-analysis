@@ -13,7 +13,7 @@
 .axis-tick-label {
     -fx-font-size: 11px;
     -fx-rotate: 0;
-    -fx-alignment: center-left;6
+    -fx-alignment: center-left;
     -fx-font-family: 'Arial', sans-serif;
 }
 
@@ -23,12 +23,12 @@
 }
 
 .chart-series-area-fill {
-    -fx-fill: linear-gradient(to bottom, #0CAFFF 0%, #0CAFFF 100%);
+    -fx-fill: #0CAFFF;
     -fx-opacity: 0.2;
 }
 
 .chart-series-area-fill:hover {
-    -fx-fill: #0077CC;
+    -fx-fill: #0CAFFF;
     -fx-opacity: 0.4;
 }
 
