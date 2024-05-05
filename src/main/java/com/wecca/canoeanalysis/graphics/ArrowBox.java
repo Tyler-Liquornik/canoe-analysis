@@ -5,6 +5,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 
+// Uniform distributed loads are to be represented as "arrow boxes"
 public class ArrowBox extends Group
 {
     private double lX;

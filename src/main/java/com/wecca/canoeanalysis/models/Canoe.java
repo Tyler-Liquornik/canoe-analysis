@@ -56,10 +56,14 @@ public final class Canoe
         }
 
         pLoads.add(p);
-        pLoads.sort(new PointLoadComparator()); // Keep the ArrayList sorted
+        pLoads.sort(Comparator.comparingDouble(PointLoad::getX)); // Keep the ArrayList sorted
         return AddPointLoadResult.ADDED;
     }
-    public void addDLoad(UniformDistributedLoad d) {dLoads.add(d); dLoads.sort(new UniformDistributedLoadComparator());}
+    public void addDLoad(UniformDistributedLoad d)
+    {
+        dLoads.add(d);
+        dLoads.sort(Comparator.comparingDouble(UniformDistributedLoad::getLX));
+    }
     public ArrayList<PointLoad> getPLoads() {return pLoads;}
     public ArrayList<UniformDistributedLoad> getDLoads() {return dLoads;}
 
