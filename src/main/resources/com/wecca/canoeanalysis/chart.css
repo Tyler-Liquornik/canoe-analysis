@@ -1,0 +1,39 @@
+.chart-area-symbol {
+    -fx-background-radius: 1px;
+    -fx-padding: 0px;
+}
+
+.axis-label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333;
+    -fx-font-family: 'Arial', sans-serif;
+}
+
+.axis-tick-label {
+    -fx-font-size: 11px;
+    -fx-rotate: 0;
+    -fx-alignment: center-left;6
+    -fx-font-family: 'Arial', sans-serif;
+}
+
+.chart-series-area-line {
+    -fx-stroke: #0CAFFF;
+    -fx-stroke-width: 2px;
+}
+
+.chart-series-area-fill {
+    -fx-fill: linear-gradient(to bottom, #0CAFFF 0%, #0CAFFF 100%);
+    -fx-opacity: 0.2;
+}
+
+.chart-series-area-fill:hover {
+    -fx-fill: #0077CC;
+    -fx-opacity: 0.4;
+}
+
+.chart {
+    -fx-background-color: #FFF;
+    -fx-border-color: #CCC;
+    -fx-border-width: 1px;
+}
