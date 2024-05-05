@@ -133,11 +133,17 @@ public final class Canoe
     }
 
 
-    // Set of endpoints sections with unique equations on the SFD/BMD
+    /**
+     * Calculate the set of endpoints sections with unique equations on the SFD/BMD
+     * Also thought of as "critical points" on the diagram
+     * Formatted as <x,
+     * @return the set of points as x values along the length of the canoe
+     */
     public Set<Double> getSectionEndPoints()
     {
         Set<Double> s = new HashSet<>();
 
+        // Points included are the locations of point loads and interval boundaries of distributed loads
         for (PointLoad p : pLoads) {s.add(p.getX());}
         for (UniformDistributedLoad d : dLoads) {s.add(d.getLX()); s.add(d.getRX());}
 

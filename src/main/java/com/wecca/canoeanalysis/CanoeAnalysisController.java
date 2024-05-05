@@ -15,7 +15,7 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.chart.LineChart;
+import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
@@ -25,11 +25,13 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-
 import java.net.URL;
 import java.util.*;
 
 
+/**
+ * Primary controller for longitudinal analysis of a beam
+ */
 public class CanoeAnalysisController implements Initializable
 {
     @FXML
@@ -67,6 +69,16 @@ public class CanoeAnalysisController implements Initializable
     // Also this is awkward to add it in with all the fields at the top
 
     private final double adjFactor = 5; // beamImageView not at x = 5 in beamContainer
+
+    /**
+     * Round a double to x digits.
+     * @param num the number to round.
+     * @param numDigits the number of digits to round to.
+     * @return the rounded double.
+     */
+    public static double roundXDigits(double num, int numDigits) {
+        return (double) ((int) (num * Math.pow(10, numDigits))) / Math.pow(10, numDigits);
+    }
 
 
     /**
@@ -571,52 +583,219 @@ public class CanoeAnalysisController implements Initializable
     }
 
     /**
+     * Consider the list of points is a "pseudo piecewise function" (pseudo as discrete points are defined rather than a continuous function)
+     * This method breaks it into a set of "pseudo functions"
+     * @param points act together as a piecewise function
+     * @param partitions the locations where the form of the piecewise changes
+     * @return a set containing each section of the piecewise pseudo functions with unique form
+     */
+    private List<List<DiagramPoint>> partitionPoints(List<DiagramPoint> points, Set<Double> partitions)
+    {
+
+        List<List<DiagramPoint>> partitionedIntervals = new ArrayList<>();
+        List<Double> partitionsList = new ArrayList<>(partitions);
+
+        // (canoe_len, 0) is not required. There will always be a duplicate point it is actually required
+//        points.remove(0);
+          points.remove(points.size() - 1);
+//     6
+
+        // If the first point is doubled up due to a jump discontinuity then throw away the first points (0, 0)
+        if (points.get(0).getX() == 0 && points.get(1).getX() == 0)
+            points.remove(0);
+
+        // Convention adopted for left interval endpoint to be within the interval starting from 0 as the leftmost endpoint
+        int partitionIndex = 0;
+        List<DiagramPoint> interval = new ArrayList<>();
+        for (int i = 0; i < points.size(); i++)
+        {
+            // Get the current point
+            DiagramPoint point = points.get(i);
+
+            // Keep adding points to the interval until the partition index reached
+            // Rounding prevents numerical errors (specifically comes up with non-linear function approximation)
+            if ((roundXDigits(point.getX(), 2) != roundXDigits(partitionsList.get(partitionIndex), 2)))
+                interval.add(point);
+
+            // Add the interval to the list of partitioned intervals and prepare for the next interval
+            else
+            {
+                // If no jump discontinuity, need to create a duplicate point to act as the left endpoint of the next interval
+                if (i != points.size() - 1)
+                {
+                    if (point.getX() != points.get(i + 1).getX())
+                        points.add(i + 1, new DiagramPoint(point.getX(), point.getY()));
+                }
+
+                interval.add(point); // this point is the right endpoint
+                partitionIndex++;
+                partitionedIntervals.add(new ArrayList<>(interval)); // add a copy of the interval to the intervals list
+                interval.clear();
+            }
+
+        }
+
+        return partitionedIntervals;
+    }
+
+    /**
+     * Finds the coefficients of the quadratic curve ax^2 + bx + c from a list of 3 of its points
+     * @param points the three points on the parabola, preferred to be the interval endpoints and critical points to reduce error due to the numerical nature of point generation
+     * @return the coefficients [a, b, c]
+     */
+    public double[] getQuadraticCoefficients(DiagramPoint[] points)
+    {
+        double x1 = points[0].getX();
+        double y1 = points[0].getY();
+        double x2 = points[1].getX();
+        double y2 = points[1].getY();
+        double x3 = points[2].getX();
+        double y3 = points[2].getY();
+
+        double denom = (x1 - x2) * (x1 - x3) * (x2 - x3);
+        double a    = (x3 * (y2 - y1) + x2 * (y1 - y3) + x1 * (y3 - y2)) / denom;
+        double b    = (x3*x3 * (y1 - y2) + x2*x2 * (y3 - y1) + x1*x1 * (y2 - y3)) / denom;
+        double c     = (x2 * x3 * (x2 - x3) * y1 + x3 * x1 * (x3 - x1) * y2 + x1 * x2 * (x1 - x2) * y3) / denom;
+
+        return new double[]{a, b, c};
+    }
+
+    /**
+     * Finds the coefficients of the line mx + b from a list of 2 of its points
+     * @param points the three points on the parabola, preferred to be the interval endpoints to reduce error due to the numerical nature of point generation
+     * @return the coefficients [a, b]
+     */
+    public double[] getLinearCoefficients(DiagramPoint[] points)
+    {
+        double x1 = points[0].getX();
+        double y1 = points[0].getY();
+        double x2 = points[1].getX();
+        double y2 = points[1].getY();
+
+        double m = (y2 - y1) / (x2 - x1);
+        double b = y1 - m * x1;
+
+        return new double[] {m, b};
+    }
+
+    /**
+     * Get the critical (max or min) value of a parabola on interval [l, r]
+     * @param coefficients in the form [a, b, c] for parabola ax^2 + bx + c
+     * @param l the left bound of the interval to check
+     * @param r the right bound of the interval to check
+     * @return the critical point on the interval as <X, Y>
+     */
+    public HashMap<Double, Double> getQuadraticCritical(double[] coefficients, double l, double r)
+    {
+        HashMap<Double, Double> critical = new HashMap<>();
+
+        double a = coefficients[0];
+        double b = coefficients[1];
+        double c = coefficients[2];
+
+        double xCritical = -b / (2 * a);
+        double yCritical = c - (b * b) / (4 * a);
+
+        critical.put(xCritical, yCritical);
+        return critical;
+    }
+
+    /**
+     * Get the max value of a line on interval [l, r]
+     * @param coefficients in the form [m, c] for line mx + c
+     * @param l the left bound of the interval to check
+     * @param r the right bound of the interval to check
+     * @return the maximum value on the interval as <X, Y>
+     */
+    public HashMap<Double, Double> getLinearMax(double[] coefficients, double l, double r)
+    {
+        HashMap<Double, Double> critical = new HashMap<>();
+
+       double m = coefficients[0];
+       double c = coefficients[1];
+
+       double x1 = l;
+       double y1 = m * l + c;
+       double x2 = r;
+       double y2 = m * r + c;
+
+       if (y1 >= y2)
+           critical.put(x1, y1);
+       else
+           critical.put(x2, y2);
+
+       return critical;
+    }
+
+
+    /**
      * Set up the canvas/pane for a diagram.
      * @param points the points to render on the diagram.
      * @param title the title of the diagram.
      * @param yUnits the units of the y-axis on the diagram.
+     * @return a list of series where each series is a section of the overall piecewise function
      */
-    private void setupDiagram(List<DiagramPoint> points, String title, String yUnits) {
+    private List<XYChart.Series> setupDiagram(List<DiagramPoint> points, String title, String yUnits)
+    {
+        // Initializing the stage and main pane
         Stage popupStage = new Stage();
         popupStage.setTitle(title);
-
         Pane chartPane = new Pane();
         chartPane.setPrefSize(1125, 750);
 
+        // Adding Logo Icon
+        Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/canoe.png");
+        popupStage.getIcons().add(icon);
+
+        // TODO: Fix buffer on ends?
+        // Setting the axes of the chart
         NumberAxis yAxis = new NumberAxis();
         NumberAxis xAxis = new NumberAxis();
-
         xAxis.setAutoRanging(false);
         xAxis.setLabel("Distance [m]");
         yAxis.setLabel(yUnits);
+        xAxis.setLowerBound(0);
+        xAxis.setUpperBound(canoe.getLen());
 
-        // TODO: When all debugging is complete remove the +-0.05 buffer
-        xAxis.setLowerBound(-0.05);
-        xAxis.setUpperBound(canoe.getLen() + 0.05);
-
-        LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
+        // Creating and styling the line chart
+        AreaChart<Number, Number> chart = new AreaChart<>(xAxis, yAxis);
         chart.setTitle(title);
         chart.setPrefSize(1125, 750);
+        chart.setLegendVisible(false);
+        chart.getStylesheets().add(getClass().getResource("chart.css").toExternalForm());
 
-        XYChart.Series series = new XYChart.Series();
-        for (DiagramPoint point : points) {
-            series.getData().add(new XYChart.Data<>(point.getX(), point.getY()));
+        // Adding the sections of the pseudo piecewise function separately
+        boolean set = false; // only need to set the name of the series once since its really one piecewise function
+        Set<Double> criticalPoints = canoe.getSectionEndPoints();
+        List<List<DiagramPoint>> intervals = partitionPoints(points, criticalPoints);
+        List<XYChart.Series> intervalsAsSeries = new ArrayList<>();
+        for (List<DiagramPoint> interval : intervals)
+        {
+            XYChart.Series series = new XYChart.Series();
+            for (DiagramPoint point : interval)
+            {
+                series.getData().add(new XYChart.Data<>(point.getX(), point.getY()));
+
+                System.out.println("Point added to chart " + title + ": " + point);
+            }
+
+            if (!set)
+            {
+                series.setName(yUnits);
+                set = true;
+            }
+            series.setName(yUnits);
+            chart.getData().add(series);
+            intervalsAsSeries.add(series);
         }
-        series.setName(yUnits);
 
-        chart.getData().add(series);
-
+        // Creating the scene and adding the chart to it
         chartPane.getChildren().add(chart);
         Scene scene = new Scene(chartPane, 1125, 750);
-
-        for (XYChart.Series<Number, Number> s : chart.getData()) {
-            for (Object data : s.getData()) {
-                ((XYChart.Data<Number, Number>) data).getNode().setStyle("-fx-background-radius: 1px; -fx-padding: 0px;");
-            }
-        }
-
         popupStage.setScene(scene);
         popupStage.show();
+
+        return intervalsAsSeries;
     }
 
     /**
@@ -624,7 +803,19 @@ public class CanoeAnalysisController implements Initializable
      */
     public void generateDiagram() {
         setupDiagram(Diagram.generateSfdPoints(canoe), "Shear Force Diagram", "Force [kN]");
-        setupDiagram(Diagram.generateBmdPoints(canoe), "Bending Moment Diagram", "Force [kN·m]");
+
+        // Testing
+        for (DiagramPoint sfdPoint : Diagram.generateSfdPoints(canoe))
+        {
+            System.out.println("sfdPoint generated: " + sfdPoint);
+        }
+
+        for (DiagramPoint bmdPoint : Diagram.generateBmdPoints(canoe))
+        {
+            System.out.println("bmdPoint generated: " + bmdPoint);
+        }
+
+        setupDiagram(Diagram.generateBmdPoints(canoe), "Bending Moment Diagram", "Moment [kN·m]");
     }
 
     /**
@@ -637,7 +828,10 @@ public class CanoeAnalysisController implements Initializable
         }
     }
 
-    // Most controls are disabled on initialization so the user doesn't use the controls in the wrong order
+    /**
+     * bulk package to toggle enabling all the controls related to loading
+     * @param b disables controls
+     */
     private void disableInitialize(boolean b)
     {
         solveSystemButton.setDisable(b);
@@ -659,6 +853,11 @@ public class CanoeAnalysisController implements Initializable
         distributedDirectionComboBox.setDisable(b);
     }
 
+    /**
+     * Operations called on initialization of the view
+     * @param url unused, part of javafx framework
+     * @param resourceBundle unused, part of javafx framework
+     */
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
