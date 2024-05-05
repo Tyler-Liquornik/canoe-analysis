@@ -1,10 +1,7 @@
 package com.wecca.canoeanalysis;
 
 import com.wecca.canoeanalysis.diagrams.FixedTicksNumberAxis;
-import com.wecca.canoeanalysis.graphics.Arrow;
-import com.wecca.canoeanalysis.graphics.ArrowBox;
-import com.wecca.canoeanalysis.graphics.ArrowBoxComparator;
-import com.wecca.canoeanalysis.graphics.ArrowComparator;
+import com.wecca.canoeanalysis.graphics.*;
 import com.wecca.canoeanalysis.diagrams.Diagram;
 import com.wecca.canoeanalysis.diagrams.DiagramPoint;
 import com.wecca.canoeanalysis.models.Canoe;
@@ -28,7 +25,6 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import java.net.URL;
 import java.util.*;
-
 
 /**
  * Primary controller for longitudinal analysis of a beam
@@ -69,7 +65,7 @@ public class CanoeAnalysisController implements Initializable
     // Is there a workaround to this that doesn't require adding the imageView manually in code
     // Also this is awkward to add it in with all the fields at the top
 
-    private final double adjFactor = 5; // beamImageView not at x = 5 in beamContainer
+    private final double adjFactor = 5; // beamImageView at x = 5 in beamContainer (fix hard coded number later)
 
     /**
      * Round a double to x digits.
@@ -369,8 +365,8 @@ public class CanoeAnalysisController implements Initializable
         }
 
         // Add sorted Arrows and ArrowBoxes to the beamContainer
-        arrowList.sort(new ArrowComparator());
-        arrowBoxList.sort(new ArrowBoxComparator());
+        arrowList.sort(Comparator.comparingDouble(Arrow::getStartX));
+        arrowBoxList.sort(Comparator.comparingDouble(ArrowBox::getLX));
         beamContainer.getChildren().addAll(arrowList);
         beamContainer.getChildren().addAll(arrowBoxList);
     }
@@ -916,5 +912,9 @@ public class CanoeAnalysisController implements Initializable
         TextField[] tfs = new TextField[]{pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
                 distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField};
         for (TextField tf : tfs) {tf.setText("0.00");}
+
+        // Test
+        // beamContainer.getChildren().add(new Triangle(5, 126));
+
     }
 }

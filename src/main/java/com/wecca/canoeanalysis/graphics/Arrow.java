@@ -5,8 +5,8 @@ import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 
-// Modified from:
-// Source: https://gist.github.com/kn0412/2086581e98a32c8dfa1f69772f14bca4
+// Point loads are to be represented as arrows
+// Modified from Source: https://gist.github.com/kn0412/2086581e98a32c8dfa1f69772f14bca4
 public class Arrow extends Path
 {
     // Fields
