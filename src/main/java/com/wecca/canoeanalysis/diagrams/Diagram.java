@@ -8,7 +8,7 @@ import com.wecca.canoeanalysis.models.UniformDistributedLoad;
 import java.util.*;
 
 // Utility class for generating diagrams
-public final class Diagram
+public class Diagram
 {
     public Diagram() {}
 
@@ -34,7 +34,7 @@ public final class Diagram
             this.slope = slope;
         }
 
-        //For testing
+        // For testing
         public String toString()
         {
             return "Interval from x = " + startX + " to x = "
@@ -221,16 +221,6 @@ public final class Diagram
         intervals.sort(Comparator.comparingDouble(a -> a.startX));
         Map<String, DiagramPoint> diagramPoints = getDiagramPointMap(intervals, canoe.getLen());
         ArrayList<DiagramPoint> sfdPoints = new ArrayList<>(diagramPoints.values());
-
-        // The last point is not required, it is an extra point (canoe_len, 0)
-        sfdPoints.remove(sfdPoints.size() - 1);
-
-        // round all points to 3 digits after the decimal
-        for (DiagramPoint sfdPoint : sfdPoints)
-        {
-            sfdPoint.setX(CanoeAnalysisController.roundXDigits(sfdPoint.getX(), 3));
-            sfdPoint.setY(CanoeAnalysisController.roundXDigits(sfdPoint.getY(), 3));
-        }
 
         // Return the generated points
         return new ArrayList<>(sfdPoints);
