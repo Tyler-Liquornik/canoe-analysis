@@ -1,7 +1,5 @@
 package com.wecca.canoeanalysis.models;
 
-import com.wecca.canoeanalysis.utility.AddPointLoadResult;
-
 import java.util.*;
 
 /**
@@ -43,6 +41,11 @@ public final class Canoe
     }
 
     public AddPointLoadResult addPLoad(PointLoad p) {
+
+        // Do nothing if trying to add a load with no magnitude
+        if (p.getMag() == 0)
+            return AddPointLoadResult.ADDED;
+
         // Search for other loads at the same position, and combine their magnitudes
         for (PointLoad pLoad : pLoads) {
             if (pLoad.getX() == p.getX()) {
