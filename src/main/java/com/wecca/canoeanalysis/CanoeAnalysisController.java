@@ -1,28 +1,20 @@
 package com.wecca.canoeanalysis;
 
-import com.wecca.canoeanalysis.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.graphics.*;
-import com.wecca.canoeanalysis.diagrams.Diagram;
-import com.wecca.canoeanalysis.diagrams.DiagramPoint;
 import com.wecca.canoeanalysis.models.Canoe;
 import com.wecca.canoeanalysis.models.PointLoad;
 import com.wecca.canoeanalysis.models.UniformDistributedLoad;
-import com.wecca.canoeanalysis.utility.AddPointLoadResult;
+import com.wecca.canoeanalysis.models.AddPointLoadResult;
 import com.wecca.canoeanalysis.utility.SystemSolver;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
-import javafx.scene.chart.AreaChart;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.stage.Stage;
+
 import java.net.URL;
 import java.util.*;
 
@@ -405,7 +397,7 @@ public class CanoeAnalysisController implements Initializable
             {
                 // Add the load to canoe, and the load arrow on the GUI
                 PointLoad p = new PointLoad(mag, x);
-                addPointLoadToCanoe(p);
+                addPointLoad(p, false);
                 updateLoadList();
             }
 
@@ -451,7 +443,7 @@ public class CanoeAnalysisController implements Initializable
                 {
                     // Add the load to canoe, and update the ListView
                     UniformDistributedLoad d = new UniformDistributedLoad(l, r, mag);
-                    addDistributedLoadToCanoe(d);
+                    addDistributedLoad(d);
                     updateLoadList();
                 }
         }
@@ -465,7 +457,7 @@ public class CanoeAnalysisController implements Initializable
      * This method was extracted to allow for reuse in system solver methods.
      * @param dLoad the distributed load to be added.
      */
-    private void addDistributedLoadToCanoe(UniformDistributedLoad dLoad) {
+    private void addDistributedLoad(UniformDistributedLoad dLoad) {
         // Label reset
         combinedAlertLabel.setText("");
 
@@ -504,17 +496,15 @@ public class CanoeAnalysisController implements Initializable
 
     /**
      * Add a point load to the canoe object and JavaFX UI.
-     * This method was extracted to allow for reuse in system solver methods.
      * @param pLoad the point load to be added.
+     * @param isSupport renders the graphic as a support (triangle) or regular point load (arrow)
      */
-    private void addPointLoadToCanoe(PointLoad pLoad) {
-        AddPointLoadResult addResult = canoe.addPLoad(pLoad);
-
-        // x coordinate in beamContainer for load arrow
+    private void addPointLoad(PointLoad pLoad, boolean isSupport)
+    {
+        // x coordinate in beamContainer for load
         double scaledX = pLoad.getXScaled(beamImageView.getFitWidth(), canoe.getLen()); // x position in the beamContainer
 
-        // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
-        int endY = pLoad.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 126
+        AddPointLoadResult addResult = canoe.addPLoad(pLoad);
 
         // Notify the user regarding point loads combining or cancelling
         combinedAlertLabel.setText("");
@@ -523,11 +513,29 @@ public class CanoeAnalysisController implements Initializable
         else if (addResult == AddPointLoadResult.REMOVED)
             combinedAlertLabel.setText("Point load magnitudes cancelled");
 
-        // Only 1 load, always at max height
-        if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2 && addResult != AddPointLoadResult.REMOVED)
+        // Render the correct graphic
+        if (isSupport)
+            addTriangleGraphic(pLoad, scaledX, addResult);
+        else
+            addArrowGraphic(pLoad, scaledX, addResult);
+
+    }
+
+    private void addTriangleGraphic(PointLoad pLoad, double beamContainerX, AddPointLoadResult result)
+    {
+
+    }
+
+    private void addArrowGraphic(PointLoad pLoad, double beamContainerX, AddPointLoadResult result) {
+
+        // endY always results in the arrow touching the beam (ternary operator accounts for direction)
+        int endY = pLoad.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 126
+
+        // If only 1 load it's always at max height
+        if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2 && result != AddPointLoadResult.REMOVED)
         {
             int startY = pLoad.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
-            Arrow arrow = new Arrow(scaledX + adjFactor, startY, scaledX + adjFactor, endY);
+            Arrow arrow = new Arrow(beamContainerX + adjFactor, startY, beamContainerX + adjFactor, endY);
             beamContainer.getChildren().add(arrow);
         }
 
@@ -581,254 +589,6 @@ public class CanoeAnalysisController implements Initializable
     }
 
     /**
-     * Set up the canvas/pane for a diagram.
-     * @param points the points to render on the diagram.
-     * @param title the title of the diagram.
-     * @param yUnits the units of the y-axis on the diagram.
-     * @return a list of series where each series is a section of the overall piecewise function
-     */
-    private List<XYChart.Series> setupDiagram(List<DiagramPoint> points, String title, String yUnits)
-    {
-        // Initializing the stage and main pane
-        Stage popupStage = new Stage();
-        popupStage.setTitle(title);
-        Pane chartPane = new Pane();
-        chartPane.setPrefSize(1125, 750);
-
-        // Adding Logo Icon
-        Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/canoe.png");
-        popupStage.getIcons().add(icon);
-
-        // Setting the axes of the chart
-        NumberAxis yAxis = new NumberAxis();
-        TreeSet<Double> criticalPoints = canoe.getSectionEndPoints();
-        FixedTicksNumberAxis xAxis = new FixedTicksNumberAxis(new ArrayList<>(criticalPoints));
-        xAxis.setAutoRanging(false);
-        xAxis.setLabel("Distance [m]");
-        yAxis.setLabel(yUnits);
-        xAxis.setLowerBound(0);
-        xAxis.setUpperBound(canoe.getLen());
-
-        // Creating and styling the line chart
-        AreaChart<Number, Number> chart = new AreaChart<>(xAxis, yAxis);
-        chart.setTitle(title);
-        chart.setPrefSize(1125, 750);
-        chart.setLegendVisible(false);
-        chart.getStylesheets().add(getClass().getResource("chart.css").toExternalForm());
-
-        // Adding the sections of the pseudo piecewise function separately
-        boolean set = false; // only need to set the name of the series once since its really one piecewise function
-        List<List<DiagramPoint>> intervals = partitionPoints(points, criticalPoints);
-        List<XYChart.Series> intervalsAsSeries = new ArrayList<>();
-        for (List<DiagramPoint> interval : intervals)
-        {
-            XYChart.Series series = new XYChart.Series();
-            for (DiagramPoint point : interval)
-            {
-                series.getData().add(new XYChart.Data<>(point.getX(), point.getY()));
-
-                System.out.println("Point added to chart " + title + ": " + point);
-            }
-
-            if (!set)
-            {
-                series.setName(yUnits);
-                set = true;
-            }
-            series.setName(yUnits);
-            chart.getData().add(series);
-            intervalsAsSeries.add(series);
-        }
-
-        // Creating the scene and adding the chart to it
-        chartPane.getChildren().add(chart);
-        Scene scene = new Scene(chartPane, 1125, 750);
-        popupStage.setScene(scene);
-        popupStage.show();
-
-        return intervalsAsSeries;
-    }
-
-    /**
-     * Generates an SFD and BMD based on the canoe's load state.
-     */
-    public void generateDiagram()
-    {
-        // Testing
-        for (DiagramPoint sfdPoint : Diagram.generateSfdPoints(canoe))
-        {
-            System.out.println("sfdPoint generated: " + sfdPoint);
-        }
-
-        setupDiagram(Diagram.generateSfdPoints(canoe), "Shear Force Diagram", "Force [kN]");
-
-        // Testing
-        for (DiagramPoint bmdPoint : Diagram.generateBmdPoints(canoe))
-        {
-            System.out.println("bmdPoint generated: " + bmdPoint);
-        }
-
-        setupDiagram(Diagram.generateBmdPoints(canoe), "Bending Moment Diagram", "Moment [kN·m]");
-    }
-
-    /**
-     * Consider the list of points is a "pseudo piecewise function" (pseudo as discrete points are defined rather than a continuous function)
-     * This method breaks it into a set of "pseudo functions"
-     * @param points act together as a piecewise function
-     * @param partitions the locations where the form of the piecewise changes
-     * @return a set containing each section of the piecewise pseudo functions with unique form
-     */
-    private List<List<DiagramPoint>> partitionPoints(List<DiagramPoint> points, TreeSet<Double> partitions)
-    {
-        // Testing
-        System.out.println("\nPartition Points:");
-        for (double point : partitions)
-        {
-            System.out.println("point = " + point);
-        }
-
-        // Initializing lists
-        List<List<DiagramPoint>> partitionedIntervals = new ArrayList<>();
-        List<Double> partitionsList = new ArrayList<>(partitions);
-
-        // If the first point is doubled up due to a jump discontinuity then throw away the first point (0, 0)
-        // By "doubled up" I mean two points at the same x coordinate
-        if (points.get(0).getX() == 0 && points.get(1).getX() == 0)
-            points.remove(0);
-
-        // Same idea for last two points if they double up
-        if (points.get(points.size() - 1).getX() == canoe.getLen() && points.get(points.size() - 2).getX() == canoe.getLen())
-            points.remove(points.size() - 1);
-
-        // Remove zero from the partition list (always first as the TreeSet is sorted ascending)
-        if (partitionsList.get(0) == 0)
-            partitionsList.remove(0);
-
-        // Keep track of intervals and points that partition them
-        int partitionIndex = 0;
-        List<DiagramPoint> interval = new ArrayList<>();
-
-        // Put all the points into intervals
-        for (int i = 0; i < points.size(); i++)
-        {
-            // Get the current point
-            DiagramPoint point = points.get(i);
-
-            // Keep adding points to the interval until the partition index reached
-            // Empty interval means this is the first point to be included
-            if (point.getX() != partitionsList.get(partitionIndex) || interval.isEmpty())
-                interval.add(point);
-
-            // Add the interval to the list of partitioned intervals and prepare for the next interval
-            else
-            {
-                interval.add(point); // this is the partition point, which acts as the right endpoint of the interval
-
-                // If not at the right boundary of the beam
-                if (i != points.size() - 1)
-                {
-                    // If no jump discontinuity, create a duplicate point to act as the left endpoint of the next interval
-                    if (point.getX() != points.get(i + 1).getX())
-                        i--;
-                }
-
-                // Add a copy of the interval to the intervals list, and prep for the next interval
-                partitionIndex++;
-                partitionedIntervals.add(new ArrayList<>(interval));
-                interval.clear();
-            }
-        }
-
-        return partitionedIntervals;
-    }
-
-    /**
-     * Finds the coefficients of the quadratic curve ax^2 + bx + c from a list of 3 of its points
-     * @param points the three points on the parabola, preferred to be the interval endpoints and critical points to reduce error due to the numerical nature of point generation
-     * @return the coefficients [a, b, c]
-     */
-    public double[] getQuadraticCoefficients(DiagramPoint[] points)
-    {
-        double x1 = points[0].getX();
-        double y1 = points[0].getY();
-        double x2 = points[1].getX();
-        double y2 = points[1].getY();
-        double x3 = points[2].getX();
-        double y3 = points[2].getY();
-
-        double denom = (x1 - x2) * (x1 - x3) * (x2 - x3);
-        double a    = (x3 * (y2 - y1) + x2 * (y1 - y3) + x1 * (y3 - y2)) / denom;
-        double b    = (x3*x3 * (y1 - y2) + x2*x2 * (y3 - y1) + x1*x1 * (y2 - y3)) / denom;
-        double c    = (x2 * x3 * (x2 - x3) * y1 + x3 * x1 * (x3 - x1) * y2 + x1 * x2 * (x1 - x2) * y3) / denom;
-
-        return new double[]{a, b, c};
-    }
-
-    /**
-     * Finds the coefficients of the line mx + b from a list of 2 of its points
-     * @param points the three points on the parabola, preferred to be the interval endpoints to reduce error due to the numerical nature of point generation
-     * @return the coefficients [a, b]
-     */
-    public double[] getLinearCoefficients(DiagramPoint[] points)
-    {
-        double x1 = points[0].getX();
-        double y1 = points[0].getY();
-        double x2 = points[1].getX();
-        double y2 = points[1].getY();
-
-        double m = (y2 - y1) / (x2 - x1);
-        double b = y1 - m * x1;
-
-        return new double[] {m, b};
-    }
-
-    /**
-     * Get the critical (max or min) value of a parabola on interval [l, r]
-     * @param coefficients in the form [a, b, c] for parabola ax^2 + bx + c
-     * @param l the left bound of the interval to check
-     * @param r the right bound of the interval to check
-     * @return the critical point on the interval as <X, Y>
-     */
-    public HashMap<Double, Double> getQuadraticCritical(double[] coefficients, double l, double r)
-    {
-        HashMap<Double, Double> critical = new HashMap<>();
-
-        double a = coefficients[0];
-        double b = coefficients[1];
-        double c = coefficients[2];
-
-        double xCritical = -b / (2 * a);
-        double yCritical = c - (b * b) / (4 * a);
-
-        critical.put(xCritical, yCritical);
-        return critical;
-    }
-
-    /**
-     * Get the max value of a line on interval [l, r]
-     * @param coefficients in the form [m, c] for line mx + c
-     * @param l the left bound of the interval to check
-     * @param r the right bound of the interval to check
-     * @return the maximum value on the interval as <X, Y>
-     */
-    public HashMap<Double, Double> getLinearMax(double[] coefficients, double l, double r)
-    {
-        HashMap<Double, Double> critical = new HashMap<>();
-
-       double m = coefficients[0];
-       double c = coefficients[1];
-       double y1 = m * l + c;
-       double y2 = m * r + c;
-
-       if (y1 >= y2)
-           critical.put(l, y1);
-       else
-           critical.put(r, y2);
-
-       return critical;
-    }
-
-    /**
      * Solve and display the result of the "stand" system load case.
      * This entails two supports at each end of the canoe, symmetrically offset from the beam bounds
      * This interval is currently hardcoded as 0 in SystemSolver, so supports on beam endpoints
@@ -836,7 +596,8 @@ public class CanoeAnalysisController implements Initializable
     private void solveStandSystem()
     {
         List<PointLoad> newLoads = SystemSolver.solveStandSystem(canoe);
-        for (PointLoad load : newLoads) {addPointLoadToCanoe(load);}
+        for (PointLoad load : newLoads) {
+            addPointLoad(load, false);}
     }
 
     /**
