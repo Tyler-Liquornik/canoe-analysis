@@ -1,6 +1,5 @@
 package com.wecca.canoeanalysis.diagrams;
 
-import com.wecca.canoeanalysis.CanoeAnalysisController;
 import com.wecca.canoeanalysis.models.Canoe;
 import com.wecca.canoeanalysis.models.PointLoad;
 import com.wecca.canoeanalysis.models.UniformDistributedLoad;
@@ -11,6 +10,17 @@ import java.util.*;
 public class Diagram
 {
     public Diagram() {}
+
+    /**
+     * Round a double to x digits.
+     * @param num the number to round.
+     * @param numDigits the number of digits to round to.
+     * @return the rounded double.
+     */
+    public static double roundXDigits(double num, int numDigits) {
+        double factor = Math.pow(10, numDigits);
+        return Math.round(num * factor) / factor;
+    }
 
     /**
      * Inner class to hold load intervals (intermediate between point/distributed loads and diagram points).
@@ -62,7 +72,7 @@ public class Diagram
     private static Map<Double, UniformDistributedLoad> getDistributedLoadStartMap(Canoe canoe)
     {
         Map<Double, UniformDistributedLoad> map = new HashMap<>();
-        for (UniformDistributedLoad load : canoe.getDLoads()) {map.put((double) Math.round(load.getLX() * 100) / 100, load);}
+        for (UniformDistributedLoad load : canoe.getDLoads()) {map.put((double) Math.round(load.getX() * 100) / 100, load);}
         return map;
     }
 
@@ -154,7 +164,7 @@ public class Diagram
             y += (x - prevX) * slope;
             // Calculate the area of the section (integral) and set the BMD value at x to this area
             double sectionArea = calculateArea(prevX, x, Math.min(prevY, y), Math.max(prevY, y));
-            points.add(new DiagramPoint(CanoeAnalysisController.roundXDigits(x, 3), CanoeAnalysisController.roundXDigits(startY + sectionArea, 4)));
+            points.add(new DiagramPoint(roundXDigits(x, 3), roundXDigits(startY + sectionArea, 4)));
             startY += sectionArea;
         }
 
@@ -244,7 +254,7 @@ public class Diagram
             DiagramPoint curr = sfdPoints.get(i);
             // If the two consecutive points are on the same vertical line, create a diagonal line for the BMD
             if (curr.getY() == firstPoint.getY()) {
-                bmdPoints.add(new DiagramPoint(CanoeAnalysisController.roundXDigits(curr.getX(), 3), CanoeAnalysisController.roundXDigits(currY + firstPoint.getY() * (curr.getX() - firstPoint.getX()), 4)));
+                bmdPoints.add(new DiagramPoint(roundXDigits(curr.getX(), 3), roundXDigits(currY + firstPoint.getY() * (curr.getX() - firstPoint.getX()), 4)));
             }
             // If the two consecutive points are connected via a diagonal line, create a parabola for the BMD
             if (curr.getX() != firstPoint.getX() && curr.getY() != firstPoint.getY()) {

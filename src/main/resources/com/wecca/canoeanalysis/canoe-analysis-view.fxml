@@ -26,9 +26,9 @@
                               <Font name="System Bold" size="14.0" />
                            </font>
                         </Label>
-                        <RadioButton fx:id="standsRadioButton" layoutX="20.0" layoutY="80.0" mnemonicParsing="false" text="Stands" />
+                        <RadioButton fx:id="floatingRadioButton" layoutX="20.0" layoutY="80.0" mnemonicParsing="false" text="Floating" />
                         <Button fx:id="solveSystemButton" layoutX="15.0" layoutY="150.0" mnemonicParsing="false" onAction="#solveSystem" prefHeight="25.0" prefWidth="165.0" text="Solve System" />
-                        <RadioButton fx:id="floatingRadioButton" layoutX="20.0" layoutY="45.0" mnemonicParsing="false" text="Floating" />
+                        <RadioButton fx:id="standsRadioButton" layoutX="20.0" layoutY="45.0" mnemonicParsing="false" text="Stands" />
                         <RadioButton fx:id="submergedRadioButton" layoutX="20.0" layoutY="115.0" mnemonicParsing="false" prefHeight="17.0" prefWidth="91.0" text="Submerged" />
                      </children>
                   </AnchorPane>
@@ -48,7 +48,7 @@
                         <ComboBox fx:id="pointDirectionComboBox" layoutX="85.0" layoutY="115.0" prefHeight="25.0" prefWidth="85.0" />
                         <ComboBox fx:id="pointMagnitudeComboBox" layoutX="180.0" layoutY="45.0" prefHeight="25.0" prefWidth="85.0" />
                         <ComboBox fx:id="pointLocationComboBox" layoutX="180.0" layoutY="81.0" prefHeight="25.0" prefWidth="85.0" />
-                        <Button fx:id="uniformLoadButton" layoutX="280.0" layoutY="150.0" mnemonicParsing="false" onAction="#addDistributedLoad" prefHeight="25.0" prefWidth="340.0" text="Add Uniformly Distributed Load" />
+                        <Button fx:id="distributedLoadButton" layoutX="280.0" layoutY="150.0" mnemonicParsing="false" onAction="#addDistributedLoad" prefHeight="25.0" prefWidth="340.0" text="Add Uniformly Distributed Load" />
                         <Label layoutX="280.0" layoutY="50.0" text="Magnitude:" />
                         <Label layoutX="280.0" layoutY="85.0" text="Interval:" />
                         <Label layoutX="280.0" layoutY="120.0" text="Direction:" />
@@ -90,13 +90,14 @@
                               <Font size="10.0" />
                            </font>
                         </Label>
-                        <AnchorPane fx:id="beamContainer" layoutX="25.0" layoutY="10.0" prefHeight="210.0" prefWidth="590.0">
+                        <AnchorPane fx:id="loadContainer" layoutX="25.0" layoutY="10.0" prefHeight="210.0" prefWidth="590.0" />
+                        <AnchorPane fx:id="beamImageContainer" layoutX="25.0" layoutY="10.0" prefHeight="210.0" prefWidth="590.0">
                            <children>
                               <ImageView fx:id="beamImageView" fitHeight="42.0" fitWidth="580.0" layoutX="5.0" layoutY="84.0" pickOnBounds="true" preserveRatio="true" />
                            </children>
                         </AnchorPane>
                      </children></AnchorPane>
-                  <ListView fx:id="loadList" layoutX="25.0" layoutY="235.0" onContextMenuRequested="#highlightLoad" onMouseClicked="#highlightLoad" onMousePressed="#highlightLoad" prefHeight="310.0" prefWidth="200.0" />
+                  <ListView fx:id="loadListView" layoutX="25.0" layoutY="235.0" onContextMenuRequested="#highlightLoad" onMouseClicked="#highlightLoad" onMousePressed="#highlightLoad" prefHeight="310.0" prefWidth="200.0" />
                   <Label fx:id="lengthAlertLabel" layoutX="643.0" layoutY="560.0" textFill="RED">
                      <font>
                         <Font name="System Bold" size="12.0" />

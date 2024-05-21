@@ -1,5 +1,7 @@
 package com.wecca.canoeanalysis.models;
 
+import com.wecca.canoeanalysis.utility.Positionable;
+
 import java.util.*;
 
 /**
@@ -12,11 +14,13 @@ public final class Canoe
     private ArrayList<PointLoad> pLoads; // point loads on the canoe
     private ArrayList<UniformDistributedLoad> dLoads; // uniformly distributed loads on the canoe
     private double m; // canoe mass (able to calculate this from exported solidworks data instead of manually?)
+    private ArrayList<Positionable> loads; // All the loads in one array
 
     private Canoe() {
         this.len = 0;
         this.pLoads = new ArrayList<>();
         this.dLoads = new ArrayList<>();
+        this.loads = new ArrayList<>();
     }
 
     /**
@@ -42,7 +46,7 @@ public final class Canoe
 
     public AddPointLoadResult addPLoad(PointLoad p) {
 
-        // Do nothing if trying to add a load with no magnitude
+        // Do not add the load if it is zero valued
         if (p.getMag() == 0)
             return AddPointLoadResult.ADDED;
 
@@ -59,13 +63,17 @@ public final class Canoe
         }
 
         pLoads.add(p);
-        pLoads.sort(Comparator.comparingDouble(PointLoad::getX)); // Keep the ArrayList sorted
+        pLoads.sort(Comparator.comparingDouble(PointLoad::getX));
+        loads.add(p);
+        loads.sort(Comparator.comparingDouble(Positionable::getX));
         return AddPointLoadResult.ADDED;
     }
     public void addDLoad(UniformDistributedLoad d)
     {
         dLoads.add(d);
-        dLoads.sort(Comparator.comparingDouble(UniformDistributedLoad::getLX));
+        dLoads.sort(Comparator.comparingDouble(UniformDistributedLoad::getX));
+        loads.add(d);
+        loads.sort(Comparator.comparingDouble(Positionable::getX));
     }
     public ArrayList<PointLoad> getPLoads() {return pLoads;}
     public ArrayList<UniformDistributedLoad> getDLoads() {return dLoads;}
@@ -151,7 +159,11 @@ public final class Canoe
 
         // Points included are the locations of point loads and interval boundaries of distributed loads
         for (PointLoad p : pLoads) {s.add(p.getX());}
-        for (UniformDistributedLoad d : dLoads) {s.add(d.getLX()); s.add(d.getRX());}
+        for (UniformDistributedLoad d : dLoads) {s.add(d.getX()); s.add(d.getRX());}
+
+        // Add canoe endpoints to the set if they aren't already
+        s.add(0.0);
+        s.add(canoe.getLen());
 
         return s;
     }

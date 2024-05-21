@@ -29,9 +29,9 @@ public class SystemSolver {
         List<PointLoad> pointLoads = new ArrayList<>();
 
         for (UniformDistributedLoad load : loads) {
-            double dLoadLength = load.getRX() - load.getLX();
+            double dLoadLength = load.getRX() - load.getX();
             double pLoadMagnitude = load.getW() * dLoadLength;
-            double pLoadPosition = load.getLX() + (dLoadLength / 2);
+            double pLoadPosition = load.getX() + (dLoadLength / 2);
             pointLoads.add(new PointLoad(pLoadMagnitude, pLoadPosition));
         }
 
@@ -65,6 +65,8 @@ public class SystemSolver {
         // Create and return resulting loads
         PointLoad pLoadStart = new PointLoad(forceStart, STAND_OFFSET);
         PointLoad pLoadEnd = new PointLoad(forceEnd, canoe.getLen() - STAND_OFFSET);
+        pLoadStart.setIsSupport(true);
+        pLoadEnd.setIsSupport(true);
         pointLoads.clear();
         pointLoads.addAll(Arrays.asList(pLoadStart, pLoadEnd));
 

@@ -4,6 +4,7 @@ import com.wecca.canoeanalysis.diagrams.DiagramPoint;
 
 import java.util.HashMap;
 
+// TODO: Use this to get equations for the piecewise graph, and eventually get LateX from that
 public class EquationMath {
     /**
      * Finds the coefficients of the line mx + b from a list of 2 of its points
