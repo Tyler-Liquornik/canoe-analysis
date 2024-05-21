@@ -1,14 +1,16 @@
 package com.wecca.canoeanalysis;
 
+import com.wecca.canoeanalysis.diagrams.Diagram;
+import com.wecca.canoeanalysis.diagrams.DiagramLogic;
+import com.wecca.canoeanalysis.diagrams.DiagramPoint;
 import com.wecca.canoeanalysis.graphics.*;
-import com.wecca.canoeanalysis.models.Canoe;
-import com.wecca.canoeanalysis.models.PointLoad;
-import com.wecca.canoeanalysis.models.UniformDistributedLoad;
-import com.wecca.canoeanalysis.models.AddPointLoadResult;
+import com.wecca.canoeanalysis.models.*;
+import com.wecca.canoeanalysis.utility.Positionable;
 import com.wecca.canoeanalysis.utility.SystemSolver;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -24,12 +26,12 @@ import java.util.*;
 public class CanoeAnalysisController implements Initializable
 {
     @FXML
-    private Label lengthLabelL, lengthLabelRTemp, lengthLabelR, lengthAlertLabel, boundsAlertLabel, magnitudeAlertLabel,
+    private Label lengthLabelRTemp, lengthLabelR, lengthAlertLabel, boundsAlertLabel, magnitudeAlertLabel,
             intervalAlertLabel, distributedMagnitudeAlertLabel, combinedAlertLabel, failedDoubleParseAlertLabel;
     @FXML
-    private ListView<String> loadList;
+    private ListView<String> loadListView;
     @FXML
-    private Button solveSystemButton, pointLoadButton, uniformLoadButton, setCanoeLengthButton, generateGraphsButton;
+    private Button solveSystemButton, pointLoadButton, distributedLoadButton, setCanoeLengthButton, generateGraphsButton;
     @FXML
     private TextField pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
             distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField;
@@ -41,7 +43,7 @@ public class CanoeAnalysisController implements Initializable
     @FXML
     private ImageView beamImageView;
     @FXML
-    private AnchorPane lowerRightAnchorPane, beamContainer;
+    private AnchorPane lowerRightAnchorPane, loadContainer;
 
     private Canoe canoe; // entity class that models the canoe as a beam
 
@@ -58,17 +60,6 @@ public class CanoeAnalysisController implements Initializable
     // Also this is awkward to add it in with all the fields at the top
 
     private final double adjFactor = 5; // beamImageView at x = 5 in beamContainer (fix hard coded number later)
-
-    /**
-     * Round a double to x digits.
-     * @param num the number to round.
-     * @param numDigits the number of digits to round to.
-     * @return the rounded double.
-     */
-    public static double roundXDigits(double num, int numDigits) {
-        double factor = Math.pow(10, numDigits);
-        return Math.round(num * factor) / factor;
-    }
 
 
     /**
@@ -102,7 +93,7 @@ public class CanoeAnalysisController implements Initializable
     /**
      * Checks if a string can be parsed as a double
      * @param s the string to be checked
-     * @return whether the string is a stringified double
+     * @return whether the string can be used as a double
      */
     public boolean validateTextAsDouble(String s)
     {
@@ -123,39 +114,17 @@ public class CanoeAnalysisController implements Initializable
      */
     public void highlightLoad()
     {
-        // Add 1 as the first child of beamContainer is the imageview for beam.png
-        int selectedIndex = loadList.getSelectionModel().getSelectedIndex() + 1;
+        int selectedIndex = loadListView.getSelectionModel().getSelectedIndex();
 
-        for (int i = 1; i < beamContainer.getChildren().size(); i++)
+        // Color the selected load red and color the others black
+        for (int i = 0; i < loadContainer.getChildren().size(); i++)
         {
-            // Paint all but the selected load black
-            if (i !=selectedIndex)
-            {
-                // Deal with pLoads and dLoads separately
-                if (i < canoe.getPLoads().size() + 1)
-                    ((Arrow) beamContainer.getChildren().get(i)).setFill(Color.BLACK);
-                else
-                {
-                    ((ArrowBox) beamContainer.getChildren().get(i)).getLArrow().setFill(Color.BLACK);
-                    ((ArrowBox) beamContainer.getChildren().get(i)).getRArrow().setFill(Color.BLACK);
-                    ((ArrowBox) beamContainer.getChildren().get(i)).getBorderLine().setStroke(Color.BLACK);
-                    ((ArrowBox) beamContainer.getChildren().get(i)).getBox().setFill(Color.LIGHTGREY);
-                }
-            }
+            Colorable graphic = (Colorable) loadContainer.getChildren().get(i);
 
-            // Paint the selected load red
+            if (i != selectedIndex)
+                graphic.recolor(Color.BLACK);
             else
-            {
-                if (i < canoe.getPLoads().size() + 1)
-                    ((Arrow) beamContainer.getChildren().get(selectedIndex)).setFill(Color.RED);
-                else
-                {
-                    ((ArrowBox) beamContainer.getChildren().get(i)).getLArrow().setFill(Color.RED);
-                    ((ArrowBox) beamContainer.getChildren().get(i)).getRArrow().setFill(Color.RED);
-                    ((ArrowBox) beamContainer.getChildren().get(i)).getBorderLine().setStroke(Color.RED);
-                    ((ArrowBox) beamContainer.getChildren().get(i)).getBox().setFill(Color.LIGHTPINK);
-                }
-            }
+                graphic.recolor(Color.RED);
         }
     }
 
@@ -229,24 +198,22 @@ public class CanoeAnalysisController implements Initializable
     }
 
     /**
-     * Update the ListView displaying loads to the user to match the canoe model
+     * Update the ListView displaying loads to the user to be sorted by x position
      */
-    public void updateLoadList()
+    public void updateLoadListView()
     {
-        // Clear current ListView
-        loadList.getItems().clear();
+        // Get the new list of loads, sorted by x position
+        List<Positionable> loads = new ArrayList<>();
+        loads.addAll(canoe.getPLoads());
+        loads.addAll(canoe.getDLoads());
+        loads.sort(Comparator.comparingDouble(Positionable::getX));
+        List<String> stringLoads = loads.stream()
+                .map(Positionable::toString)
+                .toList();
 
-        // Update the ListView from the loads on the canoe
-        for (PointLoad p : canoe.getPLoads())
-        {
-            loadList.getItems().add(p.toString());
-        }
-
-        // Update the ListView from the loads on the canoe
-        for (UniformDistributedLoad d : canoe.getDLoads())
-        {
-            loadList.getItems().add(d.toString());
-        }
+        // Recreate the list view from the updated load list
+        loadListView.getItems().clear();
+        loadListView.getItems().addAll(stringLoads);
     }
 
     /**
@@ -256,46 +223,11 @@ public class CanoeAnalysisController implements Initializable
      */
     public void rescaleFromMax(double maxMag)
     {
-        // Clear beam container of all arrows (index 0 is the imageview, gets skipped)
-        beamContainer.getChildren().subList(1, beamContainer.getChildren().size()).clear();
+        // Clear load container of all arrows
+        loadContainer.getChildren().clear();
 
         // Find max magnitude pLoad in list of pLoads
-        int maxPIndex = 0;
-        for (int i = 0; i < canoe.getPLoads().size(); i++)
-        {
-            PointLoad p = canoe.getPLoads().get(i);
-
-            // Found a new max, get its index to reference later (avoids issues with 2 equal maxes)
-            if (Math.abs(p.getMag()) == maxMag)
-            {
-                maxPIndex = i;
-                break;
-            }
-        }
-
-        // Find max magnitude dLoad in list of dLoads
-        int maxDIndex = 0;
-        for (int i = 0; i < canoe.getDLoads().size(); i++)
-        {
-            UniformDistributedLoad d = canoe.getDLoads().get(i);
-
-            // Found a new max, get its index to reference later (avoids issues with 2 equal maxes)
-            if (Math.abs(d.getW()) == maxMag)
-            {
-                // Adjustment factor because pLoads coming before dLoads in the ListView
-                maxDIndex = i;
-                break;
-            }
-        }
-
-        // Max load between pLoads ands dLoads, dLoads index adjustment factor as dLoads come after pLoads as ListView items
-        int maxIndex;
-        if (canoe.getPLoads().size() > 0 && canoe.getDLoads().size() > 0)
-            maxIndex = canoe.getMaxPLoad() > canoe.getMaxDLoad() ? maxPIndex : maxDIndex + canoe.getPLoads().size();
-        else if (canoe.getPLoads().size() == 0)
-            maxIndex = maxDIndex;
-        else
-            maxIndex = maxPIndex;
+        int maxIndex = getMaxIndexFromMagnitude(maxMag);
 
         // List of Arrows and ArrowBoxes
         ArrayList<Arrow> arrowList = new ArrayList<>();
@@ -340,7 +272,7 @@ public class CanoeAnalysisController implements Initializable
                 int startY = d.getW() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
                 int endY = d.getW() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
 
-                ArrowBox arrowBox = new ArrowBox(d.getLXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, startY, d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, endY);
+                ArrowBox arrowBox = new ArrowBox(d.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, startY, d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, endY);
                 arrowBoxList.add(arrowBox);
             }
 
@@ -351,16 +283,62 @@ public class CanoeAnalysisController implements Initializable
                 int deltaY = (int) ((acceptedArrowHeightRange[1] - acceptedArrowHeightRange[0]) * (Math.abs(d.getW()) / maxMag));
                 int startY = d.getW() < 0 ? acceptedArrowHeightRange[1] - deltaY : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight() + deltaY;
 
-                ArrowBox arrowBox = new ArrowBox(d.getLXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, startY, d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, endY);
+                ArrowBox arrowBox = new ArrowBox(d.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, startY, d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, endY);
                 arrowBoxList.add(arrowBox);
             }
         }
 
-        // Add sorted Arrows and ArrowBoxes to the beamContainer
-        arrowList.sort(Comparator.comparingDouble(Arrow::getStartX));
+        // Add sorted Arrows and ArrowBoxes to the loadContainer
+        List<Positionable> UIElements = new ArrayList<>();
+        UIElements.addAll(arrowList);
+        UIElements.addAll(arrowBoxList);
+        UIElements.sort(Comparator.comparingDouble(Positionable::getX));
         arrowBoxList.sort(Comparator.comparingDouble(ArrowBox::getLX));
-        beamContainer.getChildren().addAll(arrowList);
-        beamContainer.getChildren().addAll(arrowBoxList);
+        loadContainer.getChildren().addAll((UIElements.stream().map(element -> (Node) element)).toList());
+    }
+
+    /**
+     * @param maxMag the magnitude of the maximum load (in kN or kN/m, considered 'equivalent' for graphics rendering)
+     * @return the index of that load on the canoes list of loads
+     */
+    private int getMaxIndexFromMagnitude(double maxMag) {
+        int maxPIndex = 0;
+        for (int i = 0; i < canoe.getPLoads().size(); i++)
+        {
+            PointLoad p = canoe.getPLoads().get(i);
+
+            // Found a new max, get its index to reference later (avoids issues with 2 equal maxes)
+            if (Math.abs(p.getMag()) == maxMag)
+            {
+                maxPIndex = i;
+                break;
+            }
+        }
+
+        // Find max magnitude dLoad in list of dLoads
+        int maxDIndex = 0;
+        for (int i = 0; i < canoe.getDLoads().size(); i++)
+        {
+            UniformDistributedLoad d = canoe.getDLoads().get(i);
+
+            // Found a new max, get its index to reference later (avoids issues with 2 equal maxes)
+            if (Math.abs(d.getW()) == maxMag)
+            {
+                // Adjustment factor because pLoads coming before dLoads in the ListView
+                maxDIndex = i;
+                break;
+            }
+        }
+
+        // Max load between pLoads ands dLoads, dLoads index adjustment factor as dLoads come after pLoads as ListView items
+        int maxIndex;
+        if (!canoe.getPLoads().isEmpty() && !canoe.getDLoads().isEmpty())
+            maxIndex = canoe.getMaxPLoad() > canoe.getMaxDLoad() ? maxPIndex : maxDIndex + canoe.getPLoads().size();
+        else if (canoe.getPLoads().isEmpty())
+            maxIndex = maxDIndex;
+        else
+            maxIndex = maxPIndex;
+        return maxIndex;
     }
 
     /**
@@ -398,7 +376,7 @@ public class CanoeAnalysisController implements Initializable
                 // Add the load to canoe, and the load arrow on the GUI
                 PointLoad p = new PointLoad(mag, x);
                 addPointLoad(p, false);
-                updateLoadList();
+                updateLoadListView();
             }
 
         }
@@ -443,8 +421,8 @@ public class CanoeAnalysisController implements Initializable
                 {
                     // Add the load to canoe, and update the ListView
                     UniformDistributedLoad d = new UniformDistributedLoad(l, r, mag);
-                    addDistributedLoad(d);
-                    updateLoadList();
+                    addDistributedLoadGraphic(d);
+                    updateLoadListView();
                 }
         }
         else
@@ -457,14 +435,14 @@ public class CanoeAnalysisController implements Initializable
      * This method was extracted to allow for reuse in system solver methods.
      * @param dLoad the distributed load to be added.
      */
-    private void addDistributedLoad(UniformDistributedLoad dLoad) {
+    private void addDistributedLoadGraphic(UniformDistributedLoad dLoad) {
         // Label reset
         combinedAlertLabel.setText("");
 
         canoe.addDLoad(dLoad);
 
         // x coordinates of arrows in beamContainer for ArrowBox
-        double scaledLX = dLoad.getLXScaled(beamImageView.getFitWidth(), canoe.getLen());
+        double scaledLX = dLoad.getXScaled(beamImageView.getFitWidth(), canoe.getLen());
         double scaledRX = dLoad.getRXScaled(beamImageView.getFitWidth(), canoe.getLen());
 
         // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
@@ -475,7 +453,7 @@ public class CanoeAnalysisController implements Initializable
         {
             int startY = dLoad.getW() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
             ArrowBox arrowBox = new ArrowBox(scaledLX + adjFactor, startY, scaledRX + adjFactor, endY);
-            beamContainer.getChildren().add(arrowBox);
+            loadContainer.getChildren().add(arrowBox);
         }
 
         else
@@ -489,7 +467,7 @@ public class CanoeAnalysisController implements Initializable
             else
             {
                 // TODO
-                // currently: after getting here and trying to add another load you can't add any more arrows
+                // currently: after getting here and trying to add another load you can't add any more arrows, need to fix that
             }
         }
     }
@@ -506,37 +484,64 @@ public class CanoeAnalysisController implements Initializable
 
         AddPointLoadResult addResult = canoe.addPLoad(pLoad);
 
-        // Notify the user regarding point loads combining or cancelling
-        combinedAlertLabel.setText("");
-        if (addResult == AddPointLoadResult.COMBINED)
-            combinedAlertLabel.setText("Point load magnitudes combined");
-        else if (addResult == AddPointLoadResult.REMOVED)
-            combinedAlertLabel.setText("Point load magnitudes cancelled");
-
         // Render the correct graphic
         if (isSupport)
-            addTriangleGraphic(pLoad, scaledX, addResult);
+            addSupportGraphic(scaledX);
         else
             addArrowGraphic(pLoad, scaledX, addResult);
-
     }
 
-    private void addTriangleGraphic(PointLoad pLoad, double beamContainerX, AddPointLoadResult result)
+    /**
+     * Add a point load to the load container as a graphic of a triangle to represent a pinned support
+     * @param beamContainerX the x coordinate of the load within the load container
+     */
+    private void addSupportGraphic(double beamContainerX)
     {
+        // Create the list of current loads
+        List<Positionable> loadContainerChildren = new ArrayList<>(loadContainer.getChildren().stream()
+                .map(load -> (Positionable) load)
+                .toList());
 
+        // Add the new load as a support
+        double tipY = acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // +126
+        SupportTriangle support = new SupportTriangle(beamContainerX + adjFactor, tipY);
+        loadContainerChildren.add(support);
+
+        // Clear the load container and add list of loads including the new load, all sorted
+        loadContainer.getChildren().clear();
+        loadContainer.getChildren().addAll(loadContainerChildren.stream()
+                .sorted(Comparator.comparingDouble(Positionable::getX))
+                .map(load -> (Node) load).toList());
     }
 
-    private void addArrowGraphic(PointLoad pLoad, double beamContainerX, AddPointLoadResult result) {
+    /**
+     * Add a point load to the load container as a graphic of an arrow to represent the load
+     * @param pLoad the point load to add
+     * @param beamContainerX the x coordinate of the load within the load container
+     * @param result the enum result of adding the load
+     */
+    private void addArrowGraphic(PointLoad pLoad, double beamContainerX, AddPointLoadResult result)
+    {
+        // Notify the user regarding point loads combining or cancelling
+        combinedAlertLabel.setText("");
+        if (result == AddPointLoadResult.COMBINED)
+            combinedAlertLabel.setText("Point load magnitudes combined");
+        else if (result == AddPointLoadResult.REMOVED)
+            combinedAlertLabel.setText("Point load magnitudes cancelled");
+
+        // Prevent rendering issues with zero-valued loads
+        if (pLoad.getMag() == 0)
+            return;
 
         // endY always results in the arrow touching the beam (ternary operator accounts for direction)
-        int endY = pLoad.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 126
+        int endY = pLoad.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // +126
 
         // If only 1 load it's always at max height
         if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2 && result != AddPointLoadResult.REMOVED)
         {
-            int startY = pLoad.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
+            int startY = pLoad.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // +196
             Arrow arrow = new Arrow(beamContainerX + adjFactor, startY, beamContainerX + adjFactor, endY);
-            beamContainer.getChildren().add(arrow);
+            loadContainer.getChildren().add(arrow);
         }
 
         else
@@ -549,7 +554,7 @@ public class CanoeAnalysisController implements Initializable
 
             else
             {
-                // TODO: throw an error
+                // TODO: implement clipping
                 // currently: after getting here and trying to add another load you can't add any more arrows
             }
         }
@@ -573,19 +578,20 @@ public class CanoeAnalysisController implements Initializable
      */
     public void solveSystem() {
 
+        // Buttons enabling/disabling for UX
         generateGraphsButton.setDisable(false);
+        solveSystemButton.setDisable(true);
+        pointLoadButton.setDisable(true);
+        distributedLoadButton.setDisable(true);
 
-        if (standsRadioButton.isSelected()) {
+        if (standsRadioButton.isSelected())
             solveStandSystem();
-        } else if (floatingRadioButton.isSelected()) {
-            // Solve floating case
-        } else if (submergedRadioButton.isSelected()) {
-            // Solve submerged case
-        } else {
-            // throw error
-        }
+        else if (floatingRadioButton.isSelected())
+            solveFloatingSystem();
+        else if (submergedRadioButton.isSelected())
+            solveSubmergedSystem();
 
-        updateLoadList(); // TODO: change to support icons
+        updateLoadListView();
     }
 
     /**
@@ -597,7 +603,17 @@ public class CanoeAnalysisController implements Initializable
     {
         List<PointLoad> newLoads = SystemSolver.solveStandSystem(canoe);
         for (PointLoad load : newLoads) {
-            addPointLoad(load, false);}
+            addPointLoad(load, true);}
+    }
+
+    private void solveFloatingSystem()
+    {
+        // TODO: Implement (consult D&A)
+    }
+
+    private void solveSubmergedSystem()
+    {
+        // TODO: Implement (consult D&A)
     }
 
     /**
@@ -606,23 +622,37 @@ public class CanoeAnalysisController implements Initializable
      */
     private void disableInitialize(boolean b)
     {
-        solveSystemButton.setDisable(b);
-        pointLoadButton.setDisable(b);
-        uniformLoadButton.setDisable(b);
-        floatingRadioButton.setDisable(b);
-        standsRadioButton.setDisable(b);
-        submergedRadioButton.setDisable(b);
-        distributedMagnitudeComboBox.setDisable(b);
-        distributedMagnitudeTextField.setDisable(b);
-        pointMagnitudeComboBox.setDisable(b);
-        pointMagnitudeTextField.setDisable(b);
-        pointLocationTextField.setDisable(b);
-        pointLocationComboBox.setDisable(b);
-        pointDirectionComboBox.setDisable(b);
-        distributedIntervalTextFieldL.setDisable(b);
-        distributedIntervalTextFieldR.setDisable(b);
-        distributedIntervalComboBox.setDisable(b);
-        distributedDirectionComboBox.setDisable(b);
+        List<Control> controls = Arrays.asList(solveSystemButton, pointLoadButton, distributedLoadButton, floatingRadioButton,
+                standsRadioButton, submergedRadioButton, distributedMagnitudeComboBox, distributedMagnitudeTextField,
+                pointMagnitudeComboBox, pointMagnitudeTextField, pointLocationTextField, pointLocationComboBox, pointDirectionComboBox,
+                distributedIntervalTextFieldL, distributedIntervalTextFieldR, distributedIntervalComboBox, distributedDirectionComboBox
+        );
+
+        for (Control control : controls) {
+            control.setDisable(b);
+        }
+    }
+
+    /**
+     * Generates an SFD and BMD based on the canoe's load state.
+     */
+    public void generateDiagram()
+    {
+        // Testing
+        for (DiagramPoint sfdPoint : Diagram.generateSfdPoints(canoe))
+        {
+            System.out.println("sfdPoint generated: " + sfdPoint);
+        }
+
+        DiagramLogic.setupDiagram(canoe, Diagram.generateSfdPoints(canoe), "Shear Force Diagram", "Force [kN]");
+
+        // Testing
+        for (DiagramPoint bmdPoint : Diagram.generateBmdPoints(canoe))
+        {
+            System.out.println("bmdPoint generated: " + bmdPoint);
+        }
+
+        DiagramLogic.setupDiagram(canoe, Diagram.generateBmdPoints(canoe), "Bending Moment Diagram", "Moment [kN·m]");
     }
 
     /**
@@ -634,8 +664,6 @@ public class CanoeAnalysisController implements Initializable
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
         // Instantiate the canoe
-        ArrayList<PointLoad> pLoads = new ArrayList<>();
-        ArrayList<UniformDistributedLoad> dLoads = new ArrayList<>();
         canoe = Canoe.getInstance();
 
         // Disable most buttons on startup to prevent inputs in the wrong order
@@ -643,7 +671,7 @@ public class CanoeAnalysisController implements Initializable
         generateGraphsButton.setDisable(true);
 
         // Set Black Borders
-        loadList.setStyle("-fx-border-color: black");
+        loadListView.setStyle("-fx-border-color: black");
         lowerRightAnchorPane.setStyle("-fx-border-color: black");
 
         // Loading Images
@@ -652,7 +680,7 @@ public class CanoeAnalysisController implements Initializable
 
         // Setting RadioButton Toggle Group
         ToggleGroup canoeSupportToggleGroup = new ToggleGroup();
-        RadioButton[] canoeSupportRButtons = new RadioButton[]{floatingRadioButton, standsRadioButton, submergedRadioButton};
+        RadioButton[] canoeSupportRButtons = new RadioButton[]{standsRadioButton, floatingRadioButton, submergedRadioButton};
         setAllToggleGroup(canoeSupportToggleGroup, canoeSupportRButtons, 0);
 
         // Populate ComboBoxes
@@ -673,9 +701,5 @@ public class CanoeAnalysisController implements Initializable
         TextField[] tfs = new TextField[]{pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
                 distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField};
         for (TextField tf : tfs) {tf.setText("0.00");}
-
-        // Test
-        // beamContainer.getChildren().add(new Triangle(5, 126));
-
     }
 }

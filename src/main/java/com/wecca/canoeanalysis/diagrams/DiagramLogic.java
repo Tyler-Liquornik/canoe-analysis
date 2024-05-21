@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.diagrams;
 
+import com.wecca.canoeanalysis.CanoeAnalysisController;
 import com.wecca.canoeanalysis.models.Canoe;
 import javafx.scene.Scene;
 import javafx.scene.chart.AreaChart;
@@ -50,7 +51,7 @@ public class DiagramLogic {
         chart.setTitle(title);
         chart.setPrefSize(1125, 750);
         chart.setLegendVisible(false);
-        chart.getStylesheets().add(DiagramLogic.class.getResource("chart.css").toExternalForm());
+        chart.getStylesheets().add(CanoeAnalysisController.class.getResource("chart.css").toExternalForm());
 
         // Adding the sections of the pseudo piecewise function separately
         boolean set = false; // only need to set the name of the series once since its really one piecewise function
@@ -86,29 +87,6 @@ public class DiagramLogic {
     }
 
     /**
-     * Generates an SFD and BMD based on the canoe's load state.
-     * @param canoe to work with
-     */
-    public static void generateDiagram(Canoe canoe)
-    {
-        // Testing
-        for (DiagramPoint sfdPoint : Diagram.generateSfdPoints(canoe))
-        {
-            System.out.println("sfdPoint generated: " + sfdPoint);
-        }
-
-        setupDiagram(canoe, Diagram.generateSfdPoints(canoe), "Shear Force Diagram", "Force [kN]");
-
-        // Testing
-        for (DiagramPoint bmdPoint : Diagram.generateBmdPoints(canoe))
-        {
-            System.out.println("bmdPoint generated: " + bmdPoint);
-        }
-
-        setupDiagram(canoe, Diagram.generateBmdPoints(canoe), "Bending Moment Diagram", "Moment [kN·m]");
-    }
-
-    /**
      * Consider the list of points is a "pseudo piecewise function" (pseudo as discrete points are defined rather than a continuous function)
      * This method breaks it into a set of "pseudo functions"
      * @param canoe to work with
@@ -118,16 +96,16 @@ public class DiagramLogic {
      */
     private static List<List<DiagramPoint>> partitionPoints(Canoe canoe, List<DiagramPoint> points, TreeSet<Double> partitions)
     {
-        // Testing
-        System.out.println("\nPartition Points:");
-        for (double point : partitions)
-        {
-            System.out.println("point = " + point);
-        }
-
         // Initializing lists
         List<List<DiagramPoint>> partitionedIntervals = new ArrayList<>();
         List<Double> partitionsList = new ArrayList<>(partitions);
+
+        // Testing
+        System.out.println("\nPartition Points:");
+        for (double point : partitionsList)
+        {
+            System.out.println("point = " + point);
+        }
 
         // If the first point is doubled up due to a jump discontinuity then throw away the first point (0, 0)
         // By "doubled up" I mean two points at the same x coordinate

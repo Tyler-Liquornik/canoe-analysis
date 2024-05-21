@@ -4,10 +4,11 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
+import com.wecca.canoeanalysis.utility.Positionable;
 
 // Point loads are to be represented as arrows
 // Modified from Source: https://gist.github.com/kn0412/2086581e98a32c8dfa1f69772f14bca4
-public class Arrow extends Path
+public class Arrow extends Path implements Colorable, Positionable
 {
     // Fields
     private static final double defaultArrowHeadSize = 5.0;
@@ -61,8 +62,22 @@ public class Arrow extends Path
     }
 
     // Accessors
+
+    @Override
+    public double getX() {return Math.min(startX, endX);} // Leftmost point is considered
     public double getStartX() {return startX;}
     public double getStartY() {return startY;}
     public double getEndX() {return endX;}
     public double getEndY() {return endY;}
+
+    // Mutators
+    public void setStartX(double startX) {this.startX = startX;}
+    public void setStartY(double startY) {this.startY = startY;}
+    public void setEndX(double endX) {this.endX = endX;}
+    public void setEndY(double endY) {this.endY = endY;}
+
+    @Override
+    public void recolor(Color color) {
+        setFill(color);
+    }
 }
