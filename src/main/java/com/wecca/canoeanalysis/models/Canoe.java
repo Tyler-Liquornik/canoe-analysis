@@ -44,11 +44,15 @@ public final class Canoe
         this.m = m;
     }
 
-    public AddPointLoadResult addPLoad(PointLoad p) {
+    public AddPointLoadResult addPLoad(PointLoad p, boolean isSupport) {
 
         // Do not add the load if it is zero valued
+        // Zero-valued supports are still added as markers for the model and ListView
         if (p.getMag() == 0)
-            return AddPointLoadResult.ADDED;
+            if (!isSupport)
+                return AddPointLoadResult.ADDED;
+            else
+                p.setMag(0.00); // In case mag is -0 so that the negative deosnt display to the user
 
         // Search for other loads at the same position, and combine their magnitudes
         for (PointLoad pLoad : pLoads) {

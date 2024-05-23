@@ -6,6 +6,7 @@ import com.wecca.canoeanalysis.models.UniformDistributedLoad;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -69,7 +70,6 @@ public class SystemSolver {
         pLoadEnd.setIsSupport(true);
         pointLoads.clear();
         pointLoads.addAll(Arrays.asList(pLoadStart, pLoadEnd));
-
         return pointLoads;
     }
 
