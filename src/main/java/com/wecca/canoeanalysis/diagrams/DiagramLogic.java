@@ -53,6 +53,18 @@ public class DiagramLogic {
         chart.setLegendVisible(false);
         chart.getStylesheets().add(CanoeAnalysisController.class.getResource("chart.css").toExternalForm());
 
+        List<XYChart.Series> intervalsAsSeries = getIntervalsAsSeries(canoe, points, yUnits, criticalPoints, chart);
+
+        // Creating the scene and adding the chart to it
+        chartPane.getChildren().add(chart);
+        Scene scene = new Scene(chartPane, 1125, 750);
+        popupStage.setScene(scene);
+        popupStage.show();
+
+        return intervalsAsSeries;
+    }
+
+    private static List<XYChart.Series> getIntervalsAsSeries(Canoe canoe, List<DiagramPoint> points, String yUnits, TreeSet<Double> criticalPoints, AreaChart<Number, Number> chart) {
         // Adding the sections of the pseudo piecewise function separately
         boolean set = false; // only need to set the name of the series once since its really one piecewise function
         List<List<DiagramPoint>> intervals = partitionPoints(canoe, points, criticalPoints);
@@ -63,8 +75,6 @@ public class DiagramLogic {
             for (DiagramPoint point : interval)
             {
                 series.getData().add(new XYChart.Data<>(point.getX(), point.getY()));
-
-                System.out.println("Point added to chart " + title + ": " + point);
             }
 
             if (!set)
@@ -76,13 +86,6 @@ public class DiagramLogic {
             chart.getData().add(series);
             intervalsAsSeries.add(series);
         }
-
-        // Creating the scene and adding the chart to it
-        chartPane.getChildren().add(chart);
-        Scene scene = new Scene(chartPane, 1125, 750);
-        popupStage.setScene(scene);
-        popupStage.show();
-
         return intervalsAsSeries;
     }
 

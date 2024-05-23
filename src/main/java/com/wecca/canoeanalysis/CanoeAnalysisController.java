@@ -26,8 +26,7 @@ import java.util.*;
 public class CanoeAnalysisController implements Initializable
 {
     @FXML
-    private Label lengthLabelRTemp, lengthLabelR, lengthAlertLabel, boundsAlertLabel, magnitudeAlertLabel,
-            intervalAlertLabel, distributedMagnitudeAlertLabel, combinedAlertLabel, failedDoubleParseAlertLabel;
+    private Label lengthLabelRTemp, lengthLabelR, notificationLabel;
     @FXML
     private ListView<String> loadListView;
     @FXML
@@ -148,7 +147,7 @@ public class CanoeAnalysisController implements Initializable
             lengthLabelR.setText(String.format("%.2f m", canoe.getLen()));
 
             // Clear potential alert and reset access to controls
-            lengthAlertLabel.setText("");
+            notificationLabel.setText("");
             disableLoadingControls(false);
             canoeLengthTextField.setDisable(true);
             canoeLengthComboBox.setDisable(true);
@@ -157,7 +156,7 @@ public class CanoeAnalysisController implements Initializable
         // Populate the alert telling the user the length they've entered is out of the allowed range
         else
         {
-            lengthAlertLabel.setText("Length must be between 0.05m and 20m");
+            notificationLabel.setText("Length must be between 0.05m and 20m");
         }
     }
 
@@ -348,10 +347,8 @@ public class CanoeAnalysisController implements Initializable
      */
     public void addPointLoad()
     {
-        // Clear previous alert labels
-        boundsAlertLabel.setText("");
-        magnitudeAlertLabel.setText("");
-        failedDoubleParseAlertLabel.setText("");
+        // Clear previous alert label
+        notificationLabel.setText("");
 
         // Validate the entered numbers are doubles
         if (allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField)))
@@ -366,10 +363,10 @@ public class CanoeAnalysisController implements Initializable
 
             // Validate the load is being added within the length of the canoe
             if (!(0 <= x && x <= canoe.getLen()))
-                boundsAlertLabel.setText("Load must be contained within the canoe's length");
+                notificationLabel.setText("Load must be contained within the canoe's length");
             // Validate the load is in the accepted magnitude range
             else if (!(acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1]))
-                magnitudeAlertLabel.setText("Load must be between 0.05kN and 10kN");
+                notificationLabel.setText("Load must be between 0.05kN and 10kN");
 
             else
             {
@@ -381,7 +378,7 @@ public class CanoeAnalysisController implements Initializable
 
         }
         else
-            failedDoubleParseAlertLabel.setText("One or more entered values are not numbers");
+            notificationLabel.setText("One or more entered values are not numbers");
     }
 
     /**
@@ -392,10 +389,7 @@ public class CanoeAnalysisController implements Initializable
     public void addDistributedLoad()
     {
         // Clear previous alert labels
-        boundsAlertLabel.setText("");
-        intervalAlertLabel.setText("");
-        distributedMagnitudeAlertLabel.setText("");
-        failedDoubleParseAlertLabel.setText("");
+        notificationLabel.setText("");
 
         // Validate the entered numbers are doubles
         if (allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
@@ -411,11 +405,11 @@ public class CanoeAnalysisController implements Initializable
 
             // User entry validations
             if (!(0 <= l && r <= canoe.getLen()))
-                boundsAlertLabel.setText("Load must be contained within the canoe's length");
+                notificationLabel.setText("Load must be contained within the canoe's length");
             else if (!(r > l))
-                intervalAlertLabel.setText("Right interval bound must be greater than the left bound");
+                notificationLabel.setText("Right interval bound must be greater than the left bound");
             else if (!(acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1]))
-                distributedMagnitudeAlertLabel.setText("Load must be between 0.05kN/m and 10kN/m");
+                notificationLabel.setText("Load must be between 0.05kN/m and 10kN/m");
 
             else
                 {
@@ -426,7 +420,7 @@ public class CanoeAnalysisController implements Initializable
                 }
         }
         else
-            failedDoubleParseAlertLabel.setText("One or more entered values are not numbers");
+            notificationLabel.setText("One or more entered values are not numbers");
 
     }
 
@@ -437,7 +431,7 @@ public class CanoeAnalysisController implements Initializable
      */
     private void addDistributedLoadGraphic(UniformDistributedLoad dLoad) {
         // Label reset
-        combinedAlertLabel.setText("");
+        notificationLabel.setText("");
 
         canoe.addDLoad(dLoad);
 
@@ -482,7 +476,7 @@ public class CanoeAnalysisController implements Initializable
         // x coordinate in beamContainer for load
         double scaledX = pLoad.getXScaled(beamImageView.getFitWidth(), canoe.getLen()); // x position in the beamContainer
 
-        AddPointLoadResult addResult = canoe.addPLoad(pLoad);
+        AddPointLoadResult addResult = canoe.addPLoad(pLoad, isSupport);
 
         // Render the correct graphic
         if (isSupport)
@@ -523,11 +517,11 @@ public class CanoeAnalysisController implements Initializable
     private void addArrowGraphic(PointLoad pLoad, double beamContainerX, AddPointLoadResult result)
     {
         // Notify the user regarding point loads combining or cancelling
-        combinedAlertLabel.setText("");
+        notificationLabel.setText("");
         if (result == AddPointLoadResult.COMBINED)
-            combinedAlertLabel.setText("Point load magnitudes combined");
+            notificationLabel.setText("Point load magnitudes combined");
         else if (result == AddPointLoadResult.REMOVED)
-            combinedAlertLabel.setText("Point load magnitudes cancelled");
+            notificationLabel.setText("Point load magnitudes cancelled");
 
         // Prevent rendering issues with zero-valued loads
         if (pLoad.getMag() == 0)
@@ -599,9 +593,9 @@ public class CanoeAnalysisController implements Initializable
      */
     private void solveStandSystem()
     {
-        List<PointLoad> newLoads = SystemSolver.solveStandSystem(canoe);
-        for (PointLoad load : newLoads) {
-            addPointLoad(load, true);}
+        List<PointLoad> supportLoads = SystemSolver.solveStandSystem(canoe);
+        for (PointLoad supportLoad : supportLoads) {
+            addPointLoad(supportLoad, true);}
     }
 
     private void solveFloatingSystem()

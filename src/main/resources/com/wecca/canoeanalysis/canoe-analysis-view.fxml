@@ -102,37 +102,7 @@
                         </AnchorPane>
                      </children></AnchorPane>
                   <ListView fx:id="loadListView" layoutX="25.0" layoutY="235.0" onContextMenuRequested="#highlightLoad" onMouseClicked="#highlightLoad" onMousePressed="#highlightLoad" prefHeight="310.0" prefWidth="200.0" />
-                  <Label fx:id="lengthAlertLabel" layoutX="643.0" layoutY="560.0" textFill="RED">
-                     <font>
-                        <Font name="System Bold" size="12.0" />
-                     </font>
-                  </Label>
-                  <Label fx:id="boundsAlertLabel" layoutX="593.0" layoutY="560.0" textFill="RED">
-                     <font>
-                        <Font name="System Bold" size="12.0" />
-                     </font>
-                  </Label>
-                  <Label fx:id="magnitudeAlertLabel" layoutX="643.0" layoutY="560.0" textFill="RED">
-                     <font>
-                        <Font name="System Bold" size="12.0" />
-                     </font>
-                  </Label>
-                  <Label fx:id="intervalAlertLabel" layoutX="551.0" layoutY="560.0" textFill="RED">
-                     <font>
-                        <Font name="System Bold" size="12.0" />
-                     </font>
-                  </Label>
-                  <Label fx:id="distributedMagnitudeAlertLabel" layoutX="612.0" layoutY="560.0" textFill="RED">
-                     <font>
-                        <Font name="System Bold" size="12.0" />
-                     </font>
-                  </Label>
-                  <Label fx:id="combinedAlertLabel" layoutX="25.0" layoutY="560.0" textFill="RED">
-                     <font>
-                        <Font name="System Bold" size="12.0" />
-                     </font>
-                  </Label>
-                  <Label fx:id="failedDoubleParseAlertLabel" layoutX="621.0" layoutY="560.0" textFill="RED">
+                  <Label fx:id="notificationLabel" alignment="CENTER_RIGHT" layoutX="25.0" layoutY="560.0" maxWidth="850.0" minWidth="850.0" prefWidth="850.0" textAlignment="CENTER" textFill="RED" wrapText="true">
                      <font>
                         <Font name="System Bold" size="12.0" />
                      </font>
