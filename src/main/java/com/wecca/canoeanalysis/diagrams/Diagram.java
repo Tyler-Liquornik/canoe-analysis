@@ -60,7 +60,19 @@ public class Diagram
     private static Map<Double, PointLoad> getPointLoadMap(Canoe canoe)
     {
         Map<Double, PointLoad> map = new HashMap<>();
-        for (PointLoad load : canoe.getPLoads()) {map.put((double) Math.round(load.getX() * 100) / 100, load);}
+        for (PointLoad load : canoe.getPLoads())
+        {
+            double x = (double) Math.round(load.getX() * 100) / 100;
+            if (map.containsKey(x))
+            {
+                // Supports will not combine with loads at the same position, so they are always included in the model
+                // We need to combine them here to prevent duplicate key issues
+                double mag = map.get(x).getMag();
+                mag += load.getMag();
+                load = new PointLoad(x, mag);
+            }
+            map.put(x, load);
+        }
         return map;
     }
 
