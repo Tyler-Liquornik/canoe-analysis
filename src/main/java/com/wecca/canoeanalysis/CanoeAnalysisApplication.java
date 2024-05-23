@@ -18,6 +18,9 @@ public class CanoeAnalysisApplication extends Application {
         stage.setScene(scene);
         stage.show();
 
+        // Add the CSS file to the scene's stylesheets
+        scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
+
         // Adding Logo Icon
         Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/canoe.png");
         stage.getIcons().add(icon);

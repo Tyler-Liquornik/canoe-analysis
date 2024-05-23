@@ -14,7 +14,7 @@ public final class Canoe
     private ArrayList<PointLoad> pLoads; // point loads on the canoe
     private ArrayList<UniformDistributedLoad> dLoads; // uniformly distributed loads on the canoe
     private double m; // canoe mass (able to calculate this from exported solidworks data instead of manually?)
-    private ArrayList<Positionable> loads; // All the loads in one array
+    private ArrayList<Positionable> loads; // All the loads in one array //TODO decide if keeping, not used so far
 
     private Canoe() {
         this.len = 0;

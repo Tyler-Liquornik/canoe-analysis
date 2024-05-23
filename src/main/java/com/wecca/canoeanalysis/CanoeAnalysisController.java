@@ -43,7 +43,7 @@ public class CanoeAnalysisController implements Initializable
     @FXML
     private ImageView beamImageView;
     @FXML
-    private AnchorPane lowerRightAnchorPane, loadContainer;
+    private AnchorPane lowerRightAnchorPane, upperAnchorPane, loadContainer;
 
     private Canoe canoe; // entity class that models the canoe as a beam
 
@@ -149,7 +149,7 @@ public class CanoeAnalysisController implements Initializable
 
             // Clear potential alert and reset access to controls
             lengthAlertLabel.setText("");
-            disableInitialize(false);
+            disableLoadingControls(false);
             canoeLengthTextField.setDisable(true);
             canoeLengthComboBox.setDisable(true);
             setCanoeLengthButton.setDisable(true);
@@ -202,7 +202,7 @@ public class CanoeAnalysisController implements Initializable
      */
     public void updateLoadListView()
     {
-        // Get the new list of loads, sorted by x position
+        // Get the new list of loads as strings, sorted by x position
         List<Positionable> loads = new ArrayList<>();
         loads.addAll(canoe.getPLoads());
         loads.addAll(canoe.getDLoads());
@@ -497,17 +497,17 @@ public class CanoeAnalysisController implements Initializable
      */
     private void addSupportGraphic(double beamContainerX)
     {
-        // Create the list of current loads
+        // Create the list of current load graphics
         List<Positionable> loadContainerChildren = new ArrayList<>(loadContainer.getChildren().stream()
                 .map(load -> (Positionable) load)
                 .toList());
 
-        // Add the new load as a support
+        // Create and add the support graphic
         double tipY = acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // +126
         SupportTriangle support = new SupportTriangle(beamContainerX + adjFactor, tipY);
         loadContainerChildren.add(support);
 
-        // Clear the load container and add list of loads including the new load, all sorted
+        // Clear graphics the load container and add the new list of load graphics including the support, all sorted
         loadContainer.getChildren().clear();
         loadContainer.getChildren().addAll(loadContainerChildren.stream()
                 .sorted(Comparator.comparingDouble(Positionable::getX))
@@ -578,11 +578,9 @@ public class CanoeAnalysisController implements Initializable
      */
     public void solveSystem() {
 
-        // Buttons enabling/disabling for UX
+        // Controls enabling/disabling for UX
         generateGraphsButton.setDisable(false);
-        solveSystemButton.setDisable(true);
-        pointLoadButton.setDisable(true);
-        distributedLoadButton.setDisable(true);
+        disableLoadingControls(true);
 
         if (standsRadioButton.isSelected())
             solveStandSystem();
@@ -620,7 +618,7 @@ public class CanoeAnalysisController implements Initializable
      * Bulk package to toggle enabling all the controls related to loading
      * @param b disables controls
      */
-    private void disableInitialize(boolean b)
+    private void disableLoadingControls(boolean b)
     {
         List<Control> controls = Arrays.asList(solveSystemButton, pointLoadButton, distributedLoadButton, floatingRadioButton,
                 standsRadioButton, submergedRadioButton, distributedMagnitudeComboBox, distributedMagnitudeTextField,
@@ -667,12 +665,13 @@ public class CanoeAnalysisController implements Initializable
         canoe = Canoe.getInstance();
 
         // Disable most buttons on startup to prevent inputs in the wrong order
-        disableInitialize(true);
+        disableLoadingControls(true);
         generateGraphsButton.setDisable(true);
 
-        // Set Black Borders
-        loadListView.setStyle("-fx-border-color: black");
-        lowerRightAnchorPane.setStyle("-fx-border-color: black");
+        // Set CSS classes Styles
+        lowerRightAnchorPane.getStyleClass().add("anchor-pane");
+        upperAnchorPane.getStyleClass().add("anchor-pane");
+
 
         // Loading Images
         Image beamImage = new Image("file:src/main/resources/com/wecca/canoeanalysis/beam.png");
