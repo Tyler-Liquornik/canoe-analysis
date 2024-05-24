@@ -51,7 +51,7 @@ public class DiagramLogic {
         chart.setTitle(title);
         chart.setPrefSize(1125, 750);
         chart.setLegendVisible(false);
-        chart.getStylesheets().add(CanoeAnalysisController.class.getResource("chart.css").toExternalForm());
+        chart.getStylesheets().add(CanoeAnalysisController.class.getResource("css/chart.css").toExternalForm());
 
         List<XYChart.Series> intervalsAsSeries = getIntervalsAsSeries(canoe, points, yUnits, criticalPoints, chart);
 

@@ -8,6 +8,7 @@ import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.utility.Positionable;
 import com.wecca.canoeanalysis.utility.SystemSolver;
 import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
@@ -30,7 +31,8 @@ public class CanoeAnalysisController implements Initializable
     @FXML
     private ListView<String> loadListView;
     @FXML
-    private Button solveSystemButton, pointLoadButton, distributedLoadButton, setCanoeLengthButton, generateGraphsButton;
+    private Button solveSystemButton, pointLoadButton, distributedLoadButton, setCanoeLengthButton, generateGraphsButton,
+            clearLoadsButton, deleteLoadButton;
     @FXML
     private TextField pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
             distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField;
@@ -42,7 +44,7 @@ public class CanoeAnalysisController implements Initializable
     @FXML
     private ImageView beamImageView;
     @FXML
-    private AnchorPane lowerRightAnchorPane, upperAnchorPane, loadContainer;
+    private AnchorPane lowerRightAnchorPane, upperAnchorPane, loadContainer, lowerLeftAnchorPane;
 
     private Canoe canoe; // entity class that models the canoe as a beam
 
@@ -662,13 +664,8 @@ public class CanoeAnalysisController implements Initializable
         disableLoadingControls(true);
         generateGraphsButton.setDisable(true);
 
-        // Set CSS classes Styles
-        lowerRightAnchorPane.getStyleClass().add("anchor-pane");
-        upperAnchorPane.getStyleClass().add("anchor-pane");
-
-
         // Loading Images
-        Image beamImage = new Image("file:src/main/resources/com/wecca/canoeanalysis/beam.png");
+        Image beamImage = new Image("file:src/main/resources/com/wecca/canoeanalysis/images/beam.png");
         beamImageView.setImage(beamImage);
 
         // Setting RadioButton Toggle Group
@@ -694,5 +691,11 @@ public class CanoeAnalysisController implements Initializable
         TextField[] tfs = new TextField[]{pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
                 distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField};
         for (TextField tf : tfs) {tf.setText("0.00");}
+    }
+
+    public void deleteLoad() {
+    }
+
+    public void importLoads() {
     }
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
+<?import com.jfoenix.controls.JFXButton?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
@@ -19,19 +19,19 @@
       <content>
         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="600.0" prefWidth="900.0">
                <children>
-                  <AnchorPane fx:id="upperAnchorPane" layoutX="25.0" layoutY="25.0" maxHeight="200.0" maxWidth="850.0" minHeight="200.0" minWidth="850.0" prefHeight="200.0" prefWidth="850.0">
+                  <AnchorPane fx:id="upperAnchorPane" layoutX="25.0" layoutY="25.0" maxHeight="200.0" maxWidth="850.0" minHeight="200.0" minWidth="850.0" prefHeight="200.0" prefWidth="850.0" styleClass="anchor-pane" stylesheets="@../css/style.css">
                      <children>
                         <AnchorPane prefHeight="200.0" prefWidth="200.0">
                            <children>
-                              <Label layoutX="14.0" layoutY="14.0" text="Canoe Supports">
+                              <Label layoutX="10.0" layoutY="14.0" text="Canoe Supports">
                                  <font>
                                     <Font name="System Bold" size="14.0" />
                                  </font>
                               </Label>
-                              <RadioButton fx:id="floatingRadioButton" layoutX="20.0" layoutY="80.0" mnemonicParsing="false" text="Floating" />
-                              <Button fx:id="solveSystemButton" layoutX="15.0" layoutY="150.0" mnemonicParsing="false" onAction="#solveSystem" prefHeight="25.0" prefWidth="165.0" text="Solve System" />
-                              <RadioButton fx:id="standsRadioButton" layoutX="20.0" layoutY="45.0" mnemonicParsing="false" text="Stands" />
-                              <RadioButton fx:id="submergedRadioButton" layoutX="20.0" layoutY="115.0" mnemonicParsing="false" prefHeight="17.0" prefWidth="91.0" text="Submerged" />
+                              <RadioButton fx:id="floatingRadioButton" layoutX="10.0" layoutY="80.0" mnemonicParsing="false" text="Floating" />
+                              <RadioButton fx:id="standsRadioButton" layoutX="10.0" layoutY="45.0" mnemonicParsing="false" text="Stands" />
+                              <RadioButton fx:id="submergedRadioButton" layoutX="10.0" layoutY="115.0" mnemonicParsing="false" prefHeight="17.0" prefWidth="91.0" text="Submerged" />
+                              <JFXButton fx:id="solveSystemButton" buttonType="RAISED" layoutX="10.0" layoutY="150.0" onAction="#solveSystem" prefHeight="25.0" prefWidth="180.0" styleClass="light-blue-100" stylesheets="@../css/style.css" text="Solve System" />
                            </children>
                         </AnchorPane>
                         <AnchorPane layoutX="210.0" prefHeight="200.0" prefWidth="640.0">
@@ -44,13 +44,13 @@
                               <Label layoutX="15.0" layoutY="50.0" text="Magnitude:" />
                               <Label layoutX="15.0" layoutY="85.0" text="Location:" />
                               <Label layoutX="15.0" layoutY="120.0" text="Direction:" />
-                              <Button fx:id="pointLoadButton" layoutX="15.0" layoutY="150.0" mnemonicParsing="false" onAction="#addPointLoad" prefHeight="25.0" prefWidth="250.0" text="Add Point Load" />
+                              <JFXButton fx:id="pointLoadButton" buttonType="RAISED" layoutX="15.0" layoutY="150.0" mnemonicParsing="false" onAction="#addPointLoad" prefHeight="25.0" prefWidth="250.0" styleClass="light-blue-100" stylesheets="@../css/style.css" text="Add Point Load" />
                               <TextField fx:id="pointMagnitudeTextField" layoutX="85.0" layoutY="45.0" prefHeight="26.0" prefWidth="85.0" />
                               <TextField fx:id="pointLocationTextField" layoutX="85.0" layoutY="80.0" prefHeight="25.0" prefWidth="85.0" />
                               <ComboBox fx:id="pointDirectionComboBox" layoutX="85.0" layoutY="115.0" prefHeight="25.0" prefWidth="85.0" />
                               <ComboBox fx:id="pointMagnitudeComboBox" layoutX="180.0" layoutY="45.0" prefHeight="25.0" prefWidth="85.0" />
                               <ComboBox fx:id="pointLocationComboBox" layoutX="180.0" layoutY="81.0" prefHeight="25.0" prefWidth="85.0" />
-                              <Button fx:id="distributedLoadButton" layoutX="280.0" layoutY="150.0" mnemonicParsing="false" onAction="#addDistributedLoad" prefHeight="25.0" prefWidth="340.0" text="Add Uniformly Distributed Load" />
+                              <JFXButton fx:id="distributedLoadButton" buttonType="RAISED" layoutX="280.0" layoutY="150.0" mnemonicParsing="false" onAction="#addDistributedLoad" prefHeight="25.0" prefWidth="340.0" styleClass="light-blue-100" stylesheets="@../css/style.css" text="Add Uniformly Distributed Load" />
                               <Label layoutX="280.0" layoutY="50.0" text="Magnitude:" />
                               <Label layoutX="280.0" layoutY="85.0" text="Interval:" />
                               <Label layoutX="280.0" layoutY="120.0" text="Direction:" />
@@ -69,13 +69,13 @@
                         </AnchorPane>
                      </children>
                   </AnchorPane>
-                  <AnchorPane fx:id="lowerRightAnchorPane" layoutX="235.0" layoutY="235.0" prefHeight="310.0" prefWidth="640.0">
+                  <AnchorPane fx:id="lowerRightAnchorPane" layoutX="235.0" layoutY="235.0" prefHeight="310.0" prefWidth="640.0" styleClass="anchor-pane" stylesheets="@../css/style.css">
                      <children>
-                        <Label layoutX="10.0" layoutY="273.0" text="Canoe Length:" />
-                        <TextField fx:id="canoeLengthTextField" layoutX="95.0" layoutY="270.0" prefHeight="25.0" prefWidth="85.0" />
-                        <ComboBox fx:id="canoeLengthComboBox" layoutX="185.0" layoutY="270.0" prefHeight="25.0" prefWidth="60.0" />
-                        <Button fx:id="generateGraphsButton" layoutX="410.0" layoutY="270.0" mnemonicParsing="false" onAction="#generateDiagram" prefHeight="25.0" prefWidth="210.0" text="Generate SFD / BMD" />
-                        <Button fx:id="setCanoeLengthButton" layoutX="250.0" layoutY="270.0" mnemonicParsing="false" onAction="#setCanoeLength" prefHeight="25.0" prefWidth="85.0" text="Set Length" />
+                        <Label layoutX="10.0" layoutY="279.0" text="Canoe Length:" />
+                        <TextField fx:id="canoeLengthTextField" layoutX="95.0" layoutY="275.0" prefHeight="25.0" prefWidth="85.0" />
+                        <ComboBox fx:id="canoeLengthComboBox" layoutX="185.0" layoutY="275.0" prefHeight="25.0" prefWidth="60.0" />
+                        <JFXButton fx:id="generateGraphsButton" buttonType="RAISED" layoutX="410.0" layoutY="275.0" mnemonicParsing="false" onAction="#generateDiagram" prefHeight="25.0" prefWidth="210.0" styleClass="light-blue-100" stylesheets="@../css/style.css" text="Generate SFD / BMD" />
+                        <JFXButton fx:id="setCanoeLengthButton" buttonType="RAISED" layoutX="250.0" layoutY="275.0" mnemonicParsing="false" onAction="#setCanoeLength" prefHeight="25.0" prefWidth="85.0" styleClass="light-blue-100" stylesheets="@../css/style.css" text="Set Length" />
                         <Line endX="290.0" layoutX="320.0" layoutY="240.0" startX="-290.0" />
                         <Line endX="5.0" layoutX="30.0" layoutY="240.0" rotate="90.0" startX="-5.0" />
                         <Line endX="5.0" layoutX="610.0" layoutY="240.0" rotate="90.0" startX="-5.0" />
@@ -101,7 +101,13 @@
                            </children>
                         </AnchorPane>
                      </children></AnchorPane>
-                  <ListView fx:id="loadListView" layoutX="25.0" layoutY="235.0" onContextMenuRequested="#highlightLoad" onMouseClicked="#highlightLoad" onMousePressed="#highlightLoad" prefHeight="310.0" prefWidth="200.0" />
+                  <AnchorPane fx:id="lowerLeftAnchorPane" layoutX="25.0" layoutY="235.0" prefHeight="310.0" prefWidth="200.0" styleClass="anchor-pane" stylesheets="@../css/style.css">
+                     <children>
+                        <ListView fx:id="loadListView" layoutX="5.0" layoutY="5.0" onMouseClicked="#highlightLoad" prefHeight="260.0" prefWidth="190.0" />
+                        <JFXButton fx:id="deleteLoadButton" buttonType="RAISED" layoutX="10.0" layoutY="275.0" mnemonicParsing="false" onAction="#deleteLoad" prefHeight="25.0" prefWidth="83.0" styleClass="light-blue-100" stylesheets="@../css/style.css" text="Delete Load" />
+                        <JFXButton fx:id="importLoadsButton" buttonType="RAISED" layoutX="100.0" layoutY="275.0" mnemonicParsing="false" onAction="#importLoads" prefHeight="25.0" prefWidth="90.0" styleClass="light-blue-100" stylesheets="@../css/style.css" text="Import Loads" />
+                     </children>
+                  </AnchorPane>
                   <Label fx:id="notificationLabel" alignment="CENTER_RIGHT" layoutX="25.0" layoutY="560.0" maxWidth="850.0" minWidth="850.0" prefWidth="850.0" textAlignment="CENTER" textFill="RED" wrapText="true">
                      <font>
                         <Font name="System Bold" size="12.0" />

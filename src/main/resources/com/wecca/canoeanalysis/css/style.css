@@ -1,14 +1,20 @@
-.root {
-    padding: 0;
-}
+@import url("jfoenix-design.css");
+@import url("jfoenix-fonts.css");
+
 
 .image-view {
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 5, 0.25, 0, 0);
 }
 
+.button{
+    -fx-font-family: Roboto;
+}
+
 .list-view {
     -fx-background-color: white;
-    -fx-border-color: black;
+    -fx-border-color: white;
+    -fx-border-width: 0px;
+    -fx-border-style: hidden;
     -fx-border-radius: 5;
     -fx-background-radius: 5;
 }
@@ -16,7 +22,7 @@
 .anchor-pane {
     -fx-background-color: white;
     -fx-border-color: black;
-    -fx-border-radius: 5;
-    -fx-background-radius: 5;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
 }
 
