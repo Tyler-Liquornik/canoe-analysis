@@ -14,13 +14,11 @@ public final class Canoe
     private ArrayList<PointLoad> pLoads; // point loads on the canoe
     private ArrayList<UniformDistributedLoad> dLoads; // uniformly distributed loads on the canoe
     private double m; // canoe mass (able to calculate this from exported solidworks data instead of manually?)
-    private ArrayList<Positionable> loads; // All the loads in one array //TODO decide if keeping, not used so far
 
     private Canoe() {
         this.len = 0;
         this.pLoads = new ArrayList<>();
         this.dLoads = new ArrayList<>();
-        this.loads = new ArrayList<>();
     }
 
     /**
@@ -52,11 +50,12 @@ public final class Canoe
             if (!isSupport)
                 return AddPointLoadResult.ADDED;
             else
-                p.setMag(0.00); // In case mag is -0 so that the negative deosnt display to the user
+                p.setMag(0.00); // In case mag is -0 so that the negative doesn't display to the user
 
         // Search for other loads at the same position, and combine their magnitudes
         for (PointLoad pLoad : pLoads) {
-            if (pLoad.getX() == p.getX()) {
+            if (pLoad.getX() == p.getX() && !isSupport)
+            {
                 pLoad.setMag(pLoad.getMag() + p.getMag());
                 if (pLoad.getMag() == 0) {
                     pLoads.remove(pLoad);
@@ -68,16 +67,12 @@ public final class Canoe
 
         pLoads.add(p);
         pLoads.sort(Comparator.comparingDouble(PointLoad::getX));
-        loads.add(p);
-        loads.sort(Comparator.comparingDouble(Positionable::getX));
         return AddPointLoadResult.ADDED;
     }
     public void addDLoad(UniformDistributedLoad d)
     {
         dLoads.add(d);
         dLoads.sort(Comparator.comparingDouble(UniformDistributedLoad::getX));
-        loads.add(d);
-        loads.sort(Comparator.comparingDouble(Positionable::getX));
     }
     public ArrayList<PointLoad> getPLoads() {return pLoads;}
     public ArrayList<UniformDistributedLoad> getDLoads() {return dLoads;}
