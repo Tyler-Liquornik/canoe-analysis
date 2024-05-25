@@ -1,13 +1,33 @@
-@import url("jfoenix-design.css");
-@import url("jfoenix-fonts.css");
+/* Custom Material Design Palette*/
+/* cant get these to work as variables so hard code them for now unfortunately */
+/*--primary: #BB86FC;*/
+/*--primary-variant: #3700B3;*/
+/*--secondary: #03DAC6;*/
+/*--background: #121212;*/
+/*--surface: #202020;*/
+/*--error: #CF6679;*/
+/*--on-primary: #000000;*/
+/*--on-secondary: #000000;*/
+/*--on-background: #FFFFFF;*/
+/*--on-surface: #534B5E;*/
+/*--on-error: #000000;*/
 
+.background {
+    -fx-background-color: #121212;
+}
+
+.surface {
+    -fx-background-color: #202020;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+}
 
 .image-view {
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 5, 0.25, 0, 0);
 }
 
-.button{
-    -fx-font-family: Roboto;
+.on-surface{
+    -fx-background-color: #BB86FC;
 }
 
 .list-view {
@@ -19,10 +39,8 @@
     -fx-background-radius: 5;
 }
 
-.anchor-pane {
-    -fx-background-color: white;
-    -fx-border-color: black;
-    -fx-border-radius: 10;
-    -fx-background-radius: 10;
+.field {
+    -fx-text-fill: white;
+    -fx-font-family: "Roboto";
+    -fx-alignment: center-right;
 }
-

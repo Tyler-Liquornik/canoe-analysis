@@ -20,6 +20,7 @@ import javafx.scene.paint.Color;
 
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Primary controller for longitudinal analysis of a beam
@@ -210,7 +211,8 @@ public class CanoeAnalysisController implements Initializable
         loads.sort(Comparator.comparingDouble(Positionable::getX));
         List<String> stringLoads = loads.stream()
                 .map(Positionable::toString)
-                .toList();
+                .collect(Collectors.toList());
+
 
         // Recreate the list view from the updated load list
         loadListView.getItems().clear();
@@ -295,7 +297,8 @@ public class CanoeAnalysisController implements Initializable
         UIElements.addAll(arrowBoxList);
         UIElements.sort(Comparator.comparingDouble(Positionable::getX));
         arrowBoxList.sort(Comparator.comparingDouble(ArrowBox::getLX));
-        loadContainer.getChildren().addAll((UIElements.stream().map(element -> (Node) element)).toList());
+        loadContainer.getChildren().addAll((UIElements.stream().map(element -> (Node) element)).collect(Collectors.toList()));
+
     }
 
     /**
@@ -496,7 +499,8 @@ public class CanoeAnalysisController implements Initializable
         // Create the list of current load graphics
         List<Positionable> loadContainerChildren = new ArrayList<>(loadContainer.getChildren().stream()
                 .map(load -> (Positionable) load)
-                .toList());
+                .collect(Collectors.toList()));
+
 
         // Create and add the support graphic
         double tipY = acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // +126
@@ -507,7 +511,7 @@ public class CanoeAnalysisController implements Initializable
         loadContainer.getChildren().clear();
         loadContainer.getChildren().addAll(loadContainerChildren.stream()
                 .sorted(Comparator.comparingDouble(Positionable::getX))
-                .map(load -> (Node) load).toList());
+                .map(load -> (Node) load).collect(Collectors.toList()));
     }
 
     /**

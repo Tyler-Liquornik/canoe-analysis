@@ -5,6 +5,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+
 import java.io.IOException;
 
 public class CanoeAnalysisApplication extends Application {
@@ -16,6 +18,7 @@ public class CanoeAnalysisApplication extends Application {
         Scene scene = new Scene(fxmlLoader.load(), 900, 625);
         stage.setTitle("PADDL");
         stage.setScene(scene);
+        stage.initStyle(StageStyle.UNDECORATED);//removes the top bar, need to custom make this
         stage.show();
 
         // Add the CSS file to the scene's stylesheets
