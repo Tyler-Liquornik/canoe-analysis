@@ -139,6 +139,7 @@ public class CanoeAnalysisController implements Initializable
         List<Node> loadContainerChildren = loadContainer.getChildren().stream().toList();
 
         // Apply the unique view order for each node based on type
+        // Layering priority is SupportTriangles above ArrowBoxes above Arrows
         int viewOrder = Integer.MAX_VALUE;
         for (Node node : loadContainerChildren)
         {
@@ -707,6 +708,7 @@ public class CanoeAnalysisController implements Initializable
     public void generateDiagram()
     {
         // Testing
+        System.out.println();
         for (DiagramPoint sfdPoint : Diagram.generateSfdPoints(canoe))
         {
             System.out.println("sfdPoint generated: " + sfdPoint);
@@ -715,6 +717,7 @@ public class CanoeAnalysisController implements Initializable
         DiagramLogic.setupDiagram(canoe, Diagram.generateSfdPoints(canoe), "Shear Force Diagram", "Force [kN]");
 
         // Testing
+        System.out.println();
         for (DiagramPoint bmdPoint : Diagram.generateBmdPoints(canoe))
         {
             System.out.println("bmdPoint generated: " + bmdPoint);
