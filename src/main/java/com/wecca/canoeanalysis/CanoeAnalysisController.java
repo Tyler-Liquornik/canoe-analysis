@@ -14,10 +14,8 @@ import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
-
 import java.net.URL;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Primary controller for longitudinal analysis of a beam
@@ -43,7 +41,7 @@ public class CanoeAnalysisController implements Initializable
     @FXML
     private RadioButton standsRadioButton, floatingRadioButton, submergedRadioButton;
     @FXML
-    private AnchorPane lowerRightAnchorPane, upperAnchorPane, loadContainer, lowerLeftAnchorPane, beamContainer;
+    private AnchorPane loadContainer, beamContainer;
 
     private Canoe canoe; // entity class that models the canoe as a beam
     private Beam beam; // The graphic of the beam
@@ -108,6 +106,18 @@ public class CanoeAnalysisController implements Initializable
     }
 
     /**
+     * Check if a list of text fields all contain double values.
+     * @param fields list of text fields to check.
+     * @return whether each text field contains a double value.
+     */
+    private boolean allTextFieldsAreDouble(List<TextField> fields) {
+        for (TextField field : fields) {
+            if (!validateTextAsDouble(field.getText())) return false;
+        }
+        return true;
+    }
+
+    /**
      * Remove the info message on the list view which is there for UX
      */
     public void removeListViewInfoMessage() {
@@ -120,22 +130,60 @@ public class CanoeAnalysisController implements Initializable
     }
 
     /**
-     * Highlights the selected load red in the UI
+     * Updates the view order (z-axis rendering) property of all graphics for rendering
+     * Supports are above point loads which are above distributed loads as the preferred order
+     */
+    public void updateViewOrder()
+    {
+        // Create the list of current load graphics
+        List<Node> loadContainerChildren = loadContainer.getChildren().stream().toList();
+
+        // Apply the unique view order for each node based on type
+        int viewOrder = Integer.MAX_VALUE;
+        for (Node node : loadContainerChildren)
+        {
+            if (node instanceof ArrowBox)
+                node.setViewOrder(viewOrder--);
+        }
+        for (Node node : loadContainerChildren)
+        {
+            if (node instanceof Arrow)
+                node.setViewOrder(viewOrder--);
+
+        }
+        for (Node node : loadContainerChildren)
+        {
+            if (node instanceof SupportTriangle)
+                node.setViewOrder(viewOrder--);
+        }
+    }
+
+    /**
+     * Highlights the selected load in the UI
      * Called by the list view of loads when a load is selected
      */
     public void highlightLoad()
     {
         int selectedIndex = loadListView.getSelectionModel().getSelectedIndex();
 
+        updateViewOrder();
+
         // Color the selected load red and color the others black
         for (int i = 0; i < loadContainer.getChildren().size(); i++)
         {
-            Colorable graphic = (Colorable) loadContainer.getChildren().get(i);
 
+            // Recolor the selected graphic
+            Colorable colorableGraphic = (Colorable) loadContainer.getChildren().get(i);
             if (i != selectedIndex)
-                graphic.recolor(ColorPalette.ICON.getColor());
+                colorableGraphic.recolor(ColorPalette.ICON.getColor());
             else
-                graphic.recolor(ColorPalette.PRIMARY.getColor());
+            {
+                colorableGraphic.recolor(ColorPalette.PRIMARY.getColor());
+
+                // Bring the graphic to the front of the viewing order
+                Node node = (Node) colorableGraphic;
+                node.setViewOrder(-1);
+            }
         }
     }
 
@@ -207,11 +255,11 @@ public class CanoeAnalysisController implements Initializable
         double d = Double.parseDouble(t.getText());
 
         return switch (unit) {
-            case "kN", "kN/m" -> d;
             case "N", "N/m" -> d / 1000.0;
             case "kg", "kg/m" -> (d * GRAVITY) / 1000.0;
             case "lb" -> (d * POUNDS_TO_KG * GRAVITY) / 1000.0;
-            case null, default -> (d * POUNDS_TO_KG * GRAVITY) / (1000.0 * FEET_TO_METRES);
+            case "lb/ft" -> (d * POUNDS_TO_KG * GRAVITY) / (1000.0 * FEET_TO_METRES);
+            default -> d;
         };
     }
 
@@ -485,10 +533,13 @@ public class CanoeAnalysisController implements Initializable
 
             else
             {
-                // TODO
+                // TODO: implement clipping
                 // currently: after getting here and trying to add another load you can't add any more arrows, need to fix that
             }
         }
+
+        // Update the view order for proper z-axis rendering
+        updateViewOrder();
     }
 
     /**
@@ -517,8 +568,8 @@ public class CanoeAnalysisController implements Initializable
     private void addSupportGraphic(double beamContainerX)
     {
         // Create the list of current load graphics
-        List<Positionable> loadContainerChildren = loadContainer.getChildren().stream()
-                .map(load -> (Positionable) load).collect(Collectors.toList());
+        List<Positionable> loadContainerChildren = new ArrayList<>(loadContainer.getChildren().stream()
+                .map(load -> (Positionable) load).toList());
 
 
         // Create and add the support graphic
@@ -531,6 +582,9 @@ public class CanoeAnalysisController implements Initializable
         loadContainer.getChildren().addAll(loadContainerChildren.stream()
                 .sorted(Comparator.comparingDouble(Positionable::getX))
                 .map(load -> (Node) load).toList());
+
+        // Update the view order for proper z-axis rendering
+        updateViewOrder();
     }
 
     /**
@@ -577,18 +631,9 @@ public class CanoeAnalysisController implements Initializable
                 // currently: after getting here and trying to add another load you can't add any more arrows
             }
         }
-    }
 
-    /**
-     * Check if a list of text fields all contain double values.
-     * @param fields list of text fields to check.
-     * @return whether each text field contains a double value.
-     */
-    private boolean allTextFieldsAreDouble(List<TextField> fields) {
-        for (TextField field : fields) {
-            if (!validateTextAsDouble(field.getText())) return false;
-        }
-        return true;
+        // Update the view order for proper z-axis rendering
+        updateViewOrder();
     }
 
     /**
@@ -602,6 +647,7 @@ public class CanoeAnalysisController implements Initializable
         // Controls enabling/disabling for UX
         generateGraphsButton.setDisable(false);
         disableLoadingControls(true);
+        loadListView.setDisable(false);
 
         if (standsRadioButton.isSelected())
             solveStandSystem();
