@@ -207,6 +207,9 @@ public class CanoeAnalysisController implements Initializable
      */
     public void resetLength()
     {
+        if (Objects.equals(solveSystemButton.getText(), "Undo Solve")) // TODO: fix lazy implementation, should manage the state properly
+            solveSystemButton.fire();
+
         clearLoads();
         axisLabelR.setText("X");
         axisLabelR.setLayoutX(607); // this will not be hard coded anymore once axis labels for new loads are implemented
@@ -688,12 +691,28 @@ public class CanoeAnalysisController implements Initializable
         loadListView.setDisable(false);
 
         if (standsRadioButton.isSelected())
+        {
             solveStandSystem();
+            solveSystemButton.setText("Undo Solve");
+            solveSystemButton.setOnAction(e -> undoStandsSolve());
+            solveSystemButton.setDisable(false);
+        }
         else if (floatingRadioButton.isSelected())
-            solveFloatingSystem();
+        {
+//            solveFloatingSystem();
+//            solveSystemButton.setText("Undo Solve");
+//            solveSystemButton.setOnAction(e -> undoFloatingSolve());
+//            solveSystemButton.setDisable(false);
+        }
         else if (submergedRadioButton.isSelected())
-            solveSubmergedSystem();
+        {
+//            solveSubmergedSystem();
+//            solveSystemButton.setText("Undo Solve");
+//            solveSystemButton.setOnAction(e -> undoSubmergedSolve());
+//            solveSystemButton.setDisable(false);
+        }
 
+        // Update the lod list view with the supports
         updateLoadListView();
     }
 
@@ -709,14 +728,39 @@ public class CanoeAnalysisController implements Initializable
             addPointLoad(supportLoad, true);}
     }
 
+    private void undoStandsSolve()
+    {
+        solveSystemButton.setText("Solve System");
+        solveSystemButton.setOnAction(e -> solveSystem());
+        generateGraphsButton.setDisable(true);
+        disableLoadingControls(false);
+
+        // Simulate the user selecting and deleting the supports
+        // Supports are always the first and last load
+        loadListView.getSelectionModel().select(0);
+        deleteLoad();
+        loadListView.getSelectionModel().select(loadListView.getItems().size() - 1);
+        deleteLoad();
+    }
+
     private void solveFloatingSystem()
     {
-        // TODO: Implement (consult D&A)
+        // TODO: Implement (consult Design & Analysis)
+    }
+
+    private void undoFloatingSolve()
+    {
+        // TODO: Implement (after solveFloatingSystem())
     }
 
     private void solveSubmergedSystem()
     {
-        // TODO: Implement (consult D&A)
+        // TODO: Implement (consult Design & Analysis)
+    }
+
+    private void undoSubmergedSolve()
+    {
+        // TODO: Implement (after solveSubmergedSystem())
     }
 
     /**
