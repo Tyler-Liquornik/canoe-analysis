@@ -1,8 +1,6 @@
 package com.wecca.canoeanalysis.models;
 
-import com.wecca.canoeanalysis.utility.Positionable;
-
-public class PointLoad implements Positionable
+public class PointLoad implements Load
 {
     // Fields
     private double mag; // force magnitude (kN). + / - sign indicates up / down direction

@@ -181,8 +181,8 @@ public class Diagram
         }
 
         // Remove extra point out of bounds (caused by floating point error maybe?)
-        if (points.get(points.size() - 1).getX() > end.getX())
-            points.remove(points.size() - 1);
+        if (points.getLast().getX() > end.getX())
+            points.removeLast();
 
         return points;
     }
@@ -258,7 +258,7 @@ public class Diagram
         // Gets the SFD points for the canoe
         List<DiagramPoint> sfdPoints = generateSfdPoints(canoe);
         List<DiagramPoint> bmdPoints = new ArrayList<>();
-        DiagramPoint firstPoint = sfdPoints.get(0);
+        DiagramPoint firstPoint = sfdPoints.getFirst();
 
         bmdPoints.add(new DiagramPoint(0,0));
         double currY = 0;
@@ -275,7 +275,7 @@ public class Diagram
 
             firstPoint = curr;
             if (!bmdPoints.isEmpty()) {
-                currY = bmdPoints.get(bmdPoints.size() - 1).getY();
+                currY = bmdPoints.getLast().getY();
             }
         }
         bmdPoints.add(new DiagramPoint(canoe.getLen(),0));

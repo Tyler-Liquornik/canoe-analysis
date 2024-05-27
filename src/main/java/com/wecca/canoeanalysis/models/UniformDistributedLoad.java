@@ -1,8 +1,6 @@
 package com.wecca.canoeanalysis.models;
 
-import com.wecca.canoeanalysis.utility.Positionable;
-
-public class UniformDistributedLoad implements Positionable {
+public class UniformDistributedLoad implements Load {
     private double x; // left bound of the distributed load
     private double rX; // right bound of the distributed load
     private double w; // load in kN/m
