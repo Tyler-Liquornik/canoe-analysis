@@ -1,3 +1,12 @@
+.chart {
+    -fx-background-color: #121212;
+    -fx-border-width: 1px;
+}
+
+.chart-plot-background {
+    -fx-background-color: #202020;
+}
+
 .chart-area-symbol {
     -fx-background-radius: 1px;
     -fx-padding: 0px;
@@ -6,40 +15,43 @@
 .axis-label {
     -fx-font-size: 16px;
     -fx-font-weight: bold;
-    -fx-text-fill: #333;
-    -fx-font-family: 'Arial', sans-serif;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-family: "Roboto";
 }
 
 .axis-tick-label {
     -fx-font-size: 11px;
     -fx-rotate: 0;
     -fx-alignment: center-left;
-    -fx-font-family: 'Arial', sans-serif;
+    -fx-font-family: "Roboto";
+    -fx-text-fill: #FFFFFF;
 }
 
 .chart-title {
     -fx-font-weight: bold;
-    -fx-text-fill: #333;
-    -fx-font-family: 'Arial', sans-serif;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-family: "Roboto";
 }
 
 .chart-series-area-line {
-    -fx-stroke: #0CAFFF;
+    -fx-stroke: #BB86FC;
     -fx-stroke-width: 2px;
 }
 
 .chart-series-area-fill {
-    -fx-fill: #0CAFFF;
-    -fx-opacity: 0.2;
-}
-
-.chart-series-area-fill:hover {
-    -fx-fill: #0CAFFF;
+    -fx-fill: #BB86FC;
     -fx-opacity: 0.4;
 }
 
-.chart {
-    -fx-background-color: #FFF;
-    -fx-border-color: #CCC;
-    -fx-border-width: 1px;
+.chart-series-area-fill:hover {
+    -fx-fill: #BB86FC;
+    -fx-opacity: 0.6;
 }
+
+.axis:bottom > .axis-label,
+.axis:right > .axis-label,
+.axis-tick-mark,
+.axis-minor-tick-mark {
+    -fx-fill: white;
+}
+

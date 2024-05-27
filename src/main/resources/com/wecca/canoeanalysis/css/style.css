@@ -35,13 +35,17 @@
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 5, 0.25, 0, 0);
 }
 
-.list-cell:focused, .list-cell:even, .list-cell:odd{
+/* List views */
+.list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:focused,
+.list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:even,
+.list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:odd {
     -fx-border-radius: 5;
     -fx-background-radius: 5;
     -fx-background-color: #282828;
     -fx-text-fill: white;
 }
 
+/* Combo box  popup menu */
 .combo-box > .list-cell,
 .combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:focused,
 .combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:even,
