@@ -10,7 +10,7 @@ public enum ColorPalette {
     SURFACE("#202020"),
     ABOVE_SURFACE("#282828"),
     ERROR("#CF6679"),
-    ICON("#000000"), // this is black here for now, white ugly need to fio
+    ICON("#FFFFFF"),
     TEXT_ON_SURFACE("#534B5E");
 
     private final Color color;

@@ -13,8 +13,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 
 import java.net.URL;
@@ -27,7 +25,9 @@ import java.util.stream.Collectors;
 public class CanoeAnalysisController implements Initializable
 {
     @FXML
-    private Label lengthLabelRTemp, lengthLabelR, notificationLabel;
+    private Label axisLabelR, notificationLabel, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,
+            pointTitleLabel, supportTitleLabel, distributedDirectionLabel, distributedMagntiudeLabel,
+            distributedIntervalLabel, distributedTitleLabel;
     @FXML
     private ListView<String> loadListView;
 
@@ -53,12 +53,13 @@ public class CanoeAnalysisController implements Initializable
     private final double GRAVITY = 9.80665; // gravity on earth
 
     private final double[] acceptedMagRange = new double[] {0.05, 10}; // Acceptable magnitude range (kN)
-
     private final double[] acceptedLengthRange = new double[] {0.05, 20}; // Acceptable canoe length range (m)
     private final int[] acceptedArrowHeightRange = new int[] {14, 84}; // Acceptable arrow height range (px)
     // Cannot get this from imageView, it hasn't been instantiated until initialize is called
     // Is there a workaround to this that doesn't require adding the imageView manually in code
     // Also this is awkward to add it in with all the fields at the top
+
+    boolean addedLoad; // managers the state of the list view for displaying its default message
 
     /**
      * Put a group of radio buttons into a toggle group (only allow one to be selected at a time)
@@ -107,6 +108,18 @@ public class CanoeAnalysisController implements Initializable
     }
 
     /**
+     * Remove the info message on the list view which is there for UX
+     */
+    public void removeListViewInfoMessage() {
+        if (!addedLoad)
+        {
+            loadListView.setStyle("-fx-font-weight: normal");
+            loadListView.getItems().clear();
+            addedLoad = true;
+        }
+    }
+
+    /**
      * Highlights the selected load red in the UI
      * Called by the list view of loads when a load is selected
      */
@@ -132,6 +145,11 @@ public class CanoeAnalysisController implements Initializable
      */
     public void setCanoeLength()
     {
+        // Default list view message
+        loadListView.setStyle("-fx-font-weight: bold");
+        loadListView.getItems().add("Add a load to begin");
+
+
         // Convert to metric
         double len = getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
 
@@ -142,8 +160,8 @@ public class CanoeAnalysisController implements Initializable
             canoe.setLen(len);
 
             // Change the label on the scale
-            lengthLabelRTemp.setText("");
-            lengthLabelR.setText(String.format("%.2f m", canoe.getLen()));
+            axisLabelR.setText(String.format("%.2f m", canoe.getLen()));
+            axisLabelR.setLayoutX(595); // this will not be hard coded anymore once axis labels for new loads are implemented
 
             // Clear potential alert and reset access to controls
             notificationLabel.setText("");
@@ -151,6 +169,7 @@ public class CanoeAnalysisController implements Initializable
             canoeLengthTextField.setDisable(true);
             canoeLengthComboBox.setDisable(true);
             setCanoeLengthButton.setDisable(true);
+            axisLabelR.setDisable(true);
         }
         // Populate the alert telling the user the length they've entered is out of the allowed range
         else
@@ -187,11 +206,13 @@ public class CanoeAnalysisController implements Initializable
         String unit = c.getSelectionModel().getSelectedItem();
         double d = Double.parseDouble(t.getText());
 
-        if (Objects.equals(unit, "kN") || Objects.equals(unit, "kN/m")) {return d;}
-        else if (Objects.equals(unit, "N") || Objects.equals(unit, "N/m")) {return d / 1000.0;}
-        else if (Objects.equals(unit, "kg") || Objects.equals(unit, "kg/m")) {return (d * GRAVITY) / 1000.0;}
-        else if (Objects.equals(unit, "lb")) {return (d * POUNDS_TO_KG * GRAVITY) / 1000.0;}
-        else {return (d * POUNDS_TO_KG * GRAVITY) / (1000.0 * FEET_TO_METRES);} // lb/ft option
+        return switch (unit) {
+            case "kN", "kN/m" -> d;
+            case "N", "N/m" -> d / 1000.0;
+            case "kg", "kg/m" -> (d * GRAVITY) / 1000.0;
+            case "lb" -> (d * POUNDS_TO_KG * GRAVITY) / 1000.0;
+            case null, default -> (d * POUNDS_TO_KG * GRAVITY) / (1000.0 * FEET_TO_METRES);
+        };
     }
 
     /**
@@ -206,7 +227,7 @@ public class CanoeAnalysisController implements Initializable
         loads.sort(Comparator.comparingDouble(Positionable::getX));
         List<String> stringLoads = loads.stream()
                 .map(Positionable::toString)
-                .collect(Collectors.toList());
+                .toList();
 
 
         // Recreate the list view from the updated load list
@@ -292,7 +313,7 @@ public class CanoeAnalysisController implements Initializable
         UIElements.addAll(arrowBoxList);
         UIElements.sort(Comparator.comparingDouble(Positionable::getX));
         arrowBoxList.sort(Comparator.comparingDouble(ArrowBox::getLX));
-        loadContainer.getChildren().addAll((UIElements.stream().map(element -> (Node) element)).collect(Collectors.toList()));
+        loadContainer.getChildren().addAll((UIElements.stream().map(element -> (Node) element)).toList());
 
     }
 
@@ -347,6 +368,9 @@ public class CanoeAnalysisController implements Initializable
      */
     public void addPointLoad()
     {
+        // Removes the default list view message if this is the first load
+        removeListViewInfoMessage();
+
         // Clear previous alert label
         notificationLabel.setText("");
 
@@ -388,6 +412,9 @@ public class CanoeAnalysisController implements Initializable
      */
     public void addDistributedLoad()
     {
+        // Removes the default list view message if this is the first load
+        removeListViewInfoMessage();
+
         // Clear previous alert labels
         notificationLabel.setText("");
 
@@ -492,9 +519,8 @@ public class CanoeAnalysisController implements Initializable
     private void addSupportGraphic(double beamContainerX)
     {
         // Create the list of current load graphics
-        List<Positionable> loadContainerChildren = new ArrayList<>(loadContainer.getChildren().stream()
-                .map(load -> (Positionable) load)
-                .collect(Collectors.toList()));
+        List<Positionable> loadContainerChildren = loadContainer.getChildren().stream()
+                .map(load -> (Positionable) load).collect(Collectors.toList());
 
 
         // Create and add the support graphic
@@ -506,7 +532,7 @@ public class CanoeAnalysisController implements Initializable
         loadContainer.getChildren().clear();
         loadContainer.getChildren().addAll(loadContainerChildren.stream()
                 .sorted(Comparator.comparingDouble(Positionable::getX))
-                .map(load -> (Node) load).collect(Collectors.toList()));
+                .map(load -> (Node) load).toList());
     }
 
     /**
@@ -572,6 +598,8 @@ public class CanoeAnalysisController implements Initializable
      * Distributes call to appropriate method and re-renders loads.
      */
     public void solveSystem() {
+        // Removes the default list view message if this is the first load
+        removeListViewInfoMessage();
 
         // Controls enabling/disabling for UX
         generateGraphsButton.setDisable(false);
@@ -618,7 +646,10 @@ public class CanoeAnalysisController implements Initializable
         List<Control> controls = Arrays.asList(solveSystemButton, pointLoadButton, distributedLoadButton, floatingRadioButton,
                 standsRadioButton, submergedRadioButton, distributedMagnitudeComboBox, distributedMagnitudeTextField,
                 pointMagnitudeComboBox, pointMagnitudeTextField, pointLocationTextField, pointLocationComboBox, pointDirectionComboBox,
-                distributedIntervalTextFieldL, distributedIntervalTextFieldR, distributedIntervalComboBox, distributedDirectionComboBox
+                distributedIntervalTextFieldL, distributedIntervalTextFieldR, distributedIntervalComboBox, distributedDirectionComboBox,
+                deleteLoadButton, clearLoadsButton, loadListView, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,
+                pointTitleLabel, supportTitleLabel, distributedDirectionLabel, distributedMagntiudeLabel,
+                distributedIntervalLabel, distributedTitleLabel
         );
 
         for (Control control : controls) {
@@ -651,7 +682,7 @@ public class CanoeAnalysisController implements Initializable
     public void deleteLoad() {
     }
 
-    public void importLoads() {
+    public void clearLoads() {
     }
 
     /**
@@ -697,7 +728,8 @@ public class CanoeAnalysisController implements Initializable
         for (TextField tf : tfs) {tf.setText("0.00");}
 
         // Create and add the beam
-        beam = new Beam(0, 84, 580, 25);
+        beam = new Beam(0, 84, beamContainer.getPrefWidth(), 25);
+        JFXDepthManager.setDepth(beam, 4);
         beamContainer.getChildren().add(beam);
     }
 }
