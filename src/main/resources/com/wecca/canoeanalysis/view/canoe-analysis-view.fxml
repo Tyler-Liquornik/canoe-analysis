@@ -9,7 +9,6 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ToolBar?>
-<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.paint.Color?>
 <?import javafx.scene.shape.Line?>
@@ -154,11 +153,7 @@
                      </font>
                   </Label>
                   <AnchorPane fx:id="loadContainer" layoutX="25.0" layoutY="10.0" prefHeight="210.0" prefWidth="590.0" />
-                  <AnchorPane fx:id="beamImageContainer" layoutX="25.0" layoutY="10.0" prefHeight="210.0" prefWidth="590.0">
-                     <children>
-                        <ImageView fx:id="beamImageView" fitHeight="42.0" fitWidth="580.0" layoutX="5.0" layoutY="84.0" pickOnBounds="true" preserveRatio="true" />
-                     </children>
-                  </AnchorPane>
+                  <AnchorPane fx:id="beamContainer" layoutX="25.0" layoutY="10.0" prefHeight="210.0" prefWidth="590.0" />
                </children>
             </AnchorPane>
             <AnchorPane fx:id="lowerLeftAnchorPane" layoutX="25.0" layoutY="235.0" prefHeight="310.0" prefWidth="200.0" styleClass="surface" stylesheets="@../css/style.css" AnchorPane.bottomAnchor="55.0" AnchorPane.leftAnchor="25.0" AnchorPane.rightAnchor="675.0" AnchorPane.topAnchor="235.0">
