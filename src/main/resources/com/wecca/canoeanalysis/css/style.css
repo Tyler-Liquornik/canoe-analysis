@@ -1,16 +1,18 @@
 /* Custom Material Design Palette*/
-/* cant get these to work as variables so hard code them for now unfortunately */
+@import url("font.css");
+
+/* Cant get these to work as variables so hard code them for now unfortunately */
 /*--primary: #BB86FC;*/
 /*--primary-variant: #3700B3;*/
 /*--secondary: #03DAC6;*/
 /*--background: #121212;*/
 /*--surface: #202020;*/
+/*--above-surface: #282828
 /*--error: #CF6679;*/
-/*--on-primary: #000000;*/
-/*--on-secondary: #000000;*/
-/*--on-background: #FFFFFF;*/
-/*--on-surface: #534B5E;*/
-/*--on-error: #000000;*/
+/*--text-on-primary: #000000;*/
+/*--text-on-secondary: #000000;*/
+/*--text-on-background: #FFFFFF;*/
+/*--text-on-surface: #534B5E;*/
 
 .background {
     -fx-background-color: #121212;
@@ -22,25 +24,44 @@
     -fx-border-radius: 10;
 }
 
-.image-view {
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 5, 0.25, 0, 0);
-}
-
-.on-surface{
-    -fx-background-color: #BB86FC;
-}
-
-.list-view {
-    -fx-background-color: white;
-    -fx-border-color: white;
-    -fx-border-width: 0px;
+.above-surface {
+    -fx-background-color: #282828;
     -fx-border-style: hidden;
     -fx-border-radius: 5;
     -fx-background-radius: 5;
 }
 
+.image-view {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 5, 0.25, 0, 0);
+}
+
+.list-cell:focused, .list-cell:even, .list-cell:odd{
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-background-color: #282828;
+    -fx-text-fill: white;
+}
+
+.combo-box > .list-cell,
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:focused,
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:even,
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:odd {
+    -fx-border-radius: 0;
+    -fx-border-color: #202020;
+    -fx-background-radius: 0;
+    -fx-background-color: #202020;
+    -fx-text-fill: white;
+}
+
+.combo-box > .list-cell {
+    -fx-padding: 4 8 4 0;
+}
+
+.action-object{
+    -fx-background-color: #BB86FC;
+}
+
 .field {
     -fx-text-fill: white;
     -fx-font-family: "Roboto";
-    -fx-alignment: center-right;
 }

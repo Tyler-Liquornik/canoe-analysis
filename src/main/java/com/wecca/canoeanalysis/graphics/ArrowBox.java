@@ -20,6 +20,8 @@ public class ArrowBox extends Group implements Colorable, Positionable
     private Rectangle box;
     private Line borderLine;
 
+    private final static double defaultThickness = 2;
+
     // Constructor
     public ArrowBox(double lX, double startY, double rX, double endY)
     {
@@ -41,8 +43,10 @@ public class ArrowBox extends Group implements Colorable, Positionable
         else
             box = new Rectangle(lX, endY - 2, rX - lX, startY - endY + 2);
 
-        box.setFill(lighten(Color.BLACK));
+        box.setFill(lighten(ColorPalette.ICON.getColor()));
+
         borderLine = new Line(lX, startY, rX, startY);
+        borderLine.setStrokeWidth(defaultThickness);
 
         getChildren().addAll(box, lArrow, rArrow, borderLine);
     }
