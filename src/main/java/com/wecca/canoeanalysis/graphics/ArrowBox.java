@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.graphics;
 
+import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.utility.Positionable;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
@@ -20,7 +21,7 @@ public class ArrowBox extends Group implements Colorable, Positionable
     private Rectangle box;
     private Line borderLine;
 
-    private final static double defaultThickness = 2;
+    private final static double defaultThickness = 1;
 
     // Constructor
     public ArrowBox(double lX, double startY, double rX, double endY)
@@ -43,12 +44,16 @@ public class ArrowBox extends Group implements Colorable, Positionable
         else
             box = new Rectangle(lX, endY - 2, rX - lX, startY - endY + 2);
 
-        box.setFill(lighten(ColorPalette.ICON.getColor()));
+        // box.setFill(lighten(ColorPalette.ICON.getColor()));
+        box.setFill(ColorPalette.ABOVE_SURFACE.getColor()); // hard coded for now as lightening looks weird for white arrows
 
         borderLine = new Line(lX, startY, rX, startY);
+        borderLine.setStroke(ColorPalette.ICON.getColor());
         borderLine.setStrokeWidth(defaultThickness);
 
         getChildren().addAll(box, lArrow, rArrow, borderLine);
+
+        JFXDepthManager.setDepth(this, 4);
     }
 
     // Accessors
@@ -81,6 +86,10 @@ public class ArrowBox extends Group implements Colorable, Positionable
         lArrow.setFill(color);
         rArrow.setFill(color);
         borderLine.setStroke(color);
-        box.setFill(lighten(color));
+
+        if (color.equals(Color.WHITE)) // hard coded for now as lightening looks weird for white arrows
+            box.setFill(ColorPalette.ABOVE_SURFACE.getColor());
+        else
+            box.setFill(lighten(color));
     }
 }

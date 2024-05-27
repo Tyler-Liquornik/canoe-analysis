@@ -1,4 +1,5 @@
 package com.wecca.canoeanalysis.graphics;
+import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.utility.Positionable;
 import javafx.scene.Group;
 import javafx.scene.shape.*;
@@ -59,7 +60,8 @@ public class SupportTriangle extends Group implements Colorable, Positionable
                 x1, y,
                 x2, y
         );
-        triangle.setFill(lighten(ColorPalette.ICON.getColor()));
+        // triangle.setFill(lighten(ColorPalette.ICON.getColor()));
+        triangle.setFill(ColorPalette.ABOVE_SURFACE.getColor()); // hard coded for now as lightening looks weird for white arrows
 
         // Create the lines sticking out
         Line baseLine = new Line(x1 - sideLength / 2, y, x2 + sideLength / 2, y);
@@ -71,6 +73,8 @@ public class SupportTriangle extends Group implements Colorable, Positionable
 
         // Add the shapes to the group
         this.getChildren().addAll(triangle, baseLine);
+
+        JFXDepthManager.setDepth(this, 4);
     }
 
     // Get a lightened version of a color
@@ -87,6 +91,10 @@ public class SupportTriangle extends Group implements Colorable, Positionable
     public void recolor(Color color) {
         baseLine.setStroke(color);
         triangle.setStroke(color);
-        triangle.setFill(lighten(color));
+
+        if (color.equals(Color.WHITE)) // hard coded for now as lightening looks weird for white arrows
+            triangle.setFill(ColorPalette.ABOVE_SURFACE.getColor());
+        else
+            triangle.setFill(lighten(color));
     }
 }
