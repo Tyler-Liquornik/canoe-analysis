@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis;
 
+import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.diagrams.Diagram;
 import com.wecca.canoeanalysis.diagrams.DiagramLogic;
 import com.wecca.canoeanalysis.diagrams.DiagramPoint;
@@ -8,7 +9,6 @@ import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.utility.Positionable;
 import com.wecca.canoeanalysis.utility.SystemSolver;
 import javafx.collections.FXCollections;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
@@ -16,7 +16,6 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.paint.Color;
 
 import java.net.URL;
 import java.util.*;
@@ -31,6 +30,7 @@ public class CanoeAnalysisController implements Initializable
     private Label lengthLabelRTemp, lengthLabelR, notificationLabel;
     @FXML
     private ListView<String> loadListView;
+
     @FXML
     private Button solveSystemButton, pointLoadButton, distributedLoadButton, setCanoeLengthButton, generateGraphsButton,
             clearLoadsButton, deleteLoadButton;
@@ -61,8 +61,7 @@ public class CanoeAnalysisController implements Initializable
     // Is there a workaround to this that doesn't require adding the imageView manually in code
     // Also this is awkward to add it in with all the fields at the top
 
-    private final double adjFactor = 5; // beamImageView at x = 5 in beamContainer (fix hard coded number later)
-
+    private final double adjFactorX = 5; // beamImageView at x = 5 in beamContainer (fix hard coded number later)
 
     /**
      * Put a group of radio buttons into a toggle group (only allow one to be selected at a time)
@@ -124,9 +123,9 @@ public class CanoeAnalysisController implements Initializable
             Colorable graphic = (Colorable) loadContainer.getChildren().get(i);
 
             if (i != selectedIndex)
-                graphic.recolor(Color.BLACK);
+                graphic.recolor(ColorPalette.ICON.getColor());
             else
-                graphic.recolor(Color.RED);
+                graphic.recolor(ColorPalette.PRIMARY.getColor());
         }
     }
 
@@ -162,7 +161,6 @@ public class CanoeAnalysisController implements Initializable
             notificationLabel.setText("Length must be between 0.05m and 20m");
         }
     }
-
 
     /**
      * Convert the distance in the text field to m from the unit selected in the combo box
@@ -248,7 +246,7 @@ public class CanoeAnalysisController implements Initializable
                 int startY = p.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
                 int endY = p.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
 
-                Arrow arrow = new Arrow(p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, startY, p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, endY);
+                Arrow arrow = new Arrow(p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactorX, startY, p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactorX, endY);
                 arrowList.add(arrow);
             }
 
@@ -258,7 +256,7 @@ public class CanoeAnalysisController implements Initializable
                 int endY = p.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
                 int deltaY = (int) ((acceptedArrowHeightRange[1] - acceptedArrowHeightRange[0]) * (Math.abs(p.getMag()) / maxMag));
                 int startY = p.getMag() < 0 ? acceptedArrowHeightRange[1] - deltaY : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight() + deltaY;
-                Arrow arrow = new Arrow(p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, startY, p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, endY);
+                Arrow arrow = new Arrow(p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactorX, startY, p.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactorX, endY);
                 arrowList.add(arrow);
             }
         }
@@ -275,7 +273,7 @@ public class CanoeAnalysisController implements Initializable
                 int startY = d.getW() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
                 int endY = d.getW() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); //126
 
-                ArrowBox arrowBox = new ArrowBox(d.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, startY, d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, endY);
+                ArrowBox arrowBox = new ArrowBox(d.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactorX, startY, d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactorX, endY);
                 arrowBoxList.add(arrowBox);
             }
 
@@ -286,7 +284,7 @@ public class CanoeAnalysisController implements Initializable
                 int deltaY = (int) ((acceptedArrowHeightRange[1] - acceptedArrowHeightRange[0]) * (Math.abs(d.getW()) / maxMag));
                 int startY = d.getW() < 0 ? acceptedArrowHeightRange[1] - deltaY : acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight() + deltaY;
 
-                ArrowBox arrowBox = new ArrowBox(d.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, startY, d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactor, endY);
+                ArrowBox arrowBox = new ArrowBox(d.getXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactorX, startY, d.getRXScaled(beamImageView.getFitWidth(), canoe.getLen()) + adjFactorX, endY);
                 arrowBoxList.add(arrowBox);
             }
         }
@@ -451,7 +449,7 @@ public class CanoeAnalysisController implements Initializable
         if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2)
         {
             int startY = dLoad.getW() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // 196
-            ArrowBox arrowBox = new ArrowBox(scaledLX + adjFactor, startY, scaledRX + adjFactor, endY);
+            ArrowBox arrowBox = new ArrowBox(scaledLX + adjFactorX, startY, scaledRX + adjFactorX, endY);
             loadContainer.getChildren().add(arrowBox);
         }
 
@@ -504,7 +502,7 @@ public class CanoeAnalysisController implements Initializable
 
         // Create and add the support graphic
         double tipY = acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // +126
-        SupportTriangle support = new SupportTriangle(beamContainerX + adjFactor, tipY);
+        SupportTriangle support = new SupportTriangle(beamContainerX + adjFactorX, tipY);
         loadContainerChildren.add(support);
 
         // Clear graphics the load container and add the new list of load graphics including the support, all sorted
@@ -540,7 +538,7 @@ public class CanoeAnalysisController implements Initializable
         if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2 && result != AddPointLoadResult.REMOVED)
         {
             int startY = pLoad.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beamImageView.getFitHeight(); // +196
-            Arrow arrow = new Arrow(beamContainerX + adjFactor, startY, beamContainerX + adjFactor, endY);
+            Arrow arrow = new Arrow(beamContainerX + adjFactorX, startY, beamContainerX + adjFactorX, endY);
             loadContainer.getChildren().add(arrow);
         }
 
@@ -667,6 +665,9 @@ public class CanoeAnalysisController implements Initializable
         // Disable most buttons on startup to prevent inputs in the wrong order
         disableLoadingControls(true);
         generateGraphsButton.setDisable(true);
+
+        // Css styling
+        JFXDepthManager.setDepth(loadListView, 4);
 
         // Loading Images
         Image beamImage = new Image("file:src/main/resources/com/wecca/canoeanalysis/images/beam.png");

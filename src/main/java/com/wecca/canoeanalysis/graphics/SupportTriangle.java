@@ -53,16 +53,17 @@ public class SupportTriangle extends Group implements Colorable, Positionable
 
         // Create the triangle polygon
         Polygon triangle = new Polygon();
+        triangle.setStroke(ColorPalette.ICON.getColor());
         triangle.getPoints().addAll(
                 tipX, tipY,
                 x1, y,
                 x2, y
         );
-        triangle.setFill(lighten(Color.BLACK));
-        triangle.setStroke(Color.BLACK);
+        triangle.setFill(lighten(ColorPalette.ICON.getColor()));
 
         // Create the lines sticking out
         Line baseLine = new Line(x1 - sideLength / 2, y, x2 + sideLength / 2, y);
+        baseLine.setStroke(ColorPalette.ICON.getColor());
 
         // Set fields
         this.triangle = triangle;

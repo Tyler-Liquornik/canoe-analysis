@@ -22,6 +22,7 @@ public class CanoeAnalysisApplication extends Application {
         stage.show();
 
         // Add the CSS file to the scene's stylesheets
+        scene.getStylesheets().add(getClass().getResource("css/font.css").toExternalForm());
         scene.getStylesheets().add(getClass().getResource("css/style.css").toExternalForm());
 
         // Adding Logo Icon
