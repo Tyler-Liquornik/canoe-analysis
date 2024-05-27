@@ -69,3 +69,47 @@
     -fx-text-fill: white;
     -fx-font-family: "Roboto";
 }
+
+.scroll-bar:horizontal {
+    -fx-background-color: #282828;
+    -fx-background-insets: 0, 1;
+}
+
+.scroll-bar:vertical {
+    -fx-background-color: #282828;
+    -fx-background-insets: 0, 1;
+}
+
+.scroll-bar > .thumb {
+    -fx-background-color: #BB86FC;
+    -fx-background-insets: 0;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+}
+
+.scroll-bar > .track {
+    -fx-background-color: #282828;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+
+.scroll-bar > .track {
+    -fx-background-color: #282828;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+
+.scroll-bar > .increment-button, .scroll-bar > .decrement-button,
+.scroll-bar:horizontal > .increment-button, .scroll-bar:horizontal > .decrement-button,
+.scroll-bar:vertical > .increment-button, .scroll-bar:vertical > .decrement-button {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+}
+
+
+
+
+
+
+

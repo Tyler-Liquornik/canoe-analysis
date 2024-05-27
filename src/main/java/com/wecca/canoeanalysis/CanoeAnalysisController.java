@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class CanoeAnalysisController implements Initializable
 {
     @FXML
-    private Label axisLabelR, notificationLabel, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,
+    private Label axisLabelR, lengthLabel, notificationLabel, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,
             pointTitleLabel, supportTitleLabel, distributedDirectionLabel, distributedMagntiudeLabel,
             distributedIntervalLabel, distributedTitleLabel;
     @FXML
@@ -169,7 +169,7 @@ public class CanoeAnalysisController implements Initializable
             canoeLengthTextField.setDisable(true);
             canoeLengthComboBox.setDisable(true);
             setCanoeLengthButton.setDisable(true);
-            axisLabelR.setDisable(true);
+            lengthLabel.setDisable(true);
         }
         // Populate the alert telling the user the length they've entered is out of the allowed range
         else
@@ -368,9 +368,6 @@ public class CanoeAnalysisController implements Initializable
      */
     public void addPointLoad()
     {
-        // Removes the default list view message if this is the first load
-        removeListViewInfoMessage();
-
         // Clear previous alert label
         notificationLabel.setText("");
 
@@ -384,7 +381,6 @@ public class CanoeAnalysisController implements Initializable
             // Apply direction
             if (Objects.equals(direction, "Down")) {mag *= -1;}
 
-
             // Validate the load is being added within the length of the canoe
             if (!(0 <= x && x <= canoe.getLen()))
                 notificationLabel.setText("Load must be contained within the canoe's length");
@@ -394,6 +390,9 @@ public class CanoeAnalysisController implements Initializable
 
             else
             {
+                // Removes the default list view message if this is the first load
+                removeListViewInfoMessage();
+
                 // Add the load to canoe, and the load arrow on the GUI
                 PointLoad p = new PointLoad(mag, x);
                 addPointLoad(p, false);
@@ -411,11 +410,7 @@ public class CanoeAnalysisController implements Initializable
      * Main logic handled in addDistributedLoadToCanoe method
      */
     public void addDistributedLoad()
-    {
-        // Removes the default list view message if this is the first load
-        removeListViewInfoMessage();
-
-        // Clear previous alert labels
+    {// Clear previous alert labels
         notificationLabel.setText("");
 
         // Validate the entered numbers are doubles
@@ -440,6 +435,9 @@ public class CanoeAnalysisController implements Initializable
 
             else
                 {
+                    // Removes the default list view message if this is the first load
+                    removeListViewInfoMessage();
+
                     // Add the load to canoe, and update the ListView
                     UniformDistributedLoad d = new UniformDistributedLoad(l, r, mag);
                     addDistributedLoadGraphic(d);
@@ -680,9 +678,11 @@ public class CanoeAnalysisController implements Initializable
     }
 
     public void deleteLoad() {
+        // TODO: Implement
     }
 
     public void clearLoads() {
+        // TODO: Implement
     }
 
     /**

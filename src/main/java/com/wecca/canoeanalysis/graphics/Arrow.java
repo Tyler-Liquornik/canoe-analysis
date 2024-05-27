@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.graphics;
 
+import com.jfoenix.effects.JFXDepthManager;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
@@ -10,7 +11,7 @@ public class Arrow extends Path implements Colorable, Positionable {
 
     // Fields
     private static final double defaultArrowHeadSize = 10;
-    private static final double defaultThickness = 2;
+    private static final double defaultThickness = 1;
 
     private double startX;
     private double startY;
@@ -31,6 +32,7 @@ public class Arrow extends Path implements Colorable, Positionable {
         setFill(ColorPalette.ICON.getColor());
 
         makeArrow(startX, startY, endX, endY, arrowHeadSize);
+        JFXDepthManager.setDepth(this, 4);
     }
 
     public Arrow(double startX, double startY, double endX, double endY) {

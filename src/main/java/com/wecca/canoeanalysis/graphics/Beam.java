@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.graphics;
 
+import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.utility.Positionable;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
@@ -56,6 +57,8 @@ public class Beam extends Group implements Positionable, Colorable {
 
         // Adding elements to the group
         getChildren().addAll(beam, topBorder, bottomBorder, leftBorder, rightBorder);
+
+        JFXDepthManager.setDepth(this, 4);
     }
 
     // Accessors
