@@ -61,12 +61,7 @@
     -fx-font-family: "Roboto";
 }
 
-.scroll-bar:horizontal {
-    -fx-background-color: #282828;
-    -fx-background-insets: 0, 3;
-}
-
-.scroll-bar:vertical {
+.scroll-bar {
     -fx-background-color: #282828;
     -fx-background-insets: 0, 3;
 }
