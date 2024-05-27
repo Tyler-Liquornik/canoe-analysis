@@ -13,12 +13,14 @@ public final class Canoe
     private double len; // canoe length
     private ArrayList<PointLoad> pLoads; // point loads on the canoe
     private ArrayList<UniformDistributedLoad> dLoads; // uniformly distributed loads on the canoe
+    private ArrayList<Load> loads; // will sync with listview and loadContainer order
     private double m; // canoe mass (able to calculate this from exported solidworks data instead of manually?)
 
     private Canoe() {
         this.len = 0;
         this.pLoads = new ArrayList<>();
         this.dLoads = new ArrayList<>();
+        this.loads = new ArrayList<>();
     }
 
     /**
@@ -67,12 +69,16 @@ public final class Canoe
 
         pLoads.add(p);
         pLoads.sort(Comparator.comparingDouble(PointLoad::getX));
+        loads.add(p);
+        loads.sort(Comparator.comparingDouble(Load::getX));
         return AddPointLoadResult.ADDED;
     }
     public void addDLoad(UniformDistributedLoad d)
     {
         dLoads.add(d);
         dLoads.sort(Comparator.comparingDouble(UniformDistributedLoad::getX));
+        loads.add(d);
+        loads.sort(Comparator.comparingDouble(Load::getX));
     }
     public ArrayList<PointLoad> getPLoads() {return pLoads;}
     public ArrayList<UniformDistributedLoad> getDLoads() {return dLoads;}
@@ -144,6 +150,37 @@ public final class Canoe
         }
 
         return min;
+    }
+
+    /**
+     * Regenerates the pLoads and dLoads lists from the main loads list.
+     */
+    private void regenerateLoads() {
+        pLoads.clear();
+        dLoads.clear();
+
+        for (Load load : loads) {
+            if (load instanceof PointLoad) {
+                pLoads.add((PointLoad) load);
+            } else if (load instanceof UniformDistributedLoad) {
+                dLoads.add((UniformDistributedLoad) load);
+            }
+        }
+
+        // Sort the regenerated lists
+        pLoads.sort(Comparator.comparingDouble(PointLoad::getX));
+        dLoads.sort(Comparator.comparingDouble(UniformDistributedLoad::getX));
+    }
+
+    public void removeLoad(int index) {
+        loads.remove(index);
+        regenerateLoads();
+    }
+
+    public void clearLoads() {
+        loads.clear();
+        pLoads.clear();
+        dLoads.clear();
     }
 
 

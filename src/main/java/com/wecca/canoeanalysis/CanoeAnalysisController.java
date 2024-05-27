@@ -57,8 +57,6 @@ public class CanoeAnalysisController implements Initializable
     // Is there a workaround to this that doesn't require adding the imageView manually in code
     // Also this is awkward to add it in with all the fields at the top
 
-    boolean addedLoad; // managers the state of the list view for displaying its default message
-
     /**
      * Put a group of radio buttons into a toggle group (only allow one to be selected at a time)
      * Have one of the buttons be selected by default
@@ -118,14 +116,30 @@ public class CanoeAnalysisController implements Initializable
     }
 
     /**
-     * Remove the info message on the list view which is there for UX
+     * Toggles settings for empty load list
+     * Includes a placeholder list item, enabled/disabled status of buttons, and styling
      */
-    public void removeListViewInfoMessage() {
-        if (!addedLoad)
+    public void enableEmptyLoadListSettings(boolean enable) {
+
+        // Load List not empty, toggle normal settings
+        if (!enable)
         {
+            // Apply settings
             loadListView.setStyle("-fx-font-weight: normal");
             loadListView.getItems().clear();
-            addedLoad = true;
+            deleteLoadButton.setDisable(false);
+            clearLoadsButton.setDisable(false);
+        }
+
+        // Load list empty, toggle empty settings
+        else
+        {
+            // Apply settings
+            loadListView.setStyle("-fx-font-weight: bold");
+            loadListView.getItems().clear();
+            loadListView.getItems().add("Add a load to begin");
+            deleteLoadButton.setDisable(true);
+            clearLoadsButton.setDisable(true);
         }
     }
 
@@ -189,42 +203,65 @@ public class CanoeAnalysisController implements Initializable
     }
 
     /**
+     * Resets the length of the canoe, clearing all loads
+     */
+    public void resetLength()
+    {
+        clearLoads();
+        axisLabelR.setText("X");
+        axisLabelR.setLayoutX(607); // this will not be hard coded anymore once axis labels for new loads are implemented
+        canoeLengthTextField.setText("0.00");
+        canoeLengthTextField.setDisable(false);
+        canoeLengthComboBox.setDisable(false);
+        lengthLabel.setDisable(false);
+        deleteLoadButton.setDisable(true);
+        clearLoadsButton.setDisable(true);
+        disableLoadingControls(true);
+        setCanoeLengthButton.setText("Set Length");
+        setCanoeLengthButton.setOnAction(e -> setLength());
+    }
+
+    /**
      * Called by the "Set Length" button
      * Updates both the model and the UI, showing the length of the canoe
      */
-    public void setCanoeLength()
+    public void setLength()
     {
-        // Default list view message
-        loadListView.setStyle("-fx-font-weight: bold");
-        loadListView.getItems().add("Add a load to begin");
+        if (validateTextAsDouble(canoeLengthTextField.getText())) {
+            // Default list view message
+            enableEmptyLoadListSettings(true);
 
+            // Convert to metric
+            double len = getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
 
-        // Convert to metric
-        double len = getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
+            // Only allow lengths in the specified range
+            if (len >= acceptedLengthRange[0] && len <= acceptedLengthRange[1]) {
+                // Update the canoe model
+                canoe.setLen(len);
 
-        // Only allow lengths in the specified range
-        if (len >= acceptedLengthRange[0] && len <= acceptedLengthRange[1])
-        {
-            // Update the canoe model
-            canoe.setLen(len);
+                // Change the label on the scale
+                axisLabelR.setText(String.format("%.2f m", canoe.getLen()));
+                axisLabelR.setLayoutX(595); // this will not be hard coded anymore once axis labels for new loads are implemented
 
-            // Change the label on the scale
-            axisLabelR.setText(String.format("%.2f m", canoe.getLen()));
-            axisLabelR.setLayoutX(595); // this will not be hard coded anymore once axis labels for new loads are implemented
+                // Clear potential alert and reset access to controls
+                notificationLabel.setText("");
+                disableLoadingControls(false);
+                canoeLengthTextField.setDisable(true);
+                canoeLengthComboBox.setDisable(true);
+                lengthLabel.setDisable(true);
+                deleteLoadButton.setDisable(true);
+                clearLoadsButton.setDisable(true);
 
-            // Clear potential alert and reset access to controls
-            notificationLabel.setText("");
-            disableLoadingControls(false);
-            canoeLengthTextField.setDisable(true);
-            canoeLengthComboBox.setDisable(true);
-            setCanoeLengthButton.setDisable(true);
-            lengthLabel.setDisable(true);
+                // Set length button will now function as a reset length button
+                setCanoeLengthButton.setText("Reset Length");
+                setCanoeLengthButton.setOnAction(e -> resetLength());
+            }
+            // Populate the alert telling the user the length they've entered is out of the allowed range
+            else
+                notificationLabel.setText("Length must be between 0.05m and 20m");
         }
-        // Populate the alert telling the user the length they've entered is out of the allowed range
         else
-        {
-            notificationLabel.setText("Length must be between 0.05m and 20m");
-        }
+            notificationLabel.setText("One or more entered values are not valid numbers");
     }
 
     /**
@@ -270,12 +307,12 @@ public class CanoeAnalysisController implements Initializable
     public void updateLoadListView()
     {
         // Get the new list of loads as strings, sorted by x position
-        List<Positionable> loads = new ArrayList<>();
+        List<Load> loads = new ArrayList<>();
         loads.addAll(canoe.getPLoads());
         loads.addAll(canoe.getDLoads());
-        loads.sort(Comparator.comparingDouble(Positionable::getX));
+        loads.sort(Comparator.comparingDouble(Load::getX));
         List<String> stringLoads = loads.stream()
-                .map(Positionable::toString)
+                .map(Load::toString)
                 .toList();
 
 
@@ -357,12 +394,12 @@ public class CanoeAnalysisController implements Initializable
         }
 
         // Add sorted Arrows and ArrowBoxes to the loadContainer
-        List<Positionable> UIElements = new ArrayList<>();
-        UIElements.addAll(arrowList);
-        UIElements.addAll(arrowBoxList);
-        UIElements.sort(Comparator.comparingDouble(Positionable::getX));
+        List<Positionable> graphics = new ArrayList<>();
+        graphics.addAll(arrowList);
+        graphics.addAll(arrowBoxList);
+        graphics.sort(Comparator.comparingDouble(Positionable::getX));
         arrowBoxList.sort(Comparator.comparingDouble(ArrowBox::getLX));
-        loadContainer.getChildren().addAll((UIElements.stream().map(element -> (Node) element)).toList());
+        loadContainer.getChildren().addAll((graphics.stream().map(element -> (Node) element)).toList());
 
     }
 
@@ -440,7 +477,7 @@ public class CanoeAnalysisController implements Initializable
             else
             {
                 // Removes the default list view message if this is the first load
-                removeListViewInfoMessage();
+                enableEmptyLoadListSettings(false);
 
                 // Add the load to canoe, and the load arrow on the GUI
                 PointLoad p = new PointLoad(mag, x);
@@ -450,7 +487,7 @@ public class CanoeAnalysisController implements Initializable
 
         }
         else
-            notificationLabel.setText("One or more entered values are not numbers");
+            notificationLabel.setText("One or more entered values are not valid numbers");
     }
 
     /**
@@ -485,7 +522,7 @@ public class CanoeAnalysisController implements Initializable
             else
                 {
                     // Removes the default list view message if this is the first load
-                    removeListViewInfoMessage();
+                    enableEmptyLoadListSettings(false);
 
                     // Add the load to canoe, and update the ListView
                     UniformDistributedLoad d = new UniformDistributedLoad(l, r, mag);
@@ -494,7 +531,7 @@ public class CanoeAnalysisController implements Initializable
                 }
         }
         else
-            notificationLabel.setText("One or more entered values are not numbers");
+            notificationLabel.setText("One or more entered values are not valid numbers");
 
     }
 
@@ -570,7 +607,7 @@ public class CanoeAnalysisController implements Initializable
     {
         // Create the list of current load graphics
         List<Positionable> loadContainerChildren = new ArrayList<>(loadContainer.getChildren().stream()
-                .map(load -> (Positionable) load).toList());
+                .map(graphic -> (Positionable) graphic).toList());
 
 
         // Create and add the support graphic
@@ -643,7 +680,7 @@ public class CanoeAnalysisController implements Initializable
      */
     public void solveSystem() {
         // Removes the default list view message if this is the first load
-        removeListViewInfoMessage();
+        enableEmptyLoadListSettings(false);
 
         // Controls enabling/disabling for UX
         generateGraphsButton.setDisable(false);
@@ -707,7 +744,7 @@ public class CanoeAnalysisController implements Initializable
      */
     public void generateDiagram()
     {
-        // Testing
+        // Logging
         System.out.println();
         for (DiagramPoint sfdPoint : Diagram.generateSfdPoints(canoe))
         {
@@ -716,7 +753,7 @@ public class CanoeAnalysisController implements Initializable
 
         DiagramLogic.setupDiagram(canoe, Diagram.generateSfdPoints(canoe), "Shear Force Diagram", "Force [kN]");
 
-        // Testing
+        // Logging
         System.out.println();
         for (DiagramPoint bmdPoint : Diagram.generateBmdPoints(canoe))
         {
@@ -726,12 +763,40 @@ public class CanoeAnalysisController implements Initializable
         DiagramLogic.setupDiagram(canoe, Diagram.generateBmdPoints(canoe), "Bending Moment Diagram", "Moment [kN·m]");
     }
 
-    public void deleteLoad() {
-        // TODO: Implement
+    /**
+     * Delete the load selected in the list view
+     */
+    public void deleteLoad()
+    {
+        int selectedIndex = loadListView.getSelectionModel().getSelectedIndex();
+
+        // Handle case that no index was selected
+        if (selectedIndex == -1)
+        {
+            notificationLabel.setText("Cannot perform delete, no load selected");
+            return;
+        }
+
+        loadListView.getItems().remove(selectedIndex);
+        loadContainer.getChildren().remove(selectedIndex);
+        canoe.removeLoad(selectedIndex);
+
+        // If the list is empty, toggle empty list settings
+        if (loadContainer.getChildren().isEmpty())
+            enableEmptyLoadListSettings(true);
     }
 
-    public void clearLoads() {
-        // TODO: Implement
+    /**
+     * Clear all loads
+     */
+    public void clearLoads()
+    {
+        loadListView.getItems().clear();
+        loadContainer.getChildren().clear();
+        canoe.clearLoads();
+
+        // List is empty, toggle empty list settings
+        enableEmptyLoadListSettings(true);
     }
 
     /**
@@ -748,6 +813,7 @@ public class CanoeAnalysisController implements Initializable
         // Disable most buttons on startup to prevent inputs in the wrong order
         disableLoadingControls(true);
         generateGraphsButton.setDisable(true);
+        enableEmptyLoadListSettings(true);
 
         // Css styling
         JFXDepthManager.setDepth(loadListView, 4);
