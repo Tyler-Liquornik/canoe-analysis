@@ -6,7 +6,7 @@ import lombok.Getter;
 @Getter
 public enum ColorPalette {
     PRIMARY("#BB86FC"),
-    PRIMARY_VARIANT("#3700B3"),
+    PRIMARY_VARIANT("#D2A8FF"),
     SECONDARY("#03DAC6"),
     BACKGROUND("#121212"),
     SURFACE("#202020"),

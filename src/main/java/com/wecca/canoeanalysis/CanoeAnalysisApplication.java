@@ -18,8 +18,11 @@ public class CanoeAnalysisApplication extends Application {
         Scene scene = new Scene(fxmlLoader.load(), 900, 625);
         stage.setTitle("PADDL");
         stage.setScene(scene);
-        stage.initStyle(StageStyle.UNDECORATED);//removes the top bar, need to custom make this
+        stage.initStyle(StageStyle.UNDECORATED);
         stage.show();
+
+        // Provide a reference of the stage to the controller
+        CanoeAnalysisController.setPrimaryStage(stage);
 
         // Add the CSS file to the scene's stylesheets
         scene.getStylesheets().add(getClass().getResource("css/font.css").toExternalForm());
