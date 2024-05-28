@@ -6,8 +6,11 @@ import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import lombok.Getter;
+import lombok.Setter;
 
 // Uniform distributed loads are to be represented as "arrow boxes"
+@Getter @Setter
 public class ArrowBox extends Group implements Colorable, Positionable
 {
     // Fields
@@ -16,10 +19,10 @@ public class ArrowBox extends Group implements Colorable, Positionable
     private double startY;
     private double endY;
 
-    private Arrow lArrow;
-    private Arrow rArrow;
-    private Rectangle box;
-    private Line borderLine;
+    private final Arrow lArrow;
+    private final Arrow rArrow;
+    private final Rectangle box;
+    private final Line borderLine;
 
     private final static double defaultThickness = 1;
 
@@ -57,19 +60,8 @@ public class ArrowBox extends Group implements Colorable, Positionable
     }
 
     // Accessors
-
     @Override
     public double getX() {return getLX();}
-    public double getLX() {return lX;}
-    public double getRX() {return rX;}
-    public double getStartY() {return startY;}
-    public double getEndY() {return endY;}
-
-    // Mutators
-    public void setlX(double lX) {this.lX = lX;}
-    public void setrX(double rX) {this.rX = rX;}
-    public void setStartY(double startY) {this.startY = startY;}
-    public void setEndY(double endY) {this.endY = endY;}
 
     // Get a lightened version of a color
     public Color lighten(Color color)

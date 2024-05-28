@@ -6,7 +6,10 @@ import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import com.wecca.canoeanalysis.utility.Positionable;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter @Setter
 public class Arrow extends Path implements Colorable, Positionable {
 
     // Fields
@@ -17,7 +20,8 @@ public class Arrow extends Path implements Colorable, Positionable {
     private double startY;
     private double endX;
     private double endY;
-    private double thickness;
+
+    private final double thickness;
 
     public Arrow(double startX, double startY, double endX, double endY, double arrowHeadSize, double thickness) {
         super();
@@ -68,42 +72,7 @@ public class Arrow extends Path implements Colorable, Positionable {
 
     // Accessors
     @Override
-    public double getX() {
-        return Math.min(startX, endX); // Leftmost point is considered
-    }
-
-    public double getStartX() {
-        return startX;
-    }
-
-    public double getStartY() {
-        return startY;
-    }
-
-    public double getEndX() {
-        return endX;
-    }
-
-    public double getEndY() {
-        return endY;
-    }
-
-    // Mutators
-    public void setStartX(double startX) {
-        this.startX = startX;
-    }
-
-    public void setStartY(double startY) {
-        this.startY = startY;
-    }
-
-    public void setEndX(double endX) {
-        this.endX = endX;
-    }
-
-    public void setEndY(double endY) {
-        this.endY = endY;
-    }
+    public double getX() {return Math.min(startX, endX);} // Leftmost point is considered
 
     @Override
     public void recolor(Color color) {

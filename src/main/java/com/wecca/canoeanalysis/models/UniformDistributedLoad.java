@@ -1,22 +1,13 @@
 package com.wecca.canoeanalysis.models;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+@Data @AllArgsConstructor
 public class UniformDistributedLoad implements Load {
     private double x; // left bound of the distributed load
     private double rX; // right bound of the distributed load
     private double w; // load in kN/m
-
-    public UniformDistributedLoad(double x, double r, double w)
-    {
-        this.x = x; this.rX = r; this.w = w;
-    }
-
-
-    public double getX() {return x;}
-    public double getRX() {return rX;}
-    public double getW() {return w;}
-    public void setX(double x) {this.x = x;}
-    public void setR(double r) {this.rX = r;}
-    public void setW(double w) {this.w = w;}
 
     public double getTotalForce()
     {

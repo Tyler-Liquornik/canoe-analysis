@@ -6,7 +6,10 @@ import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import lombok.Setter;
+import lombok.Getter;
 
+@Getter @Setter
 public class Beam extends Group implements Positionable, Colorable {
 
     // Fields
@@ -15,11 +18,11 @@ public class Beam extends Group implements Positionable, Colorable {
     private double width;
     private double thickness;
 
-    private Rectangle beam;
-    private Line topBorder;
-    private Line bottomBorder;
-    private Line leftBorder;
-    private Line rightBorder;
+    private final Rectangle beam;
+    private final Line topBorder;
+    private final Line bottomBorder;
+    private final Line leftBorder;
+    private final Line rightBorder;
 
     private final static double defaultThickness = 1;
     private final static double borderExtension = 5; // Amount by which the borders extend beyond the beam
@@ -64,16 +67,6 @@ public class Beam extends Group implements Positionable, Colorable {
     // Accessors
     @Override
     public double getX() { return startX; }
-    public double getStartX() { return startX; }
-    public double getStartY() { return startY; }
-    public double getWidth() { return width; }
-    public double getThickness() { return thickness; }
-
-    // Mutators
-    public void setStartX(double startX) { this.startX = startX; }
-    public void setStartY(double startY) { this.startY = startY; }
-    public void setWidth(double width) { this.width = width; }
-    public void setThickness(double thickness) { this.thickness = thickness; }
 
     // Change the color of the beam
     @Override

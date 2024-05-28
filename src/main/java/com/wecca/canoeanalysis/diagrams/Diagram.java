@@ -69,7 +69,7 @@ public class Diagram
                 // We need to combine them here to prevent duplicate key issues
                 double mag = map.get(x).getMag();
                 mag += load.getMag();
-                load = new PointLoad(mag, x);
+                load = new PointLoad(mag, x, false);
             }
             map.put(x, load);
         }

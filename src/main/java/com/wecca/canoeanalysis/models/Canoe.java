@@ -1,20 +1,22 @@
 package com.wecca.canoeanalysis.models;
 
-import com.wecca.canoeanalysis.utility.Positionable;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.*;
 
 /**
  * Singleton class representing the canoe for the application.
  */
+@Getter @Setter
 public final class Canoe
 {
-    private static Canoe canoe = null;
     private double len; // canoe length
-    private ArrayList<PointLoad> pLoads; // point loads on the canoe
-    private ArrayList<UniformDistributedLoad> dLoads; // uniformly distributed loads on the canoe
-    private ArrayList<Load> loads; // will sync with listview and loadContainer order
     private double m; // canoe mass (able to calculate this from exported solidworks data instead of manually?)
+    private final ArrayList<PointLoad> pLoads; // point loads on the canoe
+    private final ArrayList<UniformDistributedLoad> dLoads; // uniformly distributed loads on the canoe
+    private final ArrayList<Load> loads; // will sync with listview and loadContainer order
+    private static Canoe canoe = null;
 
     private Canoe() {
         this.len = 0;
@@ -34,29 +36,19 @@ public final class Canoe
         return canoe;
     }
 
-    public double getLen() {return len;}
-    public void setLen(double len) {this.len = len;}
-
-    public double getM() {
-        return m;
-    }
-    public void setM(double m) {
-        this.m = m;
-    }
-
-    public AddPointLoadResult addPLoad(PointLoad p, boolean isSupport) {
+    public AddPointLoadResult addPLoad(PointLoad p) {
 
         // Do not add the load if it is zero valued
         // Zero-valued supports are still added as markers for the model and ListView
         if (p.getMag() == 0)
-            if (!isSupport)
+            if (!p.isSupport())
                 return AddPointLoadResult.ADDED;
             else
                 p.setMag(0.00); // In case mag is -0 so that the negative doesn't display to the user
 
         // Search for other loads at the same position, and combine their magnitudes
         for (PointLoad pLoad : pLoads) {
-            if (pLoad.getX() == p.getX() && !isSupport)
+            if (pLoad.getX() == p.getX() && !p.isSupport())
             {
                 pLoad.setMag(pLoad.getMag() + p.getMag());
                 if (pLoad.getMag() == 0) {
