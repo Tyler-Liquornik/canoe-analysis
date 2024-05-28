@@ -453,7 +453,6 @@ public class CanoeAnalysisController implements Initializable
     /**
      * Called by the "Add Point Load" button
      * Deals with parsing and validation user input.
-     * Main logic handled in addPointLoadToCanoe method
      */
     public void addPointLoad()
     {
@@ -483,8 +482,8 @@ public class CanoeAnalysisController implements Initializable
                 enableEmptyLoadListSettings(false);
 
                 // Add the load to canoe, and the load arrow on the GUI
-                PointLoad p = new PointLoad(mag, x);
-                addPointLoad(p, false);
+                PointLoad p = new PointLoad(mag, x, false);
+                addPointLoadGraphic(p);
                 updateLoadListView();
             }
 
@@ -568,9 +567,7 @@ public class CanoeAnalysisController implements Initializable
         {
             // Stay within the limits of the accepted height range (based on pixel spacing in the GUI)
             if (!(canoe.getMaxDLoad() / canoe.getMinDLoad() > (double) acceptedArrowHeightRange[1] / (double) acceptedArrowHeightRange[0]))
-            {
                 rescaleFromMax(Math.max(canoe.getMaxPLoad(), canoe.getMaxDLoad()));
-            }
 
             else
             {
@@ -586,17 +583,16 @@ public class CanoeAnalysisController implements Initializable
     /**
      * Add a point load to the canoe object and JavaFX UI.
      * @param pLoad the point load to be added.
-     * @param isSupport renders the graphic as a support (triangle) or regular point load (arrow)
      */
-    private void addPointLoad(PointLoad pLoad, boolean isSupport)
+    private void addPointLoadGraphic(PointLoad pLoad)
     {
         // x coordinate in beamContainer for load
         double scaledX = pLoad.getXScaled(beam.getWidth(), canoe.getLen()); // x position in the beamContainer
 
-        AddPointLoadResult addResult = canoe.addPLoad(pLoad, isSupport);
+        AddPointLoadResult addResult = canoe.addPLoad(pLoad);
 
         // Render the correct graphic
-        if (isSupport)
+        if (pLoad.isSupport())
             addSupportGraphic(scaledX);
         else
             addArrowGraphic(pLoad, scaledX, addResult);
@@ -662,9 +658,7 @@ public class CanoeAnalysisController implements Initializable
         {
             // Stay within the limits of the accepted height range (based on pixel spacing in the GUI)
             if (!(canoe.getMaxPLoad() / canoe.getMinPLoad() > (double) acceptedArrowHeightRange[1] / (double) acceptedArrowHeightRange[0]))
-            {
                 rescaleFromMax(Math.max(canoe.getMaxPLoad(), canoe.getMaxDLoad()));
-            }
 
             else
             {
@@ -725,7 +719,7 @@ public class CanoeAnalysisController implements Initializable
     {
         List<PointLoad> supportLoads = SystemSolver.solveStandSystem(canoe);
         for (PointLoad supportLoad : supportLoads) {
-            addPointLoad(supportLoad, true);}
+            addPointLoadGraphic(supportLoad);}
     }
 
     private void undoStandsSolve()
@@ -769,13 +763,14 @@ public class CanoeAnalysisController implements Initializable
      */
     private void disableLoadingControls(boolean b)
     {
-        List<Control> controls = Arrays.asList(solveSystemButton, pointLoadButton, distributedLoadButton, floatingRadioButton,
-                standsRadioButton, submergedRadioButton, distributedMagnitudeComboBox, distributedMagnitudeTextField,
-                pointMagnitudeComboBox, pointMagnitudeTextField, pointLocationTextField, pointLocationComboBox, pointDirectionComboBox,
-                distributedIntervalTextFieldL, distributedIntervalTextFieldR, distributedIntervalComboBox, distributedDirectionComboBox,
-                deleteLoadButton, clearLoadsButton, loadListView, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,
-                pointTitleLabel, supportTitleLabel, distributedDirectionLabel, distributedMagntiudeLabel,
-                distributedIntervalLabel, distributedTitleLabel
+        List<Control> controls = Arrays.asList(solveSystemButton, pointLoadButton, distributedLoadButton,
+                floatingRadioButton, standsRadioButton, submergedRadioButton, distributedMagnitudeComboBox,
+                distributedMagnitudeTextField, pointMagnitudeComboBox, pointMagnitudeTextField, pointLocationTextField,
+                pointLocationComboBox, pointDirectionComboBox, distributedIntervalTextFieldL,
+                distributedIntervalTextFieldR, distributedIntervalComboBox, distributedDirectionComboBox,
+                deleteLoadButton, clearLoadsButton, loadListView, pointDirectionLabel, pointMagnitudeLabel,
+                pointLocationLabel, pointTitleLabel, supportTitleLabel, distributedDirectionLabel,
+                distributedMagntiudeLabel, distributedIntervalLabel, distributedTitleLabel
         );
 
         for (Control control : controls) {

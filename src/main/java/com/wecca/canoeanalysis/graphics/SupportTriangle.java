@@ -4,13 +4,17 @@ import com.wecca.canoeanalysis.utility.Positionable;
 import javafx.scene.Group;
 import javafx.scene.shape.*;
 import javafx.scene.paint.Color;
+import lombok.Getter;
+import lombok.Setter;
 
 // Pinned support icons
 public class SupportTriangle extends Group implements Colorable, Positionable
 {
     // Fields
     private static final double defaultSideLength = 20.0;
+    @Getter @Setter
     private double tipX;
+    @Getter @Setter
     private double tipY;
 
     private Polygon triangle;
@@ -34,15 +38,8 @@ public class SupportTriangle extends Group implements Colorable, Positionable
     }
 
     // Accessors
-
     @Override
     public double getX() {return getTipX();}
-    public double getTipX() {return tipX;}
-    public double getTipY() {return tipY;}
-
-    // Mutators
-    public void setTipX(double tipX) {this.tipX = tipX;}
-    public void setTipY(double tipY) {this.tipY = tipY;}
 
     // Create the triangle
     private void makeTriangle(double tipX, double tipY, double sideLength)

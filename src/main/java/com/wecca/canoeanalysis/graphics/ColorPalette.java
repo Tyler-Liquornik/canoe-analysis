@@ -1,7 +1,9 @@
 package com.wecca.canoeanalysis.graphics;
 
 import javafx.scene.paint.Color;
+import lombok.Getter;
 
+@Getter
 public enum ColorPalette {
     PRIMARY("#BB86FC"),
     PRIMARY_VARIANT("#3700B3"),
@@ -17,9 +19,5 @@ public enum ColorPalette {
 
     ColorPalette(String hex) {
         this.color = Color.web(hex);
-    }
-
-    public Color getColor() {
-        return color;
     }
 }

@@ -17,7 +17,7 @@ public class FixedTicksNumberAxis extends ValueAxis<Number>
     private final List<Number> ticks;
 
     // Formatter
-    private NumberAxis.DefaultFormatter defaultFormatter;
+    private final NumberAxis.DefaultFormatter defaultFormatter;
 
     public FixedTicksNumberAxis(List<Number> ticks) {
         super();

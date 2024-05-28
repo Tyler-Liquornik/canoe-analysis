@@ -33,7 +33,7 @@ public class SystemSolver {
             double dLoadLength = load.getRX() - load.getX();
             double pLoadMagnitude = load.getW() * dLoadLength;
             double pLoadPosition = load.getX() + (dLoadLength / 2);
-            pointLoads.add(new PointLoad(pLoadMagnitude, pLoadPosition));
+            pointLoads.add(new PointLoad(pLoadMagnitude, pLoadPosition, false));
         }
 
         return pointLoads;
@@ -64,10 +64,8 @@ public class SystemSolver {
         double forceStart = -1 * sumOfPointLoads - forceEnd;
 
         // Create and return resulting loads
-        PointLoad pLoadStart = new PointLoad(forceStart, STAND_OFFSET);
-        PointLoad pLoadEnd = new PointLoad(forceEnd, canoe.getLen() - STAND_OFFSET);
-        pLoadStart.setIsSupport(true);
-        pLoadEnd.setIsSupport(true);
+        PointLoad pLoadStart = new PointLoad(forceStart, STAND_OFFSET, true);
+        PointLoad pLoadEnd = new PointLoad(forceEnd, canoe.getLen() - STAND_OFFSET, true);
         pointLoads.clear();
         pointLoads.addAll(Arrays.asList(pLoadStart, pLoadEnd));
         return pointLoads;
