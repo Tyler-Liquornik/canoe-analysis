@@ -1,19 +1,26 @@
 package com.wecca.canoeanalysis;
 
 import com.jfoenix.effects.JFXDepthManager;
-import com.wecca.canoeanalysis.diagrams.Diagram;
-import com.wecca.canoeanalysis.diagrams.DiagramLogic;
-import com.wecca.canoeanalysis.diagrams.DiagramPoint;
+import com.wecca.canoeanalysis.diagrams.*;
 import com.wecca.canoeanalysis.graphics.*;
 import com.wecca.canoeanalysis.models.*;
-import com.wecca.canoeanalysis.utility.Positionable;
-import com.wecca.canoeanalysis.utility.SystemSolver;
+import com.wecca.canoeanalysis.utility.*;
+import javafx.animation.ScaleTransition;
+import javafx.animation.SequentialTransition;
+import javafx.animation.TranslateTransition;
 import javafx.collections.FXCollections;
-import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.stage.Screen;
+import javafx.stage.Stage;
+import javafx.fxml.Initializable;
+import javafx.fxml.FXML;
+import javafx.util.Duration;
+import lombok.Setter;
+
 import java.net.URL;
 import java.util.*;
 
@@ -57,6 +64,42 @@ public class CanoeAnalysisController implements Initializable
     // Is there a workaround to this that doesn't require adding the imageView manually in code
     // Also this is awkward to add it in with all the fields at the top
 
+    // For draggable window with custom toolbar
+    @Setter
+    private static Stage primaryStage;
+    private double xOffset = 0;
+    private double yOffset = 0;
+
+    /**
+     * Mouse pressed event handler to record the current mouse position
+     * @param event triggers the method
+     */
+    public void draggableWindowGetLocation(MouseEvent event) {
+        xOffset = event.getSceneX();
+        yOffset = event.getSceneY();
+    }
+
+    /** Mouse dragged event handler to move the window
+     * @param event triggers the method
+     */
+    public void draggableWindowMove(MouseEvent event)
+    {
+        if (primaryStage != null) {
+            primaryStage.setX(event.getScreenX() - xOffset);
+            primaryStage.setY(event.getScreenY() - yOffset);
+        }
+    }
+
+    /**
+     * Close the window when the "X" button is pressed
+     */
+    public void closeWindow() {primaryStage.close();}
+
+    /**
+     * Minimize the window the "-" button is pressed
+     */
+    public void minimizeWindow() {primaryStage.setIconified(true);}
+
     /**
      * Put a group of radio buttons into a toggle group (only allow one to be selected at a time)
      * Have one of the buttons be selected by default
@@ -86,19 +129,18 @@ public class CanoeAnalysisController implements Initializable
     }
 
     /**
-     * Checks if a string can be parsed as a double
+     * Checks if a string can be parsed as a double.
+     *
      * @param s the string to be checked
-     * @return whether the string can be used as a double
+     * @return true if the string can be parsed as a double, false otherwise
      */
-    public boolean validateTextAsDouble(String s)
-    {
-        try
-        {
-            double d = Double.parseDouble(s);
+    public boolean validateTextAsDouble(String s) {
+        if (s == null)
+            return false;
+        try {
+            Double.parseDouble(s);
             return true;
-        }
-        catch (Exception e)
-        {
+        } catch (NumberFormatException e) {
             return false;
         }
     }
@@ -137,7 +179,7 @@ public class CanoeAnalysisController implements Initializable
             // Apply settings
             loadListView.setStyle("-fx-font-weight: bold");
             loadListView.getItems().clear();
-            loadListView.getItems().add("Add a load to begin");
+            loadListView.getItems().add("View loads here");
             deleteLoadButton.setDisable(true);
             clearLoadsButton.setDisable(true);
         }

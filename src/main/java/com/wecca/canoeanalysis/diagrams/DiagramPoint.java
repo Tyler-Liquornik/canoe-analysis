@@ -7,7 +7,6 @@ import lombok.Data;
 @Data @AllArgsConstructor
 public class DiagramPoint
 {
-
     // Fields
     private double x;
     private double y;
