@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.utility;
+package com.wecca.canoeanalysis.util;
 
 public interface Positionable {
     double getX();

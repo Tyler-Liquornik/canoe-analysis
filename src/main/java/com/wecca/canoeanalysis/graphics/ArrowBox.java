@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
-import com.wecca.canoeanalysis.utility.Positionable;
+import com.wecca.canoeanalysis.util.Positionable;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;

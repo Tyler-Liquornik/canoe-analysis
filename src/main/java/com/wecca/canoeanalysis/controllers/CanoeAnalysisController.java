@@ -1,24 +1,19 @@
-package com.wecca.canoeanalysis;
+package com.wecca.canoeanalysis.controllers;
 
+import com.jfoenix.controls.JFXDrawer;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.diagrams.*;
 import com.wecca.canoeanalysis.graphics.*;
 import com.wecca.canoeanalysis.models.*;
-import com.wecca.canoeanalysis.utility.*;
-import javafx.animation.ScaleTransition;
-import javafx.animation.SequentialTransition;
-import javafx.animation.TranslateTransition;
+import com.wecca.canoeanalysis.util.*;
 import javafx.collections.FXCollections;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
-import javafx.util.Duration;
 import lombok.Setter;
 
 import java.net.URL;
@@ -38,7 +33,7 @@ public class CanoeAnalysisController implements Initializable
 
     @FXML
     private Button solveSystemButton, pointLoadButton, distributedLoadButton, setCanoeLengthButton, generateGraphsButton,
-            clearLoadsButton, deleteLoadButton;
+            clearLoadsButton, deleteLoadButton, hamburgerButton;
     @FXML
     private TextField pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
             distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField;
@@ -49,6 +44,8 @@ public class CanoeAnalysisController implements Initializable
     private RadioButton standsRadioButton, floatingRadioButton, submergedRadioButton;
     @FXML
     private AnchorPane loadContainer, beamContainer;
+    @FXML
+    private JFXDrawer menuDrawer;
 
     private Canoe canoe; // entity class that models the canoe as a beam
     private Beam beam; // The graphic of the beam
@@ -84,7 +81,8 @@ public class CanoeAnalysisController implements Initializable
      */
     public void draggableWindowMove(MouseEvent event)
     {
-        if (primaryStage != null) {
+        if (primaryStage != null)
+        {
             primaryStage.setX(event.getScreenX() - xOffset);
             primaryStage.setY(event.getScreenY() - yOffset);
         }
@@ -99,6 +97,11 @@ public class CanoeAnalysisController implements Initializable
      * Minimize the window the "-" button is pressed
      */
     public void minimizeWindow() {primaryStage.setIconified(true);}
+
+    public void hamburgerDropDown()
+    {
+        menuDrawer.open();
+    }
 
     /**
      * Put a group of radio buttons into a toggle group (only allow one to be selected at a time)
