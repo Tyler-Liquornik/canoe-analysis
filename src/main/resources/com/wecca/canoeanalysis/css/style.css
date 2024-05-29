@@ -2,14 +2,18 @@
 @import url("font.css");
 
 /* Can't get these to work as variables so hard code them for now unfortunately */
-/*--primary: ;*/
+/*--primary: #BB86FC;*/
 /*--primary-variant: #D2A8FF;*/
 /*--secondary: #03DAC6;*/
 /*--background: #121212;*/
 /*--surface: #202020;*/
 /*--above-surface: #282828
-/*--error: #CF6679;*/
+/*--danger: #D10647;*/
 /*--text-on-surface: #534B5E;*/
+
+.root {
+    -fx-background-color: rgba(255, 255, 255, 0.3); /* Semi-transparent white */
+}
 
 .background {
     -fx-background-color: #121212;
@@ -26,6 +30,21 @@
     -fx-border-style: hidden;
     -fx-border-radius: 5;
     -fx-background-radius: 5;
+}
+
+.out-of-focus-overlay {
+    -fx-background-color: rgba(255, 255, 255, 0.3); /* Semi-transparent white */
+}
+
+.button,
+.combo-box,
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell,
+.list-view > .virtual-flow > .clipped-container > .sheet > .list-cell {
+    -fx-cursor: hand;
+}
+
+.close-window-button:hover {
+    -fx-background-color: #D10647;
 }
 
 .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:focused,
@@ -52,6 +71,10 @@
     -fx-padding: 4 8 4 0;
 }
 
+.jfx-hamburger StackPane {
+    -fx-background-color: white;
+}
+
 .action-object{
     -fx-background-color: #BB86FC;
 }
@@ -60,6 +83,7 @@
     -fx-background-color: transparent;
     -fx-border-color: transparent;
     -fx-border-width: 0;
+    -fx-border-radius: 0;
 }
 
 .tool-bar-button:hover {

@@ -1,3 +1,9 @@
+@import url("font.css");
+
+.root {
+    -fx-font-family: "Roboto"
+}
+
 .chart {
     -fx-background-color: #121212;
     -fx-border-width: 1px;

@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.utility;
+package com.wecca.canoeanalysis.util;
 
 import com.wecca.canoeanalysis.models.Canoe;
 import com.wecca.canoeanalysis.models.PointLoad;
@@ -6,7 +6,6 @@ import com.wecca.canoeanalysis.models.UniformDistributedLoad;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**

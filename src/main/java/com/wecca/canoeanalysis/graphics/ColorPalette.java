@@ -11,7 +11,7 @@ public enum ColorPalette {
     BACKGROUND("#121212"),
     SURFACE("#202020"),
     ABOVE_SURFACE("#282828"),
-    ERROR("#CF6679"),
+    DANGER("#D10647"),
     ICON("#FFFFFF"),
     TEXT_ON_SURFACE("#534B5E");
 

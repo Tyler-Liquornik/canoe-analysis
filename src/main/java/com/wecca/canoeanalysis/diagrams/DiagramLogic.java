@@ -1,6 +1,6 @@
 package com.wecca.canoeanalysis.diagrams;
 
-import com.wecca.canoeanalysis.CanoeAnalysisController;
+import com.wecca.canoeanalysis.controllers.CanoeAnalysisController;
 import com.wecca.canoeanalysis.models.Canoe;
 import javafx.scene.Scene;
 import javafx.scene.chart.AreaChart;

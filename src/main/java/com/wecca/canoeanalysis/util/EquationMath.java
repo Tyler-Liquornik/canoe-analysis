@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.utility;
+package com.wecca.canoeanalysis.util;
 
 import com.wecca.canoeanalysis.diagrams.DiagramPoint;
 

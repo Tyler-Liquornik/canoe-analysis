@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis;
 
+import com.wecca.canoeanalysis.controllers.CanoeAnalysisController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
