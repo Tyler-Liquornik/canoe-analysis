@@ -16,7 +16,7 @@ public class CanoeAnalysisApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/canoe-analysis-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 900, 625);
+        Scene scene = new Scene(fxmlLoader.load(), 900, 600);
         stage.setTitle("PADDL");
         stage.setScene(scene);
         stage.initStyle(StageStyle.UNDECORATED);
