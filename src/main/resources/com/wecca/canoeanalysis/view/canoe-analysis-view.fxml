@@ -42,7 +42,7 @@
             </Button>
          </children>
       </AnchorPane>
-      <AnchorPane layoutY="35.0" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" stylesheets="@../css/style.css">
+      <AnchorPane fx:id="mainAnchorPane" layoutY="35.0" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" stylesheets="@../css/style.css">
          <children>
             <AnchorPane fx:id="upperAnchorPane" layoutY="25.0" maxHeight="200.0" maxWidth="850.0" minHeight="200.0" minWidth="850.0" prefHeight="200.0" prefWidth="850.0" styleClass="surface" stylesheets="@../css/style.css" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">
                <children>
@@ -212,6 +212,6 @@
             </Label>
          </children>
       </AnchorPane>
-      <Pane styleClass="out-of-focus-overlay" stylesheets="@../css/style.css" visible="false" />
+      <Pane layoutY="35.0" maxHeight="565.0" maxWidth="900.0" minHeight="565.0" minWidth="900.0" prefHeight="565.0" prefWidth="900.0" styleClass="out-of-focus-overlay" stylesheets="@../css/style.css" visible="false" />
    </children>
 </AnchorPane>
