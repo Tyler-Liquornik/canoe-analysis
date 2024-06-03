@@ -17,13 +17,14 @@
 <?import javafx.scene.shape.Line?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="600.0" prefWidth="900.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.CanoeAnalysisController">
+<?import com.jfoenix.controls.JFXDrawer?>
+<AnchorPane fx:id="root" minHeight="0.0" minWidth="0.0" prefHeight="600.0" prefWidth="900.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.CanoeAnalysisController">
    <children>
       <AnchorPane maxHeight="35.0" maxWidth="900.0" minHeight="35.0" minWidth="600.0" onMouseDragged="#draggableWindowMove" onMousePressed="#draggableWindowGetLocation" prefHeight="35.0" prefWidth="900.0" styleClass="action-object" stylesheets="@../css/style.css" translateZ="5.0">
          <children>
             <Button fx:id="hamburgerButton" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#toggleDrawer" prefHeight="34.0" prefWidth="35.0" styleClass="tool-bar-button" stylesheets="@../css/style.css" AnchorPane.leftAnchor="15.0">
                <graphic>
-                  <JFXHamburger prefHeight="10.0" prefWidth="19.0" scaleX="0.9" scaleY="0.75" />
+                  <JFXHamburger fx:id="hamburger" prefHeight="10.0" prefWidth="19.0" scaleX="0.9" scaleY="0.75" />
                </graphic>
             </Button>
             <Button layoutX="830.0" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#minimizeWindow" prefHeight="34.0" prefWidth="35.0" styleClass="tool-bar-button" stylesheets="@../css/style.css" AnchorPane.rightAnchor="50.0">
@@ -42,6 +43,7 @@
             </Button>
          </children>
       </AnchorPane>
+      <JFXDrawer fx:id="menuDrawer" layoutX="0.0" layoutY="35.0" prefHeight="565.0" prefWidth="250.0" styleClass="drawer" visible="false" />
       <AnchorPane fx:id="mainAnchorPane" layoutY="35.0" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" stylesheets="@../css/style.css">
          <children>
             <AnchorPane fx:id="upperAnchorPane" layoutY="25.0" maxHeight="200.0" maxWidth="850.0" minHeight="200.0" minWidth="850.0" prefHeight="200.0" prefWidth="850.0" styleClass="surface" stylesheets="@../css/style.css" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">

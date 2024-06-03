@@ -22,7 +22,7 @@ public class CanoeAnalysisApplication extends Application {
         stage.initStyle(StageStyle.UNDECORATED);
         stage.show();
 
-        // Provide a reference of the stage to the controller
+        // Provide a references of the stage to the controller
         CanoeAnalysisController.setPrimaryStage(stage);
 
         // Add the CSS file to the scene's stylesheets
