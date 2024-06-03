@@ -4,7 +4,7 @@ import com.jfoenix.controls.JFXDrawer;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 
-public class HamburgerDrawerController {
+public class SideDrawerController {
 
     @FXML
     private JFXDrawer menuDrawer;

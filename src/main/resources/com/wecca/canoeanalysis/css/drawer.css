@@ -1,0 +1,30 @@
+.text {
+    -fx-text-fill: white;
+    -fx-font-family: "Roboto";
+}
+
+.title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.subtitle{
+    -fx-text-fill: #A9A9A9;
+    -fx-font-size: 11px;
+}
+
+.tool-bar {
+    -fx-background-color: #202020;
+}
+
+.background {
+    -fx-background-color: #282828;
+}
+
+.list-view,
+.list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:focused,
+.list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:even,
+.list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:odd{
+    -fx-background-color: #282828;
+    -fx-text-fill: white;
+}
