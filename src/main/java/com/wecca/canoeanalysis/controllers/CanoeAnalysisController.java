@@ -6,7 +6,9 @@ import com.wecca.canoeanalysis.diagrams.*;
 import com.wecca.canoeanalysis.graphics.*;
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.util.*;
+import javafx.animation.FadeTransition;
 import javafx.collections.FXCollections;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
@@ -14,8 +16,10 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
+import javafx.util.Duration;
 import lombok.Setter;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
@@ -64,8 +68,9 @@ public class CanoeAnalysisController implements Initializable
     // For draggable window with custom toolbar
     @Setter
     private static Stage primaryStage;
-    private double xOffset = 0;
-    private double yOffset = 0;
+    private static Pane rootPane = primaryStage.get
+    private static double xOffset = 0;
+    private static double yOffset = 0;
 
     /**
      * Mouse pressed event handler to record the current mouse position
@@ -98,10 +103,29 @@ public class CanoeAnalysisController implements Initializable
      */
     public void minimizeWindow() {primaryStage.setIconified(true);}
 
-    public void hamburgerDropDown()
-    {
-        menuDrawer.open();
-    }
+//    public void toggleDrawer()
+//    {
+//        FadeTransition fadeIn = new FadeTransition(Duration.seconds(3), pane);
+//        fadeIn.setFromValue(0);
+//        fadeIn.setToValue(1);
+//        fadeIn.setCycleCount(1);
+//
+//        FadeTransition fadeOut = new FadeTransition(Duration.seconds(3), pane);
+//        fadeOut.setFromValue(1);
+//        fadeOut.setToValue(0);
+//        fadeOut.setCycleCount(1);
+//
+//        fadeIn.play();
+//
+//        fadeIn.setOnFinished((e) -> fadeOut.play());
+//
+//        fadeOut.setOnFinished((e) -> {
+//            try {
+//                AnchorPane parentContent = FXMLLoader.load(getClass().getResource(("/genuinecoder/main/main.fxml")));
+//                root.getChildren().setAll(parentContent);
+//            } catch (IOException ignored) {}
+//        });
+//    }
 
     /**
      * Put a group of radio buttons into a toggle group (only allow one to be selected at a time)
@@ -258,7 +282,6 @@ public class CanoeAnalysisController implements Initializable
         clearLoads();
         axisLabelR.setText("X");
         axisLabelR.setLayoutX(607); // this will not be hard coded anymore once axis labels for new loads are implemented
-        canoeLengthTextField.setText("0.00");
         canoeLengthTextField.setDisable(false);
         canoeLengthComboBox.setDisable(false);
         lengthLabel.setDisable(false);

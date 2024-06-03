@@ -39,13 +39,13 @@ Currently, the program has one module to which will be used to model the canoe a
    Download [JFoenix](https://jar-download.com/artifacts/com.jfoenix/jfoenix/9.0.10/source-code) and [FontAwesomeFX](https://jar-download.com/artifacts/de.jensd/fontawesomefx/8.2/source-code)
 
    Add the jar files to Scenebuilder's library:
-   
+
    ![settings](images/settings.png)
 
    Add the jar files. The list should show JFoenix and Scenebuilder as added:
 
-    ![libraries](images/libraries.png)
-   
+   ![libraries](images/libraries.png)
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Roadmap
@@ -53,13 +53,13 @@ Currently, the program has one module to which will be used to model the canoe a
 <b>Feature Checklist from 06/24:</b>
 
 - [ ] Hamburger Menu Drawer
-  - [ ] Template links to other modules
-  - [ ] About Page
-- [ ] Get maximum SF/BM 
+    - [ ] Template links to other modules
+    - [ ] About Page
+- [ ] Get maximum SF/BM
 - [ ] Get piecewise function for graph equations
-  - [ ] Output equations as LaTeX
+    - [ ] Output equations as LaTeX
 - [ ] Editing non-support loads by making them horiztonally draggable
-  - [ ] Flip load direction by dragging the opposite side of the beam
+    - [ ] Flip load direction by dragging the opposite side of the beam
 - [ ] Import/Export the canoe object as JSON
 - [ ] Download graph image as PNG
 

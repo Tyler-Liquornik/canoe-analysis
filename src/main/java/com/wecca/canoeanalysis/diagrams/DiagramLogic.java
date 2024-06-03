@@ -1,6 +1,6 @@
 package com.wecca.canoeanalysis.diagrams;
 
-import com.wecca.canoeanalysis.controllers.CanoeAnalysisController;
+import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.models.Canoe;
 import javafx.scene.Scene;
 import javafx.scene.chart.AreaChart;
@@ -18,13 +18,13 @@ public class DiagramLogic {
 
     /**
      * Set up the canvas/pane for a diagram.
-     * @param canoe to work with
+     *
+     * @param canoe  to work with
      * @param points the points to render on the diagram.
-     * @param title the title of the diagram.
+     * @param title  the title of the diagram.
      * @param yUnits the units of the y-axis on the diagram.
-     * @return a list of series where each series is a section of the overall piecewise function
      */
-    public static List<XYChart.Series> setupDiagram(Canoe canoe, List<DiagramPoint> points, String title, String yUnits)
+    public static void setupDiagram(Canoe canoe, List<DiagramPoint> points, String title, String yUnits)
     {
         // Initializing the stage and main pane
         Stage popupStage = new Stage();
@@ -51,7 +51,7 @@ public class DiagramLogic {
         chart.setTitle(title);
         chart.setPrefSize(1125, 750);
         chart.setLegendVisible(false);
-        chart.getStylesheets().add(CanoeAnalysisController.class.getResource("css/chart.css").toExternalForm());
+        chart.getStylesheets().add(CanoeAnalysisApplication.class.getResource("css/chart.css").toExternalForm());
 
         List<XYChart.Series> intervalsAsSeries = getIntervalsAsSeries(canoe, points, yUnits, criticalPoints, chart);
 
@@ -61,7 +61,6 @@ public class DiagramLogic {
         popupStage.setScene(scene);
         popupStage.show();
 
-        return intervalsAsSeries;
     }
 
     private static List<XYChart.Series> getIntervalsAsSeries(Canoe canoe, List<DiagramPoint> points, String yUnits, TreeSet<Double> criticalPoints, AreaChart<Number, Number> chart) {
@@ -112,16 +111,16 @@ public class DiagramLogic {
 
         // If the first point is doubled up due to a jump discontinuity then throw away the first point (0, 0)
         // By "doubled up" I mean two points at the same x coordinate
-        if (points.get(0).getX() == 0 && points.get(1).getX() == 0)
-            points.remove(0);
+        if (points.getFirst().getX() == 0 && points.get(1).getX() == 0)
+            points.removeFirst();
 
         // Same idea for last two points if they double up
-        if (points.get(points.size() - 1).getX() == canoe.getLen() && points.get(points.size() - 2).getX() == canoe.getLen())
-            points.remove(points.size() - 1);
+        if (points.getLast().getX() == canoe.getLen() && points.get(points.size() - 2).getX() == canoe.getLen())
+            points.removeLast();
 
         // Remove zero from the partition list (always first as the TreeSet is sorted ascending)
-        if (partitionsList.get(0) == 0)
-            partitionsList.remove(0);
+        if (partitionsList.getFirst() == 0)
+            partitionsList.removeFirst();
 
         // Keep track of intervals and points that partition them
         int partitionIndex = 0;
