@@ -1,10 +1,14 @@
 package com.wecca.canoeanalysis.controllers;
 
 import com.jfoenix.controls.JFXHamburger;
+import com.jfoenix.controls.JFXSnackbar;
+import com.jfoenix.controls.JFXSnackbarLayout;
 import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
+import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.diagrams.*;
 import com.wecca.canoeanalysis.graphics.*;
+import com.wecca.canoeanalysis.graphics.CustomJFXSnackBarLayout;
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.util.*;
 import javafx.animation.AnimationTimer;
@@ -17,6 +21,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
+import javafx.util.Duration;
 import lombok.Setter;
 
 import java.io.IOException;
@@ -52,6 +57,8 @@ public class CanoeAnalysisController implements Initializable
     private AnchorPane menuDrawer;
     @FXML
     private JFXHamburger hamburger;
+    @FXML
+    private JFXSnackbar snackbar;
 
     private Canoe canoe; // entity class that models the canoe as a beam
     private Beam beam; // The graphic of the beam
@@ -156,6 +163,21 @@ public class CanoeAnalysisController implements Initializable
             }
         };
         drawerTimer.start();
+    }
+
+    public void showSnackbar(String message) {
+        snackbar.close();
+        snackbar = new JFXSnackbar(root);
+        snackbar.setPrefWidth(200);
+        snackbar.setViewOrder(Integer.MIN_VALUE);
+        JFXDepthManager.setDepth(snackbar, 5);
+        snackbar.getStylesheets().add(CanoeAnalysisApplication.class.getResource("css/style.css").toExternalForm());
+        CustomJFXSnackBarLayout snackbarLayout = new CustomJFXSnackBarLayout(message, "DISMISS", event -> snackbar.close());
+        snackbarLayout.setPrefHeight(50);
+        Button dismissButton = snackbarLayout.getAction();
+        dismissButton.getStyleClass().add("dismiss-button");
+        JFXSnackbar.SnackbarEvent snackbarEvent = new JFXSnackbar.SnackbarEvent(snackbarLayout, Duration.seconds(3));
+        snackbar.fireEvent(snackbarEvent);
     }
 
     /**
@@ -346,7 +368,7 @@ public class CanoeAnalysisController implements Initializable
                 axisLabelR.setLayoutX(595); // this will not be hard coded anymore once axis labels for new loads are implemented
 
                 // Clear potential alert and reset access to controls
-                notificationLabel.setText("");
+                showSnackbar("");
                 disableLoadingControls(false);
                 canoeLengthTextField.setDisable(true);
                 canoeLengthComboBox.setDisable(true);
@@ -360,10 +382,10 @@ public class CanoeAnalysisController implements Initializable
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
             else
-                notificationLabel.setText("Length must be between 0.05m and 20m");
+                showSnackbar("Length must be between 0.05m and 20m");
         }
         else
-            notificationLabel.setText("One or more entered values are not valid numbers");
+            showSnackbar("One or more entered values are not valid numbers");
     }
 
     /**
@@ -556,7 +578,7 @@ public class CanoeAnalysisController implements Initializable
     public void addPointLoad()
     {
         // Clear previous alert label
-        notificationLabel.setText("");
+        showSnackbar("");
 
         // Validate the entered numbers are doubles
         if (allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField)))
@@ -570,10 +592,10 @@ public class CanoeAnalysisController implements Initializable
 
             // Validate the load is being added within the length of the canoe
             if (!(0 <= x && x <= canoe.getLen()))
-                notificationLabel.setText("Load must be contained within the canoe's length");
+                showSnackbar("Load must be contained within the canoe's length");
             // Validate the load is in the accepted magnitude range
             else if (!(acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1]))
-                notificationLabel.setText("Load must be between 0.05kN and 10kN");
+                showSnackbar("Load must be between 0.05kN and 10kN");
 
             else
             {
@@ -588,7 +610,7 @@ public class CanoeAnalysisController implements Initializable
 
         }
         else
-            notificationLabel.setText("One or more entered values are not valid numbers");
+            showSnackbar("One or more entered values are not valid numbers");
     }
 
     /**
@@ -598,7 +620,7 @@ public class CanoeAnalysisController implements Initializable
      */
     public void addDistributedLoad()
     {// Clear previous alert labels
-        notificationLabel.setText("");
+        showSnackbar("");
 
         // Validate the entered numbers are doubles
         if (allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
@@ -614,11 +636,11 @@ public class CanoeAnalysisController implements Initializable
 
             // User entry validations
             if (!(0 <= l && r <= canoe.getLen()))
-                notificationLabel.setText("Load must be contained within the canoe's length");
+                showSnackbar("Load must be contained within the canoe's length");
             else if (!(r > l))
-                notificationLabel.setText("Right interval bound must be greater than the left bound");
+                showSnackbar("Right interval bound must be greater than the left bound");
             else if (!(acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1]))
-                notificationLabel.setText("Load must be between 0.05kN/m and 10kN/m");
+                showSnackbar("Load must be between 0.05kN/m and 10kN/m");
 
             else
                 {
@@ -632,7 +654,7 @@ public class CanoeAnalysisController implements Initializable
                 }
         }
         else
-            notificationLabel.setText("One or more entered values are not valid numbers");
+            showSnackbar("One or more entered values are not valid numbers");
 
     }
 
@@ -643,7 +665,7 @@ public class CanoeAnalysisController implements Initializable
      */
     private void addDistributedLoadGraphic(UniformDistributedLoad dLoad) {
         // Label reset
-        notificationLabel.setText("");
+        showSnackbar("");
 
         canoe.addDLoad(dLoad);
 
@@ -732,11 +754,11 @@ public class CanoeAnalysisController implements Initializable
     private void addArrowGraphic(PointLoad pLoad, double beamContainerX, AddPointLoadResult result)
     {
         // Notify the user regarding point loads combining or cancelling
-        notificationLabel.setText("");
+        showSnackbar("");
         if (result == AddPointLoadResult.COMBINED)
-            notificationLabel.setText("Point load magnitudes combined");
+            showSnackbar("Point load magnitudes combined");
         else if (result == AddPointLoadResult.REMOVED)
-            notificationLabel.setText("Point load magnitudes cancelled");
+            showSnackbar("Point load magnitudes cancelled");
 
         // Prevent rendering issues with zero-valued loads
         if (pLoad.getMag() == 0)
@@ -911,7 +933,7 @@ public class CanoeAnalysisController implements Initializable
         // Handle case that no index was selected
         if (selectedIndex == -1)
         {
-            notificationLabel.setText("Cannot perform delete, no load selected");
+            showSnackbar("Cannot perform delete, no load selected");
             return;
         }
 
