@@ -1,4 +1,116 @@
-### WECCA Canoe Analysis Software
+# PADDL
 
-### VM Options:
---add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=com.jfoenix  --add-exports javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix
+## About
+PADDL, Precision Analysis & Design for Dnyamic Loading is a JavaFx desktop app built to save the D&A team some hassle with tools to simplify technical civil engineering work. An emphasis is put on effective design to lower the barrier of technical civil engineering knowledge required to make informed, analytical civil enginering decisions in less time.
+
+<div style="display: flex; flex-direction: row;">
+    <img src="images/UI.png" alt="UI" style="width: 49%;" />
+    <img src="images/graph.png" alt="graph" style="width: 49%;" />
+</div>
+
+PADDL is built as a custom software solution for [WECCA](https://wecca.org/), the Western Engineering Concrete Canoe Association as the subject of our EFA (Enhanced Focus Area) in accordance with the growing use of related software tools in industry.
+
+Currently, the program has one module to which will be used to model the canoe as a beam (this is a standardized simplification) to solve for internal forces. This includes shear forces and bending moments.
+
+## Setting up the Development Environment
+
+1. <b>Clone the repo</b>
+   ```sh
+   git clone https://github.com/Tyler-Liquornik/canoe-analysis
+   ```
+2. <b>Build the project with Maven</b>
+   ```sh
+   maven clean install
+   ```
+3. <b>Configure VM options in your IntelliJ run configuration</b><br/>
+   Add the following VM options to your IDE or run configuration:
+   ```
+   --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=com.jfoenix  --add-exports javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix
+   ```
+4. <b>Install Chocolatey</b>
+    ```
+    @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
+    ```
+5. <b>Install Scenebuilder</b> <br/>
+   Even if you already had Scenebuilder installed, you cannot render certain JFoenix components with Scenebuilder 16+
+   ```
+   choco install scenebuilder --version=15.0.1
+6. <b>Add JFoenix and FontAwesomeFX to scenebuilder</b><br/>
+   Download [JFoenix](https://jar-download.com/artifacts/com.jfoenix/jfoenix/9.0.10/source-code) and [FontAwesomeFX](https://jar-download.com/artifacts/de.jensd/fontawesomefx/8.2/source-code)
+
+   Add the jar files to Scenebuilder's library:
+   
+   ![settings](images/settings.png)
+
+   Add the jar files. The list should show JFoenix and Scenebuilder as added:
+
+    ![libraries](images/libraries.png)
+   
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## Roadmap
+
+<b>Feature Checklist from 06/24:</b>
+
+- [ ] Hamburger Menu Drawer
+  - [ ] Template links to other modules
+  - [ ] About Page
+- [ ] Get maximum SF/BM 
+- [ ] Get piecewise function for graph equations
+  - [ ] Output equations as LaTeX
+- [ ] Editing non-support loads by making them horiztonally draggable
+  - [ ] Flip load direction by dragging the opposite side of the beam
+- [ ] Import/Export the canoe object as JSON
+- [ ] Download graph image as PNG
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- CONTRIBUTING -->
+## Contributing
+Starting in september for the 2024-2025 school year, any WECCA members involved on the software team can contribute to PADDL!
+
+1. Go into the directory where you cloned the project. For example I keep my project on my desktop so: <br/>
+   ```
+   cd "C:\Users\tyler\OneDrive\Desktop\canoe-analysis"
+   ```
+2. Create your own personal branch (`git checkout -b branch-name`). Use your full name as the branch name separated with dashes (i.e. tyler-liquornik)
+3. Commit your Changes (`git commit -m "write a commit message here"`). Ignore the `-b` if the branch has alredy been created.
+4. Push your commit(s) (`git push origin branch-name`)
+5. Open a pull request, and be ready to describe the feature impelmented or bugfix and justify/explain your work in the comments
+6. Wait for approval. You can send a message in the slack channel to ask, or wait until meeting to discuss the pull request
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- LICENSE -->
+## License
+
+Distributed under the MIT License. See `coming_soon.txt` for more information.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- CONTACT -->
+## Contact
+
+Tyler Liquornik: tyler.liquornik@gmail.com
+
+Project Link: [https://github.com/Tyler-Liquornik/canoe-analysis](https://github.com/Tyler-Liquornik/canoe-analysis)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+<!-- [contributors-shield]: https://img.shields.io/github/contributors/othneildrew/Best-README-Template.svg?style=for-the-badge
+[contributors-url]: https://github.com/othneildrew/Best-README-Template/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/othneildrew/Best-README-Template.svg?style=for-the-badge
+[forks-url]: https://github.com/othneildrew/Best-README-Template/network/members
+[stars-shield]: https://img.shields.io/github/stars/othneildrew/Best-README-Template.svg?style=for-the-badge
+[stars-url]: https://github.com/othneildrew/Best-README-Template/stargazers
+[issues-shield]: https://img.shields.io/github/issues/othneildrew/Best-README-Template.svg?style=for-the-badge
+[issues-url]: https://github.com/othneildrew/Best-README-Template/issues
+[license-shield]: https://img.shields.io/github/license/othneildrew/Best-README-Template.svg?style=for-the-badge
+[license-url]: https://github.com/othneildrew/Best-README-Template/blob/master/LICENSE.txt
+[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
+[linkedin-url]: https://linkedin.com/in/othneildrew
+[product-screenshot]: images/screenshot.png -->
