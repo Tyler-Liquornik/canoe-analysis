@@ -1,18 +1,23 @@
 package com.wecca.canoeanalysis.controllers;
 
 import com.jfoenix.controls.JFXDrawer;
+import com.jfoenix.controls.JFXHamburger;
 import com.jfoenix.effects.JFXDepthManager;
+import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
+import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.diagrams.*;
 import com.wecca.canoeanalysis.graphics.*;
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.util.*;
 import javafx.animation.FadeTransition;
+import javafx.animation.TranslateTransition;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
@@ -47,9 +52,11 @@ public class CanoeAnalysisController implements Initializable
     @FXML
     private RadioButton standsRadioButton, floatingRadioButton, submergedRadioButton;
     @FXML
-    private AnchorPane loadContainer, beamContainer;
+    private AnchorPane root, loadContainer, beamContainer;
     @FXML
     private JFXDrawer menuDrawer;
+    @FXML
+    private JFXHamburger hamburger;
 
     private Canoe canoe; // entity class that models the canoe as a beam
     private Beam beam; // The graphic of the beam
@@ -68,9 +75,11 @@ public class CanoeAnalysisController implements Initializable
     // For draggable window with custom toolbar
     @Setter
     private static Stage primaryStage;
-    private static Pane rootPane = primaryStage.get
     private static double xOffset = 0;
     private static double yOffset = 0;
+
+    // State management
+    private boolean isDrawerOpen = false;
 
     /**
      * Mouse pressed event handler to record the current mouse position
@@ -103,29 +112,56 @@ public class CanoeAnalysisController implements Initializable
      */
     public void minimizeWindow() {primaryStage.setIconified(true);}
 
-//    public void toggleDrawer()
-//    {
-//        FadeTransition fadeIn = new FadeTransition(Duration.seconds(3), pane);
-//        fadeIn.setFromValue(0);
-//        fadeIn.setToValue(1);
-//        fadeIn.setCycleCount(1);
-//
-//        FadeTransition fadeOut = new FadeTransition(Duration.seconds(3), pane);
-//        fadeOut.setFromValue(1);
-//        fadeOut.setToValue(0);
-//        fadeOut.setCycleCount(1);
-//
-//        fadeIn.play();
-//
-//        fadeIn.setOnFinished((e) -> fadeOut.play());
-//
-//        fadeOut.setOnFinished((e) -> {
-//            try {
-//                AnchorPane parentContent = FXMLLoader.load(getClass().getResource(("/genuinecoder/main/main.fxml")));
-//                root.getChildren().setAll(parentContent);
-//            } catch (IOException ignored) {}
-//        });
-//    }
+    private void initializeHamburger() {
+        HamburgerBackArrowBasicTransition transition = new HamburgerBackArrowBasicTransition(hamburger);
+        transition.setRate(-1);
+        hamburgerButton.addEventHandler(MouseEvent.MOUSE_PRESSED, (e) -> {
+            transition.setRate(transition.getRate() * -1);
+            transition.play();
+            toggleDrawer();
+        });
+    }
+
+    public void toggleDrawer() {
+        if (isDrawerOpen) {
+            closeDrawer();
+        } else {
+            openDrawer();
+        }
+    }
+
+    private void openDrawer() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/wecca/canoeanalysis/view/side-drawer-view.fxml"));
+            AnchorPane drawerContent = loader.load();
+            menuDrawer.setSidePane(drawerContent);
+            menuDrawer.setVisible(true);
+
+            TranslateTransition openTransition = new TranslateTransition(Duration.millis(300), menuDrawer);
+            openTransition.setFromX(-menuDrawer.getWidth());
+            openTransition.setToX(0);
+            openTransition.play();
+
+            openTransition.setOnFinished(event -> isDrawerOpen = true);
+            menuDrawer.open();
+        } catch (IOException ignored) {
+        }
+    }
+
+    private void closeDrawer() {
+        TranslateTransition closeTransition = new TranslateTransition(Duration.millis(300), menuDrawer);
+        closeTransition.setFromX(0);
+        closeTransition.setToX(-menuDrawer.getWidth());
+
+        closeTransition.setOnFinished(event -> {
+            menuDrawer.close();
+            menuDrawer.setSidePane((Node) null);
+            menuDrawer.setVisible(false);
+            isDrawerOpen = false;
+        });
+
+        closeTransition.play();
+    }
 
     /**
      * Put a group of radio buttons into a toggle group (only allow one to be selected at a time)
@@ -953,5 +989,8 @@ public class CanoeAnalysisController implements Initializable
         beam = new Beam(0, 84, beamContainer.getPrefWidth(), 25);
         JFXDepthManager.setDepth(beam, 4);
         beamContainer.getChildren().add(beam);
+
+        // Initialize the behaviour of the hamburger menu
+        initializeHamburger();
     }
 }
