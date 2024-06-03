@@ -1,27 +1,22 @@
 package com.wecca.canoeanalysis.controllers;
 
-import com.jfoenix.controls.JFXDrawer;
 import com.jfoenix.controls.JFXHamburger;
 import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
-import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.diagrams.*;
 import com.wecca.canoeanalysis.graphics.*;
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.util.*;
-import javafx.animation.FadeTransition;
-import javafx.animation.TranslateTransition;
+import javafx.animation.AnimationTimer;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
-import javafx.util.Duration;
 import lombok.Setter;
 
 import java.io.IOException;
@@ -54,7 +49,7 @@ public class CanoeAnalysisController implements Initializable
     @FXML
     private AnchorPane root, loadContainer, beamContainer;
     @FXML
-    private JFXDrawer menuDrawer;
+    private AnchorPane menuDrawer;
     @FXML
     private JFXHamburger hamburger;
 
@@ -80,6 +75,8 @@ public class CanoeAnalysisController implements Initializable
 
     // State management
     private boolean isDrawerOpen = false;
+    private AnimationTimer drawerTimer;
+    private double drawerTargetX; // Target X position for the drawer
 
     /**
      * Mouse pressed event handler to record the current mouse position
@@ -112,16 +109,6 @@ public class CanoeAnalysisController implements Initializable
      */
     public void minimizeWindow() {primaryStage.setIconified(true);}
 
-    private void initializeHamburger() {
-        HamburgerBackArrowBasicTransition transition = new HamburgerBackArrowBasicTransition(hamburger);
-        transition.setRate(-1);
-        hamburgerButton.addEventHandler(MouseEvent.MOUSE_PRESSED, (e) -> {
-            transition.setRate(transition.getRate() * -1);
-            transition.play();
-            toggleDrawer();
-        });
-    }
-
     public void toggleDrawer() {
         if (isDrawerOpen) {
             closeDrawer();
@@ -131,36 +118,44 @@ public class CanoeAnalysisController implements Initializable
     }
 
     private void openDrawer() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/wecca/canoeanalysis/view/side-drawer-view.fxml"));
-            AnchorPane drawerContent = loader.load();
-            menuDrawer.setSidePane(drawerContent);
-            menuDrawer.setVisible(true);
-
-            TranslateTransition openTransition = new TranslateTransition(Duration.millis(300), menuDrawer);
-            openTransition.setFromX(-menuDrawer.getWidth());
-            openTransition.setToX(0);
-            openTransition.play();
-
-            openTransition.setOnFinished(event -> isDrawerOpen = true);
-            menuDrawer.open();
-        } catch (IOException ignored) {
-        }
+        drawerTargetX = 0;
+        menuDrawer.setVisible(true);
+        startDrawerTimer();
     }
 
     private void closeDrawer() {
-        TranslateTransition closeTransition = new TranslateTransition(Duration.millis(300), menuDrawer);
-        closeTransition.setFromX(0);
-        closeTransition.setToX(-menuDrawer.getWidth());
+        drawerTargetX = -menuDrawer.getPrefWidth();
+        startDrawerTimer();
+    }
 
-        closeTransition.setOnFinished(event -> {
-            menuDrawer.close();
-            menuDrawer.setSidePane((Node) null);
-            menuDrawer.setVisible(false);
-            isDrawerOpen = false;
-        });
+    private void startDrawerTimer() {
+        hamburgerButton.setDisable(true);
+        hamburger.setDisable(false);
 
-        closeTransition.play();
+        if (drawerTimer != null) {
+            drawerTimer.stop();
+        }
+
+        drawerTimer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                double currentX = menuDrawer.getTranslateX();
+                if (currentX != drawerTargetX) {
+                    double newX = currentX + (drawerTargetX - currentX) * 0.075;
+                    menuDrawer.setTranslateX(newX);
+                    if (Math.abs(newX - drawerTargetX) < 1) {
+                        menuDrawer.setTranslateX(drawerTargetX);
+                        stop();
+                        isDrawerOpen = drawerTargetX == 0;
+                        hamburgerButton.setDisable(false);
+                    }
+                } else {
+                    stop();
+                    hamburgerButton.setDisable(false);
+                }
+            }
+        };
+        drawerTimer.start();
     }
 
     /**
@@ -258,7 +253,7 @@ public class CanoeAnalysisController implements Initializable
         List<Node> loadContainerChildren = loadContainer.getChildren().stream().toList();
 
         // Apply the unique view order for each node based on type
-        // Layering priority is SupportTriangles above ArrowBoxes above Arrows
+        // Layering priority is SupportTriangles => above Arrows => above ArrowBoxes
         int viewOrder = Integer.MAX_VALUE;
         for (Node node : loadContainerChildren)
         {
@@ -942,6 +937,25 @@ public class CanoeAnalysisController implements Initializable
         enableEmptyLoadListSettings(true);
     }
 
+    private void initializeHamburger() {
+        HamburgerBackArrowBasicTransition transition = new HamburgerBackArrowBasicTransition(hamburger);
+        transition.setRate(-1);
+        hamburgerButton.addEventHandler(MouseEvent.MOUSE_PRESSED, (e) -> {
+            transition.setRate(transition.getRate() * -1);
+            transition.play();
+            toggleDrawer();
+        });
+    }
+
+    private void initializeDrawer() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/wecca/canoeanalysis/view/side-drawer-view.fxml"));
+            AnchorPane drawerContent = loader.load();
+            menuDrawer.getChildren().setAll(drawerContent);
+            menuDrawer.setTranslateX(-menuDrawer.getPrefWidth());
+        } catch (IOException ignored) {}
+    }
+
     /**
      * Operations called on initialization of the view
      * @param url unused, part of javafx framework
@@ -960,6 +974,7 @@ public class CanoeAnalysisController implements Initializable
 
         // Css styling
         JFXDepthManager.setDepth(loadListView, 4);
+        JFXDepthManager.setDepth(menuDrawer, 5);
 
         // Setting RadioButton Toggle Group
         ToggleGroup canoeSupportToggleGroup = new ToggleGroup();
@@ -992,5 +1007,6 @@ public class CanoeAnalysisController implements Initializable
 
         // Initialize the behaviour of the hamburger menu
         initializeHamburger();
+        initializeDrawer();
     }
 }

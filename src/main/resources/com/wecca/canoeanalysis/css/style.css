@@ -75,11 +75,13 @@
     -fx-background-color: #BB86FC;
 }
 
-.tool-bar-button {
+.tool-bar-button,
+.tool-bar-button:disabled {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
     -fx-border-width: 0;
     -fx-border-radius: 0;
+    -fx-opacity: 1.0
 }
 
 .tool-bar-button:hover {

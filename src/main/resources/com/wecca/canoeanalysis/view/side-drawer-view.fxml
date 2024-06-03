@@ -5,7 +5,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane maxHeight="625.0" maxWidth="175.0" minHeight="625.0" minWidth="175.0" prefHeight="625.0" prefWidth="175.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane fx:id="drawerRoot" maxHeight="625.0" maxWidth="175.0" minHeight="625.0" minWidth="175.0" prefHeight="625.0" prefWidth="175.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <AnchorPane maxHeight="35.0" minHeight="35.0" prefHeight="35.0" prefWidth="175.0" styleClass="tool-bar" stylesheets="@../css/drawer.css" />
       <AnchorPane maxHeight="590.0" maxWidth="175.0" minHeight="590.0" minWidth="175.0" prefHeight="590.0" prefWidth="175.0" styleClass="background" stylesheets="@../css/drawer.css" AnchorPane.topAnchor="35.0">

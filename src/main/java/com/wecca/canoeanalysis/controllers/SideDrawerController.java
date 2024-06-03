@@ -1,20 +1,12 @@
 package com.wecca.canoeanalysis.controllers;
 
-import com.jfoenix.controls.JFXDrawer;
-import javafx.fxml.FXML;
-import javafx.scene.control.Button;
+import javafx.fxml.Initializable;
+import java.net.URL;
+import java.util.ResourceBundle;
 
-public class SideDrawerController {
-
-    @FXML
-    private JFXDrawer menuDrawer;
-
-    @FXML
-    private Button hamburgerButton;
-
-    @FXML
-    void hamburgerDropDown() {
+public class SideDrawerController implements Initializable {
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
 
     }
-
 }
