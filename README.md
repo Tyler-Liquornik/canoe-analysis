@@ -1,7 +1,7 @@
 # PADDL
 
 ## About
-PADDL, Precision Analysis & Design for Dnyamic Loading is a JavaFx desktop app built to save the D&A team some hassle with tools to simplify technical civil engineering work. An emphasis is put on effective design to lower the barrier of technical civil engineering knowledge required to make informed, analytical civil enginering decisions in less time.
+PADDL, Precision Analysis & Design for Dynamic Loading is a JavaFx desktop app built to save the D&A team some hassle with tools to simplify technical civil engineering work. An emphasis is put on effective design to lower the barrier of technical civil engineering knowledge required to make informed, analytical civil engineering decisions in less time.
 
 <div style="display: flex; flex-direction: row;">
     <img src="images/UI.png" alt="UI" style="width: 49%;" />
@@ -46,49 +46,39 @@ Currently, the program has one module to which will be used to model the canoe a
 
    ![libraries](images/libraries.png)
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 ## Roadmap
 
 <b>Feature Checklist from 06/24:</b>
 
-- [ ] Hamburger Menu Drawer
+- [X] Side Menu Drawer
     - [ ] Template links to other modules
     - [ ] About Page
 - [ ] Get maximum SF/BM
 - [ ] Get piecewise function for graph equations
     - [ ] Output equations as LaTeX
-- [ ] Editing non-support loads by making them horiztonally draggable
+- [ ] Editing non-support loads by making them horizontally draggable
     - [ ] Flip load direction by dragging the opposite side of the beam
 - [ ] Import/Export the canoe object as JSON
 - [ ] Download graph image as PNG
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
 
 <!-- CONTRIBUTING -->
 ## Contributing
 Starting in september for the 2024-2025 school year, any WECCA members involved on the software team can contribute to PADDL!
 
-1. Go into the directory where you cloned the project. For example I keep my project on my desktop so: <br/>
+1. Go into the directory where you cloned the project. For example, I keep my project on my desktop so: <br/>
    ```
    cd "C:\Users\tyler\OneDrive\Desktop\canoe-analysis"
    ```
 2. Create your own personal branch (`git checkout -b branch-name`). Use your full name as the branch name separated with dashes (i.e. tyler-liquornik)
-3. Commit your Changes (`git commit -m "write a commit message here"`). Ignore the `-b` if the branch has alredy been created.
+3. Commit your Changes (`git commit -m "write a commit message here"`). Ignore the `-b` if the branch has already been created.
 4. Push your commit(s) (`git push origin branch-name`)
-5. Open a pull request, and be ready to describe the feature impelmented or bugfix and justify/explain your work in the comments
-6. Wait for approval. You can send a message in the slack channel to ask, or wait until meeting to discuss the pull request
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+5. Open a pull request, and be ready to describe the feature implemented or bugfix and justify/explain your work in the comments
+6. Wait for approval. You can send a message in the Slack channel to ask, or wait until meeting to discuss the pull request
 
 <!-- LICENSE -->
 ## License
 
 Distributed under the MIT License. See `coming_soon.txt` for more information.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- CONTACT -->
 ## Contact
@@ -96,8 +86,6 @@ Distributed under the MIT License. See `coming_soon.txt` for more information.
 Tyler Liquornik: tyler.liquornik@gmail.com
 
 Project Link: [https://github.com/Tyler-Liquornik/canoe-analysis](https://github.com/Tyler-Liquornik/canoe-analysis)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
