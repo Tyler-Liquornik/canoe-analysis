@@ -71,8 +71,26 @@
     -fx-background-color: white;
 }
 
-.action-object{
+.action-object {
     -fx-background-color: #BB86FC;
+}
+
+.jfx-snackbar-content {
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+    -fx-background-color: #282828;
+}
+
+.jfx-snackbar-toast{
+    -fx-text-fill: WHITE;
+}
+
+.dismiss-button {
+    -fx-text-fill: #BB86FC;
+}
+
+.jfx-snackbar {
+    -fx-text-fill: #BB86FC;
 }
 
 .tool-bar-button,
