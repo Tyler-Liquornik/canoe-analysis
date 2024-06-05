@@ -2,19 +2,17 @@ package com.wecca.canoeanalysis.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data @AllArgsConstructor
-public class PointLoad implements Load
+@Setter @Getter
+public class PointLoad extends Load
 {
-    // Fields
-    private double mag; // force magnitude (kN). + / - sign indicates up / down direction
-    private double x; // force position on the canoe (m)
     private boolean isSupport; // assumed false
 
-    // Scaled on the canoe to the size of the canoe (beam) container in pixels on the GUI
-    public double getXScaled(double containerWidth, double canoeLength)
-    {
-        return this.x / canoeLength * containerWidth;
+    public PointLoad(double mag, double x, boolean isSupport) {
+        super(x, mag);
+        this.isSupport = isSupport;
     }
 
     // Stringification distinguishes supports from regular loads
