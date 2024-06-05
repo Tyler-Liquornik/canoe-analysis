@@ -36,45 +36,46 @@ public final class Canoe
         return canoe;
     }
 
-    public AddPointLoadResult addPLoad(PointLoad p) {
+    public AddLoadResult addLoad(Load l) {
+        if (l instanceof PointLoad)
+        {
+            // Do not add the load if it is zero valued
+            // Zero-valued supports are still added as markers for the model and ListView
+            if (l.getMag() == 0)
+                if (!((PointLoad) l).isSupport())
+                    return AddLoadResult.ADDED;
+                else
+                    l.setMag(0.00); // In case mag is -0 so that the negative doesn't display to the user
 
-        // Do not add the load if it is zero valued
-        // Zero-valued supports are still added as markers for the model and ListView
-        if (p.getMag() == 0)
-            if (!p.isSupport())
-                return AddPointLoadResult.ADDED;
-            else
-                p.setMag(0.00); // In case mag is -0 so that the negative doesn't display to the user
-
-        // Search for other loads at the same position, and combine their magnitudes
-        for (PointLoad pLoad : pLoads) {
-            if (pLoad.getX() == p.getX() && !p.isSupport())
-            {
-                pLoad.setMag(pLoad.getMag() + p.getMag());
-                if (pLoad.getMag() == 0) {
-                    pLoads.remove(pLoad);
-                    return AddPointLoadResult.REMOVED;
+            // Search for other loads at the same position, and combine their magnitudes
+            for (PointLoad pLoad : pLoads) {
+                if (pLoad.getX() == l.getX() && !((PointLoad) l).isSupport())
+                {
+                    pLoad.setMag(pLoad.getMag() + l.getMag());
+                    if (pLoad.getMag() == 0) {
+                        pLoads.remove(pLoad);
+                        return AddLoadResult.REMOVED;
+                    }
+                    return AddLoadResult.COMBINED;
                 }
-                return AddPointLoadResult.COMBINED;
             }
+
+            pLoads.add((PointLoad) l);
+            pLoads.sort(Comparator.comparingDouble(PointLoad::getX));
+            loads.add(l);
+            loads.sort(Comparator.comparingDouble(Load::getX));
         }
 
-        pLoads.add(p);
-        pLoads.sort(Comparator.comparingDouble(PointLoad::getX));
-        loads.add(p);
-        loads.sort(Comparator.comparingDouble(Load::getX));
-        return AddPointLoadResult.ADDED;
-    }
-    public void addDLoad(UniformDistributedLoad d)
-    {
-        dLoads.add(d);
-        dLoads.sort(Comparator.comparingDouble(UniformDistributedLoad::getX));
-        loads.add(d);
-        loads.sort(Comparator.comparingDouble(Load::getX));
-    }
-    public ArrayList<PointLoad> getPLoads() {return pLoads;}
-    public ArrayList<UniformDistributedLoad> getDLoads() {return dLoads;}
+        else if (l instanceof UniformDistributedLoad)
+        {
+            dLoads.add((UniformDistributedLoad) l);
+            dLoads.sort(Comparator.comparingDouble(UniformDistributedLoad::getX));
+            loads.add(l);
+            loads.sort(Comparator.comparingDouble(Load::getX));
+        }
 
+        return AddLoadResult.ADDED;
+    }
 
     public double getMaxPLoad()
     {
@@ -116,7 +117,7 @@ public final class Canoe
 
         for (UniformDistributedLoad d : dLoads)
         {
-            double mag = Math.abs(d.getW());
+            double mag = Math.abs(d.getMag());
 
             if (mag > max)
             {
@@ -133,7 +134,7 @@ public final class Canoe
 
         for (UniformDistributedLoad d : dLoads)
         {
-            double mag = Math.abs(d.getW());
+            double mag = Math.abs(d.getMag());
 
             if (mag < min)
             {

@@ -30,7 +30,7 @@ public class SystemSolver {
 
         for (UniformDistributedLoad load : loads) {
             double dLoadLength = load.getRX() - load.getX();
-            double pLoadMagnitude = load.getW() * dLoadLength;
+            double pLoadMagnitude = load.getMag() * dLoadLength;
             double pLoadPosition = load.getX() + (dLoadLength / 2);
             pointLoads.add(new PointLoad(pLoadMagnitude, pLoadPosition, false));
         }

@@ -1,5 +1,7 @@
 package com.wecca.canoeanalysis.controllers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jfoenix.controls.JFXHamburger;
 import com.jfoenix.controls.JFXSnackbar;
 import com.jfoenix.effects.JFXDepthManager;
@@ -469,9 +471,7 @@ public class CanoeAnalysisController implements Initializable
     public void updateLoadListView()
     {
         // Get the new list of loads as strings, sorted by x position
-        List<Load> loads = new ArrayList<>();
-        loads.addAll(canoe.getPLoads());
-        loads.addAll(canoe.getDLoads());
+        List<Load> loads = new ArrayList<>(canoe.getLoads());
         loads.sort(Comparator.comparingDouble(Load::getX));
         List<String> stringLoads = loads.stream()
                 .map(Load::toString)
@@ -528,7 +528,7 @@ public class CanoeAnalysisController implements Initializable
         }
 
         // Render all arrowBoxes not marked as the max scaled to size, dLoads index adjustment factor as dLoads come after pLoads as ListView items
-        for (int i = canoe.getPLoads().size(); i < canoe.getPLoads().size() + canoe.getDLoads().size(); i++)
+        for (int i = canoe.getPLoads().size(); i < canoe.getLoads().size(); i++)
         {
             UniformDistributedLoad d = canoe.getDLoads().get(i - canoe.getPLoads().size());
 
@@ -536,8 +536,8 @@ public class CanoeAnalysisController implements Initializable
             if (i == maxIndex)
             {
                 // Render the max at max size
-                int startY = d.getW() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beam.getThickness(); // 196
-                int endY = d.getW() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beam.getThickness(); //126
+                int startY = d.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beam.getThickness(); // 196
+                int endY = d.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beam.getThickness(); //126
 
                 ArrowBox arrowBox = new ArrowBox(d.getXScaled(beam.getWidth(), canoe.getLen()), startY, d.getRXScaled(beam.getWidth(), canoe.getLen()), endY);
                 arrowBoxList.add(arrowBox);
@@ -546,9 +546,9 @@ public class CanoeAnalysisController implements Initializable
             else
             {
                 // Render at scaled size (deltaY calculates the downscaling factor)
-                int endY = d.getW() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beam.getThickness(); //126
-                int deltaY = (int) ((acceptedArrowHeightRange[1] - acceptedArrowHeightRange[0]) * (Math.abs(d.getW()) / maxMag));
-                int startY = d.getW() < 0 ? acceptedArrowHeightRange[1] - deltaY : acceptedArrowHeightRange[1] + (int) beam.getThickness() + deltaY;
+                int endY = d.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beam.getThickness(); //126
+                int deltaY = (int) ((acceptedArrowHeightRange[1] - acceptedArrowHeightRange[0]) * (Math.abs(d.getMag()) / maxMag));
+                int startY = d.getMag() < 0 ? acceptedArrowHeightRange[1] - deltaY : acceptedArrowHeightRange[1] + (int) beam.getThickness() + deltaY;
 
                 ArrowBox arrowBox = new ArrowBox(d.getXScaled(beam.getWidth(), canoe.getLen()), startY, d.getRXScaled(beam.getWidth(), canoe.getLen()), endY);
                 arrowBoxList.add(arrowBox);
@@ -590,7 +590,7 @@ public class CanoeAnalysisController implements Initializable
             UniformDistributedLoad d = canoe.getDLoads().get(i);
 
             // Found a new max, get its index to reference later (avoids issues with 2 equal maxes)
-            if (Math.abs(d.getW()) == maxMag)
+            if (Math.abs(d.getMag()) == maxMag)
             {
                 // Adjustment factor because pLoads coming before dLoads in the ListView
                 maxDIndex = i;
@@ -600,7 +600,7 @@ public class CanoeAnalysisController implements Initializable
 
         // Max load between pLoads ands dLoads, dLoads index adjustment factor as dLoads come after pLoads as ListView items
         int maxIndex;
-        if (!canoe.getPLoads().isEmpty() && !canoe.getDLoads().isEmpty())
+        if (!canoe.getLoads().isEmpty())
             maxIndex = canoe.getMaxPLoad() > canoe.getMaxDLoad() ? maxPIndex : maxDIndex + canoe.getPLoads().size();
         else if (canoe.getPLoads().isEmpty())
             maxIndex = maxDIndex;
@@ -705,19 +705,19 @@ public class CanoeAnalysisController implements Initializable
         // Label reset
         closeSnackBar(snackbar);
 
-        canoe.addDLoad(dLoad);
+        canoe.addLoad(dLoad);
 
         // x coordinates of arrows in beamContainer for ArrowBox
         double scaledLX = dLoad.getXScaled(beam.getWidth(), canoe.getLen());
         double scaledRX = dLoad.getRXScaled(beam.getWidth(), canoe.getLen());
 
         // endY is always results in the arrow touching the beam (ternary operator accounts for direction)
-        int endY = dLoad.getW() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beam.getThickness(); //126
+        int endY = dLoad.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beam.getThickness(); //126
 
         // Only 1 load, always at max height
-        if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2)
+        if (canoe.getLoads().size() < 2)
         {
-            int startY = dLoad.getW() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beam.getThickness(); // 196
+            int startY = dLoad.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beam.getThickness(); // 196
             ArrowBox arrowBox = new ArrowBox(scaledLX, startY, scaledRX, endY);
             loadContainer.getChildren().add(arrowBox);
         }
@@ -749,7 +749,7 @@ public class CanoeAnalysisController implements Initializable
         // x coordinate in beamContainer for load
         double scaledX = pLoad.getXScaled(beam.getWidth(), canoe.getLen()); // x position in the beamContainer
 
-        AddPointLoadResult addResult = canoe.addPLoad(pLoad);
+        AddLoadResult addResult = canoe.addLoad(pLoad);
 
         // Render the correct graphic
         if (pLoad.isSupport())
@@ -790,13 +790,13 @@ public class CanoeAnalysisController implements Initializable
      * @param beamContainerX the x coordinate of the load within the load container
      * @param result the enum result of adding the load
      */
-    private void addArrowGraphic(PointLoad pLoad, double beamContainerX, AddPointLoadResult result)
+    private void addArrowGraphic(PointLoad pLoad, double beamContainerX, AddLoadResult result)
     {
         // Notify the user regarding point loads combining or cancelling
         closeSnackBar(snackbar);
-        if (result == AddPointLoadResult.COMBINED)
+        if (result == AddLoadResult.COMBINED)
             showSnackbar("Point load magnitudes combined");
-        else if (result == AddPointLoadResult.REMOVED)
+        else if (result == AddLoadResult.REMOVED)
             showSnackbar("Point load magnitudes cancelled");
 
         // Prevent rendering issues with zero-valued loads
@@ -807,7 +807,7 @@ public class CanoeAnalysisController implements Initializable
         int endY = pLoad.getMag() < 0 ? acceptedArrowHeightRange[1] : acceptedArrowHeightRange[1] + (int) beam.getThickness(); // +126
 
         // If only 1 load it's always at max height
-        if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2 && result != AddPointLoadResult.REMOVED)
+        if (canoe.getPLoads().size() + canoe.getDLoads().size() < 2 && result != AddLoadResult.REMOVED)
         {
             int startY = pLoad.getMag() < 0 ? acceptedArrowHeightRange[0] : 2 * acceptedArrowHeightRange[1] + (int) beam.getThickness(); // +196
             Arrow arrow = new Arrow(beamContainerX, startY, beamContainerX, endY);
@@ -1031,9 +1031,9 @@ public class CanoeAnalysisController implements Initializable
 
     }
 
-    public void downloadCanoe()
-    {
-
+    public void downloadCanoe() throws JsonProcessingException {
+        String JSONCanoe = (new ObjectMapper()).writeValueAsString(canoe);
+        System.out.println(JSONCanoe);
     }
 
 

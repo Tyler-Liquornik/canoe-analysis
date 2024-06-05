@@ -3,6 +3,7 @@ module com.wecca.canoeanalysis {
     requires javafx.fxml;
     requires com.jfoenix;
     requires static lombok;
+    requires com.fasterxml.jackson.databind;
 
     opens com.wecca.canoeanalysis to javafx.fxml;
     exports com.wecca.canoeanalysis;

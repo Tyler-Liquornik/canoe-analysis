@@ -7,11 +7,11 @@ import lombok.Data;
 public class UniformDistributedLoad implements Load {
     private double x; // left bound of the distributed load
     private double rX; // right bound of the distributed load
-    private double w; // load in kN/m
+    private double mag; // load in kN/m
 
     public double getTotalForce()
     {
-        return w * (rX - x);
+        return mag * (rX - x);
     }
 
     public double getXScaled(double containerWidth, double canoeLength)
@@ -27,6 +27,6 @@ public class UniformDistributedLoad implements Load {
     @Override
     public String toString()
     {
-        return String.format("Load: %.2fkN/m, [%.2fm, %.2fm]", w, x, rX);
+        return String.format("Load: %.2fkN/m, [%.2fm, %.2fm]", mag, x, rX);
     }
 }
