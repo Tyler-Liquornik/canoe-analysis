@@ -13,9 +13,9 @@ import javafx.scene.layout.StackPane;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.lang.reflect.Field;
-
 // Implementing getter/setter functionality that isn't in the original class for some reason...
+// This allows access to subcomponents of the snack bar for custom css implementations
+// This is duplicated from JFoenix but the best way I could find to do this at the moment
 @Getter
 @Setter
 public class CustomJFXSnackBarLayout extends JFXSnackbarLayout {
