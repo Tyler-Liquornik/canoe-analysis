@@ -12,7 +12,6 @@ import java.util.*;
 public final class Canoe
 {
     private double len; // canoe length
-    private double m; // canoe mass (able to calculate this from exported solidworks data instead of manually?)
     private final ArrayList<PointLoad> pLoads; // point loads on the canoe
     private final ArrayList<UniformDistributedLoad> dLoads; // uniformly distributed loads on the canoe
     private final ArrayList<Load> loads; // will sync with listview and loadContainer order
@@ -39,7 +38,7 @@ public final class Canoe
     public AddLoadResult addLoad(Load l) {
         if (l instanceof PointLoad)
         {
-            // Do not add the load if it is zero valued
+            // Do not add the load if it is zero valued unless if is a support
             // Zero-valued supports are still added as markers for the model and ListView
             if (l.getMag() == 0)
                 if (!((PointLoad) l).isSupport())
@@ -51,11 +50,15 @@ public final class Canoe
             for (PointLoad pLoad : pLoads) {
                 if (pLoad.getX() == l.getX() && !((PointLoad) l).isSupport())
                 {
-                    pLoad.setMag(pLoad.getMag() + l.getMag());
-                    if (pLoad.getMag() == 0) {
+                    double newMag = pLoad.getMag() + l.getMag();
+                    if (newMag == 0)
+                    {
+                        removeLoad(loads.indexOf(pLoad));
                         pLoads.remove(pLoad);
                         return AddLoadResult.REMOVED;
                     }
+                    loads.get(loads.indexOf(pLoad)).setMag(newMag);
+                    pLoad.setMag(newMag);
                     return AddLoadResult.COMBINED;
                 }
             }
@@ -77,72 +80,42 @@ public final class Canoe
         return AddLoadResult.ADDED;
     }
 
-    public double getMaxPLoad()
-    {
-        double max = 0;
+    public int getMaxLoadIndex() {
+        if (loads.isEmpty()) {return -1;}
 
-        for (PointLoad p : pLoads)
+        int maxIndex = 0;
+        double max = Math.abs(loads.get(0).getMag());
+
+        for (int i = 1; i < loads.size(); i++)
         {
-            double mag = Math.abs(p.getMag());
-
+            double mag = Math.abs(loads.get(i).getMag());
             if (mag > max)
             {
                 max = mag;
+                maxIndex = i;
             }
         }
-
-        return max;
+        return maxIndex;
     }
 
-    public double getMinPLoad()
-    {
-        double min = Integer.MAX_VALUE;
+    public int getMinLoadIndex() {
+        if (loads.isEmpty()) {
+            return -1;
+        }
 
-        for (PointLoad p : pLoads)
+        int minIndex = 0;
+        double min = Math.abs(loads.get(0).getMag());
+
+        for (int i = 1; i < loads.size(); i++)
         {
-            double mag = Math.abs(p.getMag());
-
+            double mag = Math.abs(loads.get(i).getMag());
             if (mag < min)
             {
                 min = mag;
+                minIndex = i;
             }
         }
-
-        return min;
-    }
-
-    public double getMaxDLoad()
-    {
-        double max = 0;
-
-        for (UniformDistributedLoad d : dLoads)
-        {
-            double mag = Math.abs(d.getMag());
-
-            if (mag > max)
-            {
-                max = mag;
-            }
-        }
-
-        return max;
-    }
-
-    public double getMinDLoad()
-    {
-        double min = Integer.MAX_VALUE;
-
-        for (UniformDistributedLoad d : dLoads)
-        {
-            double mag = Math.abs(d.getMag());
-
-            if (mag < min)
-            {
-                min = mag;
-            }
-        }
-
-        return min;
+        return minIndex;
     }
 
     /**
@@ -187,8 +160,7 @@ public final class Canoe
         TreeSet<Double> s = new TreeSet<>();
 
         // Points included are the locations of point loads and interval boundaries of distributed loads
-        for (PointLoad p : pLoads) {s.add(p.getX());}
-        for (UniformDistributedLoad d : dLoads) {s.add(d.getX()); s.add(d.getRX());}
+        for (Load l : loads) {s.add(l.getX());}
 
         // Add canoe endpoints to the set if they aren't already
         s.add(0.0);
