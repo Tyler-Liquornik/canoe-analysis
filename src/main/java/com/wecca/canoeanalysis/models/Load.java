@@ -1,6 +1,5 @@
 package com.wecca.canoeanalysis.models;
 
-import com.wecca.canoeanalysis.util.Positionable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,7 +7,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @AllArgsConstructor
-public abstract class Load implements Positionable {
+public abstract class Load{
 
     double x;
     double mag;

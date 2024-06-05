@@ -350,7 +350,7 @@ public class CanoeAnalysisController implements Initializable
         {
 
             // Recolor the selected graphic
-            Colorable colorableGraphic = (Colorable) loadContainer.getChildren().get(i);
+            Graphic colorableGraphic = (Graphic) loadContainer.getChildren().get(i);
             if (i != selectedIndex)
                 colorableGraphic.recolor(ColorPalette.ICON.getColor());
             else
@@ -493,7 +493,7 @@ public class CanoeAnalysisController implements Initializable
         loadContainer.getChildren().clear();
 
         // List of Arrows and ArrowBoxes
-        List<Positionable> graphics = new ArrayList<>();
+        List<Graphic> graphics = new ArrayList<>();
 
         // The index in the canoes Load list of the maximum magnitude load
         int maxIndex = canoe.getMaxLoadIndex();
@@ -514,7 +514,7 @@ public class CanoeAnalysisController implements Initializable
                 graphics.add(new ArrowBox(l.getXScaled(beam.getWidth(), canoe.getLen()), startY, ((UniformDistributedLoad) l).getRXScaled(beam.getWidth(), canoe.getLen()), endY));
         }
 
-        graphics.sort(Comparator.comparingDouble(Positionable::getX));
+        graphics.sort(Comparator.comparingDouble(Graphic::getX));
         loadContainer.getChildren().addAll((graphics.stream().map(element -> (Node) element)).toList());
     }
 
@@ -659,13 +659,12 @@ public class CanoeAnalysisController implements Initializable
         double scaledX = pLoad.getXScaled(beam.getWidth(), canoe.getLen()); // x position in the beamContainer
 
         AddLoadResult addResult = canoe.addLoad(pLoad);
-        System.out.println(addResult);
 
         // Render the correct graphic
         if (pLoad.isSupport())
             addSupportGraphic(scaledX);
         else
-            addArrowGraphic(pLoad, scaledX, addResult);
+            addArrowGraphic(pLoad, addResult);
     }
 
     /**
@@ -675,8 +674,8 @@ public class CanoeAnalysisController implements Initializable
     private void addSupportGraphic(double beamContainerX)
     {
         // Create the list of current load graphics
-        List<Positionable> loadContainerChildren = new ArrayList<>(loadContainer.getChildren().stream()
-                .map(graphic -> (Positionable) graphic).toList());
+        List<Graphic> loadContainerChildren = new ArrayList<>(loadContainer.getChildren().stream()
+                .map(node -> (Graphic) node).toList());
 
 
         // Create and add the support graphic
@@ -687,7 +686,7 @@ public class CanoeAnalysisController implements Initializable
         // Clear graphics the load container and add the new list of load graphics including the support, all sorted
         loadContainer.getChildren().clear();
         loadContainer.getChildren().addAll(loadContainerChildren.stream()
-                .sorted(Comparator.comparingDouble(Positionable::getX))
+                .sorted(Comparator.comparingDouble(Graphic::getX))
                 .map(load -> (Node) load).toList());
 
         // Update the view order for proper z-axis rendering
@@ -697,10 +696,9 @@ public class CanoeAnalysisController implements Initializable
     /**
      * Add a point load to the load container as a graphic of an arrow to represent the load
      * @param pLoad the point load to add
-     * @param beamContainerX the x coordinate of the load within the load container
      * @param result the enum result of adding the load
      */
-    private void addArrowGraphic(PointLoad pLoad, double beamContainerX, AddLoadResult result)
+    private void addArrowGraphic(PointLoad pLoad, AddLoadResult result)
     {
         // Notify the user regarding point loads combining or cancelling
         closeSnackBar(snackbar);
@@ -784,7 +782,7 @@ public class CanoeAnalysisController implements Initializable
      */
     private void solveStandSystem()
     {
-        List<PointLoad> supportLoads = SystemSolver.solveStandSystem(canoe);
+        List<PointLoad> supportLoads = SolverUtils.solveStandSystem(canoe);
         for (PointLoad supportLoad : supportLoads) {
             addPointLoadGraphic(supportLoad);}
     }

@@ -11,14 +11,14 @@ import java.util.List;
 /**
  * Utility class for solving system equations
  */
-public class SystemSolver {
+public class SolverUtils {
 
     // Offset of the stands from either end of the canoe (assume equal offset on either side)
     // Hard coded for now with stands right on the edges (0 offset), subject to change later
     private final static int STAND_OFFSET = 0;
 
     // Private constructor to enable utility class
-    private SystemSolver() {}
+    private SolverUtils() {}
 
     /**
      * Convert a list of UniformDistributedLoads to a list of PointLoads.

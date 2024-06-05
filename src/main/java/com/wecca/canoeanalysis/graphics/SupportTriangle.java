@@ -1,6 +1,5 @@
 package com.wecca.canoeanalysis.graphics;
 import com.jfoenix.effects.JFXDepthManager;
-import com.wecca.canoeanalysis.util.Positionable;
 import javafx.scene.Group;
 import javafx.scene.shape.*;
 import javafx.scene.paint.Color;
@@ -8,7 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 // Pinned support icons
-public class SupportTriangle extends Group implements Colorable, Positionable
+public class SupportTriangle extends Group implements Graphic
 {
     // Fields
     private static final double defaultSideLength = 20.0;

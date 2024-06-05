@@ -1,7 +1,6 @@
 package com.wecca.canoeanalysis.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
-import com.wecca.canoeanalysis.util.Positionable;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -10,7 +9,7 @@ import lombok.Setter;
 import lombok.Getter;
 
 @Getter @Setter
-public class Beam extends Group implements Positionable, Colorable {
+public class Beam extends Group implements Graphic {
 
     // Fields
     private double startX;
