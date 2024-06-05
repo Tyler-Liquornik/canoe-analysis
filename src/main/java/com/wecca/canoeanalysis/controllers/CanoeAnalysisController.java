@@ -22,7 +22,6 @@ import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
 import javafx.util.Duration;
 import lombok.Setter;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
@@ -33,7 +32,7 @@ import java.util.*;
 public class CanoeAnalysisController implements Initializable
 {
     @FXML
-    private Label axisLabelR, lengthLabel, notificationLabel, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,
+    private Label axisLabelR, lengthLabel, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,
             pointTitleLabel, supportTitleLabel, distributedDirectionLabel, distributedMagntiudeLabel,
             distributedIntervalLabel, distributedTitleLabel;
     @FXML
@@ -79,7 +78,7 @@ public class CanoeAnalysisController implements Initializable
     private static double xOffset = 0;
     private static double yOffset = 0;
 
-    // State management
+    // Drawer state management
     private boolean isDrawerOpen = false;
     private AnimationTimer drawerTimer;
     private double drawerTargetX; // Target X position for the drawer
@@ -733,6 +732,7 @@ public class CanoeAnalysisController implements Initializable
             {
                 // TODO: implement clipping
                 // currently: after getting here and trying to add another load you can't add any more arrows, need to fix that
+                showSnackbar("This is an edge case with no handler yet - Tyler :-)");
             }
         }
 
@@ -824,6 +824,7 @@ public class CanoeAnalysisController implements Initializable
             {
                 // TODO: implement clipping
                 // currently: after getting here and trying to add another load you can't add any more arrows
+                showSnackbar("This is an edge case with no handler yet - Tyler :-)");
             }
         }
 
@@ -847,26 +848,24 @@ public class CanoeAnalysisController implements Initializable
         if (standsRadioButton.isSelected())
         {
             solveStandSystem();
-            solveSystemButton.setText("Undo Solve");
             solveSystemButton.setOnAction(e -> undoStandsSolve());
-            solveSystemButton.setDisable(false);
         }
         else if (floatingRadioButton.isSelected())
         {
-//            solveFloatingSystem();
-//            solveSystemButton.setText("Undo Solve");
-//            solveSystemButton.setOnAction(e -> undoFloatingSolve());
-//            solveSystemButton.setDisable(false);
+            solveFloatingSystem();
+            solveSystemButton.setOnAction(e -> undoFloatingSolve());
         }
         else if (submergedRadioButton.isSelected())
         {
-//            solveSubmergedSystem();
-//            solveSystemButton.setText("Undo Solve");
-//            solveSystemButton.setOnAction(e -> undoSubmergedSolve());
-//            solveSystemButton.setDisable(false);
+            solveSubmergedSystem();
+            solveSystemButton.setOnAction(e -> undoSubmergedSolve());
         }
 
-        // Update the lod list view with the supports
+        // Update UI to disable loading and enable undo solve functionality
+        solveSystemButton.setText("Undo Solve");
+        solveSystemButton.setDisable(false);
+
+        // Update the load list view supports from solve
         updateLoadListView();
     }
 
@@ -900,21 +899,31 @@ public class CanoeAnalysisController implements Initializable
     private void solveFloatingSystem()
     {
         // TODO: Implement (consult Design & Analysis)
+        showSnackbar("This has not yet been implemented - Tyler :-)");
     }
 
     private void undoFloatingSolve()
     {
         // TODO: Implement (after solveFloatingSystem())
+        solveSystemButton.setText("Solve System");
+        solveSystemButton.setOnAction(e -> solveSystem());
+        generateGraphsButton.setDisable(true);
+        disableLoadingControls(false);
     }
 
     private void solveSubmergedSystem()
     {
         // TODO: Implement (consult Design & Analysis)
+        showSnackbar("This has not yet been implemented - Tyler :-)");
     }
 
     private void undoSubmergedSolve()
     {
         // TODO: Implement (after solveSubmergedSystem())
+        solveSystemButton.setText("Solve System");
+        solveSystemButton.setOnAction(e -> solveSystem());
+        generateGraphsButton.setDisable(true);
+        disableLoadingControls(false);
     }
 
     /**
@@ -1016,6 +1025,18 @@ public class CanoeAnalysisController implements Initializable
             menuDrawer.setTranslateX(-menuDrawer.getPrefWidth());
         } catch (IOException ignored) {}
     }
+
+    public void uploadCanoe()
+    {
+
+    }
+
+    public void downloadCanoe()
+    {
+
+    }
+
+
 
     /**
      * Operations called on initialization of the view
