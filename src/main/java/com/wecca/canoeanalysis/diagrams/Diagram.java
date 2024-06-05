@@ -214,7 +214,7 @@ public class Diagram
                 // Apply the magnitude and the rolling slope
                 intervals.add(new Interval(prevX, x, magnitude, slope));
                 // Increment the slope, set the x coordinate, and clear the magnitude
-                slope += distributedLoadStartMap.get(x).getW();
+                slope += distributedLoadStartMap.get(x).getMag();
                 prevX = x;
                 magnitude = 0;
             }
@@ -223,7 +223,7 @@ public class Diagram
                 // Apply the magnitude and the rolling slope
                 intervals.add(new Interval(prevX, x, magnitude, slope));
                 // Decrement the slope, set the x coordinate, and clear the magnitude
-                slope -= distributedLoadEndMap.get(x).getW();
+                slope -= distributedLoadEndMap.get(x).getMag();
                 prevX = x;
                 magnitude = 0;
             }
