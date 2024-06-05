@@ -5,12 +5,11 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
-import com.wecca.canoeanalysis.util.Positionable;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter @Setter
-public class Arrow extends Path implements Colorable, Positionable {
+public class Arrow extends Path implements Graphic{
 
     // Fields
     private static final double defaultArrowHeadSize = 10;
