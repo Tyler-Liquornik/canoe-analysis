@@ -30,12 +30,22 @@
                   <String fx:value="hamburger" />
                </styleClass>
             </Button>
-            <Button layoutX="830.0" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#minimizeWindow" prefHeight="34.0" prefWidth="35.0" styleClass="tool-bar-button" stylesheets="@../css/style.css" AnchorPane.rightAnchor="50.0">
+            <Button fx:id="uploadCanoeButton" layoutX="900.0" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#uploadCanoe" prefHeight="34.0" prefWidth="35.0" styleClass="tool-bar-button" stylesheets="@../css/style.css" AnchorPane.rightAnchor="120.0">
+               <graphic>
+                  <FontAwesomeIcon fill="WHITE" glyphName="ARROW_CIRCLE_O_UP" size="25" tabSize="0" translateY="2.0" />
+               </graphic>
+            </Button>
+            <Button fx:id="downloadCanoeButton" layoutX="900.0" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#downloadCanoe" prefHeight="34.0" prefWidth="35.0" styleClass="tool-bar-button" stylesheets="@../css/style.css" AnchorPane.rightAnchor="85.0">
+               <graphic>
+                  <FontAwesomeIcon fill="WHITE" glyphName="ARROW_CIRCLE_O_DOWN" size="25" tabSize="0" translateY="2.0" />
+               </graphic>
+            </Button>
+            <Button layoutX="900.0" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#minimizeWindow" prefHeight="34.0" prefWidth="35.0" styleClass="tool-bar-button" stylesheets="@../css/style.css" AnchorPane.rightAnchor="50.0">
                <graphic>
                   <FontAwesomeIcon fill="WHITE" glyphName="MINUS" scaleY="0.8" size="25" tabSize="0" translateY="2.0" />
                </graphic>
             </Button>
-            <Button layoutX="865.0" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#closeWindow" prefHeight="34.0" prefWidth="35.0" stylesheets="@../css/style.css" AnchorPane.rightAnchor="15.0">
+            <Button layoutX="900.0" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#closeWindow" prefHeight="34.0" prefWidth="35.0" stylesheets="@../css/style.css" AnchorPane.rightAnchor="15.0">
                <graphic>
                   <FontAwesomeIcon fill="WHITE" glyphName="TIMES" scaleX="0.9" scaleY="0.9" size="25" tabSize="0" />
                </graphic>
