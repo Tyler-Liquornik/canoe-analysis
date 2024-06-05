@@ -2,7 +2,6 @@ package com.wecca.canoeanalysis.controllers;
 
 import com.jfoenix.controls.JFXHamburger;
 import com.jfoenix.controls.JFXSnackbar;
-import com.jfoenix.controls.JFXSnackbarLayout;
 import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
@@ -11,7 +10,7 @@ import com.wecca.canoeanalysis.graphics.*;
 import com.wecca.canoeanalysis.graphics.CustomJFXSnackBarLayout;
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.util.*;
-import javafx.animation.AnimationTimer;
+import javafx.animation.*;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -135,28 +134,34 @@ public class CanoeAnalysisController implements Initializable
         startDrawerTimer();
     }
 
-    private void startDrawerTimer() {
+    private void startDrawerTimer()
+    {
         hamburgerButton.setDisable(true);
         hamburger.setDisable(false);
 
-        if (drawerTimer != null) {
+        if (drawerTimer != null)
             drawerTimer.stop();
-        }
 
-        drawerTimer = new AnimationTimer() {
+        drawerTimer = new AnimationTimer()
+        {
             @Override
-            public void handle(long now) {
+            public void handle(long now)
+            {
                 double currentX = menuDrawer.getTranslateX();
-                if (currentX != drawerTargetX) {
+                if (currentX != drawerTargetX)
+                {
                     double newX = currentX + (drawerTargetX - currentX) * 0.075;
                     menuDrawer.setTranslateX(newX);
-                    if (Math.abs(newX - drawerTargetX) < 1) {
+                    if (Math.abs(newX - drawerTargetX) < 1)
+                    {
                         menuDrawer.setTranslateX(drawerTargetX);
                         stop();
                         isDrawerOpen = drawerTargetX == 0;
                         hamburgerButton.setDisable(false);
                     }
-                } else {
+                }
+                else
+                {
                     stop();
                     hamburgerButton.setDisable(false);
                 }
@@ -166,19 +171,53 @@ public class CanoeAnalysisController implements Initializable
     }
 
     public void showSnackbar(String message) {
-        snackbar.close();
-        snackbar = new JFXSnackbar(root);
-        snackbar.setPrefWidth(200);
-        snackbar.setViewOrder(Integer.MIN_VALUE);
-        JFXDepthManager.setDepth(snackbar, 5);
-        snackbar.getStylesheets().add(CanoeAnalysisApplication.class.getResource("css/style.css").toExternalForm());
-        CustomJFXSnackBarLayout snackbarLayout = new CustomJFXSnackBarLayout(message, "DISMISS", event -> snackbar.close());
+        closeSnackBar(snackbar);
+        initializeSnackbar(); // Reinitialization is required to fix visual bugs
+        CustomJFXSnackBarLayout snackbarLayout = new CustomJFXSnackBarLayout(message, "DISMISS", event -> closeSnackBar(snackbar));
         snackbarLayout.setPrefHeight(50);
         Button dismissButton = snackbarLayout.getAction();
         dismissButton.getStyleClass().add("dismiss-button");
         JFXSnackbar.SnackbarEvent snackbarEvent = new JFXSnackbar.SnackbarEvent(snackbarLayout, Duration.seconds(3));
         snackbar.fireEvent(snackbarEvent);
     }
+
+    public void initializeSnackbar()
+    {
+        snackbar = new JFXSnackbar(root);
+        JFXDepthManager.setDepth(snackbar, 5);
+        snackbar.setPrefWidth(200);
+        snackbar.setViewOrder(Integer.MIN_VALUE);
+        snackbar.getStylesheets().add(CanoeAnalysisApplication.class.getResource("css/style.css").toExternalForm());
+    }
+
+    // .close() has an unfixed bug in the JFoenix library itself
+    // The bug at https://github.com/sshahine/JFoenix/issues/1101 has not been adequately fixed
+    // Custom fix source: https://github.com/sshahine/JFoenix/issues/983 from GitHub user sawaYch
+    public void closeSnackBar(JFXSnackbar sb) {
+        Timeline closeAnimation = new Timeline(
+                new KeyFrame(
+                        Duration.ZERO,
+                        e -> sb.toFront(),
+                        new KeyValue(sb.opacityProperty(), 1, Interpolator.EASE_IN),
+                        new KeyValue(sb.translateYProperty(), 0, Interpolator.EASE_OUT)
+                ),
+                new KeyFrame(
+                        Duration.millis(290),
+                        new KeyValue(sb.visibleProperty(), true, Interpolator.EASE_BOTH)
+                ),
+                new KeyFrame(Duration.millis(300),
+                        e -> sb.toBack(),
+                        new KeyValue(sb.visibleProperty(), false, Interpolator.EASE_BOTH),
+                        new KeyValue(sb.translateYProperty(),
+                                sb.getLayoutBounds().getHeight(),
+                                Interpolator.EASE_IN),
+                        new KeyValue(sb.opacityProperty(), 0, Interpolator.EASE_OUT)
+                )
+        );
+        closeAnimation.setCycleCount(1);
+        closeAnimation.play();
+    }
+
 
     /**
      * Put a group of radio buttons into a toggle group (only allow one to be selected at a time)
@@ -368,7 +407,7 @@ public class CanoeAnalysisController implements Initializable
                 axisLabelR.setLayoutX(595); // this will not be hard coded anymore once axis labels for new loads are implemented
 
                 // Clear potential alert and reset access to controls
-                showSnackbar("");
+                closeSnackBar(snackbar);
                 disableLoadingControls(false);
                 canoeLengthTextField.setDisable(true);
                 canoeLengthComboBox.setDisable(true);
@@ -578,7 +617,7 @@ public class CanoeAnalysisController implements Initializable
     public void addPointLoad()
     {
         // Clear previous alert label
-        showSnackbar("");
+        closeSnackBar(snackbar);
 
         // Validate the entered numbers are doubles
         if (allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField)))
@@ -620,7 +659,7 @@ public class CanoeAnalysisController implements Initializable
      */
     public void addDistributedLoad()
     {// Clear previous alert labels
-        showSnackbar("");
+        closeSnackBar(snackbar);
 
         // Validate the entered numbers are doubles
         if (allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
@@ -665,7 +704,7 @@ public class CanoeAnalysisController implements Initializable
      */
     private void addDistributedLoadGraphic(UniformDistributedLoad dLoad) {
         // Label reset
-        showSnackbar("");
+        closeSnackBar(snackbar);
 
         canoe.addDLoad(dLoad);
 
@@ -754,7 +793,7 @@ public class CanoeAnalysisController implements Initializable
     private void addArrowGraphic(PointLoad pLoad, double beamContainerX, AddPointLoadResult result)
     {
         // Notify the user regarding point loads combining or cancelling
-        showSnackbar("");
+        closeSnackBar(snackbar);
         if (result == AddPointLoadResult.COMBINED)
             showSnackbar("Point load magnitudes combined");
         else if (result == AddPointLoadResult.REMOVED)
@@ -1027,8 +1066,9 @@ public class CanoeAnalysisController implements Initializable
         JFXDepthManager.setDepth(beam, 4);
         beamContainer.getChildren().add(beam);
 
-        // Initialize the behaviour of the hamburger menu
+        // JFX Initialization refactored separately
         initializeHamburger();
         initializeDrawer();
+        initializeSnackbar();
     }
 }
