@@ -84,8 +84,7 @@ public final class Canoe
         if (loads.isEmpty()) {return -1;}
 
         int maxIndex = 0;
-        double max = Math.abs(loads.get(0).getMag());
-
+        double max = 0;
         for (int i = 1; i < loads.size(); i++)
         {
             double mag = Math.abs(loads.get(i).getMag());
@@ -99,13 +98,10 @@ public final class Canoe
     }
 
     public int getMinLoadIndex() {
-        if (loads.isEmpty()) {
-            return -1;
-        }
+        if (loads.isEmpty()) {return -1;}
 
         int minIndex = 0;
-        double min = Math.abs(loads.get(0).getMag());
-
+        double min = 0;
         for (int i = 1; i < loads.size(); i++)
         {
             double mag = Math.abs(loads.get(i).getMag());
