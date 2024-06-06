@@ -15,7 +15,8 @@ import lombok.Setter;
 
 // Implementing getter/setter functionality that isn't in the original class for some reason...
 // This allows access to subcomponents of the snack bar for custom css implementations
-// This is duplicated from JFoenix but the best way I could find to do this at the moment
+// This is duplicated code from JFoenix but the best way I could find to do this at the moment
+// JFoenix is an old unmaintained project so this is the best fixer at the moment
 @Getter
 @Setter
 public class CustomJFXSnackBarLayout extends JFXSnackbarLayout {

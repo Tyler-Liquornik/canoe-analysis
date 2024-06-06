@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.util;
 
 import com.wecca.canoeanalysis.models.Canoe;
+import com.wecca.canoeanalysis.models.Load;
 import com.wecca.canoeanalysis.models.PointLoad;
 import com.wecca.canoeanalysis.models.UniformDistributedLoad;
 
@@ -71,11 +72,14 @@ public class SolverUtils {
     }
 
     //TODO: later
-    public static List<PointLoad> solveFloatingSystem(Canoe canoe) {
-        List<PointLoad> pointLoads = new ArrayList<>();
-        pointLoads.addAll(distributedToPoint(canoe.getDLoads()));
-        pointLoads.addAll(canoe.getPLoads());
+    public static List<Load> solveFloatingSystem(Canoe canoe) {
+        List<Load> loads = new ArrayList<>();
+        return null;
+    }
 
-        return pointLoads;
+    //TODO: later
+    public static List<Load> solveSubmergedSystem(Canoe canoe) {
+        List<Load> loads = new ArrayList<>();
+        return null;
     }
 }
