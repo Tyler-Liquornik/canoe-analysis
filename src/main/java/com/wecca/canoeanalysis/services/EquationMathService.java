@@ -1,6 +1,6 @@
 package com.wecca.canoeanalysis.services;
 
-import com.wecca.canoeanalysis.graphics.diagrams.DiagramPoint;
+import com.wecca.canoeanalysis.components.diagrams.DiagramPoint;
 
 import java.util.HashMap;
 
