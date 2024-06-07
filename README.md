@@ -22,37 +22,45 @@ Currently, the program has one module to which will be used to model the canoe a
    ```sh
    maven clean install
    ```
-3. <b>Configure VM options in your IntelliJ run configuration</b><br/>
-   Add the following VM options to your IDE or run configuration:
-   ```
-   --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=com.jfoenix  --add-exports javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix
-   ```
-4. <b>Install Chocolatey</b>
+3. <b>Install Chocolatey</b>
     ```
     @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
     ```
-5. <b>Install Scenebuilder</b> <br/>
-   Even if you already had Scenebuilder installed, you cannot render certain JFoenix components with Scenebuilder 16+
+4. <b>Install Scenebuilder</b> <br/>
+   Even if you already had Scenebuilder installed, you cannot render certain JFoenix components with Scenebuilder 16+ <br/> <br/>
+   
+   On Windows, you can install it through chocolatey. <br/>
+   If you haven't installed it before, you can do it by running a terminal as admin (right click > run as admin)
+   ```
+    @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
+   ```
    ```
    choco install scenebuilder --version=15.0.1
-6. <b>Add JFoenix and FontAwesomeFX to scenebuilder</b><br/>
-   Download [JFoenix](https://jar-download.com/artifacts/com.jfoenix/jfoenix/9.0.10/source-code) and [FontAwesomeFX](https://jar-download.com/artifacts/de.jensd/fontawesomefx/8.2/source-code)
+   ```
+   
+   On Mac, you can install SceneBuilder from <br/>
+   [https://download2.gluonhq.com/scenebuilder/15.0.1/install/mac/SceneBuilder-15.0.1.dmg](https://download2.gluonhq.com/scenebuilder/15.0.1/install/mac/SceneBuilder-15.0.1.dmg) <br/> <br/>
+    
+5. <b>Add JFoenix and FontAwesomeFX to scenebuilder</b><br/>
+   Download [JFoenix](https://jar-download.com/artifacts/com.jfoenix/jfoenix/9.0.10/source-code) and [FontAwesomeFX](https://jar-download.com/artifacts/de.jensd/fontawesomefx/8.2/source-code) </br> <br/>
 
    Add the jar files to Scenebuilder's library:
 
-   ![settings](images/settings.png)
+   <div style="display: flex; flex-direction: row;">
+    <img src="images/settings.png" alt="UI" style="width: 49%;" />
+    <img src="images/libraries.png" alt="graph" style="width: 49%;" />
+   </div>
 
-   Add the jar files. The list should show JFoenix and Scenebuilder as added:
-
-   ![libraries](images/libraries.png)
+   Add the jar files from the boxed link. The list should show JFoenix and Scenebuilder as shown. </br> <br/>
 
 ## Roadmap
 
-<b>Feature Checklist from 06/24:</b>
+<b>Here as some features planned to be added as listed from 06/24:</b>
 
 - [X] Side Menu Drawer
     - [ ] Template links to other modules
     - [ ] About Page
+- [X] Snackbar error popups
 - [ ] Get maximum SF/BM
 - [ ] Get piecewise function for graph equations
     - [ ] Output equations as LaTeX
@@ -70,10 +78,11 @@ Starting in september for the 2024-2025 school year, any WECCA members involved 
    cd "C:\Users\tyler\OneDrive\Desktop\canoe-analysis"
    ```
 2. Create your own personal branch (`git checkout -b branch-name`). Use your full name as the branch name separated with dashes (i.e. tyler-liquornik)
-3. Commit your Changes (`git commit -m "write a commit message here"`). Ignore the `-b` if the branch has already been created.
-4. Push your commit(s) (`git push origin branch-name`)
-5. Open a pull request, and be ready to describe the feature implemented or bugfix and justify/explain your work in the comments
-6. Wait for approval. You can send a message in the Slack channel to ask, or wait until meeting to discuss the pull request
+3. Stage your changes (`git add .`)
+4. Commit your Changes (`git commit -m "write a commit message here"`). Ignore the `-b` if the branch has already been created.
+5. Push your commit(s) (`git push origin branch-name`)
+6. Open a pull request, and be ready to describe the feature implemented or bugfix and justify/explain your work in the comments
+7. Wait for approval. You can send a message in the Slack channel to ask, or wait until meeting to discuss the pull request
 
 <!-- LICENSE -->
 ## License
