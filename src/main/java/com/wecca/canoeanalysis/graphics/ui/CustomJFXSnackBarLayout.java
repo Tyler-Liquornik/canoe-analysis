@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.graphics;
+package com.wecca.canoeanalysis.graphics.ui;
 
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXSnackbarLayout;

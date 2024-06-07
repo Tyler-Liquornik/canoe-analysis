@@ -1,6 +1,8 @@
-package com.wecca.canoeanalysis.graphics;
+package com.wecca.canoeanalysis.graphics.ui;
 
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.graphics.ColorPalette;
+import com.wecca.canoeanalysis.graphics.Graphic;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
@@ -9,7 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter @Setter
-public class Arrow extends Path implements Graphic{
+public class Arrow extends Path implements Graphic {
 
     // Fields
     private static final double defaultArrowHeadSize = 10;

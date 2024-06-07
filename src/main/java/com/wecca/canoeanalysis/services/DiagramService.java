@@ -1,6 +1,8 @@
-package com.wecca.canoeanalysis.diagrams;
+package com.wecca.canoeanalysis.services;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.graphics.diagrams.DiagramPoint;
+import com.wecca.canoeanalysis.graphics.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.models.Canoe;
 import javafx.scene.Scene;
 import javafx.scene.chart.AreaChart;
@@ -14,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
 
-public class DiagramLogic {
+public class DiagramService {
 
     /**
      * Set up the canvas/pane for a diagram.
