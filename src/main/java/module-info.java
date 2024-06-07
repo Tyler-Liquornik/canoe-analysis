@@ -4,6 +4,7 @@ module com.wecca.canoeanalysis {
     requires com.jfoenix;
     requires static lombok;
     requires com.fasterxml.jackson.databind;
+    requires org.burningwave.core;
 
     opens com.wecca.canoeanalysis to javafx.fxml;
     exports com.wecca.canoeanalysis;
