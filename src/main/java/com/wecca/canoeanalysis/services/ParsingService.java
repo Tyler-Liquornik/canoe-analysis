@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.util;
+package com.wecca.canoeanalysis.services;
 
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
@@ -6,7 +6,7 @@ import javafx.scene.control.TextField;
 import java.util.List;
 import java.util.Objects;
 
-public class ParsingUtils {
+public class ParsingService {
 
     private static final double FEET_TO_METRES = 0.3048; // conversion factor ft to m
     private static final double POUNDS_TO_KG = 0.45359237; // conversion factor lb to kg

@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.util;
+package com.wecca.canoeanalysis.services;
 
 import com.wecca.canoeanalysis.models.Canoe;
 import com.wecca.canoeanalysis.models.Load;
@@ -12,14 +12,14 @@ import java.util.List;
 /**
  * Utility class for solving system equations
  */
-public class SolverUtils {
+public class SolverService {
 
     // Offset of the stands from either end of the canoe (assume equal offset on either side)
     // Hard coded for now with stands right on the edges (0 offset), subject to change later
     private final static int STAND_OFFSET = 0;
 
     // Private constructor to enable utility class
-    private SolverUtils() {}
+    private SolverService() {}
 
     /**
      * Convert a list of UniformDistributedLoads to a list of PointLoads.

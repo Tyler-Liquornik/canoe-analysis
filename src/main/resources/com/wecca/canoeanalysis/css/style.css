@@ -85,11 +85,11 @@
     -fx-text-fill: WHITE;
 }
 
-.dismiss-button {
+.jfx-snackbar {
     -fx-text-fill: #BB86FC;
 }
 
-.jfx-snackbar {
+.dismiss-button {
     -fx-text-fill: #BB86FC;
 }
 

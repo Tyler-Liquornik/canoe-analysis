@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.diagrams;
+package com.wecca.canoeanalysis.graphics.diagrams;
 
 import com.wecca.canoeanalysis.models.Canoe;
 import com.wecca.canoeanalysis.models.PointLoad;

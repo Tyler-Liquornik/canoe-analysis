@@ -1,11 +1,11 @@
-package com.wecca.canoeanalysis.util;
+package com.wecca.canoeanalysis.services;
 
-import com.wecca.canoeanalysis.diagrams.DiagramPoint;
+import com.wecca.canoeanalysis.graphics.diagrams.DiagramPoint;
 
 import java.util.HashMap;
 
 // TODO: Use this to get equations for the piecewise graph, and eventually get LateX from that
-public class EquationMathUtils {
+public class EquationMathService {
     /**
      * Finds the coefficients of the line mx + b from a list of 2 of its points
      * @param points the three points on the parabola, preferred to be the interval endpoints to reduce error due to the numerical nature of point generation

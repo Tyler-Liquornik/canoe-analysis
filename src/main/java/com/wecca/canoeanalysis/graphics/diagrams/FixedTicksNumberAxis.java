@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.diagrams;
+package com.wecca.canoeanalysis.graphics.diagrams;
 
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.ValueAxis;

@@ -7,11 +7,16 @@ import com.jfoenix.controls.JFXSnackbar;
 import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.diagrams.*;
 import com.wecca.canoeanalysis.graphics.*;
-import com.wecca.canoeanalysis.graphics.CustomJFXSnackBarLayout;
+import com.wecca.canoeanalysis.graphics.ui.CustomJFXSnackBarLayout;
+import com.wecca.canoeanalysis.graphics.diagrams.Diagram;
+import com.wecca.canoeanalysis.graphics.ui.Arrow;
+import com.wecca.canoeanalysis.graphics.ui.ArrowBox;
+import com.wecca.canoeanalysis.graphics.ui.Beam;
+import com.wecca.canoeanalysis.graphics.ui.SupportTriangle;
+import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.models.*;
-import com.wecca.canoeanalysis.util.*;
+import com.wecca.canoeanalysis.services.*;
 import javafx.animation.*;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXMLLoader;
@@ -358,12 +363,12 @@ public class CanoeAnalysisController implements Initializable
      */
     public void setLength()
     {
-        if (ParsingUtils.validateTextAsDouble(canoeLengthTextField.getText())) {
+        if (ParsingService.validateTextAsDouble(canoeLengthTextField.getText())) {
             // Default list view message
             enableEmptyLoadListSettings(true);
 
             // Convert to metric
-            double len = ParsingUtils.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
+            double len = ParsingService.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
 
             // Only allow lengths in the specified range
             if (len >= acceptedLengthRange[0] && len <= acceptedLengthRange[1]) {
@@ -457,10 +462,10 @@ public class CanoeAnalysisController implements Initializable
         closeSnackBar(snackbar);
 
         // Validate the entered numbers are doubles
-        if (ParsingUtils.allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField)))
+        if (ParsingService.allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField)))
         {
-            double x = ParsingUtils.getDistanceConverted(pointLocationComboBox, pointLocationTextField);
-            double mag = ParsingUtils.getLoadConverted(pointMagnitudeComboBox, pointMagnitudeTextField);
+            double x = ParsingService.getDistanceConverted(pointLocationComboBox, pointLocationTextField);
+            double mag = ParsingService.getLoadConverted(pointMagnitudeComboBox, pointMagnitudeTextField);
             String direction = pointDirectionComboBox.getSelectionModel().getSelectedItem();
 
             // Apply direction
@@ -500,12 +505,12 @@ public class CanoeAnalysisController implements Initializable
         closeSnackBar(snackbar);
 
         // Validate the entered numbers are doubles
-        if (ParsingUtils.allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
+        if (ParsingService.allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
                 distributedIntervalTextFieldR)))
         {
-            double x = ParsingUtils.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldL);
-            double xR = ParsingUtils.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldR);
-            double mag = ParsingUtils.getLoadConverted(distributedMagnitudeComboBox, distributedMagnitudeTextField);
+            double x = ParsingService.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldL);
+            double xR = ParsingService.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldR);
+            double mag = ParsingService.getLoadConverted(distributedMagnitudeComboBox, distributedMagnitudeTextField);
             String direction = distributedDirectionComboBox.getSelectionModel().getSelectedItem();
 
             // Apply direction
@@ -694,7 +699,7 @@ public class CanoeAnalysisController implements Initializable
      */
     private void solveStandSystem()
     {
-        List<PointLoad> supportLoads = SolverUtils.solveStandSystem(canoe);
+        List<PointLoad> supportLoads = SolverService.solveStandSystem(canoe);
         for (PointLoad supportLoad : supportLoads) {addPointLoadGraphic(supportLoad);}
     }
 
@@ -769,8 +774,8 @@ public class CanoeAnalysisController implements Initializable
      */
     public void generateDiagram()
     {
-        DiagramLogic.setupDiagram(canoe, Diagram.generateSfdPoints(canoe), "Shear Force Diagram", "Force [kN]");
-        DiagramLogic.setupDiagram(canoe, Diagram.generateBmdPoints(canoe), "Bending Moment Diagram", "Moment [kN·m]");
+        DiagramService.setupDiagram(canoe, Diagram.generateSfdPoints(canoe), "Shear Force Diagram", "Force [kN]");
+        DiagramService.setupDiagram(canoe, Diagram.generateBmdPoints(canoe), "Bending Moment Diagram", "Moment [kN·m]");
     }
 
     /**
