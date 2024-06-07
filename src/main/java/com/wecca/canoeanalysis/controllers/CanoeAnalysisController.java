@@ -7,13 +7,9 @@ import com.jfoenix.controls.JFXSnackbar;
 import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.graphics.*;
-import com.wecca.canoeanalysis.graphics.ui.CustomJFXSnackBarLayout;
-import com.wecca.canoeanalysis.graphics.diagrams.Diagram;
-import com.wecca.canoeanalysis.graphics.ui.Arrow;
-import com.wecca.canoeanalysis.graphics.ui.ArrowBox;
-import com.wecca.canoeanalysis.graphics.ui.Beam;
-import com.wecca.canoeanalysis.graphics.ui.SupportTriangle;
+import com.wecca.canoeanalysis.components.*;
+import com.wecca.canoeanalysis.components.graphics.*;
+import com.wecca.canoeanalysis.components.layout.CustomJFXSnackBarLayout;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.services.*;
@@ -372,7 +368,7 @@ public class CanoeAnalysisController implements Initializable
 
             // Only allow lengths in the specified range
             if (len >= acceptedLengthRange[0] && len <= acceptedLengthRange[1]) {
-                // Update the canoe model
+                // Update model state
                 canoe.setLen(len);
 
                 // Change the label on the scale
@@ -529,7 +525,7 @@ public class CanoeAnalysisController implements Initializable
                     // Removes the default list view message if this is the first load
                     enableEmptyLoadListSettings(false);
 
-                    // Add the load to canoe, and update the ListView
+                    // Add the load to canoe, and update ui state
                     UniformDistributedLoad d = new UniformDistributedLoad(x, xR, mag);
                     addArrowBoxGraphic(d);
                     updateLoadListView();
@@ -609,8 +605,7 @@ public class CanoeAnalysisController implements Initializable
                 .sorted(Comparator.comparingDouble(Graphic::getX))
                 .map(load -> (Node) load).toList());
 
-        // Update the view order for proper z-axis rendering
-        updateViewOrder();
+        // Update ui state
     }
 
     /**
@@ -688,8 +683,9 @@ public class CanoeAnalysisController implements Initializable
         solveSystemButton.setText("Undo Solve");
         solveSystemButton.setDisable(false);
 
-        // Update the load list view supports from solve
+        // Update state
         updateLoadListView();
+        updateViewOrder();
     }
 
     /**
@@ -774,8 +770,8 @@ public class CanoeAnalysisController implements Initializable
      */
     public void generateDiagram()
     {
-        DiagramService.setupDiagram(canoe, Diagram.generateSfdPoints(canoe), "Shear Force Diagram", "Force [kN]");
-        DiagramService.setupDiagram(canoe, Diagram.generateBmdPoints(canoe), "Bending Moment Diagram", "Moment [kN·m]");
+        DiagramService.setupDiagram(canoe, DiagramService.generateSfdPoints(canoe), "Shear Force Diagram", "Force [kN]");
+        DiagramService.setupDiagram(canoe, DiagramService.generateBmdPoints(canoe), "Bending Moment Diagram", "Moment [kN·m]");
     }
 
     /**

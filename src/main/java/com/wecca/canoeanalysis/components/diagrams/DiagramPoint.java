@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.graphics.diagrams;
+package com.wecca.canoeanalysis.components.diagrams;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

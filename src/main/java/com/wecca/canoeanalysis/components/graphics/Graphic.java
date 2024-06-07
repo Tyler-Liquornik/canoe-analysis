@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.graphics;
+package com.wecca.canoeanalysis.components.graphics;
 
 import javafx.scene.paint.Color;
 
