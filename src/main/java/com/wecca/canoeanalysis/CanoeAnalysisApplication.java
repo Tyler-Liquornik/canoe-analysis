@@ -15,6 +15,8 @@ public class CanoeAnalysisApplication extends Application {
     // The entry point of the application
     @Override
     public void start(Stage stage) throws IOException {
+        org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+
         FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/canoe-analysis-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 900, 600);
         stage.setTitle("PADDL");
