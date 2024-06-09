@@ -5,6 +5,7 @@ module com.wecca.canoeanalysis {
     requires static lombok;
     requires com.fasterxml.jackson.databind;
     requires org.burningwave.core;
+    requires fontawesomefx;
 
     exports com.wecca.canoeanalysis;
     opens com.wecca.canoeanalysis to javafx.fxml;

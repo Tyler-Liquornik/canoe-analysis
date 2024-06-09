@@ -8,18 +8,6 @@
     -fx-font-weight: bold;
 }
 
-.subtitle{
-    -fx-text-fill: #A9A9A9;
-    -fx-font-size: 11px;
-}
-
-.button {
-    -fx-cursor: hand;
-    -fx-alignment: CENTER_LEFT;
-    -fx-font-size: 14px;
-    -fx-padding: 0 0 0 15;
-}
-
 bar {
     -fx-background-color: #202020;
 }

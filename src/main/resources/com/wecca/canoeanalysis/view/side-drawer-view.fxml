@@ -34,7 +34,7 @@
                   <Font name="Roboto" size="12.0" />
                </font>
                <graphic>
-                  <FontAwesomeIcon fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
+                  <FontAwesomeIcon fx:id="beamIcon" fill="WHITE" glyphName="ANGLE_DOUBLE_RIGHT" wrappingWidth="15.0" />
                </graphic>
             </JFXButton>
             <JFXButton layoutX="24.0" layoutY="140.0" maxHeight="40.0" maxWidth="175.0" minHeight="40.0" minWidth="175.0" onAction="#clickPunchingShearButton" prefHeight="40.0" prefWidth="175.0" styleClass="text" stylesheets="@../css/drawer.css" text="Punching Shear" textFill="WHITE" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
@@ -42,7 +42,7 @@
                   <Font name="Roboto" size="12.0" />
                </font>
                <graphic>
-                  <FontAwesomeIcon fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
+                  <FontAwesomeIcon fx:id="punchingShearIcon" fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
                </graphic>
             </JFXButton>
             <JFXButton layoutX="34.0" layoutY="180.0" maxHeight="40.0" maxWidth="175.0" minHeight="40.0" minWidth="175.0" onAction="#clickCriticalSectionsButton" prefHeight="40.0" prefWidth="175.0" styleClass="text" stylesheets="@../css/drawer.css" text="Critical Sections" textFill="WHITE" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
@@ -50,7 +50,7 @@
                   <Font name="Roboto" size="12.0" />
                </font>
                <graphic>
-                  <FontAwesomeIcon fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
+                  <FontAwesomeIcon fx:id="criticalSectionsIcon" fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
                </graphic>
             </JFXButton>
             <JFXButton layoutX="44.0" layoutY="220.0" maxHeight="40.0" maxWidth="175.0" minHeight="40.0" minWidth="175.0" onAction="#clickFailureEnvelopeButton" prefHeight="40.0" prefWidth="175.0" styleClass="text" stylesheets="@../css/drawer.css" text="Failure Envelope" textFill="WHITE" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
@@ -58,7 +58,7 @@
                   <Font name="Roboto" size="12.0" />
                </font>
                <graphic>
-                  <FontAwesomeIcon fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
+                  <FontAwesomeIcon fx:id="failureEnvelopeIcon" fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
                </graphic>
             </JFXButton>
             <JFXButton layoutX="44.0" layoutY="260.0" maxHeight="40.0" maxWidth="175.0" minHeight="40.0" minWidth="175.0" onAction="#clickPoaButton" prefHeight="40.0" prefWidth="175.0" styleClass="text" stylesheets="@../css/drawer.css" text="Percent Open Area" textFill="WHITE" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
@@ -66,7 +66,7 @@
                   <Font name="Roboto" size="12.0" />
                </font>
                <graphic>
-                  <FontAwesomeIcon fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
+                  <FontAwesomeIcon fx:id="poaIcon" fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
                </graphic>
             </JFXButton>
             <JFXButton layoutY="508.0" maxHeight="40.0" maxWidth="175.0" minHeight="40.0" minWidth="175.0" onAction="#clickSettingsButton" prefHeight="40.0" prefWidth="175.0" styleClass="text" stylesheets="@../css/drawer.css" text=" Settings" textFill="WHITE" AnchorPane.bottomAnchor="50.0">
