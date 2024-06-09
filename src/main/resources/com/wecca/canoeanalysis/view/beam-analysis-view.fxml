@@ -17,7 +17,7 @@
 <?import javafx.scene.shape.Line?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="root" minHeight="0.0" minWidth="0.0" prefHeight="600.0" prefWidth="900.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.CanoeAnalysisController">
+<AnchorPane fx:id="root" minHeight="0.0" minWidth="0.0" prefHeight="600.0" prefWidth="900.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.BeamController">
    <children>
       <AnchorPane maxHeight="35.0" maxWidth="900.0" minHeight="35.0" minWidth="600.0" onMouseDragged="#draggableWindowMove" onMousePressed="#draggableWindowGetLocation" prefHeight="35.0" prefWidth="900.0" styleClass="action-object" stylesheets="@../css/style.css" translateZ="5.0">
          <children>

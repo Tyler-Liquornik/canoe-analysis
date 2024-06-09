@@ -1,8 +1,7 @@
 package com.wecca.canoeanalysis.components.controls;
 
-import com.jfoenix.controls.JFXListView;
 import com.jfoenix.controls.JFXTextField;
-import com.wecca.canoeanalysis.controllers.CanoeAnalysisController;
+import com.wecca.canoeanalysis.controllers.BeamController;
 import javafx.scene.control.ListCell;
 import javafx.scene.input.KeyCode;
 import lombok.Getter;
@@ -74,7 +73,7 @@ public class EditableLoadListCell extends ListCell<String> {
     //// My work v
 
     private void attemptSaveCellContent() {
-        CanoeAnalysisController canoeAnalysisController = new CanoeAnalysisController();
+        BeamController canoeAnalysisController = new BeamController();
 
         // Do not call with support (cannot edit support after solve)
         if (isValidCellInput(jfxTextField.getText())) {

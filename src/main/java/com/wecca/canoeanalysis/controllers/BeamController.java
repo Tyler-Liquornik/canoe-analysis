@@ -8,7 +8,6 @@ import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.ColorPalette;
-import com.wecca.canoeanalysis.components.controls.EditableLoadListCell;
 import com.wecca.canoeanalysis.components.graphics.*;
 import com.wecca.canoeanalysis.components.controls.CustomJFXSnackBarLayout;
 import com.wecca.canoeanalysis.services.DiagramService;
@@ -33,7 +32,7 @@ import java.util.*;
 /**
  * Primary controller for longitudinal analysis of a beam
  */
-public class CanoeAnalysisController implements Initializable
+public class BeamController implements Initializable
 {
     @FXML
     private Label axisLabelR, lengthLabel, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,

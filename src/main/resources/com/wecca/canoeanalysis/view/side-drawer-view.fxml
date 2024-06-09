@@ -1,33 +1,93 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import com.jfoenix.controls.JFXListView?>
+<?import com.jfoenix.controls.JFXButton?>
+<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon?>
 <?import java.lang.String?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="drawerRoot" maxHeight="625.0" maxWidth="175.0" minHeight="625.0" minWidth="175.0" prefHeight="625.0" prefWidth="175.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane fx:id="drawerRoot" maxHeight="565.0" maxWidth="175.0" minHeight="565.0" minWidth="175.0" prefHeight="565.0" prefWidth="175.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.SideDrawerController">
    <children>
       <AnchorPane maxHeight="35.0" minHeight="35.0" prefHeight="35.0" prefWidth="175.0" styleClass="tool-bar" stylesheets="@../css/drawer.css" />
-      <AnchorPane maxHeight="590.0" maxWidth="175.0" minHeight="590.0" minWidth="175.0" prefHeight="590.0" prefWidth="175.0" styleClass="background" stylesheets="@../css/drawer.css" AnchorPane.topAnchor="35.0">
+      <AnchorPane maxHeight="510.0" maxWidth="175.0" minHeight="510.0" minWidth="175.0" prefHeight="510.0" prefWidth="175.0" styleClass="background" stylesheets="@../css/drawer.css" AnchorPane.topAnchor="35.0">
          <children>
-            <AnchorPane maxHeight="75.0" maxWidth="175.0" minHeight="75.0" minWidth="175.0" prefHeight="75.0" prefWidth="175.0">
-               <children>
-                  <Label stylesheets="@../css/drawer.css" text="PADDL" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="15.0">
-                     <styleClass>
-                        <String fx:value="title" />
-                        <String fx:value="text" />
-                     </styleClass>
-                  </Label>
-                  <Label layoutX="14.0" layoutY="38.0" stylesheets="@../css/drawer.css" text="Precision Analysis &amp; Design for Dynamic Loading" wrapText="true" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="40.0">
-                     <styleClass>
-                        <String fx:value="text" />
-                        <String fx:value="subtitle" />
-                     </styleClass>
-                  </Label>
-               </children>
-            </AnchorPane>
-            <JFXListView maxWidth="175.0" minWidth="175.0" prefHeight="300.0" prefWidth="175.0" stylesheets="@../css/drawer.css" AnchorPane.topAnchor="75.0" />
+            <Label stylesheets="@../css/drawer.css" text="PADDL" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="15.0">
+               <styleClass>
+                  <String fx:value="title" />
+                  <String fx:value="text" />
+               </styleClass>
+            </Label>
+            <Label prefHeight="45.0" prefWidth="156.0" stylesheets="@../css/drawer.css" text="Precision Analysis &amp; Design for Dynamic Loading" wrapText="true" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="40.0">
+               <styleClass>
+                  <String fx:value="text" />
+                  <String fx:value="subtitle" />
+               </styleClass>
+               <font>
+                  <Font name="Roboto" size="12.0" />
+               </font>
+            </Label>
+            <Line endX="175.0" stroke="DARKGRAY" AnchorPane.bottomAnchor="100.0" />
+            <JFXButton layoutX="24.0" layoutY="100.0" maxHeight="40.0" maxWidth="175.0" minHeight="40.0" minWidth="175.0" onAction="#clickBeamButton" prefHeight="40.0" prefWidth="175.0" styleClass="text" stylesheets="@../css/drawer.css" text="Beam" textFill="WHITE" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+               <font>
+                  <Font name="Roboto" size="12.0" />
+               </font>
+               <graphic>
+                  <FontAwesomeIcon fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
+               </graphic>
+            </JFXButton>
+            <JFXButton layoutX="24.0" layoutY="140.0" maxHeight="40.0" maxWidth="175.0" minHeight="40.0" minWidth="175.0" onAction="#clickPunchingShearButton" prefHeight="40.0" prefWidth="175.0" styleClass="text" stylesheets="@../css/drawer.css" text="Punching Shear" textFill="WHITE" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+               <font>
+                  <Font name="Roboto" size="12.0" />
+               </font>
+               <graphic>
+                  <FontAwesomeIcon fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
+               </graphic>
+            </JFXButton>
+            <JFXButton layoutX="34.0" layoutY="180.0" maxHeight="40.0" maxWidth="175.0" minHeight="40.0" minWidth="175.0" onAction="#clickCriticalSectionsButton" prefHeight="40.0" prefWidth="175.0" styleClass="text" stylesheets="@../css/drawer.css" text="Critical Sections" textFill="WHITE" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+               <font>
+                  <Font name="Roboto" size="12.0" />
+               </font>
+               <graphic>
+                  <FontAwesomeIcon fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
+               </graphic>
+            </JFXButton>
+            <JFXButton layoutX="44.0" layoutY="220.0" maxHeight="40.0" maxWidth="175.0" minHeight="40.0" minWidth="175.0" onAction="#clickFailureEnvelopeButton" prefHeight="40.0" prefWidth="175.0" styleClass="text" stylesheets="@../css/drawer.css" text="Failure Envelope" textFill="WHITE" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+               <font>
+                  <Font name="Roboto" size="12.0" />
+               </font>
+               <graphic>
+                  <FontAwesomeIcon fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
+               </graphic>
+            </JFXButton>
+            <JFXButton layoutX="44.0" layoutY="260.0" maxHeight="40.0" maxWidth="175.0" minHeight="40.0" minWidth="175.0" onAction="#clickPoaButton" prefHeight="40.0" prefWidth="175.0" styleClass="text" stylesheets="@../css/drawer.css" text="Percent Open Area" textFill="WHITE" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+               <font>
+                  <Font name="Roboto" size="12.0" />
+               </font>
+               <graphic>
+                  <FontAwesomeIcon fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
+               </graphic>
+            </JFXButton>
+            <JFXButton layoutY="508.0" maxHeight="40.0" maxWidth="175.0" minHeight="40.0" minWidth="175.0" onAction="#clickSettingsButton" prefHeight="40.0" prefWidth="175.0" styleClass="text" stylesheets="@../css/drawer.css" text=" Settings" textFill="WHITE" AnchorPane.bottomAnchor="50.0">
+               <font>
+                  <Font name="Roboto" size="12.0" />
+               </font>
+               <graphic>
+                  <FontAwesomeIcon fill="WHITE" glyphName="GEAR" wrappingWidth="15.0" />
+               </graphic>
+            </JFXButton>
+            <JFXButton layoutY="545.0" maxHeight="40.0" maxWidth="175.0" minHeight="40.0" minWidth="175.0" onAction="#clickAboutButton" prefHeight="40.0" prefWidth="175.0" styleClass="text" stylesheets="@../css/drawer.css" text=" About" textFill="WHITE" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+               <font>
+                  <Font name="Roboto" size="12.0" />
+               </font>
+               <graphic>
+                  <FontAwesomeIcon fill="WHITE" glyphName="QUESTION" layoutX="15.0" wrappingWidth="15.0" />
+               </graphic>
+            </JFXButton>
+            <Line endX="175.0" layoutY="90.0" stroke="DARKGRAY" />
          </children>
       </AnchorPane>
+      <AnchorPane layoutY="545.0" maxHeight="20.0" maxWidth="175.0" minHeight="20.0" minWidth="175.0" prefHeight="20.0" prefWidth="175.0" styleClass="tool-bar" stylesheets="@../css/drawer.css" />
    </children>
 </AnchorPane>
