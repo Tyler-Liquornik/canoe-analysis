@@ -18,7 +18,7 @@ public class CanoeAnalysisApplication extends Application {
     public void start(Stage stage) throws IOException {
         StaticComponentContainer.Modules.exportAllToAll();
 
-        FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/beam-analysis-view.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/beam-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 900, 600);
         stage.setTitle("PADDL");
         stage.setScene(scene);

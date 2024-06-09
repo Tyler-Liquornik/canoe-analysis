@@ -96,7 +96,7 @@ Tyler Liquornik: tyler.liquornik@gmail.com
 
 Project Link: [https://github.com/Tyler-Liquornik/canoe-analysis](https://github.com/Tyler-Liquornik/canoe-analysis)
 
-<!-- MARKDOWN LINKS & IMAGES -->
+<!-- MARKDOWN LINKS & IMAGES (might use later) -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 <!-- [contributors-shield]: https://img.shields.io/github/contributors/othneildrew/Best-README-Template.svg?style=for-the-badge
 [contributors-url]: https://github.com/othneildrew/Best-README-Template/graphs/contributors
@@ -111,3 +111,11 @@ Project Link: [https://github.com/Tyler-Liquornik/canoe-analysis](https://github
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/othneildrew
 [product-screenshot]: images/screenshot.png -->
+
+<!-- 
+These are VM options required to run PADDL prior to implementation of burningwave to manage the Java reflection API. 
+I've included these here in case burningwave has future issue, however it's possible more options are required as PADDL is built up from the time of burningwave implementation
+
+--add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=com.jfoenix  --add-exports javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix
+
+-->
