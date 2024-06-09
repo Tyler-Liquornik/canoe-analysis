@@ -10,7 +10,7 @@
 
 <AnchorPane fx:id="drawerRoot" maxHeight="565.0" maxWidth="175.0" minHeight="565.0" minWidth="175.0" prefHeight="565.0" prefWidth="175.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.SideDrawerController">
    <children>
-      <AnchorPane maxHeight="35.0" minHeight="35.0" prefHeight="35.0" prefWidth="175.0" styleClass="tool-bar" stylesheets="@../css/drawer.css" />
+      <AnchorPane maxHeight="35.0" minHeight="35.0" prefHeight="35.0" prefWidth="175.0" styleClass="bar" stylesheets="@../css/drawer.css" />
       <AnchorPane maxHeight="510.0" maxWidth="175.0" minHeight="510.0" minWidth="175.0" prefHeight="510.0" prefWidth="175.0" styleClass="background" stylesheets="@../css/drawer.css" AnchorPane.topAnchor="35.0">
          <children>
             <Label stylesheets="@../css/drawer.css" text="PADDL" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="15.0">
@@ -88,6 +88,6 @@
             <Line endX="175.0" layoutY="90.0" stroke="DARKGRAY" />
          </children>
       </AnchorPane>
-      <AnchorPane layoutY="545.0" maxHeight="20.0" maxWidth="175.0" minHeight="20.0" minWidth="175.0" prefHeight="20.0" prefWidth="175.0" styleClass="tool-bar" stylesheets="@../css/drawer.css" />
+      <AnchorPane layoutY="545.0" maxHeight="20.0" maxWidth="175.0" minHeight="20.0" minWidth="175.0" prefHeight="20.0" prefWidth="175.0" styleClass="bar" stylesheets="@../css/drawer.css" />
    </children>
 </AnchorPane>

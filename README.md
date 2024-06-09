@@ -19,29 +19,26 @@ Currently, the program has one module to which will be used to model the canoe a
    git clone https://github.com/Tyler-Liquornik/canoe-analysis
    ```
 2. <b>Build the project with Maven</b>
-   ```sh
+   ```
    maven clean install
    ```
-3. <b>Install Chocolatey</b>
-    ```
-    @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
-    ```
-4. <b>Install Scenebuilder</b> <br/>
+3. <b>Install Scenebuilder</b> <br/>
    Even if you already had Scenebuilder installed, you cannot render certain JFoenix components with Scenebuilder 16+ <br/> <br/>
    
    On Windows, you can install it through chocolatey. <br/>
-   If you haven't installed it before, you can do it by running a terminal as admin (right click > run as admin)
+   If you haven't installed chocolatey before, you can do it by running a terminal as admin (right click > run as admin)
    ```
     @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
    ```
+   If you have chocolate already, skip to the installation step here
    ```
    choco install scenebuilder --version=15.0.1
    ```
    
-   On Mac, you can install SceneBuilder from <br/>
+   On Mac, you can install SceneBuilder directly from <br/>
    [https://download2.gluonhq.com/scenebuilder/15.0.1/install/mac/SceneBuilder-15.0.1.dmg](https://download2.gluonhq.com/scenebuilder/15.0.1/install/mac/SceneBuilder-15.0.1.dmg) <br/> <br/>
     
-5. <b>Add JFoenix and FontAwesomeFX to scenebuilder</b><br/>
+4. <b>Add JFoenix and FontAwesomeFX to scenebuilder</b><br/>
    Download [JFoenix](https://jar-download.com/artifacts/com.jfoenix/jfoenix/9.0.10/source-code) and [FontAwesomeFX](https://jar-download.com/artifacts/de.jensd/fontawesomefx/8.2/source-code) </br> <br/>
 
    Add the jar files to Scenebuilder's library:
@@ -61,12 +58,13 @@ Currently, the program has one module to which will be used to model the canoe a
     - [ ] Template links to other modules
     - [ ] About Page
 - [X] Snackbar error popups
-- [ ] Get maximum SF/BM
 - [ ] Get piecewise function for graph equations
-    - [ ] Output equations as LaTeX
-- [ ] Editing non-support loads by making them horizontally draggable
-    - [ ] Flip load direction by dragging the opposite side of the beam
+  - [ ] Get maximum SF/BM
+  - [ ] Output equations as LaTeX
+- [ ] Editing non-support loads (current idea is making them draggable)
 - [ ] Import/Export the canoe object as JSON
+- [ ] Unification of color system between Java and CSS code with ColorPalette.yml
+  - [ ] Customizable colors in settings
 - [ ] Download graph image as PNG
 
 <!-- CONTRIBUTING -->
