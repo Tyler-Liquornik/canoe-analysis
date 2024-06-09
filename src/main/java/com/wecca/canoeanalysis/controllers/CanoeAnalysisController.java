@@ -7,9 +7,10 @@ import com.jfoenix.controls.JFXSnackbar;
 import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.components.*;
+import com.wecca.canoeanalysis.components.ColorPalette;
+import com.wecca.canoeanalysis.components.controls.EditableLoadListCell;
 import com.wecca.canoeanalysis.components.graphics.*;
-import com.wecca.canoeanalysis.components.layout.CustomJFXSnackBarLayout;
+import com.wecca.canoeanalysis.components.controls.CustomJFXSnackBarLayout;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.services.*;
@@ -74,8 +75,8 @@ public class CanoeAnalysisController implements Initializable
     // For draggable window with custom toolbar
     @Setter
     private static Stage primaryStage;
-    private static double xOffset = 0;
-    private static double yOffset = 0;
+    private double xOffset = 0;
+    private double yOffset = 0;
 
     // Drawer state management
     private boolean isDrawerOpen = false;

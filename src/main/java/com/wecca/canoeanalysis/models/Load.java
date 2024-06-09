@@ -4,9 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-@Setter
-@Getter
-@AllArgsConstructor
+@Setter @Getter @AllArgsConstructor
 public abstract class Load{
 
     double x;
