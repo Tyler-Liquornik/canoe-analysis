@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.services;
 
+import com.jfoenix.controls.JFXDecorator;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.diagrams.DiagramPoint;
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
@@ -36,7 +37,7 @@ public class DiagramService {
         chartPane.setPrefSize(1125, 750);
 
         // Adding Logo Icon
-        Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/canoe.png");
+        Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png");
         popupStage.getIcons().add(icon);
 
         // Setting the axes of the chart
@@ -51,16 +52,20 @@ public class DiagramService {
 
         // Creating and styling the line chart
         AreaChart<Number, Number> chart = new AreaChart<>(xAxis, yAxis);
-        chart.setTitle(title);
         chart.setPrefSize(1125, 750);
         chart.setLegendVisible(false);
         chart.getStylesheets().add(CanoeAnalysisApplication.class.getResource("css/chart.css").toExternalForm());
 
+        // Will later use the returned series
         List<XYChart.Series> intervalsAsSeries = getIntervalsAsSeries(canoe, points, yUnits, criticalPoints, chart);
 
         // Creating the scene and adding the chart to it
         chartPane.getChildren().add(chart);
-        Scene scene = new Scene(chartPane, 1125, 750);
+        JFXDecorator decorator = new JFXDecorator(popupStage, chartPane, false, false, true);
+        decorator.setCustomMaximize(true);
+        popupStage.setOnShown(event -> chartPane.requestFocus());
+        Scene scene = new Scene(decorator, 1125, 775);
+
         popupStage.setScene(scene);
         popupStage.show();
 

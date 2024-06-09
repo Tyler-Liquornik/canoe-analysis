@@ -6,8 +6,8 @@ module com.wecca.canoeanalysis {
     requires com.fasterxml.jackson.databind;
     requires org.burningwave.core;
 
-    opens com.wecca.canoeanalysis to javafx.fxml;
     exports com.wecca.canoeanalysis;
+    opens com.wecca.canoeanalysis to javafx.fxml;
     exports com.wecca.canoeanalysis.components.diagrams;
     opens com.wecca.canoeanalysis.components.diagrams to javafx.fxml;
     exports com.wecca.canoeanalysis.components;
@@ -20,6 +20,6 @@ module com.wecca.canoeanalysis {
     opens com.wecca.canoeanalysis.controllers to javafx.fxml;
     exports com.wecca.canoeanalysis.components.graphics;
     opens com.wecca.canoeanalysis.components.graphics to javafx.fxml;
-    exports com.wecca.canoeanalysis.components.layout;
-    opens com.wecca.canoeanalysis.components.layout to javafx.fxml;
+    exports com.wecca.canoeanalysis.components.controls;
+    opens com.wecca.canoeanalysis.components.controls to javafx.fxml;
 }

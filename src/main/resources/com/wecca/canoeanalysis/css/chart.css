@@ -25,6 +25,10 @@
     -fx-font-family: "Roboto";
 }
 
+.axis.x {
+    -fx-translate-y: -10;
+}
+
 .axis-tick-label {
     -fx-font-size: 11px;
     -fx-rotate: 0;

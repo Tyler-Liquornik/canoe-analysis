@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis;
 
+import org.burningwave.core.assembler.StaticComponentContainer;
 import com.wecca.canoeanalysis.controllers.CanoeAnalysisController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -15,7 +16,7 @@ public class CanoeAnalysisApplication extends Application {
     // The entry point of the application
     @Override
     public void start(Stage stage) throws IOException {
-        org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+        StaticComponentContainer.Modules.exportAllToAll();
 
         FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/canoe-analysis-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 900, 600);
