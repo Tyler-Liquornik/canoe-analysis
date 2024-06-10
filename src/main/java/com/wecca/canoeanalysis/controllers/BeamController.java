@@ -2,9 +2,8 @@ package com.wecca.canoeanalysis.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jfoenix.controls.JFXHamburger;
-import com.jfoenix.controls.JFXSnackbar;
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.ColorPalette;
 import com.wecca.canoeanalysis.components.graphics.*;
 import com.wecca.canoeanalysis.services.DiagramService;
@@ -16,13 +15,16 @@ import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.net.URL;
 import java.util.*;
 
 /**
  * Primary controller for longitudinal analysis of a beam
  */
-public class BeamController extends ModuleController implements Initializable
+public class BeamController implements Initializable
 {
     @FXML
     private Label axisLabelR, lengthLabel, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,
@@ -44,6 +46,9 @@ public class BeamController extends ModuleController implements Initializable
     private RadioButton standsRadioButton, floatingRadioButton, submergedRadioButton;
     @FXML
     private AnchorPane loadContainer, beamContainer;
+
+    @Getter @Setter
+    private static MainController moduleController;
 
     private Canoe canoe; // entity class that models the canoe as a beam
     private Beam beam; // The graphic of the beam
@@ -215,7 +220,7 @@ public class BeamController extends ModuleController implements Initializable
                 axisLabelR.setLayoutX(595); // this will not be hard coded anymore once axis labels for new loads are implemented
 
                 // Clear potential alert and reset access to controls
-                closeSnackBar(getSnackbar());
+                moduleController.closeSnackBar(moduleController.getSnackbar());
                 disableLoadingControls(false);
                 canoeLengthTextField.setDisable(true);
                 canoeLengthComboBox.setDisable(true);
@@ -229,10 +234,10 @@ public class BeamController extends ModuleController implements Initializable
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
             else
-                showSnackbar("Length must be between 0.05m and 20m");
+                moduleController.showSnackbar("Length must be between 0.05m and 20m");
         }
         else
-            showSnackbar("One or more entered values are not valid numbers");
+            moduleController.showSnackbar("One or more entered values are not valid numbers");
     }
 
     /**
@@ -294,7 +299,7 @@ public class BeamController extends ModuleController implements Initializable
     public void addPointLoad()
     {
         // Clear previous alert label
-        closeSnackBar(getSnackbar());
+        moduleController.closeSnackBar(moduleController.getSnackbar());
 
         // Validate the entered numbers are doubles
         if (ParsingService.allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField)))
@@ -308,10 +313,10 @@ public class BeamController extends ModuleController implements Initializable
 
             // Validate the load is being added within the length of the canoe
             if (!(0 <= x && x <= canoe.getLen()))
-                showSnackbar("Load must be contained within the canoe's length");
+                moduleController.showSnackbar("Load must be contained within the canoe's length");
             // Validate the load is in the accepted magnitude range
             else if (!(acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1]))
-                showSnackbar("Load must be between 0.05kN and 10kN");
+                moduleController.showSnackbar("Load must be between 0.05kN and 10kN");
 
             else
             {
@@ -326,7 +331,7 @@ public class BeamController extends ModuleController implements Initializable
 
         }
         else
-            showSnackbar("One or more entered values are not valid numbers");
+            moduleController.showSnackbar("One or more entered values are not valid numbers");
     }
 
     /**
@@ -337,7 +342,7 @@ public class BeamController extends ModuleController implements Initializable
     public void addDistributedLoad()
     {
         // Clear previous alert labels
-        closeSnackBar(getSnackbar());
+        moduleController.closeSnackBar(moduleController.getSnackbar());
 
         // Validate the entered numbers are doubles
         if (ParsingService.allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
@@ -353,11 +358,11 @@ public class BeamController extends ModuleController implements Initializable
 
             // User entry validations
             if (!(0 <= x && xR <= canoe.getLen()))
-                showSnackbar("Load must be contained within the canoe's length");
+                moduleController.showSnackbar("Load must be contained within the canoe's length");
             else if (!(xR > x))
-                showSnackbar("Right interval bound must be greater than the left bound");
+                moduleController.showSnackbar("Right interval bound must be greater than the left bound");
             else if (!(acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1]))
-                showSnackbar("Load must be between 0.05kN/m and 10kN/m");
+                moduleController.showSnackbar("Load must be between 0.05kN/m and 10kN/m");
 
             else
                 {
@@ -371,7 +376,7 @@ public class BeamController extends ModuleController implements Initializable
                 }
         }
         else
-            showSnackbar("One or more entered values are not valid numbers");
+            moduleController.showSnackbar("One or more entered values are not valid numbers");
     }
 
     /**
@@ -381,7 +386,7 @@ public class BeamController extends ModuleController implements Initializable
      */
     private void addArrowBoxGraphic(UniformDistributedLoad dLoad) {
         // Label reset
-        closeSnackBar(getSnackbar());
+        moduleController.closeSnackBar(moduleController.getSnackbar());
 
         // Add the load to the model
         canoe.addLoad(dLoad);
@@ -400,7 +405,7 @@ public class BeamController extends ModuleController implements Initializable
             {
                 // TODO: implement clipping
                 // currently: after getting here and trying to add another load you can't add any more arrows, need to fix that
-                showSnackbar("This is an edge case with no handler yet - Tyler :-)");
+                moduleController.showSnackbar("This is an edge case with no handler yet - Tyler :-)");
             }
         }
     }
@@ -455,11 +460,11 @@ public class BeamController extends ModuleController implements Initializable
     private void addArrowGraphic(PointLoad pLoad, AddLoadResult result)
     {
         // Notify the user regarding point loads combining or cancelling
-        closeSnackBar(getSnackbar());
+        moduleController.closeSnackBar(moduleController.getSnackbar());
         if (result == AddLoadResult.COMBINED)
-            showSnackbar("Point load magnitudes combined");
+            moduleController.showSnackbar("Point load magnitudes combined");
         else if (result == AddLoadResult.REMOVED)
-            showSnackbar("Point load magnitudes cancelled");
+            moduleController.showSnackbar("Point load magnitudes cancelled");
 
         // Prevent rendering issues with zero-valued loads
         if (pLoad.getMag() == 0)
@@ -481,7 +486,7 @@ public class BeamController extends ModuleController implements Initializable
                 else {
                     // TODO: implement clipping
                     // currently: after getting here and trying to add another load you can't add any more arrows
-                    showSnackbar("This is an edge case with no handler yet - Tyler :-)");
+                    moduleController.showSnackbar("This is an edge case with no handler yet - Tyler :-)");
                 }
             }
             else
@@ -556,7 +561,7 @@ public class BeamController extends ModuleController implements Initializable
     private void solveFloatingSystem()
     {
         // TODO: Implement (consult Design & Analysis)
-        showSnackbar("This has not yet been implemented - Tyler :-)");
+        moduleController.showSnackbar("This has not yet been implemented - Tyler :-)");
     }
 
     private void undoFloatingSolve()
@@ -571,7 +576,7 @@ public class BeamController extends ModuleController implements Initializable
     private void solveSubmergedSystem()
     {
         // TODO: Implement (consult Design & Analysis)
-        showSnackbar("This has not yet been implemented - Tyler :-)");
+        moduleController.showSnackbar("This has not yet been implemented - Tyler :-)");
     }
 
     private void undoSubmergedSolve()
@@ -623,7 +628,7 @@ public class BeamController extends ModuleController implements Initializable
         // Handle case that no index was selected
         if (selectedIndex == -1)
         {
-            showSnackbar("Cannot perform delete, no load selected");
+            moduleController.showSnackbar("Cannot perform delete, no load selected");
             return;
         }
 
@@ -668,8 +673,7 @@ public class BeamController extends ModuleController implements Initializable
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
-        // Generalized module initialization
-        super.initialize(url, resourceBundle);
+        setModuleController(CanoeAnalysisApplication.getModuleController());
 
         // Instantiate the canoe
         canoe = Canoe.getInstance();
@@ -681,7 +685,7 @@ public class BeamController extends ModuleController implements Initializable
 
         // Css styling
         JFXDepthManager.setDepth(loadListView, 4);
-        JFXDepthManager.setDepth(getMenuDrawer(), 5);
+        JFXDepthManager.setDepth(moduleController.getMenuDrawer(), 5);
 
         // Setting RadioButton Toggle Group
         ToggleGroup canoeSupportToggleGroup = new ToggleGroup();

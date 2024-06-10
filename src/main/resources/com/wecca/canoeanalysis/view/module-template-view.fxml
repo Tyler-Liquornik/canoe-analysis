@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<!--This is a template for PADDL Modules (an indication of main anchor pane size requirements)-->
+<!-- It is not intended for direct use, except as a placeholder for future modules -->
+
+<AnchorPane fx:id="mainAnchorPane" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <Label layoutX="299.0" layoutY="271.0" styleClass="field" stylesheets="@../css/style.css" text="This is a PADDL Module Template" textFill="WHITE">
+         <font>
+            <Font name="Roboto Bold" size="20.0" />
+         </font>
+      </Label>
+   </children>
+   <stylesheets>
+      <URL value="@../css/style.css" />
+   </stylesheets>
+</AnchorPane>

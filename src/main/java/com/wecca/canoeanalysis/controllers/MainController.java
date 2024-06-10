@@ -10,6 +10,7 @@ import javafx.animation.*;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
@@ -22,7 +23,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-public class ModuleController implements Initializable {
+public class MainController implements Initializable {
 
     @FXML @Getter
     private Button hamburgerButton;
@@ -32,12 +33,13 @@ public class ModuleController implements Initializable {
     private JFXHamburger hamburger;
     @FXML @Getter
     private JFXSnackbar snackbar;
-    @FXML @Getter
-    private AnchorPane root;
+    @FXML @Getter @Setter
+    private AnchorPane root, moduleInjectionRoot;
 
-    // For draggable window with custom toolbar
-    @Setter
-    private static Stage primaryStage;
+    @Getter @Setter
+    private Scene primaryScene;
+    @Getter @Setter
+    private Stage primaryStage;
     private double xOffset = 0;
     private double yOffset = 0;
 
@@ -201,7 +203,6 @@ public class ModuleController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        // JFX Component Initialization
         initializeHamburger();
         initializeDrawer();
         initializeSnackbar();
