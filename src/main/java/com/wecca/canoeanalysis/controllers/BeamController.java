@@ -17,7 +17,6 @@ import javafx.scene.layout.AnchorPane;
 import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
 import javafx.scene.paint.Paint;
-import lombok.Getter;
 import lombok.Setter;
 
 import java.net.URL;
@@ -49,7 +48,7 @@ public class BeamController implements Initializable
     @FXML
     private AnchorPane loadContainer, beamContainer;
 
-    @Getter @Setter
+    @Setter
     private static MainController mainController;
 
     private Canoe canoe; // entity class that models the canoe as a beam
