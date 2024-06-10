@@ -28,19 +28,11 @@
     -fx-background-radius: 5;
 }
 
-.out-of-focus-overlay {
-    -fx-background-color: rgba(255, 255, 255, 0.25); /* Semi-transparent white */
-}
-
 .button,
 .combo-box,
 .combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell,
 .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell {
     -fx-cursor: hand;
-}
-
-.close-window-button:hover {
-    -fx-background-color: #D10647;
 }
 
 .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:focused,
@@ -104,6 +96,10 @@
 
 .tool-bar-button:hover {
     -fx-background-color: #D2A8FF;
+}
+
+.close-window-button:hover {
+    -fx-background-color: #D10647;
 }
 
 .field {

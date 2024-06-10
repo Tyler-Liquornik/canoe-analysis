@@ -208,7 +208,7 @@ public class MainController implements Initializable {
     }
 
     public void addToolBarButtons(List<Button> buttons) {
-        double buttonHeight = 34.0;
+        double buttonHeight = 34.0; // 1px difference is on purpose so the hover fill doesn't stick out of the toolbar
         double buttonWidth = 35.0;
 
         // Account for space taken up by minimize and close window buttons and padding
