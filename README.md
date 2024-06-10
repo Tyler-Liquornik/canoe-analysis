@@ -55,8 +55,8 @@ Currently, the program has one module to which will be used to model the canoe a
 <b>Here as some features planned to be added as listed from 06/24:</b>
 
 - [X] Side Menu Drawer
-    - [ ] Template links to other modules
-    - [ ] About Page
+    - [X] Template links to other modules
+    - [X] About Page
 - [X] Snackbar error popups
 - [ ] Get piecewise function for graph equations
   - [ ] Get maximum SF/BM
@@ -65,7 +65,6 @@ Currently, the program has one module to which will be used to model the canoe a
 - [ ] Import/Export the canoe object as JSON
 - [ ] Unification of color system between Java and CSS code with ColorPalette.yml
   - [ ] Customizable colors in settings
-- [ ] Download graph image as PNG
 
 <!-- CONTRIBUTING -->
 ## Contributing

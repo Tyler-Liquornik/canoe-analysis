@@ -7,11 +7,3 @@
     -fx-font-size: 18px;
     -fx-font-weight: bold;
 }
-
-bar {
-    -fx-background-color: #202020;
-}
-
-.background {
-    -fx-background-color: #282828;
-}

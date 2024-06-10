@@ -6,6 +6,7 @@ module com.wecca.canoeanalysis {
     requires com.fasterxml.jackson.databind;
     requires org.burningwave.core;
     requires fontawesomefx;
+    requires java.desktop;
 
     exports com.wecca.canoeanalysis;
     opens com.wecca.canoeanalysis to javafx.fxml;

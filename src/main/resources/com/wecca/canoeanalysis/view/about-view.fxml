@@ -1,6 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon?>
+<?import java.lang.String?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 
-
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.AboutController" />
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="550.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.AboutController">
+   <children>
+      <AnchorPane fx:id="imagePane" layoutX="35.0" layoutY="50.0" prefHeight="175.0" prefWidth="175.0" styleClass="surface" stylesheets="@../css/style.css" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="25.0">
+         <children>
+            <ImageView fitHeight="254.0" fitWidth="175.0" layoutY="22.0" pickOnBounds="true" preserveRatio="true" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="22.0">
+               <image>
+                  <Image url="@../images/headshot.png" />
+               </image>
+            </ImageView>
+         </children></AnchorPane>
+      <Label layoutX="385.0" layoutY="15.0" stylesheets="@../css/about.css" text="Hi, I'm Tyler!" AnchorPane.rightAnchor="15.0">
+         <styleClass>
+            <String fx:value="text" />
+            <String fx:value="title" />
+         </styleClass>
+      </Label>
+      <Label alignment="TOP_RIGHT" layoutX="208.0" layoutY="52.0" prefHeight="31.0" prefWidth="325.0" styleClass="text" stylesheets="@../css/about.css" text="My name is Tyler Liquornik, and I'm a third year Software Engineering + Ivey Business student at Western." textAlignment="RIGHT" wrapText="true" AnchorPane.bottomAnchor="217.0" AnchorPane.rightAnchor="15.0" />
+      <Label alignment="TOP_RIGHT" layoutX="220.0" layoutY="95.0" prefHeight="52.0" prefWidth="325.0" styleClass="text" stylesheets="@../css/about.css" text="I have spent my time at WECCA as a Technical Communications Lead in my first and second year of school, and I later became the Software Lead in my third year. " textAlignment="RIGHT" wrapText="true" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="93.0" />
+      <Label alignment="TOP_RIGHT" layoutX="210.0" layoutY="150.0" prefHeight="62.0" prefWidth="325.0" styleClass="text" stylesheets="@../css/about.css" text="I started PADDL to make civil engineering design easy for anyone. It's my hope that future WECCA developers will build upon PADDL above and beyond anything I ever imagined!" textAlignment="RIGHT" wrapText="true" AnchorPane.rightAnchor="15.0" />
+      <Label alignment="TOP_RIGHT" layoutX="210.0" layoutY="212.0" prefHeight="41.0" prefWidth="325.0" styleClass="text" stylesheets="@../css/about.css" text="Please reach out for concerns regarding PADDL, or if you just wanted to connect, I'm always happy to make time to chat :-)" textAlignment="RIGHT" wrapText="true" AnchorPane.rightAnchor="15.0" />
+      <Button layoutX="252.0" layoutY="243.0" mnemonicParsing="false" onAction="#redirectLinkedin" prefHeight="21.0" prefWidth="21.0" styleClass="transparent-button" stylesheets="@../css/style.css" AnchorPane.bottomAnchor="15.0" AnchorPane.rightAnchor="15.0">
+         <graphic>
+            <FontAwesomeIcon fill="WHITE" glyphName="LINKEDIN" size="2em" />
+         </graphic>
+      </Button>
+      <Button layoutX="262.0" layoutY="253.0" mnemonicParsing="false" onAction="#redirectGithub" prefHeight="21.0" prefWidth="21.0" styleClass="transparent-button" stylesheets="@../css/style.css" AnchorPane.bottomAnchor="15.0" AnchorPane.rightAnchor="55.0">
+         <graphic>
+            <FontAwesomeIcon fill="WHITE" glyphName="GITHUB" size="2em" />
+         </graphic>
+      </Button>
+   </children>
+</AnchorPane>

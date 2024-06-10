@@ -204,6 +204,7 @@ public class MainController implements Initializable {
             AnchorPane drawerContent = loader.load();
             menuDrawer.getChildren().setAll(drawerContent);
             menuDrawer.setTranslateX(-menuDrawer.getPrefWidth());
+            JFXDepthManager.setDepth(menuDrawer, 5);
         } catch (IOException ignored) {}
     }
 
