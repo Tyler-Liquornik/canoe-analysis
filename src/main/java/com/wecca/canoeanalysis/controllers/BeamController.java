@@ -187,7 +187,7 @@ public class BeamController implements Initializable
 
         clearLoads();
         axisLabelR.setText("X");
-        axisLabelR.setLayoutX(607); // this will not be hard coded anymore once axis labels for new loads are implemented
+        axisLabelR.setLayoutX(607); // TODO: this will not be hard coded anymore once axis labels for new loads are implemented
         canoeLengthTextField.setDisable(false);
         canoeLengthComboBox.setDisable(false);
         lengthLabel.setDisable(false);
@@ -218,7 +218,7 @@ public class BeamController implements Initializable
 
                 // Change the label on the scale
                 axisLabelR.setText(String.format("%.2f m", canoe.getLen()));
-                axisLabelR.setLayoutX(595); // this will not be hard coded anymore once axis labels for new loads are implemented
+                axisLabelR.setLayoutX(595); // TODO: this will not be hard coded anymore once axis labels for new loads are implemented
 
                 // Clear potential alert and reset access to controls
                 mainController.closeSnackBar(mainController.getSnackbar());
