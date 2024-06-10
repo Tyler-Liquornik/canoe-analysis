@@ -9,12 +9,14 @@ import com.wecca.canoeanalysis.components.graphics.*;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.services.*;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.collections.FXCollections;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
+import javafx.scene.paint.Paint;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -48,7 +50,7 @@ public class BeamController implements Initializable
     private AnchorPane loadContainer, beamContainer;
 
     @Getter @Setter
-    private static MainController moduleController;
+    private static MainController mainController;
 
     private Canoe canoe; // entity class that models the canoe as a beam
     private Beam beam; // The graphic of the beam
@@ -220,7 +222,7 @@ public class BeamController implements Initializable
                 axisLabelR.setLayoutX(595); // this will not be hard coded anymore once axis labels for new loads are implemented
 
                 // Clear potential alert and reset access to controls
-                moduleController.closeSnackBar(moduleController.getSnackbar());
+                mainController.closeSnackBar(mainController.getSnackbar());
                 disableLoadingControls(false);
                 canoeLengthTextField.setDisable(true);
                 canoeLengthComboBox.setDisable(true);
@@ -234,10 +236,10 @@ public class BeamController implements Initializable
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
             else
-                moduleController.showSnackbar("Length must be between 0.05m and 20m");
+                mainController.showSnackbar("Length must be between 0.05m and 20m");
         }
         else
-            moduleController.showSnackbar("One or more entered values are not valid numbers");
+            mainController.showSnackbar("One or more entered values are not valid numbers");
     }
 
     /**
@@ -299,7 +301,7 @@ public class BeamController implements Initializable
     public void addPointLoad()
     {
         // Clear previous alert label
-        moduleController.closeSnackBar(moduleController.getSnackbar());
+        mainController.closeSnackBar(mainController.getSnackbar());
 
         // Validate the entered numbers are doubles
         if (ParsingService.allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField)))
@@ -313,10 +315,10 @@ public class BeamController implements Initializable
 
             // Validate the load is being added within the length of the canoe
             if (!(0 <= x && x <= canoe.getLen()))
-                moduleController.showSnackbar("Load must be contained within the canoe's length");
+                mainController.showSnackbar("Load must be contained within the canoe's length");
             // Validate the load is in the accepted magnitude range
             else if (!(acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1]))
-                moduleController.showSnackbar("Load must be between 0.05kN and 10kN");
+                mainController.showSnackbar("Load must be between 0.05kN and 10kN");
 
             else
             {
@@ -331,7 +333,7 @@ public class BeamController implements Initializable
 
         }
         else
-            moduleController.showSnackbar("One or more entered values are not valid numbers");
+            mainController.showSnackbar("One or more entered values are not valid numbers");
     }
 
     /**
@@ -342,7 +344,7 @@ public class BeamController implements Initializable
     public void addDistributedLoad()
     {
         // Clear previous alert labels
-        moduleController.closeSnackBar(moduleController.getSnackbar());
+        mainController.closeSnackBar(mainController.getSnackbar());
 
         // Validate the entered numbers are doubles
         if (ParsingService.allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
@@ -358,11 +360,11 @@ public class BeamController implements Initializable
 
             // User entry validations
             if (!(0 <= x && xR <= canoe.getLen()))
-                moduleController.showSnackbar("Load must be contained within the canoe's length");
+                mainController.showSnackbar("Load must be contained within the canoe's length");
             else if (!(xR > x))
-                moduleController.showSnackbar("Right interval bound must be greater than the left bound");
+                mainController.showSnackbar("Right interval bound must be greater than the left bound");
             else if (!(acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1]))
-                moduleController.showSnackbar("Load must be between 0.05kN/m and 10kN/m");
+                mainController.showSnackbar("Load must be between 0.05kN/m and 10kN/m");
 
             else
                 {
@@ -376,7 +378,7 @@ public class BeamController implements Initializable
                 }
         }
         else
-            moduleController.showSnackbar("One or more entered values are not valid numbers");
+            mainController.showSnackbar("One or more entered values are not valid numbers");
     }
 
     /**
@@ -386,7 +388,7 @@ public class BeamController implements Initializable
      */
     private void addArrowBoxGraphic(UniformDistributedLoad dLoad) {
         // Label reset
-        moduleController.closeSnackBar(moduleController.getSnackbar());
+        mainController.closeSnackBar(mainController.getSnackbar());
 
         // Add the load to the model
         canoe.addLoad(dLoad);
@@ -405,7 +407,7 @@ public class BeamController implements Initializable
             {
                 // TODO: implement clipping
                 // currently: after getting here and trying to add another load you can't add any more arrows, need to fix that
-                moduleController.showSnackbar("This is an edge case with no handler yet - Tyler :-)");
+                mainController.showSnackbar("This is an edge case with no handler yet - Tyler :-)");
             }
         }
     }
@@ -460,11 +462,11 @@ public class BeamController implements Initializable
     private void addArrowGraphic(PointLoad pLoad, AddLoadResult result)
     {
         // Notify the user regarding point loads combining or cancelling
-        moduleController.closeSnackBar(moduleController.getSnackbar());
+        mainController.closeSnackBar(mainController.getSnackbar());
         if (result == AddLoadResult.COMBINED)
-            moduleController.showSnackbar("Point load magnitudes combined");
+            mainController.showSnackbar("Point load magnitudes combined");
         else if (result == AddLoadResult.REMOVED)
-            moduleController.showSnackbar("Point load magnitudes cancelled");
+            mainController.showSnackbar("Point load magnitudes cancelled");
 
         // Prevent rendering issues with zero-valued loads
         if (pLoad.getMag() == 0)
@@ -486,7 +488,7 @@ public class BeamController implements Initializable
                 else {
                     // TODO: implement clipping
                     // currently: after getting here and trying to add another load you can't add any more arrows
-                    moduleController.showSnackbar("This is an edge case with no handler yet - Tyler :-)");
+                    mainController.showSnackbar("This is an edge case with no handler yet - Tyler :-)");
                 }
             }
             else
@@ -561,7 +563,7 @@ public class BeamController implements Initializable
     private void solveFloatingSystem()
     {
         // TODO: Implement (consult Design & Analysis)
-        moduleController.showSnackbar("This has not yet been implemented - Tyler :-)");
+        mainController.showSnackbar("This has not yet been implemented - Tyler :-)");
     }
 
     private void undoFloatingSolve()
@@ -576,7 +578,7 @@ public class BeamController implements Initializable
     private void solveSubmergedSystem()
     {
         // TODO: Implement (consult Design & Analysis)
-        moduleController.showSnackbar("This has not yet been implemented - Tyler :-)");
+        mainController.showSnackbar("This has not yet been implemented - Tyler :-)");
     }
 
     private void undoSubmergedSolve()
@@ -628,7 +630,7 @@ public class BeamController implements Initializable
         // Handle case that no index was selected
         if (selectedIndex == -1)
         {
-            moduleController.showSnackbar("Cannot perform delete, no load selected");
+            mainController.showSnackbar("Cannot perform delete, no load selected");
             return;
         }
 
@@ -673,7 +675,40 @@ public class BeamController implements Initializable
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
-        setModuleController(CanoeAnalysisApplication.getModuleController());
+        // Set the local instance of the main controller
+        setMainController(CanoeAnalysisApplication.getMainController());
+
+        // Add module tool bar buttons
+        List<Button> beamModuleButtons = new ArrayList<>();
+
+        Button downloadCanoeButton = new Button();
+        downloadCanoeButton.getStyleClass().add("tool-bar-button");
+        downloadCanoeButton.setOnAction(event -> {
+            try {
+                downloadCanoe();
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        FontAwesomeIcon downloadIcon = new FontAwesomeIcon();
+        downloadIcon.setFill(Paint.valueOf("WHITE"));
+        downloadIcon.setGlyphName("ARROW_CIRCLE_O_DOWN");
+        downloadIcon.setSize("25");
+        downloadCanoeButton.setGraphic(downloadIcon);
+        beamModuleButtons.add(downloadCanoeButton);
+
+        Button uploadCanoeButton = new Button();
+        uploadCanoeButton.getStyleClass().add("tool-bar-button");
+        uploadCanoeButton.setOnAction(event -> uploadCanoe());
+        FontAwesomeIcon uploadIcon = new FontAwesomeIcon();
+        uploadIcon.setFill(Paint.valueOf("WHITE"));
+        uploadIcon.setGlyphName("ARROW_CIRCLE_O_UP");
+        uploadIcon.setSize("25");
+        uploadCanoeButton.setGraphic(uploadIcon);
+        beamModuleButtons.add(uploadCanoeButton);
+
+        mainController.resetToolBarButtons();
+        mainController.addToolBarButtons(beamModuleButtons);
 
         // Instantiate the canoe
         canoe = Canoe.getInstance();
@@ -685,7 +720,7 @@ public class BeamController implements Initializable
 
         // Css styling
         JFXDepthManager.setDepth(loadListView, 4);
-        JFXDepthManager.setDepth(moduleController.getMenuDrawer(), 5);
+        JFXDepthManager.setDepth(mainController.getMenuDrawer(), 5);
 
         // Setting RadioButton Toggle Group
         ToggleGroup canoeSupportToggleGroup = new ToggleGroup();

@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="mainAnchorPane" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.PunchingShearController">
     <children>
         <Label layoutX="185.0" layoutY="271.0" styleClass="field" stylesheets="@../css/style.css" text="The Punching Shear module has not yet been implemented" textFill="WHITE">
             <font>
