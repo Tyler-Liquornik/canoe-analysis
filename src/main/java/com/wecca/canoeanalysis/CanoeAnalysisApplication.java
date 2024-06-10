@@ -1,7 +1,10 @@
 package com.wecca.canoeanalysis;
 
+import com.wecca.canoeanalysis.controllers.MainController;
+import javafx.scene.layout.AnchorPane;
+import lombok.Getter;
+import lombok.Setter;
 import org.burningwave.core.assembler.StaticComponentContainer;
-import com.wecca.canoeanalysis.controllers.BeamController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -13,20 +16,28 @@ import java.io.IOException;
 
 public class CanoeAnalysisApplication extends Application {
 
+    @Getter @Setter
+    private static MainController moduleController;
+
     // The entry point of the application
     @Override
     public void start(Stage stage) throws IOException {
         StaticComponentContainer.Modules.exportAllToAll();
 
-        FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/beam-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 900, 600);
+        FXMLLoader mainFxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/main-view.fxml"));
+        Scene scene = new Scene(mainFxmlLoader.load(), 900, 600);
         stage.setTitle("PADDL");
         stage.setScene(scene);
         stage.initStyle(StageStyle.UNDECORATED);
         stage.show();
 
-        // Provide a references of the stage to the controller
-        BeamController.setPrimaryStage(stage);
+        // Provide a references of stage, scene, controller between
+        setModuleController(mainFxmlLoader.getController());
+        moduleController.setPrimaryStage(stage);
+        moduleController.setPrimaryScene(scene);
+        FXMLLoader beamFxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/beam-view.fxml"));
+        AnchorPane moduleInjectionRoot = beamFxmlLoader.load();
+        moduleController.getModuleInjectionRoot().getChildren().setAll(moduleInjectionRoot);
 
         // Add the CSS file to the scene's stylesheets
         scene.getStylesheets().add(getClass().getResource("css/font.css").toExternalForm());

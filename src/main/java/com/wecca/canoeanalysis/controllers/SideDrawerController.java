@@ -1,10 +1,18 @@
 package com.wecca.canoeanalysis.controllers;
 
+import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
+import javafx.scene.layout.AnchorPane;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import lombok.Getter;
+import lombok.Setter;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
@@ -33,11 +41,11 @@ public class SideDrawerController implements Initializable {
     }
 
     // Module selection handlers
-    public void clickBeamButton() {selectModule(Module.BEAM, beamIcon);}
-    public void clickPunchingShearButton() {selectModule(Module.PUNCHING_SHEAR, punchingShearIcon);}
-    public void clickCriticalSectionsButton() {selectModule(Module.CRITICAL_SECTIONS, criticalSectionsIcon);}
-    public void clickFailureEnvelopeButton() {selectModule(Module.FAILURE_ENVELOPE, failureEnvelopeIcon);}
-    public void clickPoaButton() {selectModule(Module.PERCENT_OPEN_AREA, poaIcon);}
+    public void clickBeamButton() throws IOException {selectModule(Module.BEAM, beamIcon);}
+    public void clickPunchingShearButton() throws IOException {selectModule(Module.PUNCHING_SHEAR, punchingShearIcon);}
+    public void clickCriticalSectionsButton() throws IOException {selectModule(Module.CRITICAL_SECTIONS, criticalSectionsIcon);}
+    public void clickFailureEnvelopeButton() throws IOException {selectModule(Module.FAILURE_ENVELOPE, failureEnvelopeIcon);}
+    public void clickPoaButton() throws IOException {selectModule(Module.PERCENT_OPEN_AREA, poaIcon);}
 
     // Auxiliary button handlers
     public void clickSettingsButton() {
@@ -46,14 +54,21 @@ public class SideDrawerController implements Initializable {
     public void clickAboutButton() {
     }
 
-    public void selectModule(Module module, FontAwesomeIcon icon)
-    {
+    public void selectModule(Module module, FontAwesomeIcon icon) throws IOException {
         if (selectedModule != module)
         {
+            // Change the icon for the selected module in the drawer
             selectedModule = module;
             selectedIcon.setGlyphName("ANGLE_RIGHT");
             selectedIcon = icon;
             icon.setGlyphName("ANGLE_DOUBLE_RIGHT");
+
+            // Load the new FXML content
+            FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/" + module.getViewName() + ".fxml"));
+            AnchorPane moduleInjectionRoot = fxmlLoader.load();
+
+            // Set the new root from the respective view FXMl file
+            CanoeAnalysisApplication.getModuleController().getModuleInjectionRoot().getChildren().setAll(moduleInjectionRoot);
         }
     }
 
