@@ -726,9 +726,16 @@ public class BeamController implements Initializable
         // Add module tool bar buttons
         addModuleToolBarButtons();
 
-        // Reset the canoe
-        canoe = null;
+        // Instantiate the canoe
         canoe = Canoe.getInstance();
+
+        // Reset module state if switching PADDL modules
+        canoe.setLen(0);
+        canoe.getPLoads().clear();
+        canoe.getDLoads().clear();
+        canoe.getLoads().clear();
+        loadListView.getItems().clear();
+        loadContainer.getChildren().clear();
 
         // Disable most buttons on startup to prevent inputs in the wrong order
         disableLoadingControls(true);
