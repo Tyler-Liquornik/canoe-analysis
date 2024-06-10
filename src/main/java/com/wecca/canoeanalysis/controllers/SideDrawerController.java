@@ -5,12 +5,8 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.layout.AnchorPane;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.io.IOException;
 import java.net.URL;
@@ -68,7 +64,7 @@ public class SideDrawerController implements Initializable {
             AnchorPane moduleInjectionRoot = fxmlLoader.load();
 
             // Set the new root from the respective view FXMl file
-            CanoeAnalysisApplication.getModuleController().getModuleInjectionRoot().getChildren().setAll(moduleInjectionRoot);
+            CanoeAnalysisApplication.getMainController().getModuleInjectionRoot().getChildren().setAll(moduleInjectionRoot);
         }
     }
 

@@ -17,7 +17,7 @@ import java.io.IOException;
 public class CanoeAnalysisApplication extends Application {
 
     @Getter @Setter
-    private static MainController moduleController;
+    private static MainController mainController;
 
     // The entry point of the application
     @Override
@@ -32,12 +32,12 @@ public class CanoeAnalysisApplication extends Application {
         stage.show();
 
         // Provide a references of stage, scene, controller between
-        setModuleController(mainFxmlLoader.getController());
-        moduleController.setPrimaryStage(stage);
-        moduleController.setPrimaryScene(scene);
+        setMainController(mainFxmlLoader.getController());
+        mainController.setPrimaryStage(stage);
+        mainController.setPrimaryScene(scene);
         FXMLLoader beamFxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/beam-view.fxml"));
         AnchorPane moduleInjectionRoot = beamFxmlLoader.load();
-        moduleController.getModuleInjectionRoot().getChildren().setAll(moduleInjectionRoot);
+        mainController.getModuleInjectionRoot().getChildren().setAll(moduleInjectionRoot);
 
         // Add the CSS file to the scene's stylesheets
         scene.getStylesheets().add(getClass().getResource("css/font.css").toExternalForm());

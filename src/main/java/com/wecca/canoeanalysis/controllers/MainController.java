@@ -20,7 +20,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
@@ -34,7 +37,7 @@ public class MainController implements Initializable {
     @FXML @Getter
     private JFXSnackbar snackbar;
     @FXML @Getter @Setter
-    private AnchorPane root, moduleInjectionRoot;
+    private AnchorPane root, moduleInjectionRoot, toolBarPane;
 
     @Getter @Setter
     private Scene primaryScene;
@@ -47,6 +50,9 @@ public class MainController implements Initializable {
     private boolean isDrawerOpen = false;
     private AnimationTimer drawerTimer;
     private double drawerTargetX; // Target X position for the drawer
+
+    // Each module will have a set of custom toolbar buttons on top of the minimize and close window buttons
+    private List<Button> moduleToolBarButtons = new ArrayList<>();
 
     /**
      * Mouse pressed event handler to record the current mouse position
@@ -201,8 +207,41 @@ public class MainController implements Initializable {
         } catch (IOException ignored) {}
     }
 
+    public void addToolBarButtons(List<Button> buttons) {
+        double buttonHeight = 34.0;
+        double buttonWidth = 35.0;
+
+        // Account for space taken up by minimize and close window buttons and padding
+        double buttonX = toolBarPane.getWidth() - buttonWidth * 2 - AnchorPane.getRightAnchor(toolBarPane.getChildren().getLast());
+        double buttonY = 0.0;
+
+        moduleToolBarButtons = buttons;
+
+        for (Button button : moduleToolBarButtons) {
+            buttonX = buttonX - buttonWidth;
+
+            button.setPrefHeight(buttonHeight);
+            button.setPrefWidth(buttonWidth);
+            button.setLayoutX(buttonX);
+            button.setLayoutY(buttonY);
+        }
+
+        // Extra index skips the hamburger which is always first
+        toolBarPane.getChildren().addAll(1, moduleToolBarButtons);
+    }
+
+    public void resetToolBarButtons() {
+        if (!moduleToolBarButtons.isEmpty())
+        {
+            // Extra index skips the hamburger which is always first
+            toolBarPane.getChildren().remove(1, 1 + moduleToolBarButtons.size());
+            moduleToolBarButtons.clear();
+        }
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        // Initialize components
         initializeHamburger();
         initializeDrawer();
         initializeSnackbar();
