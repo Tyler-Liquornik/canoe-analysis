@@ -655,11 +655,19 @@ public class BeamController implements Initializable
         enableEmptyLoadListSettings(true);
     }
 
+    /**
+     * Upload a JSON file representing the Canoe object model
+     * This populates the list view and beam graphic with the new model
+     */
     public void uploadCanoe()
     {
         // TODO
     }
 
+    /**
+     * Download the Canoe object model with the loads currently on the canoe as a JSON file
+     * This can be uploaded later with uploadCanoe() or manually modified
+     */
     public void downloadCanoe() throws JsonProcessingException {
         // TODO
         String JSONCanoe = (new ObjectMapper()).writeValueAsString(canoe);
@@ -667,21 +675,15 @@ public class BeamController implements Initializable
     }
 
     /**
-     * Operations called on initialization of the view
-     * @param url unused, part of javafx framework
-     * @param resourceBundle unused, part of javafx framework
+     * Clears the toolbar of buttons from other modules and adds ones from this module
+     * Currently, this provides buttons to download and upload the Canoe object as JSON
      */
-    @Override
-    public void initialize(URL url, ResourceBundle resourceBundle)
+    public void addModuleToolBarButtons()
     {
-        // Set the local instance of the main controller
-        setMainController(CanoeAnalysisApplication.getMainController());
-
-        // Add module tool bar buttons
         List<Button> beamModuleButtons = new ArrayList<>();
 
         Button downloadCanoeButton = new Button();
-        downloadCanoeButton.getStyleClass().add("tool-bar-button");
+        downloadCanoeButton.getStyleClass().add("transparent-button");
         downloadCanoeButton.setOnAction(event -> {
             try {
                 downloadCanoe();
@@ -697,7 +699,7 @@ public class BeamController implements Initializable
         beamModuleButtons.add(downloadCanoeButton);
 
         Button uploadCanoeButton = new Button();
-        uploadCanoeButton.getStyleClass().add("tool-bar-button");
+        uploadCanoeButton.getStyleClass().add("transparent-button");
         uploadCanoeButton.setOnAction(event -> uploadCanoe());
         FontAwesomeIcon uploadIcon = new FontAwesomeIcon();
         uploadIcon.setFill(Paint.valueOf("WHITE"));
@@ -708,8 +710,24 @@ public class BeamController implements Initializable
 
         mainController.resetToolBarButtons();
         mainController.addToolBarButtons(beamModuleButtons);
+    }
 
-        // Instantiate the canoe
+    /**
+     * Operations called on initialization of the view
+     * @param url unused, part of javafx framework
+     * @param resourceBundle unused, part of javafx framework
+     */
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle)
+    {
+        // Set the local instance of the main controller
+        setMainController(CanoeAnalysisApplication.getMainController());
+
+        // Add module tool bar buttons
+        addModuleToolBarButtons();
+
+        // Reset the canoe
+        canoe = null;
         canoe = Canoe.getInstance();
 
         // Disable most buttons on startup to prevent inputs in the wrong order
@@ -719,7 +737,6 @@ public class BeamController implements Initializable
 
         // Css styling
         JFXDepthManager.setDepth(loadListView, 4);
-        JFXDepthManager.setDepth(mainController.getMenuDrawer(), 5);
 
         // Setting RadioButton Toggle Group
         ToggleGroup canoeSupportToggleGroup = new ToggleGroup();

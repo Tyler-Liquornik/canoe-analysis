@@ -35,6 +35,7 @@ public class DiagramService {
         popupStage.setTitle(title);
         Pane chartPane = new Pane();
         chartPane.setPrefSize(1125, 750);
+        popupStage.setResizable(false);
 
         // Adding Logo Icon
         Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png");
@@ -62,7 +63,6 @@ public class DiagramService {
         // Creating the scene and adding the chart to it
         chartPane.getChildren().add(chart);
         JFXDecorator decorator = new JFXDecorator(popupStage, chartPane, false, false, true);
-        decorator.setCustomMaximize(true);
         popupStage.setOnShown(event -> chartPane.requestFocus());
         Scene scene = new Scene(decorator, 1125, 775);
 

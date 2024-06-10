@@ -1,12 +1,20 @@
 package com.wecca.canoeanalysis.controllers;
 
+import com.jfoenix.controls.JFXDecorator;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import lombok.Getter;
+import org.burningwave.core.assembler.StaticComponentContainer;
 
 import java.io.IOException;
 import java.net.URL;
@@ -47,7 +55,21 @@ public class SideDrawerController implements Initializable {
     public void clickSettingsButton() {
     }
 
-    public void clickAboutButton() {
+    public void clickAboutButton() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/about-view.fxml"));
+        AnchorPane rootPane = fxmlLoader.load();
+
+        Stage stage = new Stage();
+        JFXDecorator decorator = new JFXDecorator(stage, new VBox(rootPane), false, false, true);
+
+        Scene scene = new Scene(decorator, 550, 325);
+        stage.setTitle("About Me");
+        stage.setScene(scene);
+        stage.initStyle(StageStyle.UNDECORATED);
+        stage.setOnShown(event -> rootPane.requestFocus());
+        stage.setResizable(false);
+        stage.getIcons().add(new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png"));
+        stage.show();
     }
 
     public void selectModule(Module module, FontAwesomeIcon icon) throws IOException {

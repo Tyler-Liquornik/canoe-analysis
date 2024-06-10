@@ -71,7 +71,7 @@ public class SupportTriangle extends Group implements Graphic
         // Add the shapes to the group
         this.getChildren().addAll(triangle, baseLine);
 
-        JFXDepthManager.setDepth(this, 4);
+        JFXDepthManager.setDepth(this, 5);
     }
 
     // Get a lightened version of a color
