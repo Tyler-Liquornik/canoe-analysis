@@ -54,12 +54,9 @@ public class BeamController implements Initializable
     private Canoe canoe; // entity class that models the canoe as a beam
     private Beam beam; // The graphic of the beam
 
-    private final double[] acceptedMagRange = new double[] {0.05, 10}; // Acceptable magnitude range (kN)
-    private final double[] acceptedLengthRange = new double[] {0.05, 20}; // Acceptable canoe length range (m)
-    private final int[] acceptedGraphicHeightRange = new int[] {14, 84}; // Acceptable arrow height range (px)
-    // Cannot get this from imageView, it hasn't been instantiated until initialize is called
-    // Is there a workaround to this that doesn't require adding the imageView manually in code
-    // Also this is awkward to add it in with all the fields at the top
+    // Size rules for load graphics (prevents them from rendering too big/small)
+    private double minGraphicSize;
+    private double[] acceptedGraphicHeightRange;
 
 
     /**
@@ -212,7 +209,7 @@ public class BeamController implements Initializable
             double len = ParsingService.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
 
             // Only allow lengths in the specified range
-            if (len >= acceptedLengthRange[0] && len <= acceptedLengthRange[1]) {
+            if (len >= 0.01) {
                 // Update model state
                 canoe.setLen(len);
 
@@ -235,7 +232,7 @@ public class BeamController implements Initializable
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
             else
-                mainController.showSnackbar("Length must be between 0.05m and 20m");
+                mainController.showSnackbar("Length must be at least 0.01m");
         }
         else
             mainController.showSnackbar("One or more entered values are not valid numbers");
@@ -277,10 +274,17 @@ public class BeamController implements Initializable
         {
             Load l = canoe.getLoads().get(i);
 
+            // The ratio of the largest load (always rendered at max size) to this load
+            double loadMagnitudeRatio = Math.abs(l.getMag() / canoe.getLoads().get(maxIndex).getMag());
+
+            // Clip load length if too small (i.e. ratio is too large)
+            if (loadMagnitudeRatio < Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]))
+                loadMagnitudeRatio = Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]);
+
             // Render at scaled size (deltaY calculates the downscaling factor)
-            int endY = l.getMag() < 0 ? acceptedGraphicHeightRange[1] : acceptedGraphicHeightRange[1] + (int) beam.getThickness();
-            int deltaY = (int) ((acceptedGraphicHeightRange[1] - acceptedGraphicHeightRange[0]) * Math.abs(l.getMag() / canoe.getLoads().get(maxIndex).getMag()));
-            int startY = l.getMag() < 0 ? acceptedGraphicHeightRange[1] - deltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
+            double endY = l.getMag() < 0 ? acceptedGraphicHeightRange[1] : acceptedGraphicHeightRange[1] + (int) beam.getThickness();
+            double deltaY = (acceptedGraphicHeightRange[1] - acceptedGraphicHeightRange[0]) * loadMagnitudeRatio;
+            double startY = l.getMag() < 0 ? acceptedGraphicHeightRange[1] - deltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
 
             if (l instanceof PointLoad)
                 rescaledGraphics.add(new Arrow(l.getXScaled(beam.getWidth(), canoe.getLen()), startY, l.getXScaled(beam.getWidth(), canoe.getLen()), endY));
@@ -316,8 +320,8 @@ public class BeamController implements Initializable
             if (!(0 <= x && x <= canoe.getLen()))
                 mainController.showSnackbar("Load must be contained within the canoe's length");
             // Validate the load is in the accepted magnitude range
-            else if (!(acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1]))
-                mainController.showSnackbar("Load must be between 0.05kN and 10kN");
+            else if (Math.abs(mag) < 0.01)
+                mainController.showSnackbar("Load magnitude at least 0.01kN");
 
             else
             {
@@ -362,8 +366,8 @@ public class BeamController implements Initializable
                 mainController.showSnackbar("Load must be contained within the canoe's length");
             else if (!(xR > x))
                 mainController.showSnackbar("Right interval bound must be greater than the left bound");
-            else if (!(acceptedMagRange[0] <= Math.abs(mag) && Math.abs(mag) <= acceptedMagRange[1]))
-                mainController.showSnackbar("Load must be between 0.05kN/m and 10kN/m");
+            else if (Math.abs(mag) < 0.01)
+                mainController.showSnackbar("Load magnitude at least 0.01kN");
 
             else
                 {
@@ -392,23 +396,8 @@ public class BeamController implements Initializable
         // Add the load to the model
         canoe.addLoad(dLoad);
 
-        // Only 1 load, always at max height
-        if (canoe.getLoads().size() <= 1)
-            refreshLoadGraphics();
-
-        else
-        {
-            // Stay within the limits of the accepted height range (based on pixel spacing in the GUI)
-            if (!(canoe.getLoads().get(canoe.getMaxLoadIndex()).getMag() / canoe.getLoads().get(canoe.getMinLoadIndex()).getMag() > (double) acceptedGraphicHeightRange[1] / (double) acceptedGraphicHeightRange[0]))
-                refreshLoadGraphics();
-
-            else
-            {
-                // TODO: implement clipping
-                // currently: after getting here and trying to add another load you can't add any more arrows, need to fix that
-                mainController.showSnackbar("This is an edge case with no handler yet - Tyler :-)");
-            }
-        }
+        // Refresh load graphics
+        refreshLoadGraphics();
     }
 
     /**
@@ -471,28 +460,7 @@ public class BeamController implements Initializable
         if (pLoad.getMag() == 0)
             return;
 
-        // If only 1 load it's always at max height, so we don't need to worry checking relative scaling
-        if (canoe.getLoads().size() <= 1 && result != AddLoadResult.REMOVED)
-            refreshLoadGraphics();
-
-        else
-        {
-            // Load list can be empty if loads cancelled out
-            if (!canoe.getLoads().isEmpty())
-            {
-                // Stay within the limits of the accepted height range (based on pixel spacing in the GUI)
-                if (!(canoe.getLoads().get(canoe.getMaxLoadIndex()).getMag() / canoe.getLoads().get(canoe.getMinLoadIndex()).getMag() > (double) acceptedGraphicHeightRange[1] / (double) acceptedGraphicHeightRange[0]))
-                    refreshLoadGraphics();
-
-                else {
-                    // TODO: implement clipping
-                    // currently: after getting here and trying to add another load you can't add any more arrows
-                    mainController.showSnackbar("This is an edge case with no handler yet - Tyler :-)");
-                }
-            }
-            else
-                refreshLoadGraphics();
-        }
+        refreshLoadGraphics();
     }
 
     /**
@@ -773,5 +741,10 @@ public class BeamController implements Initializable
         beam = new Beam(0, 84, beamContainer.getPrefWidth(), 25);
         JFXDepthManager.setDepth(beam, 4);
         beamContainer.getChildren().add(beam);
+
+        // Initialize maximum allowed graphics size from beam graphic and container dimensions
+        double maxGraphicHeight = 84;
+        double minimumGraphicHeight = 14;
+        acceptedGraphicHeightRange = new double[] {minimumGraphicHeight, maxGraphicHeight};
     }
 }
