@@ -156,7 +156,12 @@ public final class Canoe
         TreeSet<Double> s = new TreeSet<>();
 
         // Points included are the locations of point loads and interval boundaries of distributed loads
-        for (Load l : loads) {s.add(l.getX());}
+        for (Load l : loads)
+        {
+            s.add(l.getX());
+            if (l instanceof UniformDistributedLoad distributedLoad)
+                s.add(distributedLoad.getRX());
+        }
 
         // Add canoe endpoints to the set if they aren't already
         s.add(0.0);
