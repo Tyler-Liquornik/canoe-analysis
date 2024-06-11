@@ -6,14 +6,13 @@ import lombok.Getter;
 @Getter
 public enum ColorPalette {
     PRIMARY("#BB86FC"),
-    PRIMARY_VARIANT("#D2A8FF"),
-    SECONDARY("#03DAC6"),
+    PRIMARY_LIGHT("#D2A8FF"),
+    PRIMARY_DESATURATED("#534B5E"),
     BACKGROUND("#121212"),
     SURFACE("#202020"),
     ABOVE_SURFACE("#282828"),
     DANGER("#D10647"),
-    ICON("#FFFFFF"),
-    TEXT_ON_SURFACE("#534B5E");
+    WHITE("#FFFFFF");
 
     private final Color color;
 

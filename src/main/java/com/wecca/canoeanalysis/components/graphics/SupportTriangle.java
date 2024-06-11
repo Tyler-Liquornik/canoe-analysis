@@ -51,7 +51,7 @@ public class SupportTriangle extends Group implements Graphic
 
         // Create the triangle polygon
         Polygon triangle = new Polygon();
-        triangle.setStroke(ColorPalette.ICON.getColor());
+        triangle.setStroke(ColorPalette.WHITE.getColor());
         triangle.getPoints().addAll(
                 tipX, tipY,
                 x1, y,
@@ -62,7 +62,7 @@ public class SupportTriangle extends Group implements Graphic
 
         // Create the lines sticking out
         Line baseLine = new Line(x1 - sideLength / 2, y, x2 + sideLength / 2, y);
-        baseLine.setStroke(ColorPalette.ICON.getColor());
+        baseLine.setStroke(ColorPalette.WHITE.getColor());
 
         // Set fields
         this.triangle = triangle;
