@@ -8,6 +8,6 @@
 
 <AnchorPane fx:id="mainAnchorPane" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <Label layoutX="299.0" layoutY="271.0" styleClass="field" stylesheets="@../css/style.css" text="This is a PADDL Module Template" />
+      <Label layoutX="299.0" layoutY="271.0" styleClass="module-placeholder-text" stylesheets="@../css/style.css" text="This is a PADDL Module Template" />
    </children>
 </AnchorPane>

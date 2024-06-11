@@ -5,6 +5,6 @@
 
 <AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background"  stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.PercentOpenAreaController">
     <children>
-        <Label layoutX="171.0" layoutY="271.0" stylesheets="@../css/style.css" text="The Percent Open Area module has not yet been implemented" />
+        <Label layoutX="171.0" layoutY="271.0" styleClass="module-placeholder-text"  stylesheets="@../css/style.css" text="The Percent Open Area module has not yet been implemented" />
     </children>
 </AnchorPane>

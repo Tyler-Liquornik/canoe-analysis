@@ -35,6 +35,12 @@
     -fx-font-size: 16px;
 }
 
+/* Eventually removed once all modules are created*/
+.module-placeholder-text {
+    -fx-font-weight: bold;
+    -fx-font-size: 20px;
+}
+
 .button,
 .combo-box,
 .combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell,
