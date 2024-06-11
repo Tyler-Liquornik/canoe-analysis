@@ -1,19 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.net.URL?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.PercentOpenAreaController">
+<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background"  stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.PercentOpenAreaController">
     <children>
-        <Label layoutX="171.0" layoutY="271.0" styleClass="field" stylesheets="@../css/style.css" text="The Percent Open Area module has not yet been implemented" textFill="WHITE">
-            <font>
-                <Font name="Roboto Bold" size="20.0" />
-            </font>
-        </Label>
+        <Label layoutX="171.0" layoutY="271.0" stylesheets="@../css/style.css" text="The Percent Open Area module has not yet been implemented" />
     </children>
-    <stylesheets>
-        <URL value="@../css/style.css" />
-    </stylesheets>
 </AnchorPane>

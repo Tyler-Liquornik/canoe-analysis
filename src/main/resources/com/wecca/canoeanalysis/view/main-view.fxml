@@ -11,13 +11,10 @@
    <children>
       <AnchorPane fx:id="toolBarPane" maxHeight="35.0" maxWidth="900.0" minHeight="35.0" minWidth="600.0" onMouseDragged="#draggableWindowMove" onMousePressed="#draggableWindowGetLocation" prefHeight="35.0" prefWidth="900.0" styleClass="action-object" stylesheets="@../css/style.css" translateZ="5.0">
          <children>
-            <Button fx:id="hamburgerButton" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#toggleDrawer" prefHeight="34.0" prefWidth="35.0" stylesheets="@../css/style.css" AnchorPane.leftAnchor="15.0">
+            <Button fx:id="hamburgerButton" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#toggleDrawer" prefHeight="34.0" prefWidth="35.0" stylesheets="@../css/style.css" styleClass="transparent-button" AnchorPane.leftAnchor="15.0">
                <graphic>
                   <JFXHamburger fx:id="hamburger" prefHeight="10.0" prefWidth="19.0" scaleX="0.9" scaleY="0.75" />
                </graphic>
-               <styleClass>
-                  <String fx:value="transparent-button" />
-               </styleClass>
             </Button>
             <Button fx:id="minimizeButton" layoutX="900.0" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#minimizeWindow" prefHeight="34.0" prefWidth="35.0" styleClass="transparent-button" stylesheets="@../css/style.css" AnchorPane.rightAnchor="50.0">
                <graphic>
@@ -26,7 +23,7 @@
             </Button>
             <Button layoutX="900.0" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#closeWindow" prefHeight="34.0" prefWidth="35.0" stylesheets="@../css/style.css" AnchorPane.rightAnchor="15.0">
                <graphic>
-                  <FontAwesomeIcon fill="WHITE" glyphName="TIMES" scaleX="0.9" scaleY="0.9" size="25" tabSize="0" />
+                  <FontAwesomeIcon fill="WHITE" glyphName="TIMES" scaleX="0.9" scaleY="0.9" size="25" tabSize="0"/>
                </graphic>
                <styleClass>
                   <String fx:value="transparent-button" />
@@ -35,11 +32,8 @@
             </Button>
          </children>
       </AnchorPane>
-      <AnchorPane fx:id="menuDrawer" layoutX="0.0" layoutY="35.0" prefHeight="565.0" prefWidth="250.0" styleClass="drawer" viewOrder="-100" visible="false" />
-      <AnchorPane fx:id="moduleInjectionRoot" layoutY="35.0" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" stylesheets="@../css/style.css">
-         <children>
-         </children>
-      </AnchorPane>
+      <AnchorPane fx:id="menuDrawer" layoutY="35.0" prefHeight="565.0" prefWidth="250.0" viewOrder="-100" visible="false" />
+      <AnchorPane fx:id="moduleInjectionRoot" layoutY="35.0" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" stylesheets="@../css/style.css" />
       <JFXSnackbar fx:id="snackbar" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="0.0" />
    </children>
 </AnchorPane>
