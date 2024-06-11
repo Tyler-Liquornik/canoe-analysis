@@ -63,15 +63,6 @@ public class ArrowBox extends Group implements Graphic
     @Override
     public double getX() {return getLX();}
 
-    // Get a lightened version of a color
-    public Color lighten(Color color)
-    {
-        double red = color.getRed() + (1 - color.getRed()) * LIGHTEN_FACTOR;
-        double green = color.getGreen() + (1 - color.getGreen()) * LIGHTEN_FACTOR;
-        double blue = color.getBlue() + (1 - color.getBlue()) * LIGHTEN_FACTOR;
-        return new Color(red, green, blue, color.getOpacity());
-    }
-
     // Change the color of the arrow box
     @Override
     public void recolor(Color color) {
@@ -82,6 +73,6 @@ public class ArrowBox extends Group implements Graphic
         if (color.equals(Color.WHITE)) // hard coded for now as lightening looks weird for white arrows
             box.setFill(ColorPalette.getInstance().getAboveSurface());
         else
-            box.setFill(lighten(color));
+            box.setFill(ColorPalette.getInstance().getPrimaryLight());
     }
 }
