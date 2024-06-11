@@ -9,6 +9,7 @@ public final class ColorPalette {
     private static ColorPalette colorPalette = null;
 
     // Default color palette
+    // Field Names MUST match css variable names with camelCase for the reflection APi to work properly
     private Color primary = Color.web("#BB86FC");
     private Color primaryLight = Color.web("#D2A8FF");
     private Color primaryDesaturated = Color.web("#534B5E");
@@ -16,7 +17,7 @@ public final class ColorPalette {
     private Color surface = Color.web("#202020");
     private Color aboveSurface = Color.web("#282828");
     private Color danger = Color.web("#D10647");
-    private Color white = Color.web("#FFFFFF");
+    private Color white = Color.web("#FFFFFF"); // keeping as a utility for now, not permanent
 
     // Private constructor to prevent instantiation
     private ColorPalette() {}

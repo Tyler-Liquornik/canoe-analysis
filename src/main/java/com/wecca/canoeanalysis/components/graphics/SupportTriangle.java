@@ -74,15 +74,6 @@ public class SupportTriangle extends Group implements Graphic
         JFXDepthManager.setDepth(this, 5);
     }
 
-    // Get a lightened version of a color
-    public Color lighten(Color color)
-    {
-        double red = color.getRed() + (1 - color.getRed()) * LIGHTEN_FACTOR;
-        double green = color.getGreen() + (1 - color.getGreen()) * LIGHTEN_FACTOR;
-        double blue = color.getBlue() + (1 - color.getBlue()) * LIGHTEN_FACTOR;
-        return new Color(red, green, blue, color.getOpacity());
-    }
-
     // Change the color of the support triangle
     @Override
     public void recolor(Color color) {
@@ -92,6 +83,6 @@ public class SupportTriangle extends Group implements Graphic
         if (color.equals(Color.WHITE)) // hard coded for now as lightening looks weird for white arrows
             triangle.setFill(ColorPalette.getInstance().getAboveSurface());
         else
-            triangle.setFill(lighten(color));
+            triangle.setFill(ColorPalette.getInstance().getPrimaryLight());
     }
 }

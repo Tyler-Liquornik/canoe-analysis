@@ -1,5 +1,10 @@
 @import url("font.css");
 
+/*
+If changes are made to this palette it is VERY IMPORTANT to align naming with ColorPalette
+For example, -fx-primary-light MUST be named primaryLight in ColorPalette
+This is because the reflection API is being used to set ColorPalette colors
+*/
 * {
     -fx-primary: #BB86FC;
     -fx-primary-light: #D2A8FF;
