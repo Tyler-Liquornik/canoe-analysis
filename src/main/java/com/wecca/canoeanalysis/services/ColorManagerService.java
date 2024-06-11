@@ -5,7 +5,6 @@ import com.wecca.canoeanalysis.components.ColorPalette;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -18,7 +17,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * This service will dynamically update PADDL CSS file colors
+ * This service will dynamically update styles.css and ColorPalette colors and propagate all color changes
  * This will allow a flexible approach to allow CSS changes to persist
  */
 public class ColorManagerService

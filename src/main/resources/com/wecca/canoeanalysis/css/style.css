@@ -8,6 +8,9 @@
     -fx-surface: #202020;
     -fx-above-surface: #282828;
     -fx-danger: #D10647;
+
+    -fx-text-fill: white;
+    -fx-font-family: "Roboto";
 }
 
 .background {
@@ -25,6 +28,11 @@
     -fx-border-style: hidden;
     -fx-border-radius: 5;
     -fx-background-radius: 5;
+}
+
+.title {
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
 }
 
 .button,
@@ -58,11 +66,15 @@
     -fx-padding: 4 8 4 0;
 }
 
-.jfx-hamburger StackPane {
+.jfx-hamburger StackPane,
+.jfx-combo-box > .input-focused-line,
+.jfx-text-field > .input-focused-line {
     -fx-background-color: white;
 }
 
-.action-object {
+.action-object,
+.jfx-combo-box > .input-line,
+.jfx-text-field > .input-line {
     -fx-background-color: -fx-primary;
 }
 
@@ -101,11 +113,6 @@
     -fx-background-color: -fx-danger;
 }
 
-.field {
-    -fx-text-fill: white;
-    -fx-font-family: "Roboto";
-}
-
 .scroll-bar {
     -fx-background-color: -fx-above-surface;
     -fx-background-insets: 0, 3;
@@ -139,4 +146,9 @@
 
 .scroll-bar:vertical > .increment-button, .scroll-bar:vertical > .decrement-button {
     -fx-padding: 5 0 5 0;
+}
+
+.jfx-radio-button {
+    -jfx-selected-color: -fx-primary;
+    -jfx-unselected-color: white;
 }

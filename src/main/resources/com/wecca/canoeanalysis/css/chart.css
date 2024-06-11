@@ -1,9 +1,5 @@
 @import url("style.css");
 
-.root {
-    -fx-font-family: "Roboto"
-}
-
 .chart {
     -fx-background-color: -fx-background;
     -fx-border-width: 1px;
@@ -21,8 +17,6 @@
 .axis-label {
     -fx-font-size: 16px;
     -fx-font-weight: bold;
-    -fx-text-fill: white;
-    -fx-font-family: "Roboto";
 }
 
 .axis.x {
@@ -33,14 +27,10 @@
     -fx-font-size: 11px;
     -fx-rotate: 0;
     -fx-alignment: center-left;
-    -fx-font-family: "Roboto";
-    -fx-text-fill: white;
 }
 
 .chart-title {
     -fx-font-weight: bold;
-    -fx-text-fill: white;
-    -fx-font-family: "Roboto";
 }
 
 .chart-series-area-line {

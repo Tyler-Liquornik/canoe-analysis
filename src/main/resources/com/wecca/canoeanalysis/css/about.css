@@ -1,7 +1,4 @@
-.text {
-    -fx-text-fill: white;
-    -fx-font-family: "Roboto";
-}
+@import url("style.css");
 
 .title {
     -fx-font-size: 18px;
