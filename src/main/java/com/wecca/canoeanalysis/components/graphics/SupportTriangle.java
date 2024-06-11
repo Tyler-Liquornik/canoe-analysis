@@ -51,18 +51,18 @@ public class SupportTriangle extends Group implements Graphic
 
         // Create the triangle polygon
         Polygon triangle = new Polygon();
-        triangle.setStroke(ColorPalette.WHITE.getColor());
+        triangle.setStroke(ColorPalette.getInstance().getWhite());
         triangle.getPoints().addAll(
                 tipX, tipY,
                 x1, y,
                 x2, y
         );
-        // triangle.setFill(lighten(ColorPalette.ICON.getColor()));
-        triangle.setFill(ColorPalette.ABOVE_SURFACE.getColor()); // hard coded for now as lightening looks weird for white arrows
+
+        triangle.setFill(ColorPalette.getInstance().getAboveSurface()); // hard coded for now as lightening looks weird for white arrows
 
         // Create the lines sticking out
         Line baseLine = new Line(x1 - sideLength / 2, y, x2 + sideLength / 2, y);
-        baseLine.setStroke(ColorPalette.WHITE.getColor());
+        baseLine.setStroke(ColorPalette.getInstance().getWhite());
 
         // Set fields
         this.triangle = triangle;
@@ -90,7 +90,7 @@ public class SupportTriangle extends Group implements Graphic
         triangle.setStroke(color);
 
         if (color.equals(Color.WHITE)) // hard coded for now as lightening looks weird for white arrows
-            triangle.setFill(ColorPalette.ABOVE_SURFACE.getColor());
+            triangle.setFill(ColorPalette.getInstance().getAboveSurface());
         else
             triangle.setFill(lighten(color));
     }

@@ -6,6 +6,7 @@ import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.controls.CustomJFXSnackBarLayout;
+import com.wecca.canoeanalysis.services.ColorManagerService;
 import javafx.animation.*;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -20,9 +21,7 @@ import lombok.Getter;
 import lombok.Setter;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 
 public class MainController implements Initializable {
 
@@ -156,6 +155,7 @@ public class MainController implements Initializable {
         snackbar.setPrefWidth(200);
         snackbar.setViewOrder(Integer.MIN_VALUE);
         snackbar.getStylesheets().add(CanoeAnalysisApplication.class.getResource("css/style.css").toExternalForm());
+        ColorManagerService.addEntryToStylesheetMapping(snackbar, "css/style.css");
     }
 
     // .close() has an unfixed bug in the JFoenix library itself
