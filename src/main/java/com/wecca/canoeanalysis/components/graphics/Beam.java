@@ -38,25 +38,25 @@ public class Beam extends Group implements Graphic {
 
         // Creating the beam rectangle
         beam = new Rectangle(startX, startY, width, thickness);
-        beam.setFill(ColorPalette.ABOVE_SURFACE.getColor());
+        beam.setFill(ColorPalette.getInstance().getAboveSurface());
 
         // Creating the borders with extension
         topBorder = new Line(startX - borderExtension, startY, startX + width + borderExtension, startY);
         topBorder.setStrokeWidth(defaultThickness);
-        topBorder.setStroke(ColorPalette.WHITE.getColor());
+        topBorder.setStroke(ColorPalette.getInstance().getWhite());
 
         bottomBorder = new Line(startX - borderExtension, startY + thickness, startX + width + borderExtension, startY + thickness);
         bottomBorder.setStrokeWidth(defaultThickness);
-        bottomBorder.setStroke(ColorPalette.WHITE.getColor());
+        bottomBorder.setStroke(ColorPalette.getInstance().getWhite());
 
         // Creating the left and right borders
         leftBorder = new Line(startX, startY, startX, startY + thickness);
         leftBorder.setStrokeWidth(defaultThickness);
-        leftBorder.setStroke(ColorPalette.WHITE.getColor());
+        leftBorder.setStroke(ColorPalette.getInstance().getWhite());
 
         rightBorder = new Line(startX + width, startY, startX + width, startY + thickness);
         rightBorder.setStrokeWidth(defaultThickness);
-        rightBorder.setStroke(ColorPalette.WHITE.getColor());
+        rightBorder.setStroke(ColorPalette.getInstance().getWhite());
 
         // Adding elements to the group
         getChildren().addAll(beam, topBorder, bottomBorder, leftBorder, rightBorder);
@@ -72,9 +72,9 @@ public class Beam extends Group implements Graphic {
     @Override
     public void recolor(Color color) {
         beam.setFill(color);
-        topBorder.setStroke(ColorPalette.WHITE.getColor());
-        bottomBorder.setStroke(ColorPalette.WHITE.getColor());
-        leftBorder.setStroke(ColorPalette.WHITE.getColor());
-        rightBorder.setStroke(ColorPalette.WHITE.getColor());
+        topBorder.setStroke(ColorPalette.getInstance().getWhite());
+        bottomBorder.setStroke(ColorPalette.getInstance().getWhite());
+        leftBorder.setStroke(ColorPalette.getInstance().getWhite());
+        rightBorder.setStroke(ColorPalette.getInstance().getWhite());
     }
 }

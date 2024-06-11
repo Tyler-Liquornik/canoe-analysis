@@ -56,6 +56,7 @@ public class DiagramService {
         chart.setPrefSize(1125, 750);
         chart.setLegendVisible(false);
         chart.getStylesheets().add(CanoeAnalysisApplication.class.getResource("css/chart.css").toExternalForm());
+        ColorManagerService.addEntryToStylesheetMapping(chart, "css/chart.css");
 
         // Will later use the returned series
         List<XYChart.Series> intervalsAsSeries = getIntervalsAsSeries(canoe, points, yUnits, criticalPoints, chart);
