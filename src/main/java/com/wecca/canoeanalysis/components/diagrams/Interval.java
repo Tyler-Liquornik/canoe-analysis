@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.components.diagrams;
 
 /**
- * Inner class to hold load intervals (intermediate between point/distributed loads and diagram points).
+ * Class to hold load intervals (intermediate between point/distributed loads and diagram points).
  * Each interval is defined by its x coordinates (start - end), magnitude, and slope.
  * Solo point loads have a magnitude but no slope.
  * Solo distributed loads have a slope but no magnitude.
