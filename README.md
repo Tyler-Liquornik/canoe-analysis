@@ -63,12 +63,12 @@ Currently, the program has one module to which will be used to model the canoe a
   - [ ] Output equations as LaTeX
 - [ ] Editing non-support loads (current idea is making them draggable)
 - [ ] Import/Export the canoe object as JSON
-- [ ] Unification of color system between Java and CSS code with ColorPalette.yml
+- [ ] Unification of color system between Java and CSS code
   - [ ] Customizable colors in settings
 
 <!-- CONTRIBUTING -->
 ## Contributing
-Starting in september for the 2024-2025 school year, any WECCA members involved on the software team can contribute to PADDL!
+Starting in September for the 2024-2025 school year, any WECCA members involved on the software team can contribute to PADDL!
 
 1. Go into the directory where you cloned the project. For example, I keep my project on my desktop so: <br/>
    ```
