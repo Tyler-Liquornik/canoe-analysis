@@ -51,7 +51,7 @@ public class ArrowBox extends Group implements Graphic
         box.setFill(ColorPalette.ABOVE_SURFACE.getColor()); // hard coded for now as lightening looks weird for white arrows
 
         borderLine = new Line(lX, startY, rX, startY);
-        borderLine.setStroke(ColorPalette.ICON.getColor());
+        borderLine.setStroke(ColorPalette.WHITE.getColor());
         borderLine.setStrokeWidth(defaultThickness);
 
         getChildren().addAll(box, lArrow, rArrow, borderLine);

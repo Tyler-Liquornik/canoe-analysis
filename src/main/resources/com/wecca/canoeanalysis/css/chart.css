@@ -1,16 +1,16 @@
-@import url("font.css");
+@import url("style.css");
 
 .root {
     -fx-font-family: "Roboto"
 }
 
 .chart {
-    -fx-background-color: #121212;
+    -fx-background-color: -fx-background;
     -fx-border-width: 1px;
 }
 
 .chart-plot-background {
-    -fx-background-color: #202020;
+    -fx-background-color: -fx-surface;
 }
 
 .chart-area-symbol {
@@ -21,7 +21,7 @@
 .axis-label {
     -fx-font-size: 16px;
     -fx-font-weight: bold;
-    -fx-text-fill: #FFFFFF;
+    -fx-text-fill: white;
     -fx-font-family: "Roboto";
 }
 
@@ -34,27 +34,27 @@
     -fx-rotate: 0;
     -fx-alignment: center-left;
     -fx-font-family: "Roboto";
-    -fx-text-fill: #FFFFFF;
+    -fx-text-fill: white;
 }
 
 .chart-title {
     -fx-font-weight: bold;
-    -fx-text-fill: #FFFFFF;
+    -fx-text-fill: white;
     -fx-font-family: "Roboto";
 }
 
 .chart-series-area-line {
-    -fx-stroke: #BB86FC;
+    -fx-stroke: -fx-primary;
     -fx-stroke-width: 2px;
 }
 
 .chart-series-area-fill {
-    -fx-fill: #BB86FC;
+    -fx-fill: -fx-primary;
     -fx-opacity: 0.4;
 }
 
 .chart-series-area-fill:hover {
-    -fx-fill: #BB86FC;
+    -fx-fill: -fx-primary;
     -fx-opacity: 0.6;
 }
 
