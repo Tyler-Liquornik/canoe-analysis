@@ -18,7 +18,6 @@ import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
 import javafx.scene.paint.Paint;
 import lombok.Setter;
-
 import java.net.URL;
 import java.util.*;
 

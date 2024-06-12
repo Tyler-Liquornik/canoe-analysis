@@ -93,8 +93,8 @@ This is because the reflection API is being used to set ColorPalette colors
     -fx-background-color: -fx-primary;
 }
 
-.jfx-decorator > .jfx-decorator-buttons-container {
-    -fx-background-color: -fx-primary;
+.jfx-decorator > .jfx-decorator-buttons-container > .jfx-button:hover {
+    -fx-background-color: -fx-primary-light;
 }
 
 .jfx-decorator > .resize-border {

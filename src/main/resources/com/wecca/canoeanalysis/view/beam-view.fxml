@@ -57,10 +57,10 @@
          <children>
             <Label fx:id="lengthLabel" layoutX="25.0" layoutY="289.0" text="Canoe Length:">
             </Label>
-            <JFXTextField fx:id="canoeLengthTextField" layoutX="115.0" layoutY="282.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="60.0" />
-            <JFXComboBox fx:id="canoeLengthComboBox" layoutX="185.0" layoutY="282.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="60.0" />
-            <JFXButton fx:id="generateGraphsButton" buttonType="RAISED" layoutX="400.0" layoutY="282.0" mnemonicParsing="false" onAction="#generateDiagram" prefHeight="25.0" prefWidth="212.0" styleClass="action-object" text="Generate SFD / BMD" />
-            <JFXButton fx:id="setCanoeLengthButton" buttonType="RAISED" layoutX="260.0" layoutY="282.0" mnemonicParsing="false" onAction="#setLength" prefHeight="25.0" prefWidth="100.0" styleClass="action-object" text="Set Length" />
+            <JFXTextField fx:id="canoeLengthTextField" layoutX="115.0" layoutY="285.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="60.0" />
+            <JFXComboBox fx:id="canoeLengthComboBox" layoutX="185.0" layoutY="285.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="60.0" />
+            <JFXButton fx:id="generateGraphsButton" buttonType="RAISED" layoutX="400.0" layoutY="285.0" mnemonicParsing="false" onAction="#generateDiagram" prefHeight="25.0" prefWidth="212.0" styleClass="action-object" text="Generate SFD / BMD" />
+            <JFXButton fx:id="setCanoeLengthButton" buttonType="RAISED" layoutX="260.0" layoutY="285.0" mnemonicParsing="false" onAction="#setLength" prefHeight="25.0" prefWidth="100.0" styleClass="action-object" text="Set Length" AnchorPane.bottomAnchor="15.0" />
             <Line endX="290.0" layoutX="320.0" layoutY="255.0" startX="-290.0" stroke="WHITE" />
             <Line endX="5.0" layoutX="30.0" layoutY="255.0" rotate="90.0" startX="-5.0" stroke="WHITE" />
             <Line endX="5.0" layoutX="610.0" layoutY="255.0" rotate="90.0" startX="-5.0" stroke="WHITE" />
@@ -72,15 +72,15 @@
       </AnchorPane>
       <AnchorPane fx:id="lowerLeftAnchorPane" layoutX="25.0" layoutY="235.0" prefHeight="310.0" prefWidth="200.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="665.0" AnchorPane.topAnchor="225.0">
          <children>
-            <JFXListView fx:id="loadListView" layoutY="30.0" onMouseClicked="#highlightLoad" prefHeight="200.0" prefWidth="170.0" styleClass="above-surface" AnchorPane.bottomAnchor="60.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="5.0">
+            <JFXListView fx:id="loadListView" layoutX="15.0" layoutY="15.0" onMouseClicked="#highlightLoad" prefHeight="250.0" prefWidth="190.0" styleClass="above-surface">
                <padding>
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </padding>
             </JFXListView>
-            <AnchorPane layoutX="30.0" layoutY="240.0" prefHeight="60.0" prefWidth="170.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="234.0">
+            <AnchorPane layoutX="30.0" layoutY="283.0" prefHeight="51.0" prefWidth="190.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="273.0">
                <children>
-                  <JFXButton fx:id="deleteLoadButton" buttonType="RAISED" layoutX="20.0" layoutY="40.0" mnemonicParsing="false" onAction="#deleteLoad" prefHeight="25.0" prefWidth="77.0" styleClass="action-object" text="Delete" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="100.0" />
-                  <JFXButton fx:id="clearLoadsButton" buttonType="RAISED" layoutX="100.0" layoutY="40.0" mnemonicParsing="false" onAction="#clearLoads" prefHeight="25.0" prefWidth="65.0" styleClass="action-object" text="Clear All" AnchorPane.leftAnchor="100.0" AnchorPane.rightAnchor="0.0" />
+                  <JFXButton fx:id="deleteLoadButton" buttonType="RAISED" layoutX="20.0" mnemonicParsing="false" onAction="#deleteLoad" prefHeight="25.0" prefWidth="77.0" styleClass="action-object" text="Delete" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="100.0" />
+                  <JFXButton fx:id="clearLoadsButton" buttonType="RAISED" layoutX="100.0" mnemonicParsing="false" onAction="#clearLoads" prefHeight="25.0" prefWidth="65.0" styleClass="action-object" text="Clear All" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="100.0" AnchorPane.rightAnchor="0.0" />
                </children>
             </AnchorPane>
          </children>
