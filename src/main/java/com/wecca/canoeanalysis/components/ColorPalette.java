@@ -1,31 +1,37 @@
 package com.wecca.canoeanalysis.components;
 
 import javafx.scene.paint.Color;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter @Setter
-public final class ColorPalette {
-    private static ColorPalette colorPalette = null;
+import java.util.HashMap;
+import java.util.Map;
 
-    // Default color palette
-    // Field Names MUST match css variable names with camelCase for the reflection APi to work properly
-    private Color primary = Color.web("#BB86FC");
-    private Color primaryLight = Color.web("#D2A8FF");
-    private Color primaryDesaturated = Color.web("#534B5E");
-    private Color background = Color.web("#121212");
-    private Color surface = Color.web("#202020");
-    private Color aboveSurface = Color.web("#282828");
-    private Color danger = Color.web("#D10647");
-    private Color white = Color.web("#FFFFFF"); // keeping as a utility for now, not permanent
+public class ColorPalette {
+    private static final Map<String, Color> COLORS = new HashMap<>();
 
-    // Private constructor to prevent instantiation
+    // Default Palette
+    static {
+        COLORS.put("primary", Color.web("#BB86FC"));
+        COLORS.put("primary-light", Color.web("#D2A8FF"));
+        COLORS.put("primary-desaturated", Color.web("#534B5E"));
+        COLORS.put("background", Color.web("#121212"));
+        COLORS.put("surface", Color.web("#202020"));
+        COLORS.put("above-surface", Color.web("#282828"));
+        COLORS.put("danger", Color.web("#D10647"));
+        COLORS.put("white", Color.web("#FFFFFF"));
+    }
+
     private ColorPalette() {}
 
-    // Static method to provide access to the single instance
-    public static ColorPalette getInstance() {
-        if (colorPalette == null)
-            colorPalette = new ColorPalette();
-        return colorPalette;
+    public static void putColor(String name, String colorHex) {
+        System.out.println("Put " + name +": " + colorHex);
+        COLORS.put(name, Color.web(colorHex));
+    }
+
+    public static Color getColor(String name) {
+        return COLORS.get(name);
+    }
+
+    public static Map<String, Color> getColors() {
+        return new HashMap<>(COLORS);
     }
 }

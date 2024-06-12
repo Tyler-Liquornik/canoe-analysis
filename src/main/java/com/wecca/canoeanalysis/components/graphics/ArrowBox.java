@@ -48,10 +48,10 @@ public class ArrowBox extends Group implements Graphic
             box = new Rectangle(lX, endY - 2, rX - lX, startY - endY + 2);
 
         // box.setFill(lighten(ColorPalette.ICON.getColor()));
-        box.setFill(ColorPalette.getInstance().getAboveSurface()); // hard coded for now as lightening looks weird for white arrows
+        box.setFill(ColorPalette.getColor("above-surface"));
 
         borderLine = new Line(lX, startY, rX, startY);
-        borderLine.setStroke(ColorPalette.getInstance().getWhite());
+        borderLine.setStroke(ColorPalette.getColor("white"));
         borderLine.setStrokeWidth(defaultThickness);
 
         getChildren().addAll(box, lArrow, rArrow, borderLine);
@@ -71,8 +71,8 @@ public class ArrowBox extends Group implements Graphic
         borderLine.setStroke(color);
 
         if (color.equals(Color.WHITE)) // hard coded for now as lightening looks weird for white arrows
-            box.setFill(ColorPalette.getInstance().getAboveSurface());
+            box.setFill(ColorPalette.getColor("above-surface"));
         else
-            box.setFill(ColorPalette.getInstance().getPrimaryLight());
+            box.setFill(ColorPalette.getColor("primary-light"));
     }
 }

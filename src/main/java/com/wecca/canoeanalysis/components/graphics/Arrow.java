@@ -33,7 +33,7 @@ public class Arrow extends Path implements Graphic {
         this.thickness = thickness;
 
         strokeProperty().bind(fillProperty());
-        setFill(ColorPalette.getInstance().getWhite());
+        setFill(ColorPalette.getColor("white"));
 
         makeArrow(startX, startY, endX, endY, arrowHeadSize);
         JFXDepthManager.setDepth(this, 4);
