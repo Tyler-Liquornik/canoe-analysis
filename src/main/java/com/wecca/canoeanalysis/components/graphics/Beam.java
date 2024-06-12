@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
-import com.wecca.canoeanalysis.components.ColorPalette;
+import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -38,25 +38,25 @@ public class Beam extends Group implements Graphic {
 
         // Creating the beam rectangle
         beam = new Rectangle(startX, startY, width, thickness);
-        beam.setFill(ColorPalette.getColor("above-surface"));
+        beam.setFill(ColorPaletteService.getColor("above-surface"));
 
         // Creating the borders with extension
         topBorder = new Line(startX - borderExtension, startY, startX + width + borderExtension, startY);
         topBorder.setStrokeWidth(defaultThickness);
-        topBorder.setStroke(ColorPalette.getColor("white"));
+        topBorder.setStroke(ColorPaletteService.getColor("white"));
 
         bottomBorder = new Line(startX - borderExtension, startY + thickness, startX + width + borderExtension, startY + thickness);
         bottomBorder.setStrokeWidth(defaultThickness);
-        bottomBorder.setStroke(ColorPalette.getColor("white"));
+        bottomBorder.setStroke(ColorPaletteService.getColor("white"));
 
         // Creating the left and right borders
         leftBorder = new Line(startX, startY, startX, startY + thickness);
         leftBorder.setStrokeWidth(defaultThickness);
-        leftBorder.setStroke(ColorPalette.getColor("white"));
+        leftBorder.setStroke(ColorPaletteService.getColor("white"));
 
         rightBorder = new Line(startX + width, startY, startX + width, startY + thickness);
         rightBorder.setStrokeWidth(defaultThickness);
-        rightBorder.setStroke(ColorPalette.getColor("white"));
+        rightBorder.setStroke(ColorPaletteService.getColor("white"));
 
         // Adding elements to the group
         getChildren().addAll(beam, topBorder, bottomBorder, leftBorder, rightBorder);
@@ -72,9 +72,9 @@ public class Beam extends Group implements Graphic {
     @Override
     public void recolor(Color color) {
         beam.setFill(color);
-        topBorder.setStroke(ColorPalette.getColor("white"));
-        bottomBorder.setStroke(ColorPalette.getColor("white"));
-        leftBorder.setStroke(ColorPalette.getColor("white"));
-        rightBorder.setStroke(ColorPalette.getColor("white"));
+        topBorder.setStroke(ColorPaletteService.getColor("white"));
+        bottomBorder.setStroke(ColorPaletteService.getColor("white"));
+        leftBorder.setStroke(ColorPaletteService.getColor("white"));
+        rightBorder.setStroke(ColorPaletteService.getColor("white"));
     }
 }

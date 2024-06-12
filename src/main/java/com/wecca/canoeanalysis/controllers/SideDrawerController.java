@@ -46,7 +46,7 @@ public class SideDrawerController implements Initializable {
 
     // Auxiliary button handlers
     public void clickSettingsButton() throws IOException {
-        WindowManagerService.openUtilityWindow("PADDL Settings", "view/settings-view.fxml");
+        WindowManagerService.openUtilityWindow("Settings", "view/settings-view.fxml");
     }
 
     public void clickAboutButton() throws IOException {

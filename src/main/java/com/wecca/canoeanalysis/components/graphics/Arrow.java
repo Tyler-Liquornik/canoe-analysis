@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
-import com.wecca.canoeanalysis.components.ColorPalette;
+import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
@@ -33,7 +33,7 @@ public class Arrow extends Path implements Graphic {
         this.thickness = thickness;
 
         strokeProperty().bind(fillProperty());
-        setFill(ColorPalette.getColor("white"));
+        setFill(ColorPaletteService.getColor("white"));
 
         makeArrow(startX, startY, endX, endY, arrowHeadSize);
         JFXDepthManager.setDepth(this, 4);

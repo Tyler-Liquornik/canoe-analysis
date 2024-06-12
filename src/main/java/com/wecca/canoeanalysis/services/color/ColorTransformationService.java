@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.services;
+package com.wecca.canoeanalysis.services.color;
 
 import com.wecca.canoeanalysis.utils.ColorUtils;
 import javafx.scene.paint.Color;
@@ -14,7 +14,7 @@ import javafx.scene.paint.Color;
  * Usage:
  * </p>
  * <p>
- * 1. Define a marker for the color in the universal CSS selector * {}
+ * 1. Define a marker for the color variable in the universal CSS selector * {}
  *    - Examples:
  *     * {
  *         -fx-base: #000000 /* This is a marker, any valid hex color can go here

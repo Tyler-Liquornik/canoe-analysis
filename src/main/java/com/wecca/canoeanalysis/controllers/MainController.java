@@ -6,7 +6,7 @@ import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.controls.CustomJFXSnackBarLayout;
-import com.wecca.canoeanalysis.services.ColorManagerService;
+import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import javafx.animation.*;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;

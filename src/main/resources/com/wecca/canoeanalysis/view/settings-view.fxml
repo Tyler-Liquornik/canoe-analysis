@@ -1,12 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXToggleButton?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.shape.Line?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="550.0" styleClass="sett" stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.SettingsController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="550.0" stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.SettingsController">
    <children>
-      <Label layoutX="29.0" layoutY="39.0" styleClass="setting-label" text="Main App Color:" />
-      <ToggleButton layoutX="227.0" layoutY="67.0" mnemonicParsing="false" text="ToggleButton" />
+      <Label layoutX="20.0" layoutY="20.0" styleClass="title" text="Colors" />
+      <Label layoutX="20.0" layoutY="60.0" styleClass="setting-label" text="Primary App Color:" />
+      <Label layoutX="20.0" layoutY="100.0" styleClass="setting-label" text="Enable Light Theme:" />
+      <Label layoutX="20.0" layoutY="140.0" styleClass="title" text="Units" />
+      <Label layoutX="20.0" layoutY="180.0" styleClass="setting-label" text="Display Imperial Units:" />
+      <JFXToggleButton layoutX="175.0" layoutY="174.0" maxHeight="30.0" maxWidth="50.0" minHeight="30.0" minWidth="50.0" prefHeight="30.0" prefWidth="50.0" text=".">
+         <padding>
+            <Insets left="1.0" />
+         </padding>
+      </JFXToggleButton>
+      <JFXToggleButton layoutX="175.0" layoutY="95.0" maxHeight="30.0" maxWidth="50.0" minHeight="30.0" minWidth="50.0" prefHeight="30.0" prefWidth="161.0" text=".">
+         <padding>
+            <Insets left="1.0" />
+         </padding>
+      </JFXToggleButton>
+      <JFXButton buttonType="RAISED" layoutX="308.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #BB86FC;" text="" />
+      <JFXButton buttonType="RAISED" layoutX="278.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #4169E1;" text="" />
+      <JFXButton buttonType="RAISED" layoutX="248.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #3CC6F8;" text="" />
+      <JFXButton buttonType="RAISED" layoutX="218.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #009688;" text="" />
+      <JFXButton buttonType="RAISED" layoutX="188.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #F96C37;" text="" />
+      <Label layoutX="20.0" layoutY="205.0" prefHeight="18.0" prefWidth="314.0" styleClass="info" text="All units are always selectable, only affects final displayed units" wrapText="true" />
+      <Line endX="-48.0" layoutX="121.0" layoutY="44.0" scaleY="3.0" startX="-100.0" styleClass="action-object" />
+      <Line endX="-58.5" layoutX="121.0" layoutY="163.0" scaleY="3.0" startX="-100.0" styleClass="action-object" />
    </children>
 </AnchorPane>

@@ -1,11 +1,11 @@
-package com.wecca.canoeanalysis.components;
+package com.wecca.canoeanalysis.services.color;
 
 import javafx.scene.paint.Color;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class ColorPalette {
+public class ColorPaletteService {
     private static final Map<String, Color> COLORS = new HashMap<>();
 
     // Default Palette
@@ -19,8 +19,6 @@ public class ColorPalette {
         COLORS.put("danger", Color.web("#D10647"));
         COLORS.put("white", Color.web("#FFFFFF"));
     }
-
-    private ColorPalette() {}
 
     public static void putColor(String name, String colorHex) {
         System.out.println("Put " + name +": " + colorHex);
