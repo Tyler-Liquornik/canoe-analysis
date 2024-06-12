@@ -1,7 +1,6 @@
-package com.wecca.canoeanalysis.services;
+package com.wecca.canoeanalysis.services.color;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.components.ColorPalette;
 import com.wecca.canoeanalysis.utils.ColorUtils;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -64,9 +63,8 @@ public class ColorManagerService {
     /**
      * Derives colors based on a specified base color and updates the CSS file and ColorPalette map.
      *
-     * @param baseName      the base color name (e.g., "primary")
+     * @param baseName the base color name (e.g., "primary")
      * @param baseColorHex the base color hex value (e.g., "#FF0000")
-     * @throws IOException        if an I/O error occurs
      */
     public static void addColorPalette(String baseName, String baseColorHex) throws IOException, URISyntaxException {
         // Build a map of CSS color variables to values
@@ -82,7 +80,7 @@ public class ColorManagerService {
         Map<String, Boolean> propertyReplaced = new HashMap<>();
         colorsMap.forEach((key, value) -> propertyReplaced.put(key, false));
 
-        // Update or insert lines
+        // Replace properties if they exist
         List<String> updatedLines = lines.stream()
                 .map(line -> {
                     for (Map.Entry<String, String> entry : colorsMap.entrySet()) {
@@ -97,7 +95,7 @@ public class ColorManagerService {
                 })
                 .toList();
 
-        // Insert any properties that were not replaced
+        // Insert any properties that were not replaced from the base marker
         List<String> finalLines = updatedLines.stream()
                 .flatMap(line -> {
                     if (line.contains(String.format("-fx-%s:", baseName))) {
@@ -118,7 +116,7 @@ public class ColorManagerService {
         // Populate the ColorPalette map with derived colors
         colorsMap.forEach((cssVariable, colorValue) -> {
             String constantName = baseName + "-" + cssVariable.substring(4);
-            ColorPalette.putColor(constantName, colorValue);
+            ColorPaletteService.putColor(constantName, colorValue);
         });
     }
 

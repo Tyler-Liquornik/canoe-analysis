@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
-import com.wecca.canoeanalysis.components.ColorPalette;
+import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -48,10 +48,10 @@ public class ArrowBox extends Group implements Graphic
             box = new Rectangle(lX, endY - 2, rX - lX, startY - endY + 2);
 
         // box.setFill(lighten(ColorPalette.ICON.getColor()));
-        box.setFill(ColorPalette.getColor("above-surface"));
+        box.setFill(ColorPaletteService.getColor("above-surface"));
 
         borderLine = new Line(lX, startY, rX, startY);
-        borderLine.setStroke(ColorPalette.getColor("white"));
+        borderLine.setStroke(ColorPaletteService.getColor("white"));
         borderLine.setStrokeWidth(defaultThickness);
 
         getChildren().addAll(box, lArrow, rArrow, borderLine);
@@ -71,8 +71,8 @@ public class ArrowBox extends Group implements Graphic
         borderLine.setStroke(color);
 
         if (color.equals(Color.WHITE)) // hard coded for now as lightening looks weird for white arrows
-            box.setFill(ColorPalette.getColor("above-surface"));
+            box.setFill(ColorPaletteService.getColor("above-surface"));
         else
-            box.setFill(ColorPalette.getColor("primary-light"));
+            box.setFill(ColorPaletteService.getColor("primary-light"));
     }
 }

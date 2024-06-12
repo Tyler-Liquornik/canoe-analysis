@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.components.ColorPalette;
+import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.components.graphics.*;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.models.*;
@@ -132,10 +132,10 @@ public class BeamController implements Initializable
             // Recolor the selected graphic
             Graphic colorableGraphic = (Graphic) loadContainer.getChildren().get(i);
             if (i != selectedIndex)
-                colorableGraphic.recolor(ColorPalette.getColor("white"));
+                colorableGraphic.recolor(ColorPaletteService.getColor("white"));
             else
             {
-                colorableGraphic.recolor(ColorPalette.getColor("white"));
+                colorableGraphic.recolor(ColorPaletteService.getColor("white"));
 
                 // Bring the graphic to the front of the viewing order
                 Node node = (Node) colorableGraphic;

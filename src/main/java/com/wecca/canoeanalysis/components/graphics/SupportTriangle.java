@@ -1,6 +1,6 @@
 package com.wecca.canoeanalysis.components.graphics;
 import com.jfoenix.effects.JFXDepthManager;
-import com.wecca.canoeanalysis.components.ColorPalette;
+import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.Group;
 import javafx.scene.shape.*;
 import javafx.scene.paint.Color;
@@ -51,18 +51,18 @@ public class SupportTriangle extends Group implements Graphic
 
         // Create the triangle polygon
         Polygon triangle = new Polygon();
-        triangle.setStroke(ColorPalette.getColor("white"));
+        triangle.setStroke(ColorPaletteService.getColor("white"));
         triangle.getPoints().addAll(
                 tipX, tipY,
                 x1, y,
                 x2, y
         );
 
-        triangle.setFill(ColorPalette.getColor("above-surface")); // hard coded for now as lightening looks weird for white arrows
+        triangle.setFill(ColorPaletteService.getColor("above-surface")); // hard coded for now as lightening looks weird for white arrows
 
         // Create the lines sticking out
         Line baseLine = new Line(x1 - sideLength / 2, y, x2 + sideLength / 2, y);
-        baseLine.setStroke(ColorPalette.getColor("white"));
+        baseLine.setStroke(ColorPaletteService.getColor("white"));
 
         // Set fields
         this.triangle = triangle;
@@ -81,8 +81,8 @@ public class SupportTriangle extends Group implements Graphic
         triangle.setStroke(color);
 
         if (color.equals(Color.WHITE)) // hard coded for now as lightening looks weird for white arrows
-            triangle.setFill(ColorPalette.getColor("above-surface"));
+            triangle.setFill(ColorPaletteService.getColor("above-surface"));
         else
-            triangle.setFill(ColorPalette.getColor("primary-light"));
+            triangle.setFill(ColorPaletteService.getColor("primary-light"));
     }
 }

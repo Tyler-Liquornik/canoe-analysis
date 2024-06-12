@@ -1,7 +1,7 @@
 @import url("font.css");
 
 * {
-    -fx-primary: #000000; /*Marker, generated at runtime*/
+    -fx-primary:  #BB86FC; /*Marker, generated at runtime*/
 
     -fx-background: #121212;
     -fx-surface: #202020;
@@ -85,6 +85,7 @@
 .jfx-text-field > .input-line,
 .jfx-decorator > .jfx-decorator-buttons-container {
     -fx-background-color: -fx-primary;
+    -fx-stroke: -fx-primary;
 }
 
 .jfx-decorator > .jfx-decorator-buttons-container > .jfx-button:hover {
@@ -170,4 +171,26 @@
 .jfx-radio-button {
     -jfx-selected-color: -fx-primary;
     -jfx-unselected-color: white;
+}
+
+jfx-toggle-button,
+.jfx-toggle-button:armed,
+.jfx-toggle-button:hover,
+.jfx-toggle-button:focused,
+.jfx-toggle-button:selected,
+.jfx-toggle-button:focused:selected {
+    -jfx-toggle-color: -fx-primary;
+    -jfx-toggle-line-color: -fx-primary-light;
+}
+
+.jfx-toggle-button:selected Line{
+    -fx-stroke: -fx-primary-light;
+}
+
+.jfx-toggle-button:selected Circle{
+    -fx-fill: -fx-primary;
+}
+
+.jfx-toggle-button:selected .jfx-rippler {
+    -jfx-rippler-fill: -fx-primary-light;
 }
