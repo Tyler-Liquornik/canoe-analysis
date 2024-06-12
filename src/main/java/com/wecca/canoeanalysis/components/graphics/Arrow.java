@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
@@ -21,6 +22,10 @@ public class Arrow extends Path implements Graphic {
     private double endX;
     private double endY;
 
+    private boolean isColored;
+
+    private boolean isHighlighted;
+
     private final double thickness;
 
     public Arrow(double startX, double startY, double endX, double endY, double arrowHeadSize, double thickness) {
@@ -31,6 +36,7 @@ public class Arrow extends Path implements Graphic {
         this.endX = endX;
         this.endY = endY;
         this.thickness = thickness;
+        this.isHighlighted = false;
 
         strokeProperty().bind(fillProperty());
         setFill(ColorPaletteService.getColor("white"));
@@ -68,6 +74,9 @@ public class Arrow extends Path implements Graphic {
         getElements().add(new LineTo(x1, y1));
         getElements().add(new LineTo(x2, y2));
         getElements().add(new LineTo(endX, endY));
+
+        this.isColored = false;
+        ColorManagerService.registerForRecoloringFromColorPalette(this);
     }
 
     // Accessors
@@ -75,7 +84,12 @@ public class Arrow extends Path implements Graphic {
     public double getX() {return Math.min(startX, endX);} // Leftmost point is considered
 
     @Override
-    public void recolor(Color color) {
-        setFill(color);
+    public void recolor(boolean setColored) {
+        this.isColored = setColored;
+
+        if (setColored)
+            setFill(ColorPaletteService.getColor("primary"));
+        else
+            setFill(ColorPaletteService.getColor("white"));
     }
 }

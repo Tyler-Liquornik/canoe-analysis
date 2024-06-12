@@ -87,6 +87,6 @@ public class WindowManagerService {
      */
     private static void addStyleSheet(Scene scene, String path) {
         scene.getStylesheets().add(CanoeAnalysisApplication.class.getResource(path).toExternalForm());
-        ColorManagerService.addEntryToStylesheetMapping(scene, path);
+        ColorManagerService.registerForRecoloringFromStylesheet(scene, path);
     }
 }
