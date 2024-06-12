@@ -29,7 +29,7 @@
       <JFXButton buttonType="RAISED" layoutX="248.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #3CC6F8;" text="" />
       <JFXButton buttonType="RAISED" layoutX="218.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #009688;" text="" />
       <JFXButton buttonType="RAISED" layoutX="188.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #F96C37;" text="" />
-      <Label layoutX="20.0" layoutY="205.0" prefHeight="18.0" prefWidth="314.0" styleClass="info" text="All units are always selectable, only affects final displayed units" wrapText="true" />
+      <Label layoutX="20.0" layoutY="205.0" prefHeight="18.0" prefWidth="314.0" styleClass="setting-info" text="All units are always selectable, only affects final displayed units" wrapText="true" />
       <Line endX="-55.0" layoutX="121.0" layoutY="44.0" scaleY="3.0" startX="-100.0" styleClass="action-object" />
       <Line endX="-65.0" layoutX="121.0" layoutY="163.0" scaleY="3.0" startX="-100.0" styleClass="action-object" />
    </children>
