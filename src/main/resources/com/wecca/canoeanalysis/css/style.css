@@ -34,6 +34,10 @@
     -fx-font-size: 16px;
 }
 
+.about-body {
+    -fx-font-size: 12px;
+}
+
 /* Eventually removed once all modules are created*/
 .module-placeholder-text {
     -fx-font-weight: bold;

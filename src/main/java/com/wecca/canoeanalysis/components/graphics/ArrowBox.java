@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
@@ -23,6 +24,8 @@ public class ArrowBox extends Group implements Graphic
     private final Arrow rArrow;
     private final Rectangle box;
     private final Line borderLine;
+
+    private boolean isColored;
 
     private final static double defaultThickness = 1;
 
@@ -57,6 +60,9 @@ public class ArrowBox extends Group implements Graphic
         getChildren().addAll(box, lArrow, rArrow, borderLine);
 
         JFXDepthManager.setDepth(this, 4);
+
+        this.isColored = false;
+        ColorManagerService.registerForRecoloringFromColorPalette(this);
     }
 
     // Accessors
@@ -65,14 +71,17 @@ public class ArrowBox extends Group implements Graphic
 
     // Change the color of the arrow box
     @Override
-    public void recolor(Color color) {
-        lArrow.setFill(color);
-        rArrow.setFill(color);
-        borderLine.setStroke(color);
+    public void recolor(boolean setColored) {
+        this.isColored = setColored;
 
-        if (color.equals(Color.WHITE)) // hard coded for now as lightening looks weird for white arrows
-            box.setFill(ColorPaletteService.getColor("above-surface"));
-        else
-            box.setFill(ColorPaletteService.getColor("primary-light"));
+        Color outlineColor = setColored ? ColorPaletteService.getColor("primary") :
+                ColorPaletteService.getColor("white");
+        Color fillColor = setColored ? ColorPaletteService.getColor("primary-light") :
+                ColorPaletteService.getColor("above-surface");
+
+        lArrow.setFill(outlineColor);
+        rArrow.setFill(outlineColor);
+        borderLine.setStroke(outlineColor);
+        box.setFill(fillColor);
     }
 }

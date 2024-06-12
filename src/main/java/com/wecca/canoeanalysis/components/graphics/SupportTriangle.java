@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.components.graphics;
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.Group;
 import javafx.scene.shape.*;
@@ -8,17 +9,18 @@ import lombok.Getter;
 import lombok.Setter;
 
 // Pinned support icons
+@Getter @Setter
 public class SupportTriangle extends Group implements Graphic
 {
     // Fields
     private static final double defaultSideLength = 20.0;
-    @Getter @Setter
     private double tipX;
-    @Getter @Setter
     private double tipY;
 
     private Polygon triangle;
     private Line baseLine;
+
+    private boolean isColored;
 
     // Constructor
     public SupportTriangle(double tipX, double tipY, double sideLength)
@@ -72,17 +74,23 @@ public class SupportTriangle extends Group implements Graphic
         this.getChildren().addAll(triangle, baseLine);
 
         JFXDepthManager.setDepth(this, 5);
+
+        this.isColored = false;
+        ColorManagerService.registerForRecoloringFromColorPalette(this);
     }
 
     // Change the color of the support triangle
     @Override
-    public void recolor(Color color) {
-        baseLine.setStroke(color);
-        triangle.setStroke(color);
+    public void recolor(boolean setColored) {
+        this.isColored = setColored;
 
-        if (color.equals(Color.WHITE)) // hard coded for now as lightening looks weird for white arrows
-            triangle.setFill(ColorPaletteService.getColor("above-surface"));
-        else
-            triangle.setFill(ColorPaletteService.getColor("primary-light"));
+        Color outlineColor = setColored ? ColorPaletteService.getColor("primary") :
+                ColorPaletteService.getColor("white");
+        Color fillColor = setColored ? ColorPaletteService.getColor("primary-light") :
+                ColorPaletteService.getColor("above-surface");
+
+        baseLine.setStroke(outlineColor);
+        triangle.setStroke(outlineColor);
+        triangle.setFill(fillColor);
     }
 }

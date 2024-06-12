@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.services.color;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.components.graphics.Graphic;
 import com.wecca.canoeanalysis.utils.ColorUtils;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -12,10 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -26,8 +24,11 @@ import java.util.stream.Stream;
  */
 public class ColorManagerService {
 
-    // Css loading information for CssManagerService
-    private static final LinkedHashMap<Object, String> stylesheetMap = new LinkedHashMap<>();
+    // Scenes / Parents to have CSS colors reloaded on color change must be added here
+    private static final HashMap<Object, String> stylesheetMap = new HashMap<>();
+
+    // Graphics to have ColorPalette colors reloaded on color change must be added here
+    private static final HashSet<Graphic> graphics = new HashSet<>();
 
     /**
      * Adds an entry to the stylesheet mapping.
@@ -35,18 +36,23 @@ public class ColorManagerService {
      * @param object the object (Parent or Scene) to which the stylesheet will be applied
      * @param stylesheetPath the path to the stylesheet
      */
-    public static void addEntryToStylesheetMapping(Object object, String stylesheetPath) {
+    public static void registerForRecoloringFromStylesheet(Object object, String stylesheetPath) {
         if (object instanceof Scene || object instanceof Parent)
             stylesheetMap.put(object, stylesheetPath);
         else
             throw new RuntimeException("addEntryToStyleSheetMapping method only takes objects of type 'Scene' or 'Parent'");
     }
 
+    public static void registerForRecoloringFromColorPalette(Graphic graphic) {
+        graphics.add(graphic);
+    }
+
+
     /**
      * Reloads the stylesheets for all registered objects.
      * Anytime a Parent or Scene object loads CSS it needs to add to the styleSheetMap to be used here.
      */
-    private static void reloadStyleSheets() {
+    private static void reloadStyleSheetsColors() {
         for (Map.Entry<Object, String> entry : stylesheetMap.entrySet()) {
             Object object = entry.getKey();
             String stylesheetPath = entry.getValue();
@@ -57,6 +63,14 @@ public class ColorManagerService {
                 scene.getStylesheets().clear();
                 scene.getStylesheets().add(CanoeAnalysisApplication.class.getResource(stylesheetPath).toExternalForm());
             }
+        }
+    }
+
+    private static void reloadGraphicsColors() {
+        for (Graphic graphic : graphics)
+        {
+            if (graphic.isColored())
+                graphic.recolor(true);
         }
     }
 
@@ -112,13 +126,14 @@ public class ColorManagerService {
 
         // Write the results to the stylesheet and reload them
         Files.write(path, finalLines, StandardOpenOption.TRUNCATE_EXISTING);
-        reloadStyleSheets();
+        reloadStyleSheetsColors();
 
-        // Populate the ColorPalette map with derived colors
+        // Refresh ColorPaletteService and reload graphics
         colorsMap.forEach((cssVariable, colorValue) -> {
             String constantName = cssVariable.substring(4);
             ColorPaletteService.putColor(constantName, colorValue);
         });
+        reloadGraphicsColors();
     }
 
     /**

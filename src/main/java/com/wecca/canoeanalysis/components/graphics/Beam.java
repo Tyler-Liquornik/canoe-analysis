@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
@@ -23,6 +24,8 @@ public class Beam extends Group implements Graphic {
     private final Line bottomBorder;
     private final Line leftBorder;
     private final Line rightBorder;
+
+    private boolean isColored;
 
     private final static double defaultThickness = 1;
     private final static double borderExtension = 5; // Amount by which the borders extend beyond the beam
@@ -62,6 +65,9 @@ public class Beam extends Group implements Graphic {
         getChildren().addAll(beam, topBorder, bottomBorder, leftBorder, rightBorder);
 
         JFXDepthManager.setDepth(this, 4);
+
+        this.isColored = false;
+        ColorManagerService.registerForRecoloringFromColorPalette(this);
     }
 
     // Accessors
@@ -70,11 +76,18 @@ public class Beam extends Group implements Graphic {
 
     // Change the color of the beam
     @Override
-    public void recolor(Color color) {
-        beam.setFill(color);
-        topBorder.setStroke(ColorPaletteService.getColor("white"));
-        bottomBorder.setStroke(ColorPaletteService.getColor("white"));
-        leftBorder.setStroke(ColorPaletteService.getColor("white"));
-        rightBorder.setStroke(ColorPaletteService.getColor("white"));
+    public void recolor(boolean setColored) {
+        this.isColored = setColored;
+
+        Color outlineColor = setColored ? ColorPaletteService.getColor("primary") :
+                ColorPaletteService.getColor("white");
+        Color fillColor = setColored ? ColorPaletteService.getColor("primary-light") :
+                ColorPaletteService.getColor("above-surface");
+
+        beam.setFill(fillColor);
+        topBorder.setStroke(outlineColor);
+        bottomBorder.setStroke(outlineColor);
+        leftBorder.setStroke(outlineColor);
+        rightBorder.setStroke(outlineColor);
     }
 }

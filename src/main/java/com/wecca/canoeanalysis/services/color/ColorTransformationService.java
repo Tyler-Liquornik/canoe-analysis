@@ -66,9 +66,11 @@ public class ColorTransformationService {
 
     public static Color primary_light(Color color)
     {
-        double lightenFactor = 0.4; // Adjust lightness to 0.6/1.0 (1.0 is white)
+        double lightenFactor = 0.4;
+        double saturationFactor = 0.8;
 
         double[] hsl = ColorUtils.rgbToHsl(color.getRed(), color.getGreen(), color.getBlue());
+        hsl[1] = saturationFactor;
         hsl[2] = ColorUtils.clamp(hsl[2] + (1 - hsl[2]) * lightenFactor);
         return ColorUtils.hslToRgb(hsl[0], hsl[1], hsl[2]);
     }

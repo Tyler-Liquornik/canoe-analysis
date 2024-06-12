@@ -159,7 +159,7 @@ public class MainController implements Initializable {
         snackbar.setPrefWidth(200);
         snackbar.setViewOrder(Integer.MIN_VALUE);
         snackbar.getStylesheets().add(CanoeAnalysisApplication.class.getResource("css/style.css").toExternalForm());
-        ColorManagerService.addEntryToStylesheetMapping(snackbar, "css/style.css");
+        ColorManagerService.registerForRecoloringFromStylesheet(snackbar, "css/style.css");
     }
 
     // .close() has an unfixed bug in the JFoenix library itself

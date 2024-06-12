@@ -1,10 +1,8 @@
 package com.wecca.canoeanalysis.components.graphics;
 
-import javafx.scene.paint.Color;
-
 public interface Graphic
 {
-    double LIGHTEN_FACTOR = 0.8;
-    void recolor(Color color);
+    void recolor(boolean setColored);
     double getX();
+    boolean isColored();
 }

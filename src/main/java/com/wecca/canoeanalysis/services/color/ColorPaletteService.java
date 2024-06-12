@@ -8,11 +8,8 @@ import java.util.Map;
 public class ColorPaletteService {
     private static final Map<String, Color> COLORS = new HashMap<>();
 
-    // Default Palette
+    // Base palette
     static {
-        COLORS.put("primary", Color.web("#BB86FC"));
-        COLORS.put("primary-light", Color.web("#D2A8FF"));
-        COLORS.put("primary-desaturated", Color.web("#534B5E"));
         COLORS.put("background", Color.web("#121212"));
         COLORS.put("surface", Color.web("#202020"));
         COLORS.put("above-surface", Color.web("#282828"));

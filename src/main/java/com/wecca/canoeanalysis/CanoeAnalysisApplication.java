@@ -43,11 +43,13 @@ public class CanoeAnalysisApplication extends Application {
 
         // Add the CSS file to the scene's stylesheets
         scene.getStylesheets().add(getClass().getResource("css/style.css").toExternalForm());
-        ColorManagerService.addEntryToStylesheetMapping(scene, "css/style.css");
+        ColorManagerService.registerForRecoloringFromStylesheet(scene, "css/style.css");
 
         // Adding Logo Icon
         Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png");
         stage.getIcons().add(icon);
+
+        ColorManagerService.putColorPalette("primary", "#BB86FC");
     }
 
     public static void main(String[] args) {

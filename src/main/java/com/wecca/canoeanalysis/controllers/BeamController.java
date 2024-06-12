@@ -132,10 +132,10 @@ public class BeamController implements Initializable
             // Recolor the selected graphic
             Graphic colorableGraphic = (Graphic) loadContainer.getChildren().get(i);
             if (i != selectedIndex)
-                colorableGraphic.recolor(ColorPaletteService.getColor("white"));
+                colorableGraphic.recolor(false);
             else
             {
-                colorableGraphic.recolor(ColorPaletteService.getColor("white"));
+                colorableGraphic.recolor(true);
 
                 // Bring the graphic to the front of the viewing order
                 Node node = (Node) colorableGraphic;
@@ -291,7 +291,7 @@ public class BeamController implements Initializable
                 mainController.showSnackbar("Load must be contained within the canoe's length");
             // Validate the load is in the accepted magnitude range
             else if (Math.abs(mag) < 0.01)
-                mainController.showSnackbar("Load magnitude at least 0.01kN");
+                mainController.showSnackbar("Load magnitude must be at least 0.01kN");
 
             else
             {
@@ -337,7 +337,7 @@ public class BeamController implements Initializable
             else if (!(xR > x))
                 mainController.showSnackbar("Right interval bound must be greater than the left bound");
             else if (Math.abs(mag) < 0.01)
-                mainController.showSnackbar("Load magnitude at least 0.01kN");
+                mainController.showSnackbar("Load magnitude must be at least 0.01kN");
 
             else
                 {
