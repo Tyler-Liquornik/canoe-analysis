@@ -1,11 +1,63 @@
 package com.wecca.canoeanalysis.services;
 
+import com.wecca.canoeanalysis.utils.ColorUtils;
 import javafx.scene.paint.Color;
 
 /**
- * Add transformations when introducing more color variants derived from a primary color
- * This addressed problems with JavaFX CSS limitations with color functions, and the lack of documentation for
- * algorithms that do exist and how they work. This will allow full customization with custom methods.
+ * <p>
+ * ColorTransformationService dynamically updates colors in styles.css and the ColorPalette class, allowing
+ * flexible color palette customization by applying transformations to a base color.
+ * </p>
+ * The goal of this is to overcome the issue of JavaFX CSS lacking functionality with color functions,
+ * which combined with the lack of documentation makes dealing with CSS colors a challenging task
+ * <p>
+ * Usage:
+ * </p>
+ * <p>
+ * 1. Define a marker for the color in the universal CSS selector * {}
+ *    - Examples:
+ *     * {
+ *         -fx-base: #000000 /* This is a marker, any valid hex color can go here
+ *         -fx-primary: #123ABC /* This is a marker, any valid hex color can go here
+ *         -fx-secondary: #FFFFFF /* This is a marker, any valid hex color can go here
+ *       }
+ * </p>
+ * <p>
+ * 2. Define any number color transformation methods in ColorTransformationService for a given base:
+ *    - Methods public static and named in the format "base_transformation".
+ *    - These are your custom defined methods to derive new colors
+ *    - Examples:
+ *      public static Color base_transformation(Color color) { ... }
+ *      public static Color primary_light(Color color) { ... }
+ *      public static Color secondary_complement(Color color) { ... }
+ * </p>
+ * <p>
+ * 3. Use ColorManagerService derive colors:
+ *    - deriveColors will scan ColorTransformationService for all transformation methods
+ *      containing the specified base, and generate derived colors
+ *    - Examples:
+ *      ColorManagerService.deriveColors("base", "#BB86FC");
+ *      ColorManagerService.deriveColors("primary", "#4169E1");
+ *      ColorManagerService.deriveColors("secondary", "#5CE47B");
+ * </p>
+ * <p>
+ * 4. Access generated color
+ *    - You can access colors generated at build time ass CSS variables
+ *    - Result:
+ *    * {
+ *            -fx-base: #BB86FC
+ *            -fx-base-transformed: TRANSFORMED COLOR
+ *            -fx-primary: #4169E1
+ *            -fx-primary-light: LIGHTENED COLOR
+ *            -fx-secondary: #5CE47B
+ *            -fx-secondary-complement: COMPLEMENTED COLOR
+ *      }
+ *    - You can access colors in your Java code through ColorPalette
+ *    - Result:
+ *      Color baseTransform = ColorPalette.getColor("base-transform");
+ *      Color primaryLight = ColorPalette.getColor("primary-light");
+ *      Color secondaryComplement = ColorPalette.getColor("secondaryComplement")
+ * </p>
  */
 public class ColorTransformationService {
 
@@ -13,9 +65,9 @@ public class ColorTransformationService {
     {
         double lightenFactor = 0.4; // Adjust lightness to 0.6/1.0 (1.0 is white)
 
-        double[] hsl = rgbToHsl(color.getRed(), color.getGreen(), color.getBlue());
-        hsl[2] = clamp(hsl[2] + (1 - hsl[2]) * lightenFactor);
-        return hslToRgb(hsl[0], hsl[1], hsl[2]);
+        double[] hsl = ColorUtils.rgbToHsl(color.getRed(), color.getGreen(), color.getBlue());
+        hsl[2] = ColorUtils.clamp(hsl[2] + (1 - hsl[2]) * lightenFactor);
+        return ColorUtils.hslToRgb(hsl[0], hsl[1], hsl[2]);
     }
 
     public static Color primary_desaturated(Color color)
@@ -23,58 +75,10 @@ public class ColorTransformationService {
         double lightenFactor = 0.33;
         double saturationFactor = 0.12;
 
-        double[] hsl = rgbToHsl(color.getRed(), color.getGreen(), color.getBlue());
+        double[] hsl = ColorUtils.rgbToHsl(color.getRed(), color.getGreen(), color.getBlue());
         hsl[1] = saturationFactor; // Adjust saturation to 12%
         hsl[2] = lightenFactor; // Adjust lightness to 33%
-        return hslToRgb(hsl[0], hsl[1], hsl[2]);
+        return ColorUtils.hslToRgb(hsl[0], hsl[1], hsl[2]);
     }
 
-    private static double clamp(double value) {
-        return Math.max(0, Math.min(1, value));
-    }
-
-    private static double[] rgbToHsl(double r, double g, double b) {
-        double max = Math.max(r, Math.max(g, b));
-        double min = Math.min(r, Math.min(g, b));
-        double h, s, l = (max + min) / 2.0;
-
-        if (max == min) {
-            h = s = 0; // achromatic
-        } else {
-            double d = max - min;
-            s = l > 0.5 ? d / (2.0 - max - min) : d / (max + min);
-            if (max == r) {
-                h = (g - b) / d + (g < b ? 6 : 0);
-            } else if (max == g) {
-                h = (b - r) / d + 2;
-            } else {
-                h = (r - g) / d + 4;
-            }
-            h /= 6;
-        }
-        return new double[]{h, s, l};
-    }
-
-    private static Color hslToRgb(double h, double s, double l) {
-        double r, g, b;
-        if (s == 0) {
-            r = g = b = l; // achromatic
-        } else {
-            double q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            double p = 2 * l - q;
-            r = hueToRgb(p, q, h + 1.0 / 3.0);
-            g = hueToRgb(p, q, h);
-            b = hueToRgb(p, q, h - 1.0 / 3.0);
-        }
-        return new Color(r, g, b, 1.0);
-    }
-
-    private static double hueToRgb(double p, double q, double t) {
-        if (t < 0) t += 1;
-        if (t > 1) t -= 1;
-        if (t < 1.0 / 6.0) return p + (q - p) * 6 * t;
-        if (t < 1.0 / 2.0) return q;
-        if (t < 2.0 / 3.0) return p + (q - p) * (2.0 / 3.0 - t) * 6;
-        return p;
-    }
 }

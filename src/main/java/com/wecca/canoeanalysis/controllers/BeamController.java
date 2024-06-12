@@ -132,10 +132,10 @@ public class BeamController implements Initializable
             // Recolor the selected graphic
             Graphic colorableGraphic = (Graphic) loadContainer.getChildren().get(i);
             if (i != selectedIndex)
-                colorableGraphic.recolor(ColorPalette.getInstance().getWhite());
+                colorableGraphic.recolor(ColorPalette.getColor("white"));
             else
             {
-                colorableGraphic.recolor(ColorPalette.getInstance().getPrimary());
+                colorableGraphic.recolor(ColorPalette.getColor("white"));
 
                 // Bring the graphic to the front of the viewing order
                 Node node = (Node) colorableGraphic;

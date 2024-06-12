@@ -49,9 +49,9 @@ public class CanoeAnalysisApplication extends Application {
         Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png");
         stage.getIcons().add(icon);
 
-        // Original primary color: #BB86FC
+        // Original primary color: #BB86FC // #4169E1
         // Will likely choose a handful of colors instead of full customizability as some colors don't allow proper contrast
-        ColorManagerService.setPrimaryColor("#4169E1"); // Testing changing colors, only affects built files (rebuild to go back to default)
+        ColorManagerService.deriveColorPaletteFromBaseCssName("primary", "#5CE47B"); // Testing changing colors, only affects built files (rebuild to go back to default)
     }
 
     public static void main(String[] args) {
