@@ -2,6 +2,9 @@ package com.wecca.canoeanalysis.controllers;
 
 import com.jfoenix.controls.JFXDecorator;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.components.ColorPalette;
+import com.wecca.canoeanalysis.services.ColorManagerService;
+import com.wecca.canoeanalysis.services.WindowOpenerService;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -54,20 +57,7 @@ public class SideDrawerController implements Initializable {
     }
 
     public void clickAboutButton() throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/about-view.fxml"));
-        AnchorPane rootPane = fxmlLoader.load();
-
-        Stage stage = new Stage();
-        JFXDecorator decorator = new JFXDecorator(stage, new VBox(rootPane), false, false, true);
-
-        Scene scene = new Scene(decorator, 550, 325);
-        stage.setTitle("About Me");
-        stage.setScene(scene);
-        stage.initStyle(StageStyle.UNDECORATED);
-        stage.setOnShown(event -> rootPane.requestFocus());
-        stage.setResizable(false);
-        stage.getIcons().add(new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png"));
-        stage.show();
+        WindowOpenerService.openAboutWindow("About Me");
     }
 
     public void selectModule(Module module, FontAwesomeIcon icon) throws IOException {

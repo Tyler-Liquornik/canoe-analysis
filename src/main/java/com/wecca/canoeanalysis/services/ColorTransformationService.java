@@ -11,16 +11,21 @@ public class ColorTransformationService {
 
     static Color lighten(Color color)
     {
+        double lightenFactor = 0.4; // Adjust lightness to 0.6/1.0 (1.0 is white)
+
         double[] hsl = rgbToHsl(color.getRed(), color.getGreen(), color.getBlue());
-        hsl[2] = clamp(hsl[2] + (1 - hsl[2]) * 0.6); // Adjust lightness
+        hsl[2] = clamp(hsl[2] + (1 - hsl[2]) * lightenFactor);
         return hslToRgb(hsl[0], hsl[1], hsl[2]);
     }
 
     static Color darkenAndDesaturate(Color color)
     {
+        double lightenFactor = 0.33;
+        double saturationFactor = 0.12;
+
         double[] hsl = rgbToHsl(color.getRed(), color.getGreen(), color.getBlue());
-        hsl[1] = 0.12; // Adjust saturation to 12%
-        hsl[2] = 0.33; // Adjust lightness to 33%
+        hsl[1] = saturationFactor; // Adjust saturation to 12%
+        hsl[2] = lightenFactor; // Adjust lightness to 33%
         return hslToRgb(hsl[0], hsl[1], hsl[2]);
     }
 

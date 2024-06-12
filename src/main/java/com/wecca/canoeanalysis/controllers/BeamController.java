@@ -9,8 +9,8 @@ import com.wecca.canoeanalysis.components.graphics.*;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.services.*;
+import com.wecca.canoeanalysis.utils.ControlUtils;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import javafx.collections.FXCollections;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
@@ -55,37 +55,8 @@ public class BeamController implements Initializable
     private Beam beam; // The graphic of the beam
 
     // Size rules for load graphics (prevents them from rendering too big/small)
-    private double minGraphicSize;
     private double[] acceptedGraphicHeightRange;
 
-
-    /**
-     * Put a group of radio buttons into a toggle group (only allow one to be selected at a time)
-     * Have one of the buttons be selected by default
-     * @param group for the buttons to be added to
-     * @param buttons the radio buttons to add to the group
-     * @param selectedIndex the index in buttons to be selected on initialization
-     */
-    public void setAllToggleGroup(ToggleGroup group, RadioButton[] buttons, int selectedIndex)
-    {
-        for (RadioButton b : buttons) {
-            b.setToggleGroup(group);
-        }
-
-        buttons[selectedIndex].setSelected(true);
-    }
-
-    /**
-     * Populate a combo box and set a default item to show
-     * @param comboBox the combo box to populate
-     * @param options the list of options to populate the combo box with
-     * @param selectedIndex the index in the list of options to display on initialization
-     */
-    public void setAllWithDefault(ComboBox<String> comboBox, String[] options, int selectedIndex)
-    {
-        comboBox.setItems(FXCollections.observableArrayList(options));
-        comboBox.getSelectionModel().select(selectedIndex);
-    }
 
     /**
      * Toggles settings for empty load list
@@ -519,8 +490,7 @@ public class BeamController implements Initializable
         generateGraphsButton.setDisable(true);
         disableLoadingControls(false);
 
-        // Simulate the user selecting and deleting the supports
-        // Supports are always the first and last load
+        // Simulate the user selecting and deleting the supports which are always the first and last load
         loadListView.getSelectionModel().select(0);
         deleteLoad();
         loadListView.getSelectionModel().select(loadListView.getItems().size() - 1);
@@ -583,8 +553,8 @@ public class BeamController implements Initializable
      */
     public void generateDiagram()
     {
-        DiagramService.setupDiagram(canoe, DiagramService.generateSfdPoints(canoe), "Shear Force Diagram", "Force [kN]");
-        DiagramService.setupDiagram(canoe, DiagramService.generateBmdPoints(canoe), "Bending Moment Diagram", "Moment [kN·m]");
+        WindowOpenerService.openDiagramWindow("Shear Force Diagram", canoe, DiagramService.generateSfdPoints(canoe), "Force [kN]");
+        WindowOpenerService.openDiagramWindow("Bending Moment Diagram", canoe, DiagramService.generateBmdPoints(canoe), "Moment [kN·m]");
     }
 
     /**
@@ -716,7 +686,7 @@ public class BeamController implements Initializable
         // Setting RadioButton Toggle Group
         ToggleGroup canoeSupportToggleGroup = new ToggleGroup();
         RadioButton[] canoeSupportRButtons = new RadioButton[]{standsRadioButton, floatingRadioButton, submergedRadioButton};
-        setAllToggleGroup(canoeSupportToggleGroup, canoeSupportRButtons, 0);
+        ControlUtils.addAllRadioButtonsToToggleGroup(canoeSupportToggleGroup, canoeSupportRButtons, 0);
 
         // Populate ComboBoxes
         String[] directions = new String[]{"Down", "Up"};
@@ -724,13 +694,13 @@ public class BeamController implements Initializable
         String[] distanceUnits = new String[]{"m", "ft"};
         String[] distributedLoadUnits = new String[]{"kN/m", "N/m", "kg/m", "lb/ft"};
 
-        setAllWithDefault(pointDirectionComboBox, directions, 0);
-        setAllWithDefault(pointMagnitudeComboBox, loadUnits, 0);
-        setAllWithDefault(pointLocationComboBox, distanceUnits, 0);
-        setAllWithDefault(distributedIntervalComboBox, distanceUnits, 0);
-        setAllWithDefault(distributedDirectionComboBox, directions, 0);
-        setAllWithDefault(distributedMagnitudeComboBox, distributedLoadUnits, 0);
-        setAllWithDefault(canoeLengthComboBox, distanceUnits, 0);
+        ControlUtils.initComboBoxesWithDefaultSelected(pointDirectionComboBox, directions, 0);
+        ControlUtils.initComboBoxesWithDefaultSelected(pointMagnitudeComboBox, loadUnits, 0);
+        ControlUtils.initComboBoxesWithDefaultSelected(pointLocationComboBox, distanceUnits, 0);
+        ControlUtils.initComboBoxesWithDefaultSelected(distributedIntervalComboBox, distanceUnits, 0);
+        ControlUtils.initComboBoxesWithDefaultSelected(distributedDirectionComboBox, directions, 0);
+        ControlUtils.initComboBoxesWithDefaultSelected(distributedMagnitudeComboBox, distributedLoadUnits, 0);
+        ControlUtils.initComboBoxesWithDefaultSelected(canoeLengthComboBox, distanceUnits, 0);
 
         // Populate the TextFields with default values
         TextField[] tfs = new TextField[]{pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,

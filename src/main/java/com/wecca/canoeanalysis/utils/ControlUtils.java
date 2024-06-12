@@ -1,0 +1,36 @@
+package com.wecca.canoeanalysis.utils;
+
+import javafx.collections.FXCollections;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.ToggleGroup;
+
+public class ControlUtils {
+    /**
+     * Put a group of radio buttons into a toggle group (only allow one to be selected at a time)
+     * Have one of the buttons be selected by default
+     * @param group for the buttons to be added to
+     * @param buttons the radio buttons to add to the group
+     * @param selectedIndex the index in buttons to be selected on initialization
+     */
+    public static void addAllRadioButtonsToToggleGroup(ToggleGroup group, RadioButton[] buttons, int selectedIndex)
+    {
+        for (RadioButton b : buttons) {
+            b.setToggleGroup(group);
+        }
+
+        buttons[selectedIndex].setSelected(true);
+    }
+
+    /**
+     * Populate a combo box and set a default item to show
+     * @param comboBox the combo box to populate
+     * @param options the list of options to populate the combo box with
+     * @param selectedIndex the index in the list of options to display on initialization
+     */
+    public static void initComboBoxesWithDefaultSelected(ComboBox<String> comboBox, String[] options, int selectedIndex)
+    {
+        comboBox.setItems(FXCollections.observableArrayList(options));
+        comboBox.getSelectionModel().select(selectedIndex);
+    }
+}

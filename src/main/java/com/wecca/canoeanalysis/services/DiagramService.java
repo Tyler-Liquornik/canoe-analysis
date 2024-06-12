@@ -1,6 +1,5 @@
 package com.wecca.canoeanalysis.services;
 
-import com.jfoenix.controls.JFXDecorator;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.diagrams.DiagramPoint;
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
@@ -8,71 +7,83 @@ import com.wecca.canoeanalysis.components.diagrams.Interval;
 import com.wecca.canoeanalysis.models.Canoe;
 import com.wecca.canoeanalysis.models.PointLoad;
 import com.wecca.canoeanalysis.models.UniformDistributedLoad;
-import javafx.scene.Scene;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
-import javafx.scene.image.Image;
-import javafx.scene.layout.Pane;
-import javafx.stage.Stage;
 
 import java.util.*;
 
 public class DiagramService {
 
     /**
-     * Set up the canvas/pane for a diagram.
+     * Sets up the chart for the diagram window.
      *
-     * @param canoe  to work with
-     * @param points the points to render on the diagram.
-     * @param title  the title of the diagram.
-     * @param yUnits the units of the y-axis on the diagram.
+     * @param canoe  the canoe object containing section end points and length
+     * @param points the list of diagram points to be plotted
+     * @param yUnits the label for the Y-axis units
+     * @return the configured AreaChart
      */
-    public static void setupDiagram(Canoe canoe, List<DiagramPoint> points, String title, String yUnits)
-    {
-        // Initializing the stage and main pane
-        Stage popupStage = new Stage();
-        popupStage.setTitle(title);
-        Pane chartPane = new Pane();
-        chartPane.setPrefSize(1125, 750);
-        popupStage.setResizable(false);
+    public static AreaChart<Number, Number> setupChart(Canoe canoe, List<DiagramPoint> points, String yUnits) {
+        // Setting up the axes
+        NumberAxis yAxis = setupYAxis(yUnits);
+        FixedTicksNumberAxis xAxis = setupXAxis(canoe);
 
-        // Adding Logo Icon
-        Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png");
-        popupStage.getIcons().add(icon);
+        // Creating and styling the chart
+        AreaChart<Number, Number> chart = new AreaChart<>(xAxis, yAxis);
+        chart.setPrefSize(1125, 750);
+        chart.setLegendVisible(false);
 
-        // Setting the axes of the chart
+        // Adding the data series to the chart
+        addSeriesToChart(chart, canoe, points, yUnits);
+
+        return chart;
+    }
+
+    /**
+     * Sets up the Y-axis for the chart.
+     *
+     * @param yUnits the label for the Y-axis units
+     * @return the configured NumberAxis
+     */
+    private static NumberAxis setupYAxis(String yUnits) {
         NumberAxis yAxis = new NumberAxis();
+        yAxis.setLabel(yUnits);
+        return yAxis;
+    }
+
+    /**
+     * Sets up the X-axis for the chart using critical points from the canoe.
+     *
+     * @param canoe the canoe object containing section end points and length
+     * @return the configured FixedTicksNumberAxis
+     */
+    private static FixedTicksNumberAxis setupXAxis(Canoe canoe) {
         TreeSet<Double> criticalPoints = canoe.getSectionEndPoints();
         FixedTicksNumberAxis xAxis = new FixedTicksNumberAxis(new ArrayList<>(criticalPoints));
         xAxis.setAutoRanging(false);
         xAxis.setLabel("Distance [m]");
-        yAxis.setLabel(yUnits);
         xAxis.setLowerBound(0);
         xAxis.setUpperBound(canoe.getLen());
-
-        // Creating and styling the line chart
-        AreaChart<Number, Number> chart = new AreaChart<>(xAxis, yAxis);
-        chart.setPrefSize(1125, 750);
-        chart.setLegendVisible(false);
-        chart.getStylesheets().add(CanoeAnalysisApplication.class.getResource("css/chart.css").toExternalForm());
-        ColorManagerService.addEntryToStylesheetMapping(chart, "css/chart.css");
-
-        // Will later use the returned series
-        List<XYChart.Series> intervalsAsSeries = getIntervalsAsSeries(canoe, points, yUnits, criticalPoints, chart);
-
-        // Creating the scene and adding the chart to it
-        chartPane.getChildren().add(chart);
-        JFXDecorator decorator = new JFXDecorator(popupStage, chartPane, false, false, true);
-        popupStage.setOnShown(event -> chartPane.requestFocus());
-        Scene scene = new Scene(decorator, 1125, 775);
-
-        popupStage.setScene(scene);
-        popupStage.show();
-
+        return xAxis;
     }
 
-    private static List<XYChart.Series> getIntervalsAsSeries(Canoe canoe, List<DiagramPoint> points, String yUnits, TreeSet<Double> criticalPoints, AreaChart<Number, Number> chart) {
+    /**
+     * Adds data series to the chart.
+     *
+     * @param chart the chart to which the data series will be added
+     * @param canoe the canoe object containing section end points and length
+     * @param points the list of diagram points to be plotted
+     * @param yUnits the label for the Y-axis units
+     */
+    private static void addSeriesToChart(AreaChart<Number, Number> chart, Canoe canoe, List<DiagramPoint> points, String yUnits) {
+        TreeSet<Double> criticalPoints = canoe.getSectionEndPoints();
+        List<XYChart.Series> intervalsAsSeries = DiagramService.getIntervalsAsSeries(canoe, points, yUnits, criticalPoints, chart);
+        for (XYChart.Series series : intervalsAsSeries) {
+            chart.getData().add(series);
+        }
+    }
+
+    static List<XYChart.Series> getIntervalsAsSeries(Canoe canoe, List<DiagramPoint> points, String yUnits, TreeSet<Double> criticalPoints, AreaChart<Number, Number> chart) {
         // Adding the sections of the pseudo piecewise function separately
         boolean set = false; // only need to set the name of the series once since its really one piecewise function
         List<List<DiagramPoint>> intervals = partitionPoints(canoe, points, criticalPoints);
