@@ -43,12 +43,25 @@ public class ColorUtils {
         return new Color(r, g, b, 1.0);
     }
 
-    private static double hueToRgb(double p, double q, double t) {
+    public static double hueToRgb(double p, double q, double t) {
         if (t < 0) t += 1;
         if (t > 1) t -= 1;
         if (t < 1.0 / 6.0) return p + (q - p) * 6 * t;
         if (t < 1.0 / 2.0) return q;
         if (t < 2.0 / 3.0) return p + (q - p) * (2.0 / 3.0 - t) * 6;
         return p;
+    }
+
+    /**
+     * Convert a color object with RGB values to a hex representation as a string.
+     *
+     * @param color the color object to convert
+     * @return the color in hex format as a string
+     */
+    public static String colorToHexString(Color color) {
+        return String.format("#%02X%02X%02X",
+                (int) (color.getRed() * 255),
+                (int) (color.getGreen() * 255),
+                (int) (color.getBlue() * 255));
     }
 }

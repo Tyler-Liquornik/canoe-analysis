@@ -30,15 +30,18 @@ import javafx.scene.paint.Color;
  *      public static Color base_transformation(Color color) { ... }
  *      public static Color primary_light(Color color) { ... }
  *      public static Color secondary_complement(Color color) { ... }
+ *
+ *    - Note that each of base, primary, or secondary can have many transformations each
+ *    - No transformations can be specified if you only want to dynamically change one color (the base)
  * </p>
  * <p>
  * 3. Use ColorManagerService derive colors:
  *    - deriveColors will scan ColorTransformationService for all transformation methods
  *      containing the specified base, and generate derived colors
  *    - Examples:
- *      ColorManagerService.deriveColors("base", "#BB86FC");
- *      ColorManagerService.deriveColors("primary", "#4169E1");
- *      ColorManagerService.deriveColors("secondary", "#5CE47B");
+ *      ColorManagerService.addColorPalette("base", "#BB86FC");
+ *      ColorManagerService.addColorPalette("primary", "#4169E1");
+ *      ColorManagerService.addColorPalette("secondary", "#5CE47B");
  * </p>
  * <p>
  * 4. Access generated color
@@ -80,5 +83,4 @@ public class ColorTransformationService {
         hsl[2] = lightenFactor; // Adjust lightness to 33%
         return ColorUtils.hslToRgb(hsl[0], hsl[1], hsl[2]);
     }
-
 }
