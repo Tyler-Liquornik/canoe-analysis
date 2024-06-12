@@ -3,19 +3,15 @@ package com.wecca.canoeanalysis.services;
 import com.jfoenix.controls.JFXDecorator;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.diagrams.DiagramPoint;
-import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.models.Canoe;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.chart.AreaChart;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.XYChart;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,7 +20,7 @@ import java.util.List;
  * Logic for opening windows and associated initializations
  * This does not include the main window opened in CanoeAnalysisApplication
  */
-public class WindowOpenerService {
+public class WindowManagerService {
     /**
      * Set up the canvas/pane for a diagram.
      * @param title  the title of the diagram.
@@ -63,8 +59,8 @@ public class WindowOpenerService {
     /**
      * @param title the title of the window
      */
-    public static void openAboutWindow(String title) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/about-view.fxml"));
+    public static void openUtilityWindow(String title, String fxmlPath) throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource(fxmlPath));
         AnchorPane rootPane = fxmlLoader.load();
 
         Stage stage = new Stage();
@@ -74,7 +70,6 @@ public class WindowOpenerService {
         styleJFXDecorator(scene, "css/style.css");
         stage.setTitle(title);
         stage.setScene(scene);
-        stage.initStyle(StageStyle.UNDECORATED);
         stage.setOnShown(event -> rootPane.requestFocus());
         stage.setResizable(false);
         stage.getIcons().add(new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png"));

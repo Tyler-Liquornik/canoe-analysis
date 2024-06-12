@@ -1,20 +1,12 @@
 package com.wecca.canoeanalysis.controllers;
 
-import com.jfoenix.controls.JFXDecorator;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.components.ColorPalette;
-import com.wecca.canoeanalysis.services.ColorManagerService;
-import com.wecca.canoeanalysis.services.WindowOpenerService;
+import com.wecca.canoeanalysis.services.WindowManagerService;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
-import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import lombok.Getter;
 
 import java.io.IOException;
@@ -53,11 +45,12 @@ public class SideDrawerController implements Initializable {
     public void clickPoaButton() throws IOException {selectModule(Module.PERCENT_OPEN_AREA, poaIcon);}
 
     // Auxiliary button handlers
-    public void clickSettingsButton() {
+    public void clickSettingsButton() throws IOException {
+        WindowManagerService.openUtilityWindow("PADDL Settings", "view/settings-view.fxml");
     }
 
     public void clickAboutButton() throws IOException {
-        WindowOpenerService.openAboutWindow("About Me");
+        WindowManagerService.openUtilityWindow("About Me", "view/about-view.fxml");
     }
 
     public void selectModule(Module module, FontAwesomeIcon icon) throws IOException {
