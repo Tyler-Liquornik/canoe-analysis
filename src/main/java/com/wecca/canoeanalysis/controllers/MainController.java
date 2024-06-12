@@ -51,6 +51,10 @@ public class MainController implements Initializable {
     // Each module will have a set of custom toolbar buttons on top of the minimize and close window buttons
     private List<Button> moduleToolBarButtons = new ArrayList<>();
 
+    // Colors / Theme static management
+    private boolean isLightThemeEnabled;
+    private String currentPrimaryThemeColor; // #BB86FC
+
     /**
      * Mouse pressed event handler to record the current mouse position
      * @param event triggers the method
@@ -221,6 +225,10 @@ public class MainController implements Initializable {
 
             button.setPrefHeight(buttonHeight);
             button.setPrefWidth(buttonWidth);
+            button.setMaxHeight(buttonHeight);
+            button.setMaxWidth(buttonWidth);
+            button.setMinHeight(buttonHeight);
+            button.setMinWidth(buttonWidth);
             button.setLayoutX(buttonX);
             button.setLayoutY(buttonY);
         }

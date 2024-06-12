@@ -77,16 +77,29 @@ This is because the reflection API is being used to set ColorPalette colors
     -fx-padding: 4 8 4 0;
 }
 
-.jfx-hamburger StackPane,
+.jfx-hamburger StackPane {
+    -fx-background-color: white;
+}
+
 .jfx-combo-box > .input-focused-line,
 .jfx-text-field > .input-focused-line {
-    -fx-background-color: white;
+    -fx-background-color: -fx-primary-light;
 }
 
 .action-object,
 .jfx-combo-box > .input-line,
-.jfx-text-field > .input-line {
+.jfx-text-field > .input-line,
+.jfx-decorator > .jfx-decorator-buttons-container {
     -fx-background-color: -fx-primary;
+}
+
+.jfx-decorator > .jfx-decorator-buttons-container {
+    -fx-background-color: -fx-primary;
+}
+
+.jfx-decorator > .resize-border {
+    -fx-border-color: -fx-primary;
+    -fx-border-width: 0 3 3 3;
 }
 
 .jfx-snackbar-content {
@@ -105,6 +118,7 @@ This is because the reflection API is being used to set ColorPalette colors
 
 .dismiss-button {
     -fx-text-fill: -fx-primary;
+    -fx-font-family: bold;
 }
 
 .transparent-button,
@@ -117,7 +131,7 @@ This is because the reflection API is being used to set ColorPalette colors
 }
 
 .transparent-button:hover {
-    -fx-background-color: -fx-primary-variant;
+    -fx-background-color: -fx-primary-light;
 }
 
 .close-window-button:hover {
