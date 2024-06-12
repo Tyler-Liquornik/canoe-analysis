@@ -173,6 +173,20 @@
     -jfx-unselected-color: white;
 }
 
+.setting-title {
+    -fx-font-weight: bold;
+    -fx-font-size: 18px;
+}
+
+.setting-label {
+    -fx-font-size: 14px;
+}
+
+.setting-info {
+    -fx-text-fill: #A9A9A9;
+    -fx-font-size: 11px;
+}
+
 jfx-toggle-button,
 .jfx-toggle-button:armed,
 .jfx-toggle-button:hover,

@@ -7,7 +7,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.shape.Line?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="550.0" stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.SettingsController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="550.0" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.SettingsController">
    <children>
       <Label layoutX="20.0" layoutY="20.0" styleClass="title" text="Colors" />
       <Label layoutX="20.0" layoutY="60.0" styleClass="setting-label" text="Primary App Color:" />
@@ -30,7 +30,7 @@
       <JFXButton buttonType="RAISED" layoutX="218.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #009688;" text="" />
       <JFXButton buttonType="RAISED" layoutX="188.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #F96C37;" text="" />
       <Label layoutX="20.0" layoutY="205.0" prefHeight="18.0" prefWidth="314.0" styleClass="info" text="All units are always selectable, only affects final displayed units" wrapText="true" />
-      <Line endX="-48.0" layoutX="121.0" layoutY="44.0" scaleY="3.0" startX="-100.0" styleClass="action-object" />
-      <Line endX="-58.5" layoutX="121.0" layoutY="163.0" scaleY="3.0" startX="-100.0" styleClass="action-object" />
+      <Line endX="-55.0" layoutX="121.0" layoutY="44.0" scaleY="3.0" startX="-100.0" styleClass="action-object" />
+      <Line endX="-65.0" layoutX="121.0" layoutY="163.0" scaleY="3.0" startX="-100.0" styleClass="action-object" />
    </children>
 </AnchorPane>

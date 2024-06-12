@@ -22,6 +22,10 @@ import java.util.List;
  * This does not include the main window opened in CanoeAnalysisApplication
  */
 public class WindowManagerService {
+
+
+    Scene test = null;
+
     /**
      * Set up the canvas/pane for a diagram.
      * @param title  the title of the diagram.
@@ -50,7 +54,7 @@ public class WindowManagerService {
         JFXDecorator decorator = new JFXDecorator(popupStage, chartPane, false, false, true);
         popupStage.setOnShown(event -> chartPane.requestFocus());
         Scene scene = new Scene(decorator, 1125, 775);
-        styleJFXDecorator(scene, "css/chart.css");
+        addStyleSheet(scene, "css/chart.css");
 
         // Setting the scene and showing the stage
         popupStage.setScene(scene);
@@ -68,12 +72,12 @@ public class WindowManagerService {
         JFXDecorator decorator = new JFXDecorator(stage, new VBox(rootPane), false, false, true);
 
         Scene scene = new Scene(decorator, 550, 325);
-        styleJFXDecorator(scene, "css/style.css");
+        addStyleSheet(scene, "css/style.css");
         stage.setTitle(title);
-        stage.setScene(scene);
         stage.setOnShown(event -> rootPane.requestFocus());
         stage.setResizable(false);
         stage.getIcons().add(new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png"));
+        stage.setScene(scene);
         stage.show();
     }
 
@@ -81,8 +85,8 @@ public class WindowManagerService {
      * Load CSS to the JFXDecorator which must be done through the scene and cannot be added inline in FXML
      * @param scene the Scene on which a decorator be styled is present
      */
-    private static void styleJFXDecorator(Scene scene, String cssPath) {
-        scene.getStylesheets().add(CanoeAnalysisApplication.class.getResource(cssPath).toExternalForm());
-        ColorManagerService.addEntryToStylesheetMapping(scene, cssPath);
+    private static void addStyleSheet(Scene scene, String path) {
+        scene.getStylesheets().add(CanoeAnalysisApplication.class.getResource(path).toExternalForm());
+        ColorManagerService.addEntryToStylesheetMapping(scene, path);
     }
 }

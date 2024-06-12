@@ -4,7 +4,6 @@ import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
-import javafx.scene.paint.Color;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -20,7 +19,7 @@ public class SettingsController implements Initializable {
     }
 
     public void setPrimaryColor(ActionEvent actionEvent) throws IOException, URISyntaxException {
-        ColorManagerService.addColorPalette("primary", getBackgroundColorHexString(((Button) actionEvent.getSource())));
+        ColorManagerService.putColorPalette("primary", getBackgroundColorHexString(((Button) actionEvent.getSource())));
     }
 
     public static String getBackgroundColorHexString(Button button)
