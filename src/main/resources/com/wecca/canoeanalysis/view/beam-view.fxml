@@ -16,7 +16,7 @@
          <children>
             <AnchorPane prefHeight="200.0" prefWidth="200.0" AnchorPane.leftAnchor="10.0">
                <children>
-                  <Label fx:id="supportTitleLabel" layoutX="10.0" layoutY="14.0" text="Canoe Supports" />
+                  <Label fx:id="supportTitleLabel" layoutX="10.0" layoutY="14.0" styleClass="title" text="Canoe Supports" />
                   <JFXRadioButton fx:id="floatingRadioButton" layoutX="10.0" layoutY="80.0" mnemonicParsing="false" text="Floating" />
                   <JFXRadioButton fx:id="standsRadioButton" layoutX="10.0" layoutY="45.0" mnemonicParsing="false" text="Stands" />
                   <JFXRadioButton fx:id="submergedRadioButton" layoutX="10.0" layoutY="115.0" mnemonicParsing="false" text="Submerged" />
@@ -25,7 +25,7 @@
             </AnchorPane>
             <AnchorPane layoutX="210.0" prefHeight="200.0" prefWidth="640.0" AnchorPane.leftAnchor="210.0">
                <children>
-                  <Label fx:id="pointTitleLabel" layoutX="14.0" layoutY="14.0" text="Point Load" />
+                  <Label fx:id="pointTitleLabel" layoutX="14.0" layoutY="14.0" styleClass="title" text="Point Load" />
                   <Label fx:id="pointMagnitudeLabel" layoutX="15.0" layoutY="45.0" text="Magnitude:" />
                   <Label fx:id="pointLocationLabel" layoutX="15.0" layoutY="80.0" text="Location:" />
                   <Label fx:id="pointDirectionLabel" layoutX="15.0" layoutY="115.0" text="Direction:" />
@@ -45,7 +45,7 @@
                   <JFXComboBox fx:id="distributedIntervalComboBox" layoutX="534.0" layoutY="75.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="85.0" />
                   <JFXComboBox fx:id="distributedDirectionComboBox" layoutX="350.0" layoutY="110.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="85.0" />
                   <JFXComboBox fx:id="distributedMagnitudeComboBox" layoutX="442.0" layoutY="40.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="85.0" />
-                  <Label fx:id="distributedTitleLabel" layoutX="280.0" layoutY="14.0" text="Uniformly Distributed Load" />
+                  <Label fx:id="distributedTitleLabel" layoutX="280.0" layoutY="14.0" styleClass="title" text="Uniformly Distributed Load" />
                </children>
                <padding>
                   <Insets top="20.0" />

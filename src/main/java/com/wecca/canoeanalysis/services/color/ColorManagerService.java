@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,7 +27,7 @@ import java.util.stream.Stream;
 public class ColorManagerService {
 
     // Css loading information for CssManagerService
-    private static final HashMap<Object, String> stylesheetMap = new HashMap<>();
+    private static final LinkedHashMap<Object, String> stylesheetMap = new LinkedHashMap<>();
 
     /**
      * Adds an entry to the stylesheet mapping.
@@ -66,7 +67,7 @@ public class ColorManagerService {
      * @param baseName the base color name (e.g., "primary")
      * @param baseColorHex the base color hex value (e.g., "#FF0000")
      */
-    public static void addColorPalette(String baseName, String baseColorHex) throws IOException, URISyntaxException {
+    public static void putColorPalette(String baseName, String baseColorHex) throws IOException, URISyntaxException {
         // Build a map of CSS color variables to values
         Color baseColor = Color.web(baseColorHex);
         HashMap<String, String> colorsMap = deriveColorVariants(baseName, baseColor);
@@ -115,7 +116,7 @@ public class ColorManagerService {
 
         // Populate the ColorPalette map with derived colors
         colorsMap.forEach((cssVariable, colorValue) -> {
-            String constantName = baseName + "-" + cssVariable.substring(4);
+            String constantName = cssVariable.substring(4);
             ColorPaletteService.putColor(constantName, colorValue);
         });
     }
