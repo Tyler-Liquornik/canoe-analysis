@@ -2,6 +2,7 @@ package com.wecca.canoeanalysis.services;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.ColorPalette;
+import com.wecca.canoeanalysis.utils.ColorUtils;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
@@ -67,7 +68,7 @@ public class ColorManagerService {
      * @param baseColorHex the base color hex value (e.g., "#FF0000")
      * @throws IOException        if an I/O error occurs
      */
-    public static void deriveColorPaletteFromBaseCssName(String baseName, String baseColorHex) throws IOException, URISyntaxException {
+    public static void addColorPalette(String baseName, String baseColorHex) throws IOException, URISyntaxException {
         // Build a map of CSS color variables to values
         Color baseColor = Color.web(baseColorHex);
         HashMap<String, String> colorsMap = deriveColorVariants(baseName, baseColor);
@@ -139,7 +140,7 @@ public class ColorManagerService {
                     String transformationName = method.getName().substring(baseName.length() + 1); // Remove "base_" prefix
                     String cssVariableName = String.format("-fx-%s-%s", baseName, transformationName);
                     Color transformedColor = (Color) method.invoke(null, baseColor);
-                    String colorHex = colorToHexString(transformedColor);
+                    String colorHex = ColorUtils.colorToHexString(transformedColor);
                     colorVariants.put(cssVariableName, colorHex);
                 }
             }
@@ -148,18 +149,5 @@ public class ColorManagerService {
         }
 
         return colorVariants;
-    }
-
-    /**
-     * Convert a color object with RGB values to a hex representation as a string.
-     *
-     * @param color the color object to convert
-     * @return the color in hex format as a string
-     */
-    private static String colorToHexString(Color color) {
-        return String.format("#%02X%02X%02X",
-                (int) (color.getRed() * 255),
-                (int) (color.getGreen() * 255),
-                (int) (color.getBlue() * 255));
     }
 }
