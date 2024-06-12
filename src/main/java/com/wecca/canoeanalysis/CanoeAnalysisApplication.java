@@ -51,7 +51,7 @@ public class CanoeAnalysisApplication extends Application {
 
         // Original primary color: #BB86FC
         // Will likely choose a handful of colors instead of full customizability as some colors don't allow proper contrast
-        ColorManagerService.setPrimaryColor("#F96C37"); // Testing changing colors, only affects built files (rebuild to go back to default)
+        ColorManagerService.setPrimaryColor("#4169E1"); // Testing changing colors, only affects built files (rebuild to go back to default)
     }
 
     public static void main(String[] args) {

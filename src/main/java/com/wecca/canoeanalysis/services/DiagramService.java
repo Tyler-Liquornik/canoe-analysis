@@ -1,6 +1,5 @@
 package com.wecca.canoeanalysis.services;
 
-import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.diagrams.DiagramPoint;
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.Interval;
