@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="550.0" styleClass="sett" stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.SettingsController">
+   <children>
+      <Label layoutX="29.0" layoutY="39.0" styleClass="setting-label" text="Main App Color:" />
+      <ToggleButton layoutX="227.0" layoutY="67.0" mnemonicParsing="false" text="ToggleButton" />
+   </children>
+</AnchorPane>

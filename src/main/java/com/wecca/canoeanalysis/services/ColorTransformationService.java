@@ -9,7 +9,7 @@ import javafx.scene.paint.Color;
  */
 public class ColorTransformationService {
 
-    static Color lighten(Color color)
+    public static Color primary_light(Color color)
     {
         double lightenFactor = 0.4; // Adjust lightness to 0.6/1.0 (1.0 is white)
 
@@ -18,7 +18,7 @@ public class ColorTransformationService {
         return hslToRgb(hsl[0], hsl[1], hsl[2]);
     }
 
-    static Color darkenAndDesaturate(Color color)
+    public static Color primary_desaturated(Color color)
     {
         double lightenFactor = 0.33;
         double saturationFactor = 0.12;
