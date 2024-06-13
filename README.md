@@ -1,7 +1,7 @@
 # PADDL
 
 ## About
-PADDL, Precision Analysis & Design for Dynamic Loading is a JavaFx desktop app built to save the D&A team some hassle with tools to simplify technical civil engineering work. An emphasis is put on effective design to lower the barrier of technical civil engineering knowledge required to make informed, analytical civil engineering decisions in less time.
+PADDL, Precision Analysis & Design for Dynamic Loading is a JavaFx desktop app built to simplify technical civil engineering design and analysis. An emphasis is put on effective design to lower the barrier of technical civil engineering knowledge required to make informed, analytical civil engineering decisions in less time.
 
 <div style="display: flex; flex-direction: row;">
     <img src="images/UI.png" alt="UI" style="width: 49%;" />
