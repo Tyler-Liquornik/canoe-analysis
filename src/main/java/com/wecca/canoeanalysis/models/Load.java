@@ -6,9 +6,9 @@ import lombok.Setter;
 
 @Setter @Getter @AllArgsConstructor
 public abstract class Load{
-
-    double x;
+    String type;
     double mag;
+    double x;
 
     // Scaled on the canoe to the size of the canoe (beam) container in pixels on the GUI
     public double getXScaled(double containerWidth, double canoeLength)

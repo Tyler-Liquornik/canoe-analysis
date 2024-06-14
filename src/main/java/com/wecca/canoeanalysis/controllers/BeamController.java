@@ -1,10 +1,7 @@
 package com.wecca.canoeanalysis.controllers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.components.graphics.*;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.models.*;
@@ -18,6 +15,9 @@ import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
 import javafx.scene.paint.Paint;
 import lombok.Setter;
+
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
@@ -181,10 +181,10 @@ public class BeamController implements Initializable
             // Only allow lengths in the specified range
             if (len >= 0.01) {
                 // Update model state
-                canoe.setLen(len);
+                canoe.setLength(len);
 
                 // Change the label on the scale
-                axisLabelR.setText(String.format("%.2f m", canoe.getLen()));
+                axisLabelR.setText(String.format("%.2f m", canoe.getLength()));
                 axisLabelR.setLayoutX(595); // TODO: this will not be hard coded anymore once axis labels for new loads are implemented
 
                 // Clear potential alert and reset access to controls
@@ -257,9 +257,9 @@ public class BeamController implements Initializable
             double startY = l.getMag() < 0 ? acceptedGraphicHeightRange[1] - deltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
 
             if (l instanceof PointLoad)
-                rescaledGraphics.add(new Arrow(l.getXScaled(beam.getWidth(), canoe.getLen()), startY, l.getXScaled(beam.getWidth(), canoe.getLen()), endY));
+                rescaledGraphics.add(new Arrow(l.getXScaled(beam.getWidth(), canoe.getLength()), startY, l.getXScaled(beam.getWidth(), canoe.getLength()), endY));
             else if (l instanceof UniformDistributedLoad)
-                rescaledGraphics.add(new ArrowBox(l.getXScaled(beam.getWidth(), canoe.getLen()), startY, ((UniformDistributedLoad) l).getRXScaled(beam.getWidth(), canoe.getLen()), endY));
+                rescaledGraphics.add(new ArrowBox(l.getXScaled(beam.getWidth(), canoe.getLength()), startY, ((UniformDistributedLoad) l).getRxScaled(beam.getWidth(), canoe.getLength()), endY));
         }
 
         rescaledGraphics.sort(Comparator.comparingDouble(Graphic::getX));
@@ -287,7 +287,7 @@ public class BeamController implements Initializable
             if (Objects.equals(direction, "Down")) {mag *= -1;}
 
             // Validate the load is being added within the length of the canoe
-            if (!(0 <= x && x <= canoe.getLen()))
+            if (!(0 <= x && x <= canoe.getLength()))
                 mainController.showSnackbar("Load must be contained within the canoe's length");
             // Validate the load is in the accepted magnitude range
             else if (Math.abs(mag) < 0.01)
@@ -332,7 +332,7 @@ public class BeamController implements Initializable
             if (Objects.equals(direction, "Down")) {mag *= -1;}
 
             // User entry validations
-            if (!(0 <= x && xR <= canoe.getLen()))
+            if (!(0 <= x && xR <= canoe.getLength()))
                 mainController.showSnackbar("Load must be contained within the canoe's length");
             else if (!(xR > x))
                 mainController.showSnackbar("Right interval bound must be greater than the left bound");
@@ -345,7 +345,7 @@ public class BeamController implements Initializable
                     enableEmptyLoadListSettings(false);
 
                     // Add the load to canoe, and update ui state
-                    UniformDistributedLoad d = new UniformDistributedLoad(x, xR, mag);
+                    UniformDistributedLoad d = new UniformDistributedLoad(mag, x, xR);
                     addArrowBoxGraphic(d);
                     updateLoadListView();
                 }
@@ -377,7 +377,7 @@ public class BeamController implements Initializable
     private void addPointLoadGraphic(PointLoad pLoad)
     {
         // x coordinate in beamContainer for load
-        double scaledX = pLoad.getXScaled(beam.getWidth(), canoe.getLen()); // x position in the beamContainer
+        double scaledX = pLoad.getXScaled(beam.getWidth(), canoe.getLength()); // x position in the beamContainer
 
         AddLoadResult addResult = canoe.addLoad(pLoad);
 
@@ -445,6 +445,8 @@ public class BeamController implements Initializable
         generateGraphsButton.setDisable(false);
         disableLoadingControls(true);
         loadListView.setDisable(false);
+        for (Button button : mainController.getModuleToolBarButtons()) {button.setDisable(true);}
+
 
         if (standsRadioButton.isSelected())
         {
@@ -484,10 +486,7 @@ public class BeamController implements Initializable
 
     private void undoStandsSolve()
     {
-        solveSystemButton.setText("Solve System");
-        solveSystemButton.setOnAction(e -> solveSystem());
-        generateGraphsButton.setDisable(true);
-        disableLoadingControls(false);
+        undoSolveUpdateUI();
 
         // Simulate the user selecting and deleting the supports which are always the first and last load
         loadListView.getSelectionModel().select(0);
@@ -505,10 +504,7 @@ public class BeamController implements Initializable
     private void undoFloatingSolve()
     {
         // TODO: Implement (after solveFloatingSystem())
-        solveSystemButton.setText("Solve System");
-        solveSystemButton.setOnAction(e -> solveSystem());
-        generateGraphsButton.setDisable(true);
-        disableLoadingControls(false);
+        undoSolveUpdateUI();
     }
 
     private void solveSubmergedSystem()
@@ -520,10 +516,16 @@ public class BeamController implements Initializable
     private void undoSubmergedSolve()
     {
         // TODO: Implement (after solveSubmergedSystem())
+        undoSolveUpdateUI();
+    }
+
+    private void undoSolveUpdateUI()
+    {
         solveSystemButton.setText("Solve System");
         solveSystemButton.setOnAction(e -> solveSystem());
         generateGraphsButton.setDisable(true);
         disableLoadingControls(false);
+        for (Button button : mainController.getModuleToolBarButtons()) {button.setDisable(false);}
     }
 
     /**
@@ -593,22 +595,36 @@ public class BeamController implements Initializable
     }
 
     /**
-     * Upload a JSON file representing the Canoe object model
+     * Upload a YAML file representing the Canoe object model
      * This populates the list view and beam graphic with the new model
      */
-    public void uploadCanoe()
-    {
-        // TODO
+    public void uploadCanoe() throws IOException {
+        Canoe uploadedCanoe = FileSerializationService.importCanoeFromYAML(mainController.getPrimaryStage());
+
+        WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view");
+
+        // If clicked yes on alert AND then
+        if (uploadedCanoe != null)
+        {
+            canoe = uploadedCanoe;
+
+            // Update UI to new canoe
+            updateLoadListView();
+            refreshLoadGraphics();
+        }
     }
 
     /**
-     * Download the Canoe object model with the loads currently on the canoe as a JSON file
+     * Download the Canoe object model with the loads currently on the canoe as a YAML file
      * This can be uploaded later with uploadCanoe() or manually modified
      */
-    public void downloadCanoe() throws JsonProcessingException {
-        // TODO
-        String JSONCanoe = (new ObjectMapper()).writeValueAsString(canoe);
-        System.out.println(JSONCanoe);
+    public void downloadCanoe() throws IOException {
+        File downloadedFile = FileSerializationService.exportCanoeToYAML(canoe, mainController.getPrimaryStage());
+
+        String message = downloadedFile != null ? "Successfully downloaded canoe as \"" + downloadedFile.getName() + "\" to " + downloadedFile.getParentFile().getName()
+                : "Download cancelled";
+
+        mainController.showSnackbar(message);
     }
 
     /**
@@ -621,13 +637,7 @@ public class BeamController implements Initializable
 
         Button downloadCanoeButton = new Button();
         downloadCanoeButton.getStyleClass().add("transparent-button");
-        downloadCanoeButton.setOnAction(event -> {
-            try {
-                downloadCanoe();
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        downloadCanoeButton.setOnAction(event -> {try {downloadCanoe();} catch (IOException e) {throw new RuntimeException(e);}});
         FontAwesomeIcon downloadIcon = new FontAwesomeIcon();
         downloadIcon.setFill(Paint.valueOf("WHITE"));
         downloadIcon.setGlyphName("ARROW_CIRCLE_O_DOWN");
@@ -637,7 +647,7 @@ public class BeamController implements Initializable
 
         Button uploadCanoeButton = new Button();
         uploadCanoeButton.getStyleClass().add("transparent-button");
-        uploadCanoeButton.setOnAction(event -> uploadCanoe());
+        uploadCanoeButton.setOnAction(event -> {try {uploadCanoe();} catch (IOException e) {throw new RuntimeException(e);}});
         FontAwesomeIcon uploadIcon = new FontAwesomeIcon();
         uploadIcon.setFill(Paint.valueOf("WHITE"));
         uploadIcon.setGlyphName("ARROW_CIRCLE_O_UP");
@@ -667,7 +677,7 @@ public class BeamController implements Initializable
         canoe = Canoe.getInstance();
 
         // Reset module state if switching PADDL modules
-        canoe.setLen(0);
+        canoe.setLength(0);
         canoe.getPLoads().clear();
         canoe.getDLoads().clear();
         canoe.getLoads().clear();

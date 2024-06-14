@@ -62,7 +62,7 @@ public class DiagramService {
         xAxis.setAutoRanging(false);
         xAxis.setLabel("Distance [m]");
         xAxis.setLowerBound(0);
-        xAxis.setUpperBound(canoe.getLen());
+        xAxis.setUpperBound(canoe.getLength());
         return xAxis;
     }
 
@@ -134,7 +134,7 @@ public class DiagramService {
             points.removeFirst();
 
         // Same idea for last two points if they double up
-        if (points.getLast().getX() == canoe.getLen() && points.get(points.size() - 2).getX() == canoe.getLen())
+        if (points.getLast().getX() == canoe.getLength() && points.get(points.size() - 2).getX() == canoe.getLength())
             points.removeLast();
 
         // Remove zero from the partition list (always first as the TreeSet is sorted ascending)
@@ -234,7 +234,7 @@ public class DiagramService {
     private static Map<Double, UniformDistributedLoad> getDistributedLoadEndMap(Canoe canoe)
     {
         Map<Double, UniformDistributedLoad> map = new HashMap<>();
-        for (UniformDistributedLoad load : canoe.getDLoads()) {map.put((double) Math.round(load.getRX() * 100) / 100, load);}
+        for (UniformDistributedLoad load : canoe.getDLoads()) {map.put((double) Math.round(load.getRx() * 100) / 100, load);}
         return map;
     }
 
@@ -344,7 +344,7 @@ public class DiagramService {
         List<Interval> intervals = new ArrayList<>();
         // Go through each x index from 0 to [canoe length], incrementing it by 0.01 each time
         // This tests each possible starting point to check for a load beginning/ending/occurring at this x coordinate.
-        for (int i = 0; i < canoe.getLen() * 100; i ++) {
+        for (int i = 0; i < canoe.getLength() * 100; i ++) {
             double x = (double) i / 100;
 
             // If a distributed load starts here
@@ -375,11 +375,11 @@ public class DiagramService {
             }
         }
         // Add a final interval to the end of the canoe with the current magnitude and slope
-        intervals.add(new Interval(prevX, canoe.getLen(), magnitude, slope));
+        intervals.add(new Interval(prevX, canoe.getLength(), magnitude, slope));
 
         // Sort the list, process them to a map of unique points, and return the points as a list
         intervals.sort(Comparator.comparingDouble(a -> a.startX));
-        Map<String, DiagramPoint> diagramPoints = getDiagramPointMap(intervals, canoe.getLen());
+        Map<String, DiagramPoint> diagramPoints = getDiagramPointMap(intervals, canoe.getLength());
         ArrayList<DiagramPoint> sfdPoints = new ArrayList<>(diagramPoints.values());
 
         // Return the generated points
@@ -416,7 +416,7 @@ public class DiagramService {
                 currY = bmdPoints.getLast().getY();
             }
         }
-        bmdPoints.add(new DiagramPoint(canoe.getLen(),0));
+        bmdPoints.add(new DiagramPoint(canoe.getLength(),0));
 
         return bmdPoints;
     }

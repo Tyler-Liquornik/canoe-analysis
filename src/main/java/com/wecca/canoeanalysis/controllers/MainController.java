@@ -6,6 +6,7 @@ import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.controls.CustomJFXSnackBarLayout;
+import com.wecca.canoeanalysis.services.FileSerializationService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import javafx.animation.*;
 import javafx.fxml.FXML;
@@ -23,25 +24,24 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
+@Getter @Setter
 public class MainController implements Initializable {
 
-    @FXML @Getter
+    @FXML
     private Button hamburgerButton;
-    @FXML @Getter
+    @FXML
     private AnchorPane menuDrawer;
-    @FXML @Getter
+    @FXML
     private JFXHamburger hamburger;
-    @FXML @Getter
+    @FXML
     private JFXSnackbar snackbar;
-    @FXML @Getter @Setter
+    @FXML
     private AnchorPane root, moduleInjectionRoot, toolBarPane;
 
-    @Getter @Setter
     private Scene primaryScene;
-    @Getter @Setter
     private Stage primaryStage;
-    private double xOffset = 0;
-    private double yOffset = 0;
+    private double stageXOffset = 0;
+    private double stageYOffset = 0;
 
     // Drawer state management
     private boolean isDrawerOpen = false;
@@ -51,17 +51,13 @@ public class MainController implements Initializable {
     // Each module will have a set of custom toolbar buttons on top of the minimize and close window buttons
     private List<Button> moduleToolBarButtons = new ArrayList<>();
 
-    // Colors / Theme static management
-    private boolean isLightThemeEnabled;
-    private String currentPrimaryThemeColor; // #BB86FC
-
     /**
      * Mouse pressed event handler to record the current mouse position
      * @param event triggers the method
      */
     public void draggableWindowGetLocation(MouseEvent event) {
-        xOffset = event.getSceneX();
-        yOffset = event.getSceneY();
+        stageXOffset = event.getSceneX();
+        stageYOffset = event.getSceneY();
     }
 
     /** Mouse dragged event handler to move the window
@@ -71,8 +67,8 @@ public class MainController implements Initializable {
     {
         if (primaryStage != null)
         {
-            primaryStage.setX(event.getScreenX() - xOffset);
-            primaryStage.setY(event.getScreenY() - yOffset);
+            primaryStage.setX(event.getScreenX() - stageXOffset);
+            primaryStage.setY(event.getScreenY() - stageYOffset);
         }
     }
 
@@ -252,5 +248,8 @@ public class MainController implements Initializable {
         initializeHamburger();
         initializeDrawer();
         initializeSnackbar();
+
+        // Pass references to services that require it
+        FileSerializationService.setMainController(this);
     }
 }

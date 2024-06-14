@@ -1,7 +1,7 @@
 @import url("font.css");
 
 * {
-    -fx-primary:  #BB86FC; /*Marker, generated at runtime*/
+    -fx-primary: #F96C37; /*Marker, generated at runtime*/
 
     -fx-background: #121212;
     -fx-surface: #202020;
@@ -117,7 +117,7 @@
 
 .dismiss-button {
     -fx-text-fill: -fx-primary;
-    -fx-font-family: bold;
+    -fx-font-weight: bold;
 }
 
 .transparent-button,
