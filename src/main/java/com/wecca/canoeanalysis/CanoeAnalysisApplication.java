@@ -49,7 +49,8 @@ public class CanoeAnalysisApplication extends Application {
         Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png");
         stage.getIcons().add(icon);
 
-        ColorManagerService.putColorPalette("primary", "#BB86FC");
+        // TODO: should come from a properties file that persists color preferences
+        ColorManagerService.putColorPalette("primary", "#F96C37");
     }
 
     public static void main(String[] args) {

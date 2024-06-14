@@ -7,6 +7,7 @@ module com.wecca.canoeanalysis {
     requires org.burningwave.core;
     requires fontawesomefx;
     requires java.desktop;
+    requires com.fasterxml.jackson.dataformat.yaml;
 
     exports com.wecca.canoeanalysis;
     opens com.wecca.canoeanalysis to javafx.fxml;

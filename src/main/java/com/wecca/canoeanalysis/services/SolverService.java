@@ -30,7 +30,7 @@ public class SolverService {
         List<PointLoad> pointLoads = new ArrayList<>();
 
         for (UniformDistributedLoad load : loads) {
-            double dLoadLength = load.getRX() - load.getX();
+            double dLoadLength = load.getRx() - load.getX();
             double pLoadMagnitude = load.getMag() * dLoadLength;
             double pLoadPosition = load.getX() + (dLoadLength / 2);
             pointLoads.add(new PointLoad(pLoadMagnitude, pLoadPosition, false));
@@ -60,12 +60,12 @@ public class SolverService {
         }
 
         // Resulting forces combine to counteract the moments and total combined point load
-        double forceEnd = -1 * momentSum / canoe.getLen();
+        double forceEnd = -1 * momentSum / canoe.getLength();
         double forceStart = -1 * sumOfPointLoads - forceEnd;
 
         // Create and return resulting loads
         PointLoad pLoadStart = new PointLoad(forceStart, STAND_OFFSET, true);
-        PointLoad pLoadEnd = new PointLoad(forceEnd, canoe.getLen() - STAND_OFFSET, true);
+        PointLoad pLoadEnd = new PointLoad(forceEnd, canoe.getLength() - STAND_OFFSET, true);
         pointLoads.clear();
         pointLoads.addAll(Arrays.asList(pLoadStart, pLoadEnd));
         return pointLoads;

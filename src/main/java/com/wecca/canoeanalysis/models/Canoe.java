@@ -1,5 +1,7 @@
 package com.wecca.canoeanalysis.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,19 +10,15 @@ import java.util.*;
 /**
  * Singleton class representing the canoe for the application.
  */
-@Getter @Setter
+@Getter @Setter @EqualsAndHashCode
 public final class Canoe
 {
-    private double len; // canoe length
-    private final ArrayList<PointLoad> pLoads; // point loads on the canoe
-    private final ArrayList<UniformDistributedLoad> dLoads; // uniformly distributed loads on the canoe
-    private final ArrayList<Load> loads; // will sync with listview and loadContainer order
+    private double length;
+    private final ArrayList<Load> loads;
     private static Canoe canoe = null;
 
     private Canoe() {
-        this.len = 0;
-        this.pLoads = new ArrayList<>();
-        this.dLoads = new ArrayList<>();
+        this.length = 0;
         this.loads = new ArrayList<>();
     }
 
@@ -47,14 +45,13 @@ public final class Canoe
                     l.setMag(0.00); // In case mag is -0 so that the negative doesn't display to the user
 
             // Search for other loads at the same position, and combine their magnitudes
-            for (PointLoad pLoad : pLoads) {
+            for (PointLoad pLoad : getPLoads()) {
                 if (pLoad.getX() == l.getX() && !((PointLoad) l).isSupport())
                 {
                     double newMag = pLoad.getMag() + l.getMag();
                     if (newMag == 0)
                     {
                         removeLoad(loads.indexOf(pLoad));
-                        pLoads.remove(pLoad);
                         return AddLoadResult.REMOVED;
                     }
                     loads.get(loads.indexOf(pLoad)).setMag(newMag);
@@ -62,17 +59,12 @@ public final class Canoe
                     return AddLoadResult.COMBINED;
                 }
             }
-
-            pLoads.add((PointLoad) l);
-            pLoads.sort(Comparator.comparingDouble(PointLoad::getX));
             loads.add(l);
             loads.sort(Comparator.comparingDouble(Load::getX));
         }
 
         else if (l instanceof UniformDistributedLoad)
         {
-            dLoads.add((UniformDistributedLoad) l);
-            dLoads.sort(Comparator.comparingDouble(UniformDistributedLoad::getX));
             loads.add(l);
             loads.sort(Comparator.comparingDouble(Load::getX));
         }
@@ -80,6 +72,7 @@ public final class Canoe
         return AddLoadResult.ADDED;
     }
 
+    @JsonIgnore
     public int getMaxLoadIndex() {
         if (loads.isEmpty()) {return -1;}
 
@@ -97,52 +90,40 @@ public final class Canoe
         return maxIndex;
     }
 
-    public int getMinLoadIndex() {
-        if (loads.isEmpty()) {return -1;}
-
-        int minIndex = 0;
-        double min = 0;
-        for (int i = 0; i < loads.size(); i++)
-        {
-            double mag = Math.abs(loads.get(i).getMag());
-            if (mag < min)
-            {
-                min = mag;
-                minIndex = i;
-            }
-        }
-        return minIndex;
-    }
-
-    /**
-     * Regenerates the pLoads and dLoads lists from the main loads list.
-     */
-    private void regenerateLoads() {
-        pLoads.clear();
-        dLoads.clear();
-
-        for (Load load : loads) {
-            if (load instanceof PointLoad) {
-                pLoads.add((PointLoad) load);
-            } else if (load instanceof UniformDistributedLoad) {
-                dLoads.add((UniformDistributedLoad) load);
-            }
-        }
-
-        // Sort the regenerated lists
-        pLoads.sort(Comparator.comparingDouble(PointLoad::getX));
-        dLoads.sort(Comparator.comparingDouble(UniformDistributedLoad::getX));
-    }
-
     public void removeLoad(int index) {
         loads.remove(index);
-        regenerateLoads();
     }
 
     public void clearLoads() {
         loads.clear();
-        pLoads.clear();
-        dLoads.clear();
+    }
+
+    @JsonIgnore
+    public List<PointLoad> getPLoads() {
+
+        List<PointLoad> pLoads = new ArrayList<>();
+
+        for (Load load : loads)
+        {
+            if (load instanceof PointLoad pLoad)
+                pLoads.add(pLoad);
+        }
+
+        return pLoads;
+    }
+
+    @JsonIgnore
+    public List<UniformDistributedLoad> getDLoads() {
+
+        List<UniformDistributedLoad> dLoads = new ArrayList<>();
+
+        for (Load load : loads)
+        {
+            if (load instanceof UniformDistributedLoad dLoad)
+                dLoads.add(dLoad);
+        }
+
+        return dLoads;
     }
 
 
@@ -150,6 +131,7 @@ public final class Canoe
      * Gets x values that separate piecewise intervals with unique equations on the SFD/BMD
      * @return the set of points as x values along the length of the canoe
      */
+    @JsonIgnore
     public TreeSet<Double> getSectionEndPoints()
     {
         // Tree ensures sorting, set prevents duplicates
@@ -160,12 +142,12 @@ public final class Canoe
         {
             s.add(l.getX());
             if (l instanceof UniformDistributedLoad distributedLoad)
-                s.add(distributedLoad.getRX());
+                s.add(distributedLoad.getRx());
         }
 
         // Add canoe endpoints to the set if they aren't already
         s.add(0.0);
-        s.add(canoe.getLen());
+        s.add(canoe.getLength());
 
         return s;
     }

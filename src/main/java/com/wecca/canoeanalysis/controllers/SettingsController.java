@@ -12,6 +12,9 @@ import java.util.ResourceBundle;
 
 public class SettingsController implements Initializable {
 
+    // TODO: settings state management
+    // Note: colors managed through ColorPaletteService
+    private boolean isDisplayImperialUnitsEnabled;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -19,10 +22,10 @@ public class SettingsController implements Initializable {
     }
 
     public void setPrimaryColor(ActionEvent actionEvent) throws IOException, URISyntaxException {
-        ColorManagerService.putColorPalette("primary", getBackgroundColorHexString(((Button) actionEvent.getSource())));
+        ColorManagerService.putColorPalette("primary", getButtonBackgroundAsColorHexString(((Button) actionEvent.getSource())));
     }
 
-    public static String getBackgroundColorHexString(Button button)
+    public static String getButtonBackgroundAsColorHexString(Button button)
     {
         String style = button.getStyle();
         String[] styleProperties = style.split(";");

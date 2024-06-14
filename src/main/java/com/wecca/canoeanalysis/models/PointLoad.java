@@ -1,17 +1,17 @@
 package com.wecca.canoeanalysis.models;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 
 @Setter @Getter
 public class PointLoad extends Load
 {
-    private boolean isSupport; // assumed false
+    @JsonIgnore
+    private boolean isSupport;
 
     public PointLoad(double mag, double x, boolean isSupport) {
-        super(x, mag);
+        super("Point Load", mag, x);
         this.isSupport = isSupport;
     }
 

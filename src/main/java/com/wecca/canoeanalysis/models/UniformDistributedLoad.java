@@ -1,28 +1,26 @@
 package com.wecca.canoeanalysis.models;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
 @Setter @Getter
 public class UniformDistributedLoad extends Load {
 
-    private double rX; // right bound of the distributed load
+    private double rx; // right bound of the distributed load
 
-    public UniformDistributedLoad(double x, double rX, double mag) {
-        super(x, mag);
-        this.rX = rX;
+    public UniformDistributedLoad(double mag, double x, double rx) {
+        super("Distributed Load", mag, x);
+        this.rx = rx;
     }
 
-    public double getRXScaled(double containerWidth, double canoeLength)
+    public double getRxScaled(double containerWidth, double canoeLength)
     {
-        return this.rX / canoeLength * containerWidth;
+        return this.rx / canoeLength * containerWidth;
     }
 
     @Override
     public String toString()
     {
-        return String.format("Load: %.2fkN/m, [%.2fm, %.2fm]", mag, x, rX);
+        return String.format("Load: %.2fkN/m, [%.2fm, %.2fm]", mag, x, rx);
     }
 }
