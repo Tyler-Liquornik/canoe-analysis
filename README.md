@@ -1,7 +1,7 @@
 # PADDL
 
 ## About
-PADDL, Precision Analysis & Design for Dynamic Loading is a JavaFx desktop app built to save the D&A team some hassle with tools to simplify technical civil engineering work. An emphasis is put on effective design to lower the barrier of technical civil engineering knowledge required to make informed, analytical civil engineering decisions in less time.
+PADDL, Precision Analysis & Design for Dynamic Loading is a JavaFx desktop app built to simplify technical civil engineering design and analysis. An emphasis is put on effective design to lower the barrier of technical civil engineering knowledge required to make informed, analytical civil engineering decisions in less time.
 
 <div style="display: flex; flex-direction: row;">
     <img src="images/UI.png" alt="UI" style="width: 49%;" />
@@ -54,70 +54,17 @@ Currently, the program has one module to which will be used to model the canoe a
 
 <b>Here as some features planned to be added as listed from 06/24:</b>
 
-<html lang="en">
-<head>
-    <title></title>
-    <style>
-        input[type=checkbox]:checked + label {
-            color: blue;
-        }
-    </style>
-</head>
-<body>
-    <ul>
-        <li>
-            <input type="checkbox" id="task1" checked>
-            <label for="task1">Side Menu Drawer</label>
-            <ul>
-                <li>
-                    <input type="checkbox" id="task1-1" checked>
-                    <label for="task1-1">Template links to other modules</label>
-                </li>
-                <li>
-                    <input type="checkbox" id="task1-2" checked>
-                    <label for="task1-2">About Page</label>
-                </li>
-            </ul>
-        </li>
-        <li>
-            <input type="checkbox" id="task2" checked>
-            <label for="task2">Snackbar error popups</label>
-        </li>
-        <li>
-            <input type="checkbox" id="task3">
-            <label for="task3">Get piecewise function for graph equations</label>
-            <ul>
-                <li>
-                    <input type="checkbox" id="task3-1">
-                    <label for="task3-1">Get maximum SF/BM</label>
-                </li>
-                <li>
-                    <input type="checkbox" id="task3-2">
-                    <label for="task3-2">Output equations as LaTeX</label>
-                </li>
-            </ul>
-        </li>
-        <li>
-            <input type="checkbox" id="task4">
-            <label for="task4">Editing non-support loads (current idea is making them draggable)</label>
-        </li>
-        <li>
-            <input type="checkbox" id="task5">
-            <label for="task5">Import/Export the canoe object as JSON</label>
-        </li>
-        <li>
-            <input type="checkbox" id="task6" checked>
-            <label for="task6">Unification of color system between Java and CSS code</label>
-            <ul>
-                <li>
-                    <input type="checkbox" id="task6-1" checked>
-                    <label for="task6-1">Customizable colors in settings</label>
-                </li>
-            </ul>
-        </li>
-    </ul>
-</body>
-</html>
+- [X] Side Menu Drawer
+    - [X] Template links to other modules
+    - [X] About Page
+- [X] Snackbar error popups
+- [ ] Get piecewise function for graph equations
+  - [ ] Get maximum SF/BM
+  - [ ] Output equations as LaTeX
+- [ ] Editing non-support loads (current idea is making them draggable)
+- [ ] Import/Export the canoe object as JSON
+- [X] Unification of color system between Java and CSS code
+  - [X] Customizable colors in settings
 
 <!-- CONTRIBUTING -->
 ## Contributing
