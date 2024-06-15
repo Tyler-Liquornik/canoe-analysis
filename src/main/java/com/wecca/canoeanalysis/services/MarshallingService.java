@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.wecca.canoeanalysis.controllers.BeamController;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.Canoe;
 import com.wecca.canoeanalysis.models.Load;
@@ -11,22 +12,30 @@ import com.wecca.canoeanalysis.models.UniformDistributedLoad;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Setter;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FileSerializationService {
+public class MarshallingService {
 
     @Setter
     private static MainController mainController;
+    @Setter
+    private static BeamController beamController;
     private static final ObjectMapper yamlMapper;
 
     static {
         yamlMapper = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
         yamlMapper.findAndRegisterModules();
     }
+
+    /**
+     * Prompts the user the download the current cano model to a YAML representation
+     * @param canoe the canoe model to download to YAML
+     * @param stage the stage to have the FileChooser model popup onto
+     * @return the YAML file downloaded, or null if no file was downloaded
+     */
     public static File exportCanoeToYAML(Canoe canoe, Stage stage) throws IOException {
         // Create a file chooser
         FileChooser fileChooser = new FileChooser();
@@ -48,8 +57,11 @@ public class FileSerializationService {
         return fileToDownload;
     }
 
-    public static Canoe importCanoeFromYAML(Stage stage)
-    {
+    /**
+     * Prompts the user the upload a YAML file representing a new canoe model to upload
+     * @param stage the stage to have the FileChooser model popup onto
+     */
+    public static void importCanoeFromYAML(Stage stage) {
         // Create a file chooser
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Upload Canoe");
@@ -65,24 +77,20 @@ public class FileSerializationService {
         {
             try
             {
-                Canoe canoe = yamlMapper.readValue(fileToUpload, Canoe.class);
-                Canoe combinedPointLoadsCanoe = combinePointLoads(canoe);
-
-                if (!canoe.equals(combinedPointLoadsCanoe))
-                    mainController.showSnackbar("Some points loads have been combined");
-
-                return validateCanoe(yamlMapper.readValue(fileToUpload, Canoe.class));
-            }
-            catch (IOException ex)
-            {
-                mainController.showSnackbar("Could not parse \"" + fileToUpload.getName() + "\"." );
-                return null;
+                Canoe canoe = combinePointLoads(validateCanoe(yamlMapper.readValue(fileToUpload, Canoe.class)));
+                beamController.setUploadedCanoe(canoe);
+            } catch (IOException ex) {
+                System.out.println(ex.getMessage());
+                mainController.showSnackbar("Could not parse \"" + fileToUpload.getName() + "\".");
             }
         }
-        else
-            return null;
     }
 
+    /**
+     * Validate basic assumptions of the canoe model that would not be caught be the YAML parser
+     * @param canoe the canoe which may be an invalid model
+     * @return the same canoe if valid, or null if invalid
+     */
     private static Canoe validateCanoe(Canoe canoe) {
 
         if (canoe.getLength() < 0.01)
@@ -93,7 +101,7 @@ public class FileSerializationService {
 
         for (Load load : canoe.getLoads())
         {
-            if (load.getMag() < 0.01)
+            if (Math.abs(load.getMag()) < 0.01)
             {
                 mainController.showSnackbar("All load magnitudes must be at least 0.01kN");
                 canoe = null;
@@ -117,6 +125,12 @@ public class FileSerializationService {
         return canoe;
     }
 
+    /**
+     * Automatically combines point loads at the same x
+     * Will avoid solving issues with a YAML model with point loads at the same x, still allowing the user to upload it
+     * @param canoe the canoe which may have point loads at the same x value
+     * @return the canoe with point loads combined if any loads were any the same x
+     */
     private static Canoe combinePointLoads(Canoe canoe)
     {
         double length = canoe.getLength();

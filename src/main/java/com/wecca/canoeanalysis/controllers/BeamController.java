@@ -6,6 +6,7 @@ import com.wecca.canoeanalysis.components.graphics.*;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.services.*;
+import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.ControlUtils;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.scene.Node;
@@ -13,7 +14,6 @@ import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
-import javafx.scene.paint.Paint;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -48,10 +48,9 @@ public class BeamController implements Initializable
     @FXML
     private AnchorPane loadContainer, beamContainer;
 
-    @Setter
-    private static MainController mainController;
-
-    @Getter
+    @Getter @Setter
+    private MainController mainController;
+    @Getter @Setter
     private Canoe canoe; // entity class that models the canoe as a beam
     private Beam beam; // The graphic of the beam
 
@@ -603,18 +602,16 @@ public class BeamController implements Initializable
      * This populates the list view and beam graphic with the new model
      */
     public void uploadCanoe() throws IOException {
-        Canoe uploadedCanoe = FileSerializationService.importCanoeFromYAML(mainController.getPrimaryStage());
+        MarshallingService.setBeamController(this);
 
         // Alert the user they will be overriding the current loads on the canoe by uploading a new one
         if (!canoe.getLoads().isEmpty())
         {
             UploadAlertController.setBeamController(this);
-            UploadAlertController.setUploadedCanoe(uploadedCanoe);
             WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view.fxml", 350, 230);
         }
         else
-            setUploadedCanoe(uploadedCanoe);
-
+            MarshallingService.importCanoeFromYAML(mainController.getPrimaryStage());
     }
 
     public void setUploadedCanoe(Canoe uploadedCanoe)
@@ -625,10 +622,10 @@ public class BeamController implements Initializable
             canoe = uploadedCanoe;
 
             // Update UI to new canoe
+            enableEmptyLoadListSettings(uploadedCanoe.getLoads().isEmpty());
             updateLoadListView();
             refreshLoadGraphics();
-            if (uploadedCanoe.getLoads().isEmpty())
-                enableEmptyLoadListSettings(true);
+            axisLabelR.setText(String.format("%.2f m", canoe.getLength()));
 
             // Notify the user of the result
             mainController.showSnackbar("Successfully uploaded Canoe Model");
@@ -640,10 +637,10 @@ public class BeamController implements Initializable
      * This can be uploaded later with uploadCanoe() or manually modified
      */
     public void downloadCanoe() throws IOException {
-        File downloadedFile = FileSerializationService.exportCanoeToYAML(canoe, mainController.getPrimaryStage());
+        File downloadedFile = MarshallingService.exportCanoeToYAML(canoe, mainController.getPrimaryStage());
 
-        String message = downloadedFile != null ? "Successfully downloaded canoe as \"" + downloadedFile.getName() + "\" to " + downloadedFile.getParentFile().getName()
-                : "Download cancelled";
+        String message = downloadedFile != null ? "Successfully downloaded canoe as \"" + downloadedFile.getName()
+                + "\" to " + downloadedFile.getParentFile().getName() : "Download cancelled";
 
         mainController.showSnackbar(message);
     }
@@ -660,7 +657,7 @@ public class BeamController implements Initializable
         downloadCanoeButton.getStyleClass().add("transparent-button");
         downloadCanoeButton.setOnAction(event -> {try {downloadCanoe();} catch (IOException e) {throw new RuntimeException(e);}});
         FontAwesomeIcon downloadIcon = new FontAwesomeIcon();
-        downloadIcon.setFill(Paint.valueOf("WHITE"));
+        downloadIcon.setFill(ColorPaletteService.getColor("white"));
         downloadIcon.setGlyphName("ARROW_CIRCLE_O_DOWN");
         downloadIcon.setSize("25");
         downloadCanoeButton.setGraphic(downloadIcon);
@@ -670,7 +667,7 @@ public class BeamController implements Initializable
         uploadCanoeButton.getStyleClass().add("transparent-button");
         uploadCanoeButton.setOnAction(event -> {try {uploadCanoe();} catch (IOException e) {throw new RuntimeException(e);}});
         FontAwesomeIcon uploadIcon = new FontAwesomeIcon();
-        uploadIcon.setFill(Paint.valueOf("WHITE"));
+        uploadIcon.setFill(ColorPaletteService.getColor("white"));
         uploadIcon.setGlyphName("ARROW_CIRCLE_O_UP");
         uploadIcon.setSize("25");
         uploadCanoeButton.setGraphic(uploadIcon);
