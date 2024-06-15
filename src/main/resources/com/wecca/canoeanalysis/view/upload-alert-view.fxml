@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import com.jfoenix.controls.JFXButton?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.AnchorPane?>
 
-
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="550.0" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.UploadAlertController">
-
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="200.0" prefWidth="350.0" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.UploadAlertController">
+   <children>
+      <JFXButton layoutX="220.0" layoutY="213.0" maxWidth="80.0" minWidth="80.0" onAction="#closeWindow" prefWidth="80.0" styleClass="action-object" text="Cancel" AnchorPane.bottomAnchor="20.0" AnchorPane.rightAnchor="120.0" />
+      <JFXButton layoutX="450.0" layoutY="238.0" maxWidth="80.0" minWidth="80.0" onAction="#continueToCanoeUpload" prefWidth="80.0" styleClass="action-object" text="Accept" AnchorPane.bottomAnchor="20.0" AnchorPane.rightAnchor="20.0" />
+      <Label layoutX="27.0" layoutY="27.0" styleClass="title" text="Upload Canoe Model?" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0" />
+      <Label alignment="TOP_CENTER" graphicTextGap="5.0" layoutX="30.0" layoutY="64.0" prefHeight="56.0" prefWidth="290.0" style="-fx-line-spacing: 5px;" text="This will override the current Canoe Model. Ensure you download the current Canoe Model first if you do not wish to lose it permanently." wrapText="true" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" />
+   </children>
 </AnchorPane>

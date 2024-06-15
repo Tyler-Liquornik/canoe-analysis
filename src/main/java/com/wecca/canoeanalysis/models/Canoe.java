@@ -1,6 +1,8 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,26 +13,19 @@ import java.util.*;
  * Singleton class representing the canoe for the application.
  */
 @Getter @Setter @EqualsAndHashCode
-public final class Canoe
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = PointLoad.class, name = "Point Load"),
+        @JsonSubTypes.Type(value = UniformDistributedLoad.class, name = "Distributed Load")
+})
+public class Canoe
 {
     private double length;
     private final ArrayList<Load> loads;
-    private static Canoe canoe = null;
 
-    private Canoe() {
+    public Canoe() {
         this.length = 0;
         this.loads = new ArrayList<>();
-    }
-
-    /**
-     * Get the Canoe singleton instance. Use this rather than a constructor.
-     * @return the Canoe singleton.
-     */
-    public static Canoe getInstance() {
-        if (canoe == null) {
-            canoe = new Canoe();
-        }
-        return canoe;
     }
 
     public AddLoadResult addLoad(Load l) {
@@ -147,7 +142,7 @@ public final class Canoe
 
         // Add canoe endpoints to the set if they aren't already
         s.add(0.0);
-        s.add(canoe.getLength());
+        s.add(length);
 
         return s;
     }

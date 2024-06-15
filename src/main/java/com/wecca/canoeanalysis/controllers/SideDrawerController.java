@@ -46,11 +46,11 @@ public class SideDrawerController implements Initializable {
 
     // Auxiliary button handlers
     public void clickSettingsButton() throws IOException {
-        WindowManagerService.openUtilityWindow("Settings", "view/settings-view.fxml");
+        WindowManagerService.openUtilityWindow("Settings", "view/settings-view.fxml", 550, 325);
     }
 
     public void clickAboutButton() throws IOException {
-        WindowManagerService.openUtilityWindow("About Me", "view/about-view.fxml");
+        WindowManagerService.openUtilityWindow("About Me", "view/about-view.fxml", 550, 325);
     }
 
     public void selectModule(Module module, FontAwesomeIcon icon) throws IOException {
