@@ -2,10 +2,10 @@ package com.wecca.canoeanalysis.services;
 
 import com.jfoenix.controls.JFXDecorator;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.components.diagrams.DiagramPoint;
 import com.wecca.canoeanalysis.models.Canoe;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.image.Image;
@@ -33,7 +33,7 @@ public class WindowManagerService {
      * @param points the points to render on the diagram.
      * @param yUnits the units of the y-axis on the diagram.
      */
-    public static void openDiagramWindow(String title, Canoe canoe, List<DiagramPoint> points, String yUnits)
+    public static void openDiagramWindow(String title, Canoe canoe, List<Point2D> points, String yUnits)
     {
         // Initializing the stage and main pane
         Stage popupStage = new Stage();
@@ -64,14 +64,14 @@ public class WindowManagerService {
     /**
      * @param title the title of the window
      */
-    public static void openUtilityWindow(String title, String fxmlPath) throws IOException {
+    public static void openUtilityWindow(String title, String fxmlPath, int windowWidth, int windowHeight) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource(fxmlPath));
         AnchorPane rootPane = fxmlLoader.load();
 
         Stage stage = new Stage();
         JFXDecorator decorator = new JFXDecorator(stage, new VBox(rootPane), false, false, true);
 
-        Scene scene = new Scene(decorator, 550, 325);
+        Scene scene = new Scene(decorator, windowWidth, windowHeight);
         addStyleSheet(scene, "css/style.css");
         stage.setTitle(title);
         stage.setOnShown(event -> rootPane.requestFocus());

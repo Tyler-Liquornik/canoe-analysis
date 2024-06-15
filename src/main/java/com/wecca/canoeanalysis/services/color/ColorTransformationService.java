@@ -5,8 +5,8 @@ import javafx.scene.paint.Color;
 
 /**
  * <p>
- * ColorTransformationService dynamically updates colors in styles.css and the ColorPalette class, allowing
- * flexible color palette customization by applying transformations to a base color.
+ * ColorTransformationService dynamically updates with Java based CSS functions enabled by the reflection API.
+ * Styles are accessible from ColorPalette for in-Java styling and style.css for in-CSS styling.
  * </p>
  * The goal of this is to overcome the issue of JavaFX CSS lacking functionality with color functions,
  * which combined with the lack of documentation makes dealing with CSS colors a challenging task

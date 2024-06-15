@@ -14,6 +14,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
 import javafx.scene.paint.Paint;
+import lombok.Getter;
 import lombok.Setter;
 
 import java.io.File;
@@ -50,6 +51,7 @@ public class BeamController implements Initializable
     @Setter
     private static MainController mainController;
 
+    @Getter
     private Canoe canoe; // entity class that models the canoe as a beam
     private Beam beam; // The graphic of the beam
 
@@ -445,8 +447,6 @@ public class BeamController implements Initializable
         generateGraphsButton.setDisable(false);
         disableLoadingControls(true);
         loadListView.setDisable(false);
-        for (Button button : mainController.getModuleToolBarButtons()) {button.setDisable(true);}
-
 
         if (standsRadioButton.isSelected())
         {
@@ -525,7 +525,6 @@ public class BeamController implements Initializable
         solveSystemButton.setOnAction(e -> solveSystem());
         generateGraphsButton.setDisable(true);
         disableLoadingControls(false);
-        for (Button button : mainController.getModuleToolBarButtons()) {button.setDisable(false);}
     }
 
     /**
@@ -534,19 +533,24 @@ public class BeamController implements Initializable
      */
     private void disableLoadingControls(boolean b)
     {
-        List<Control> controls = Arrays.asList(solveSystemButton, pointLoadButton, distributedLoadButton,
-                floatingRadioButton, standsRadioButton, submergedRadioButton, distributedMagnitudeComboBox,
-                distributedMagnitudeTextField, pointMagnitudeComboBox, pointMagnitudeTextField, pointLocationTextField,
-                pointLocationComboBox, pointDirectionComboBox, distributedIntervalTextFieldL,
-                distributedIntervalTextFieldR, distributedIntervalComboBox, distributedDirectionComboBox,
-                deleteLoadButton, clearLoadsButton, loadListView, pointDirectionLabel, pointMagnitudeLabel,
-                pointLocationLabel, pointTitleLabel, supportTitleLabel, distributedDirectionLabel,
-                distributedMagntiudeLabel, distributedIntervalLabel, distributedTitleLabel
-        );
+        List<Control> controls = new ArrayList<>(Arrays.asList
+        (
+            solveSystemButton, pointLoadButton, distributedLoadButton, floatingRadioButton, standsRadioButton,
+            submergedRadioButton, distributedMagnitudeComboBox, distributedMagnitudeTextField, pointMagnitudeComboBox,
+            pointMagnitudeTextField, pointLocationTextField, pointLocationComboBox, pointDirectionComboBox,
+            distributedIntervalTextFieldL, distributedIntervalTextFieldR, distributedIntervalComboBox,
+            distributedDirectionComboBox, deleteLoadButton, clearLoadsButton, loadListView, pointDirectionLabel,
+            pointMagnitudeLabel, pointLocationLabel, pointTitleLabel, supportTitleLabel, distributedDirectionLabel,
+            distributedMagntiudeLabel, distributedIntervalLabel, distributedTitleLabel
+        ));
 
-        for (Control control : controls) {
-            control.setDisable(b);
+        for (Button button : mainController.getModuleToolBarButtons()) {
+            controls.add(button);
+            double opacity = b ? 0.4 : 1.0;
+            button.setStyle("-fx-opacity: " + opacity);
         }
+
+        for (Control control : controls) {control.setDisable(b);}
     }
 
     /**
@@ -601,16 +605,33 @@ public class BeamController implements Initializable
     public void uploadCanoe() throws IOException {
         Canoe uploadedCanoe = FileSerializationService.importCanoeFromYAML(mainController.getPrimaryStage());
 
-        WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view");
+        // Alert the user they will be overriding the current loads on the canoe by uploading a new one
+        if (!canoe.getLoads().isEmpty())
+        {
+            UploadAlertController.setBeamController(this);
+            UploadAlertController.setUploadedCanoe(uploadedCanoe);
+            WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view.fxml", 350, 230);
+        }
+        else
+            setUploadedCanoe(uploadedCanoe);
 
-        // If clicked yes on alert AND then
+    }
+
+    public void setUploadedCanoe(Canoe uploadedCanoe)
+    {
         if (uploadedCanoe != null)
         {
+            // Update the canoe model
             canoe = uploadedCanoe;
 
             // Update UI to new canoe
             updateLoadListView();
             refreshLoadGraphics();
+            if (uploadedCanoe.getLoads().isEmpty())
+                enableEmptyLoadListSettings(true);
+
+            // Notify the user of the result
+            mainController.showSnackbar("Successfully uploaded Canoe Model");
         }
     }
 
@@ -674,7 +695,7 @@ public class BeamController implements Initializable
         addModuleToolBarButtons();
 
         // Instantiate the canoe
-        canoe = Canoe.getInstance();
+        canoe = new Canoe();
 
         // Reset module state if switching PADDL modules
         canoe.setLength(0);

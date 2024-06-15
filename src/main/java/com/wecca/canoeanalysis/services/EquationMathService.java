@@ -1,6 +1,6 @@
 package com.wecca.canoeanalysis.services;
 
-import com.wecca.canoeanalysis.components.diagrams.DiagramPoint;
+import javafx.geometry.Point2D;
 
 import java.util.HashMap;
 
@@ -11,7 +11,7 @@ public class EquationMathService {
      * @param points the three points on the parabola, preferred to be the interval endpoints to reduce error due to the numerical nature of point generation
      * @return the coefficients [a, b]
      */
-    public static double[] getLinearCoefficients(DiagramPoint[] points)
+    public static double[] getLinearCoefficients(Point2D[] points)
     {
         double x1 = points[0].getX();
         double y1 = points[0].getY();
@@ -53,7 +53,7 @@ public class EquationMathService {
      * @param points the three points on the parabola, preferred to be the interval endpoints and critical points to reduce error due to the numerical nature of point generation
      * @return the coefficients [a, b, c]
      */
-    public static double[] getQuadraticCoefficients(DiagramPoint[] points)
+    public static double[] getQuadraticCoefficients(Point2D[] points)
     {
         double x1 = points[0].getX();
         double y1 = points[0].getY();

@@ -1,11 +1,11 @@
 package com.wecca.canoeanalysis.services;
 
-import com.wecca.canoeanalysis.components.diagrams.DiagramPoint;
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.Interval;
 import com.wecca.canoeanalysis.models.Canoe;
 import com.wecca.canoeanalysis.models.PointLoad;
 import com.wecca.canoeanalysis.models.UniformDistributedLoad;
+import javafx.geometry.Point2D;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
@@ -22,7 +22,7 @@ public class DiagramService {
      * @param yUnits the label for the Y-axis units
      * @return the configured AreaChart
      */
-    public static AreaChart<Number, Number> setupChart(Canoe canoe, List<DiagramPoint> points, String yUnits) {
+    public static AreaChart<Number, Number> setupChart(Canoe canoe, List<Point2D> points, String yUnits) {
         // Setting up the axes
         NumberAxis yAxis = setupYAxis(yUnits);
         FixedTicksNumberAxis xAxis = setupXAxis(canoe);
@@ -74,7 +74,7 @@ public class DiagramService {
      * @param points the list of diagram points to be plotted
      * @param yUnits the label for the Y-axis units
      */
-    private static void addSeriesToChart(AreaChart<Number, Number> chart, Canoe canoe, List<DiagramPoint> points, String yUnits) {
+    private static void addSeriesToChart(AreaChart<Number, Number> chart, Canoe canoe, List<Point2D> points, String yUnits) {
         TreeSet<Double> criticalPoints = canoe.getSectionEndPoints();
         List<XYChart.Series> intervalsAsSeries = DiagramService.getIntervalsAsSeries(canoe, points, yUnits, criticalPoints, chart);
         for (XYChart.Series series : intervalsAsSeries) {
@@ -82,15 +82,15 @@ public class DiagramService {
         }
     }
 
-    static List<XYChart.Series> getIntervalsAsSeries(Canoe canoe, List<DiagramPoint> points, String yUnits, TreeSet<Double> criticalPoints, AreaChart<Number, Number> chart) {
+    static List<XYChart.Series> getIntervalsAsSeries(Canoe canoe, List<Point2D> points, String yUnits, TreeSet<Double> criticalPoints, AreaChart<Number, Number> chart) {
         // Adding the sections of the pseudo piecewise function separately
         boolean set = false; // only need to set the name of the series once since its really one piecewise function
-        List<List<DiagramPoint>> intervals = partitionPoints(canoe, points, criticalPoints);
+        List<List<Point2D>> intervals = partitionPoints(canoe, points, criticalPoints);
         List<XYChart.Series> intervalsAsSeries = new ArrayList<>();
-        for (List<DiagramPoint> interval : intervals)
+        for (List<Point2D> interval : intervals)
         {
             XYChart.Series series = new XYChart.Series();
-            for (DiagramPoint point : interval)
+            for (Point2D point : interval)
             {
                 series.getData().add(new XYChart.Data<>(point.getX(), point.getY()));
             }
@@ -115,10 +115,10 @@ public class DiagramService {
      * @param partitions the locations where the form of the piecewise changes
      * @return a list containing each section of the piecewise pseudo functions with unique form
      */
-    private static List<List<DiagramPoint>> partitionPoints(Canoe canoe, List<DiagramPoint> points, TreeSet<Double> partitions)
+    private static List<List<Point2D>> partitionPoints(Canoe canoe, List<Point2D> points, TreeSet<Double> partitions)
     {
         // Initializing lists
-        List<List<DiagramPoint>> partitionedIntervals = new ArrayList<>();
+        List<List<Point2D>> partitionedIntervals = new ArrayList<>();
         List<Double> partitionsList = new ArrayList<>(partitions);
 
         // Testing
@@ -143,13 +143,13 @@ public class DiagramService {
 
         // Keep track of intervals and points that partition them
         int partitionIndex = 0;
-        List<DiagramPoint> interval = new ArrayList<>();
+        List<Point2D> interval = new ArrayList<>();
 
         // Put all the points into intervals
         for (int i = 0; i < points.size(); i++)
         {
             // Get the current point
-            DiagramPoint point = points.get(i);
+            Point2D point = points.get(i);
 
             // Keep adding points to the interval until the partition index reached
             // Empty interval means this is the first point to be included
@@ -245,19 +245,19 @@ public class DiagramService {
      * @param canoeLength the length of the canoe.
      * @return the generated map.
      */
-    private static Map<String, DiagramPoint> getDiagramPointMap(List<Interval> intervals, double canoeLength)
+    private static Map<String, Point2D> getDiagramPointMap(List<Interval> intervals, double canoeLength)
     {
-        Map<String, DiagramPoint> diagramPoints = new LinkedHashMap<>();
+        Map<String, Point2D> diagramPoints = new LinkedHashMap<>();
         double rollingMag = 0;
         for (Interval interval : intervals) {
-            DiagramPoint start = new DiagramPoint(interval.startX, rollingMag + interval.magnitude);
+            Point2D start = new Point2D(interval.startX, rollingMag + interval.magnitude);
             if (!diagramPoints.containsKey(start.toString())) {
                 diagramPoints.put(start.toString(), start);
                 // Add the magnitude of the initial point load to the rolling magnitude
                 rollingMag += interval.magnitude;
             }
 
-            DiagramPoint end = new DiagramPoint(interval.endX, rollingMag + interval.slope * (interval.endX - interval.startX));
+            Point2D end = new Point2D(interval.endX, rollingMag + interval.slope * (interval.endX - interval.startX));
             if (!diagramPoints.containsKey(end.toString())) {
                 diagramPoints.put(end.toString(), end);
                 // Add the magnitude of the ending distributed load to the rolling magnitude
@@ -266,7 +266,7 @@ public class DiagramService {
         }
 
         // Add an end point at (length, 0)
-        DiagramPoint end = new DiagramPoint(canoeLength, 0);
+        Point2D end = new Point2D(canoeLength, 0);
         if (!diagramPoints.containsKey(end)) {
             diagramPoints.put(end.toString(), end);
         }
@@ -294,9 +294,9 @@ public class DiagramService {
      * @param startY the baseline y value for the parabola.
      * @return the list of generated points along the parabola.
      */
-    private static List<DiagramPoint> generateParabolicPoints(DiagramPoint start, DiagramPoint end, double startY)
+    private static List<Point2D> generateParabolicPoints(Point2D start, Point2D end, double startY)
     {
-        List<DiagramPoint> points = new ArrayList<>();
+        List<Point2D> points = new ArrayList<>();
 
         // Record the prevX, x, prevY, and y for the dy and dx
         double prevX;
@@ -314,7 +314,7 @@ public class DiagramService {
             y += (x - prevX) * slope;
             // Calculate the area of the section (integral) and set the BMD value at x to this area
             double sectionArea = calculateArea(prevX, x, Math.min(prevY, y), Math.max(prevY, y));
-            points.add(new DiagramPoint(roundXDigits(x, 3), roundXDigits(startY + sectionArea, 4)));
+            points.add(new Point2D(roundXDigits(x, 3), roundXDigits(startY + sectionArea, 4)));
             startY += sectionArea;
         }
 
@@ -330,7 +330,7 @@ public class DiagramService {
      * @param canoe the canoe object with loads.
      * @return the list of points to render for the SFD.
      */
-    public static List<DiagramPoint> generateSfdPoints(Canoe canoe)
+    public static List<Point2D> generateSfdPoints(Canoe canoe)
     {
         // Get maps for each load type for efficient processing
         Map<Double, PointLoad> pointLoadMap = getPointLoadMap(canoe);
@@ -379,8 +379,8 @@ public class DiagramService {
 
         // Sort the list, process them to a map of unique points, and return the points as a list
         intervals.sort(Comparator.comparingDouble(a -> a.startX));
-        Map<String, DiagramPoint> diagramPoints = getDiagramPointMap(intervals, canoe.getLength());
-        ArrayList<DiagramPoint> sfdPoints = new ArrayList<>(diagramPoints.values());
+        Map<String, Point2D> diagramPoints = getDiagramPointMap(intervals, canoe.getLength());
+        ArrayList<Point2D> sfdPoints = new ArrayList<>(diagramPoints.values());
 
         // Return the generated points
         return new ArrayList<>(sfdPoints);
@@ -391,20 +391,20 @@ public class DiagramService {
      * @param canoe the canoe object with loads.
      * @return the list of points to render for the BMD.
      */
-    public static List<DiagramPoint> generateBmdPoints(Canoe canoe)
+    public static List<Point2D> generateBmdPoints(Canoe canoe)
     {
         // Gets the SFD points for the canoe
-        List<DiagramPoint> sfdPoints = generateSfdPoints(canoe);
-        List<DiagramPoint> bmdPoints = new ArrayList<>();
-        DiagramPoint firstPoint = sfdPoints.getFirst();
+        List<Point2D> sfdPoints = generateSfdPoints(canoe);
+        List<Point2D> bmdPoints = new ArrayList<>();
+        Point2D firstPoint = sfdPoints.getFirst();
 
-        bmdPoints.add(new DiagramPoint(0,0));
+        bmdPoints.add(new Point2D(0,0));
         double currY = 0;
         for (int i = 1; i < sfdPoints.size(); i++) {
-            DiagramPoint curr = sfdPoints.get(i);
+            Point2D curr = sfdPoints.get(i);
             // If the two consecutive points are on the same vertical line, create a diagonal line for the BMD
             if (curr.getY() == firstPoint.getY()) {
-                bmdPoints.add(new DiagramPoint(roundXDigits(curr.getX(), 3), roundXDigits(currY + firstPoint.getY() * (curr.getX() - firstPoint.getX()), 4)));
+                bmdPoints.add(new Point2D(roundXDigits(curr.getX(), 3), roundXDigits(currY + firstPoint.getY() * (curr.getX() - firstPoint.getX()), 4)));
             }
             // If the two consecutive points are connected via a diagonal line, create a parabola for the BMD
             if (curr.getX() != firstPoint.getX() && curr.getY() != firstPoint.getY()) {
@@ -416,7 +416,7 @@ public class DiagramService {
                 currY = bmdPoints.getLast().getY();
             }
         }
-        bmdPoints.add(new DiagramPoint(canoe.getLength(),0));
+        bmdPoints.add(new Point2D(canoe.getLength(),0));
 
         return bmdPoints;
     }
