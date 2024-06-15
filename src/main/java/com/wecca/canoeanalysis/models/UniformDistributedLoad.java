@@ -1,9 +1,10 @@
 package com.wecca.canoeanalysis.models;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Setter @Getter
+@Setter @Getter @NoArgsConstructor
 public class UniformDistributedLoad extends Load {
 
     private double rx; // right bound of the distributed load

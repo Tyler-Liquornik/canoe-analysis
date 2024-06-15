@@ -6,7 +6,7 @@ import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.controls.CustomJFXSnackBarLayout;
-import com.wecca.canoeanalysis.services.FileSerializationService;
+import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import javafx.animation.*;
 import javafx.fxml.FXML;
@@ -144,7 +144,7 @@ public class MainController implements Initializable {
         snackbarLayout.setPrefHeight(50);
         Button dismissButton = snackbarLayout.getAction();
         dismissButton.getStyleClass().add("dismiss-button");
-        JFXSnackbar.SnackbarEvent snackbarEvent = new JFXSnackbar.SnackbarEvent(snackbarLayout, Duration.seconds(3));
+        JFXSnackbar.SnackbarEvent snackbarEvent = new JFXSnackbar.SnackbarEvent(snackbarLayout, Duration.seconds(5));
         snackbar.fireEvent(snackbarEvent);
     }
 
@@ -250,6 +250,6 @@ public class MainController implements Initializable {
         initializeSnackbar();
 
         // Pass references to services that require it
-        FileSerializationService.setMainController(this);
+        MarshallingService.setMainController(this);
     }
 }

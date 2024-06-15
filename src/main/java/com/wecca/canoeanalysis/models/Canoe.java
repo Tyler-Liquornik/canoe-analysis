@@ -13,11 +13,6 @@ import java.util.*;
  * Singleton class representing the canoe for the application.
  */
 @Getter @Setter @EqualsAndHashCode
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = PointLoad.class, name = "Point Load"),
-        @JsonSubTypes.Type(value = UniformDistributedLoad.class, name = "Distributed Load")
-})
 public class Canoe
 {
     private double length;
@@ -28,7 +23,8 @@ public class Canoe
         this.loads = new ArrayList<>();
     }
 
-    public AddLoadResult addLoad(Load l) {
+    public AddLoadResult addLoad(Load l)
+    {
         if (l instanceof PointLoad)
         {
             // Do not add the load if it is zero valued unless if is a support
@@ -120,7 +116,6 @@ public class Canoe
 
         return dLoads;
     }
-
 
     /**
      * Gets x values that separate piecewise intervals with unique equations on the SFD/BMD

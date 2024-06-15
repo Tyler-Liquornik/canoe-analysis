@@ -2,11 +2,13 @@ package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Setter @Getter
+@Setter @Getter @NoArgsConstructor
 public class PointLoad extends Load
 {
+    // Download / Upload buttons disabled after solve so this should never be included in the YAML model
     @JsonIgnore
     private boolean isSupport;
 
