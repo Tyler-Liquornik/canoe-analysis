@@ -62,7 +62,7 @@ Currently, the program has one module to which will be used to model the canoe a
   - [ ] Get maximum SF/BM
   - [ ] Display equations as LaTeX (formatted + raw)
 - [ ] Editable non-support loads
-- [X] Import/Export the canoe object as JSON
+- [X] Import/Export the canoe object as YAML
 - [X] Unification of color system between Java and CSS code
   - [X] Customizable colors in settings
 

@@ -33,7 +33,7 @@ public class DiagramService {
         chart.setLegendVisible(false);
 
         // Adding the data series to the chart
-        addSeriesToChart(chart, canoe, points, yUnits);
+        addSeriesToChart(canoe, points, yUnits, chart);
 
         return chart;
     }
@@ -66,23 +66,10 @@ public class DiagramService {
         return xAxis;
     }
 
-    /**
-     * Adds data series to the chart.
-     *
-     * @param chart the chart to which the data series will be added
-     * @param canoe the canoe object containing section end points and length
-     * @param points the list of diagram points to be plotted
-     * @param yUnits the label for the Y-axis units
-     */
-    private static void addSeriesToChart(AreaChart<Number, Number> chart, Canoe canoe, List<Point2D> points, String yUnits) {
-        TreeSet<Double> criticalPoints = canoe.getSectionEndPoints();
-        List<XYChart.Series> intervalsAsSeries = DiagramService.getIntervalsAsSeries(canoe, points, yUnits, criticalPoints, chart);
-        for (XYChart.Series series : intervalsAsSeries) {
-            chart.getData().add(series);
-        }
-    }
+    public static void addSeriesToChart(Canoe canoe, List<Point2D> points, String yUnits, AreaChart<Number, Number> chart) {
 
-    static List<XYChart.Series> getIntervalsAsSeries(Canoe canoe, List<Point2D> points, String yUnits, TreeSet<Double> criticalPoints, AreaChart<Number, Number> chart) {
+        TreeSet<Double> criticalPoints = canoe.getSectionEndPoints();
+
         // Adding the sections of the pseudo piecewise function separately
         boolean set = false; // only need to set the name of the series once since its really one piecewise function
         List<List<Point2D>> intervals = partitionPoints(canoe, points, criticalPoints);
@@ -104,7 +91,6 @@ public class DiagramService {
             chart.getData().add(series);
             intervalsAsSeries.add(series);
         }
-        return intervalsAsSeries;
     }
 
     /**
