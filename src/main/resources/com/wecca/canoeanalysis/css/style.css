@@ -115,7 +115,7 @@
     -fx-text-fill: -fx-primary;
 }
 
-.dismiss-button {
+.jfx-snackbar-action {
     -fx-text-fill: -fx-primary;
     -fx-font-weight: bold;
 }
