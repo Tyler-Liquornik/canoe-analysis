@@ -4,8 +4,8 @@ import com.jfoenix.controls.JFXHamburger;
 import com.jfoenix.controls.JFXSnackbar;
 import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
+import com.jfoenix.controls.JFXSnackbarLayout;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.components.controls.CustomJFXSnackBarLayout;
 import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import javafx.animation.*;
@@ -140,10 +140,8 @@ public class MainController implements Initializable {
     public void showSnackbar(String message) {
         closeSnackBar(snackbar);
         initializeSnackbar(); // Reinitialization is required to fix visual bugs
-        CustomJFXSnackBarLayout snackbarLayout = new CustomJFXSnackBarLayout(message, "DISMISS", event -> closeSnackBar(snackbar));
+        JFXSnackbarLayout snackbarLayout = new JFXSnackbarLayout(message, "DISMISS", event -> closeSnackBar(snackbar));
         snackbarLayout.setPrefHeight(50);
-        Button dismissButton = snackbarLayout.getAction();
-        dismissButton.getStyleClass().add("dismiss-button");
         JFXSnackbar.SnackbarEvent snackbarEvent = new JFXSnackbar.SnackbarEvent(snackbarLayout, Duration.seconds(5));
         snackbar.fireEvent(snackbarEvent);
     }
