@@ -9,6 +9,8 @@ import javafx.geometry.Point2D;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 
 import java.util.*;
 
@@ -178,6 +180,7 @@ public class DiagramService {
 
     /**
      * Convert the canoe's point loads to a map of [x coordinate] : [point load].
+     * Note: a regular map suffices instead of a multimap as point loads at the same x value should always combine
      * @param canoe the canoe object.
      * @return the generated map.
      */
@@ -205,9 +208,9 @@ public class DiagramService {
      * @param canoe the canoe object.
      * @return the generated map.
      */
-    private static Map<Double, UniformDistributedLoad> getDistributedLoadStartMap(Canoe canoe)
+    private static Multimap<Double, UniformDistributedLoad> getDistributedLoadStartMap(Canoe canoe)
     {
-        Map<Double, UniformDistributedLoad> map = new HashMap<>();
+        Multimap<Double, UniformDistributedLoad> map = ArrayListMultimap.create();
         for (UniformDistributedLoad load : canoe.getDLoads()) {map.put((double) Math.round(load.getX() * 100) / 100, load);}
         return map;
     }
@@ -217,9 +220,9 @@ public class DiagramService {
      * @param canoe the canoe object.
      * @return the generated map.
      */
-    private static Map<Double, UniformDistributedLoad> getDistributedLoadEndMap(Canoe canoe)
+    private static Multimap<Double, UniformDistributedLoad> getDistributedLoadEndMap(Canoe canoe)
     {
-        Map<Double, UniformDistributedLoad> map = new HashMap<>();
+        Multimap<Double, UniformDistributedLoad> map = ArrayListMultimap.create();
         for (UniformDistributedLoad load : canoe.getDLoads()) {map.put((double) Math.round(load.getRx() * 100) / 100, load);}
         return map;
     }
@@ -320,8 +323,8 @@ public class DiagramService {
     {
         // Get maps for each load type for efficient processing
         Map<Double, PointLoad> pointLoadMap = getPointLoadMap(canoe);
-        Map<Double, UniformDistributedLoad> distributedLoadStartMap = getDistributedLoadStartMap(canoe);
-        Map<Double, UniformDistributedLoad> distributedLoadEndMap = getDistributedLoadEndMap(canoe);
+        Multimap<Double, UniformDistributedLoad> distributedLoadStartMap = getDistributedLoadStartMap(canoe);
+        Multimap<Double, UniformDistributedLoad> distributedLoadEndMap = getDistributedLoadEndMap(canoe);
 
         // Maintain the x coordinate, slope, and magnitude of the previous interval
         double prevX = 0;
@@ -338,7 +341,7 @@ public class DiagramService {
                 // Apply the magnitude and the rolling slope
                 intervals.add(new Interval(prevX, x, magnitude, slope));
                 // Increment the slope, set the x coordinate, and clear the magnitude
-                slope += distributedLoadStartMap.get(x).getMag();
+                for (UniformDistributedLoad load : distributedLoadStartMap.get(x)) {slope += load.getMag();}
                 prevX = x;
                 magnitude = 0;
             }
@@ -347,7 +350,7 @@ public class DiagramService {
                 // Apply the magnitude and the rolling slope
                 intervals.add(new Interval(prevX, x, magnitude, slope));
                 // Decrement the slope, set the x coordinate, and clear the magnitude
-                slope -= distributedLoadEndMap.get(x).getMag();
+                for (UniformDistributedLoad load : distributedLoadEndMap.get(x)) {slope -= load.getMag();}
                 prevX = x;
                 magnitude = 0;
             }
