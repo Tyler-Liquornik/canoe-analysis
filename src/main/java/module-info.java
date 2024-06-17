@@ -8,6 +8,7 @@ module com.wecca.canoeanalysis {
     requires fontawesomefx;
     requires java.desktop;
     requires com.fasterxml.jackson.dataformat.yaml;
+    requires com.google.common;
 
     exports com.wecca.canoeanalysis;
     opens com.wecca.canoeanalysis to javafx.fxml;
