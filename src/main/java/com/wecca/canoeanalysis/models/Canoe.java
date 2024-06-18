@@ -1,23 +1,56 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.util.*;
 
 @Getter @Setter @EqualsAndHashCode
-public class Canoe
-{
+public class Canoe {
     private double length;
     private final ArrayList<Load> loads;
 
-    public Canoe() {
-        this.length = 0;
+    @JsonIgnore
+    private double concreteDensity; // [kg/m^3]
+    @JsonIgnore
+    private double bulkheadDensity; // [kg/m^3]
+
+    @JsonIgnore
+    private List<CanoeSection> sections;
+
+    public Canoe(double concreteDensity, double bulkheadDensity) {
+        this.sections = new ArrayList<>();
         this.loads = new ArrayList<>();
+        this.concreteDensity = concreteDensity;
+        this.bulkheadDensity = bulkheadDensity;
+        this.length = 0;
+        assertContinuousHullShape();
+    }
+
+    public Canoe(List<CanoeSection> sections, List<PointLoad> pointLoads, List<UniformDistributedLoad> udlLoads, double concreteDensity, double bulkheadDensity) {
+        this.sections = sections;
+        this.loads = new ArrayList<>();
+        this.loads.addAll(pointLoads);
+        this.loads.addAll(udlLoads);
+        this.concreteDensity = concreteDensity;
+        this.bulkheadDensity = bulkheadDensity;
+        this.length = sections.stream().mapToDouble(CanoeSection::getLength).sum();
+        assertContinuousHullShape();
+    }
+
+    private void assertContinuousHullShape() {
+        for (int i = 0; i < sections.size() - 1; i++)
+        {
+            CanoeSection current = sections.get(i);
+            CanoeSection next = sections.get(i + 1);
+            double currentEnd = current.getEnd();
+            double nextStart = next.getStart();
+            double currentEndDepth = current.getHullShapeFunction().apply(currentEnd);
+            double nextStartDepth = next.getHullShapeFunction().apply(nextStart);
+            if (Math.abs(currentEndDepth - nextStartDepth) > 1e-6) // small tolerance for discontinuities in case of floating point errors
+                throw new IllegalArgumentException("Hull shape functions must form a continuous curve at section boundaries.");
+        }
     }
 
     public AddLoadResult addLoad(Load l)
@@ -62,15 +95,15 @@ public class Canoe
 
     @JsonIgnore
     public int getMaxLoadIndex() {
-        if (loads.isEmpty()) {return -1;}
+        if (loads.isEmpty()) {
+            return -1;
+        }
 
         int maxIndex = 0;
         double max = 0;
-        for (int i = 0; i < loads.size(); i++)
-        {
+        for (int i = 0; i < loads.size(); i++) {
             double mag = Math.abs(loads.get(i).getMag());
-            if (mag > max)
-            {
+            if (mag > max) {
                 max = mag;
                 maxIndex = i;
             }
@@ -88,54 +121,54 @@ public class Canoe
 
     @JsonIgnore
     public List<PointLoad> getPLoads() {
-
         List<PointLoad> pLoads = new ArrayList<>();
-
-        for (Load load : loads)
-        {
-            if (load instanceof PointLoad pLoad)
+        for (Load load : loads) {
+            if (load instanceof PointLoad pLoad) {
                 pLoads.add(pLoad);
+            }
         }
-
         return pLoads;
     }
 
     @JsonIgnore
     public List<UniformDistributedLoad> getDLoads() {
-
         List<UniformDistributedLoad> dLoads = new ArrayList<>();
-
-        for (Load load : loads)
-        {
-            if (load instanceof UniformDistributedLoad dLoad)
+        for (Load load : loads) {
+            if (load instanceof UniformDistributedLoad dLoad) {
                 dLoads.add(dLoad);
+            }
         }
-
         return dLoads;
     }
 
-    /**
-     * Gets x values that separate piecewise intervals with unique equations on the SFD/BMD
-     * @return the set of points as x values along the length of the canoe
-     */
-    @JsonIgnore
-    public TreeSet<Double> getSectionEndPoints()
-    {
-        // Tree ensures sorting, set prevents duplicates
-        TreeSet<Double> s = new TreeSet<>();
+    // Setting the length clears the sections
+    public void setLength(double length){
+        this.length = length;
+        this.sections = new ArrayList<>();
+    }
 
-        // Points included are the locations of point loads and interval boundaries of distributed loads
-        for (Load l : loads)
-        {
-            s.add(l.getX());
-            if (l instanceof UniformDistributedLoad distributedLoad)
-                s.add(distributedLoad.getRx());
+    // Setting the sections must match the length
+    public void setSections(List<CanoeSection> sections) {
+        double totalSectionLength = sections.stream().mapToDouble(CanoeSection::getLength).sum();
+        if (totalSectionLength != this.length) {
+            throw new IllegalArgumentException("Total length of sections must equal the length of the canoe.");
         }
+        this.sections = sections;
+        assertContinuousHullShape();
+    }
 
-        // Add canoe endpoints to the set if they aren't already
+
+    @JsonIgnore
+    public TreeSet<Double> getSectionEndPoints() {
+        TreeSet<Double> s = new TreeSet<>();
+        for (Load l : loads) {
+            s.add(l.getX());
+            if (l instanceof UniformDistributedLoad distributedLoad) {
+                s.add(distributedLoad.getRx());
+            }
+        }
         s.add(0.0);
         s.add(length);
-
         return s;
     }
 }

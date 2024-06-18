@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * Primary controller for longitudinal analysis of a beam
@@ -692,7 +693,35 @@ public class BeamController implements Initializable
         addModuleToolBarButtons();
 
         // Instantiate the canoe
-        canoe = new Canoe();
+        canoe = new Canoe(1056, 28.83); // hardcoded to 2024 numbers for now
+
+
+        // Console test
+        canoe.setLength(12);
+
+        // Define hull shape function
+        double a = 0.4;
+        double b = 8.0;
+        Function<Double, Double> hullShapeFunction = x -> a * (Math.pow((x / b), 2) - 1);
+
+        // Initialize the sections
+        List<CanoeSection> sections = List.of(
+                new CanoeSection(0, 2, 0.8, 0.2, hullShapeFunction),
+                new CanoeSection(2, 4, 1.0, 0.2, hullShapeFunction),
+                new CanoeSection(4, 6, 1.2, 0.2, hullShapeFunction),
+                new CanoeSection(6, 8, 1.2, 0.2, hullShapeFunction),
+                new CanoeSection(8, 10, 1.0, 0.2, hullShapeFunction),
+                new CanoeSection(10, 12, 0.8, 0.2, hullShapeFunction)
+        );
+
+        // Add sections to the canoe
+        canoe.setSections(sections);
+
+        // Solve the floating case example
+        List<UniformDistributedLoad> loads = SolverService.solveFloatingSystem(canoe);
+        for (UniformDistributedLoad load : loads) {
+            System.out.println(load);
+        }
 
         // Reset module state if switching PADDL modules
         canoe.setLength(0);
