@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.services;
 
+import com.jfoenix.controls.JFXTooltip;
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.Interval;
 import com.wecca.canoeanalysis.models.Canoe;
@@ -34,8 +35,9 @@ public class DiagramService {
         chart.setPrefSize(1125, 750);
         chart.setLegendVisible(false);
 
-        // Adding the data series to the chart
+        // Adding data to chart
         addSeriesToChart(canoe, points, yUnits, chart);
+        // addTooltipsToChart(chart, yUnits);
 
         return chart;
     }
@@ -75,13 +77,13 @@ public class DiagramService {
         // Adding the sections of the pseudo piecewise function separately
         boolean set = false; // only need to set the name of the series once since its really one piecewise function
         List<List<Point2D>> intervals = partitionPoints(canoe, points, criticalPoints);
-        List<XYChart.Series> intervalsAsSeries = new ArrayList<>();
         for (List<Point2D> interval : intervals)
         {
-            XYChart.Series series = new XYChart.Series();
+            XYChart.Series<Number, Number> series = new XYChart.Series<>();
             for (Point2D point : interval)
             {
-                series.getData().add(new XYChart.Data<>(point.getX(), point.getY()));
+                XYChart.Data<Number, Number> data = new XYChart.Data<>(point.getX(), point.getY());
+                series.getData().add(data);
             }
 
             if (!set)
@@ -91,9 +93,57 @@ public class DiagramService {
             }
             series.setName(yUnits);
             chart.getData().add(series);
-            intervalsAsSeries.add(series);
         }
     }
+
+//    public static void addTooltipsToChart(AreaChart<Number, Number> chart, String yUnits) {
+//        for (XYChart.Series<Number, Number> series : chart.getData()) {
+//            for (XYChart.Data<Number, Number> data : series.getData()) {
+//                addTooltipToData(data, yUnits);
+//            }
+//        }
+//    }
+//
+//    private static void addTooltipToData(XYChart.Data<Number, Number> data, String yUnits) {
+//        JFXTooltip tooltip = new JFXTooltip();
+//        tooltip.setText(
+//                "x: " + data.getXValue() + "\n" +
+//                "mag: " + data.getYValue() + " " + yUnits
+//        );
+//
+//        // Apply CSS styling to the tooltip (placeholder needs to work properly with color services)
+//        //  tooltip.setStyle("-fx-background-color: " + ColorManagerService.getColor("tooltipBackground") + ";"
+//        //          + "-fx-text-fill: " + ColorManagerService.getColor("tooltipText") + ";"
+//        //          + "-fx-padding: 10px;"
+//        //          + "-fx-border-color: " + ColorManagerService.getColor("tooltipBorder") + ";"
+//        //          + "-fx-border-width: 1px;");
+//
+//        data.getNode().setOnMouseEntered(event -> {
+//            double mouseY = event.getScreenY();
+//            double screenHeight = data.getNode().getScene().getWindow().getHeight();
+//
+//            // Determine tooltip position
+//            if (mouseY > screenHeight / 2) {
+//                tooltip.show(data.getNode(), event.getScreenX(), event.getScreenY() - tooltip.getHeight() - 15);
+//            } else {
+//                tooltip.show(data.getNode(), event.getScreenX(), event.getScreenY() + 15);
+//            }
+//        });
+//
+//        data.getNode().setOnMouseMoved(event -> {
+//            double mouseY = event.getScreenY();
+//            double screenHeight = data.getNode().getScene().getWindow().getHeight();
+//
+//            // Determine tooltip position
+//            if (mouseY > screenHeight / 2) {
+//                tooltip.show(data.getNode(), event.getScreenX(), event.getScreenY() - tooltip.getHeight() - 15);
+//            } else {
+//                tooltip.show(data.getNode(), event.getScreenX(), event.getScreenY() + 15);
+//            }
+//        });
+//
+//        data.getNode().setOnMouseExited(event -> tooltip.hide());
+//    }
 
     /**
      * Consider the list of points is a "pseudo piecewise function" (pseudo as discrete points are defined rather than a continuous function)
@@ -256,9 +306,7 @@ public class DiagramService {
 
         // Add an end point at (length, 0)
         Point2D end = new Point2D(canoeLength, 0);
-        if (!diagramPoints.containsKey(end)) {
-            diagramPoints.put(end.toString(), end);
-        }
+        diagramPoints.put(end.toString(), end);
         return diagramPoints;
     }
 

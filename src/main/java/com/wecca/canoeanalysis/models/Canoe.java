@@ -9,9 +9,6 @@ import lombok.Setter;
 
 import java.util.*;
 
-/**
- * Singleton class representing the canoe for the application.
- */
 @Getter @Setter @EqualsAndHashCode
 public class Canoe
 {
