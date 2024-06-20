@@ -9,6 +9,7 @@ module com.wecca.canoeanalysis {
     requires java.desktop;
     requires com.fasterxml.jackson.dataformat.yaml;
     requires com.google.common;
+    requires commons.math3;
 
     exports com.wecca.canoeanalysis;
     opens com.wecca.canoeanalysis to javafx.fxml;

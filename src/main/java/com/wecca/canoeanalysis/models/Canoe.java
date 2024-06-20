@@ -4,7 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.univariate.*;
+
 import java.util.*;
+import java.util.function.Function;
 
 @Getter @Setter @EqualsAndHashCode
 public class Canoe {
@@ -17,7 +22,7 @@ public class Canoe {
     private double bulkheadDensity; // [kg/m^3]
 
     @JsonIgnore
-    private List<CanoeSection> sections;
+    private List<HullSection> sections;
 
     public Canoe(double concreteDensity, double bulkheadDensity) {
         this.sections = new ArrayList<>();
@@ -25,31 +30,62 @@ public class Canoe {
         this.concreteDensity = concreteDensity;
         this.bulkheadDensity = bulkheadDensity;
         this.length = 0;
-        assertContinuousHullShape();
+        validateContinuousHullShape();
     }
 
-    public Canoe(List<CanoeSection> sections, List<PointLoad> pointLoads, List<UniformDistributedLoad> udlLoads, double concreteDensity, double bulkheadDensity) {
+    public Canoe(List<HullSection> sections, List<PointLoad> pointLoads, List<UniformDistributedLoad> udlLoads, double concreteDensity, double bulkheadDensity) {
         this.sections = sections;
         this.loads = new ArrayList<>();
         this.loads.addAll(pointLoads);
         this.loads.addAll(udlLoads);
         this.concreteDensity = concreteDensity;
         this.bulkheadDensity = bulkheadDensity;
-        this.length = sections.stream().mapToDouble(CanoeSection::getLength).sum();
-        assertContinuousHullShape();
+        this.length = sections.stream().mapToDouble(HullSection::getLength).sum();
+        validateContinuousHullShape();
+        validateWallThickness();
+        validateFloorThickness();
     }
 
-    private void assertContinuousHullShape() {
+    private void validateContinuousHullShape() {
         for (int i = 0; i < sections.size() - 1; i++)
         {
-            CanoeSection current = sections.get(i);
-            CanoeSection next = sections.get(i + 1);
+            HullSection current = sections.get(i);
+            HullSection next = sections.get(i + 1);
             double currentEnd = current.getEnd();
             double nextStart = next.getStart();
-            double currentEndDepth = current.getHullShapeFunction().apply(currentEnd);
-            double nextStartDepth = next.getHullShapeFunction().apply(nextStart);
+            double currentEndDepth = current.getProfileCurve().value(currentEnd);
+            double nextStartDepth = next.getProfileCurve().value(nextStart);
             if (Math.abs(currentEndDepth - nextStartDepth) > 1e-6) // small tolerance for discontinuities in case of floating point errors
                 throw new IllegalArgumentException("Hull shape functions must form a continuous curve at section boundaries.");
+        }
+    }
+
+    /**
+     * Validates that the hull shape function is non-positive on its domain [start, end]
+     * This convention allows waterline height h for a floating hull to be a distance below the top of the null at h = 0
+     * Uses calculus to avoid checking all points individually by checking only critical points and domain endpoints
+     */
+    private void validateFloorThickness() {
+
+        double canoeHeight = getCanoeHeight();
+
+        for (HullSection section : sections)
+        {
+            // This is chosen arbitrarily as a reasonable benchmark
+            if (section.getFloorThickness() > canoeHeight / 4)
+                throw new IllegalArgumentException("Hull floor thickness must not exceed 1/4 of the canoe's max height");
+        }
+    }
+
+    /**
+     * The two hull walls should not overlap and thus each hull wall can be at most half the canoes width
+     * (Although realistically the number is way smaller this is the theoretical max)
+     */
+    public void validateWallThickness() {
+        for (HullSection section : sections)
+        {
+            if (section.getWallThickness() > section.getWidth() / 2)
+                throw new IllegalArgumentException("Hull walls would be greater than the width of the canoe");
         }
     }
 
@@ -148,13 +184,40 @@ public class Canoe {
     }
 
     // Setting the sections must match the length
-    public void setSections(List<CanoeSection> sections) {
-        double totalSectionLength = sections.stream().mapToDouble(CanoeSection::getLength).sum();
+    public void setSections(List<HullSection> sections) {
+        double totalSectionLength = sections.stream().mapToDouble(HullSection::getLength).sum();
         if (totalSectionLength != this.length) {
             throw new IllegalArgumentException("Total length of sections must equal the length of the canoe.");
         }
         this.sections = sections;
-        assertContinuousHullShape();
+        validateContinuousHullShape();
+    }
+
+    public double getCanoeHeight() {
+        double canoeHeight = 0;
+        for (HullSection section : sections) {
+            // Convert the hullShapeFunction to UnivariateFunction for compatibility with Apache Commons Math
+            // Need to negate the function as BrentOptimizer finds the min, and we want the max
+            UnivariateFunction profileCurve = section.getProfileCurve();
+
+            // Use BrentOptimizer to find the maximum value of the hull shape function on [start, end]
+            UnivariateOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);
+            UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(profileCurve);
+            SearchInterval searchInterval = new SearchInterval(section.getStart(), section.getEnd());
+
+            // Optimize (find minimum of the negated function, which corresponds to the maximum of the original function)
+            UnivariatePointValuePair result = optimizer.optimize(
+                    MaxEval.unlimited(),
+                    objectiveFunction,
+                    searchInterval
+            );
+
+            double sectionHeight = result.getValue();
+
+            if (sectionHeight < canoeHeight)
+                canoeHeight = sectionHeight;
+        }
+        return canoeHeight;
     }
 
 

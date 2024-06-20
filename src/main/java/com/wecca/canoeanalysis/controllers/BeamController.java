@@ -701,27 +701,26 @@ public class BeamController implements Initializable
 
         // Define hull shape function
         double a = 0.4;
-        double b = 8.0;
-        Function<Double, Double> hullShapeFunction = x -> a * (Math.pow((x / b), 2) - 1);
+        double b = 6.0;
+        Function<Double, Double> hullProfileCurve = x -> a * (Math.pow(((x - b) / b), 2) - 1);
 
-        // Initialize the sections
-        List<CanoeSection> sections = List.of(
-                new CanoeSection(0, 2, 0.8, 0.2, hullShapeFunction),
-                new CanoeSection(2, 4, 1.0, 0.2, hullShapeFunction),
-                new CanoeSection(4, 6, 1.2, 0.2, hullShapeFunction),
-                new CanoeSection(6, 8, 1.2, 0.2, hullShapeFunction),
-                new CanoeSection(8, 10, 1.0, 0.2, hullShapeFunction),
-                new CanoeSection(10, 12, 0.8, 0.2, hullShapeFunction)
+        List<HullSection> sections = List.of(
+                new HullSection(hullProfileCurve, 0, 2, 0.8, 0.013, 0.013, true),
+                new HullSection(hullProfileCurve, 2, 4, 1.0, 0.013, 0.013, true),
+                new HullSection(hullProfileCurve, 4, 6, 1.2, 0.013, 0.013, true),
+                new HullSection(hullProfileCurve, 6, 8, 1.2, 0.013, 0.013, true),
+                new HullSection(hullProfileCurve, 8, 10, 1.0, 0.013, 0.013, true),
+                new HullSection(hullProfileCurve, 10, 12, 0.8, 0.013, 0.013, true)
         );
+//
+//        // Add sections to the canoe
+//        canoe.setSections(sections);
 
-        // Add sections to the canoe
-        canoe.setSections(sections);
-
-        // Solve the floating case example
-        List<UniformDistributedLoad> loads = SolverService.solveFloatingSystem(canoe);
-        for (UniformDistributedLoad load : loads) {
-            System.out.println(load);
-        }
+//        // Solve the floating case example
+//        List<UniformDistributedLoad> loads = SolverService.solveFloatingSystem(canoe);
+//        for (UniformDistributedLoad load : loads) {
+//            System.out.println(load);
+//        }
 
         // Reset module state if switching PADDL modules
         canoe.setLength(0);
