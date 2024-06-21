@@ -16,33 +16,52 @@ import java.util.function.Function;
  */
 @Getter @Setter @NoArgsConstructor
 public class HullSection {
+
+    /**
+     * Let the following conventions by applied for dimensioning the canoe.
+     *
+     *        7 +Z
+     *      /
+     *    /
+     *  +-----------> +X
+     *  |
+     *  |
+     *  |
+     *  V +Y
+     *
+     * "Length" refers to the +x direction
+     * "Height" refers to the to the +y direction
+     * "Width" refers to the +z direction
+     * "Thickness" refers to the positively oriented normal direction of the surface in discussion (i.e. k-hat > 0)
+     *
+     */
+
     private UnivariateFunction profileCurve;
     private double start;
     private double end;
     private double width;
-    private double wallThickness;
-    private double floorThickness;
+    private double thickness;
     private boolean fillBulkhead;
-
-    SimpsonIntegrator integrator = new SimpsonIntegrator();
+    SimpsonIntegrator integrator;
 
     /**
-     * Constructs a CanoeSection with specified dimensions and bulkhead properties.
+     * Constructs a HullSection with specified dimensions and bulkhead properties.
      *
      * @param start the start x position of the section's profile curve interval
      * @param end the end x position of the section's profile curve interval
      * @param width the width of the section in meters in the z-direction ("into/out of the screen" direction)
      * @param fillBulkhead whether the empty space between the inner hull walls should be filled with a styrofoam bulkhead
+     *                     Note: filling with bulkhead
      * @param profileCurve the function that defines the shape of the hull in this section in the xy-plane
      */
-    public HullSection(Function<Double, Double> profileCurve, double start, double end, double width, double wallThickness, double floorThickness, boolean fillBulkhead) {
+    public HullSection(Function<Double, Double> profileCurve, double start, double end, double width, double thickness, boolean fillBulkhead) {
         this.profileCurve = profileCurve::apply;
         this.start = start;
         this.end = end;
         this.width = width;
-        this.wallThickness = wallThickness;
-        this.floorThickness = floorThickness;
+        this.thickness = thickness;
         this.fillBulkhead = fillBulkhead;
+        this.integrator = new SimpsonIntegrator();
 
         validateProfileCurve(profileCurve);
     }
@@ -51,33 +70,6 @@ public class HullSection {
         return end - start;
     }
 
-    /**
-     * Calculates the depth of the section based on the hull shape function.
-     *
-     * @return the depth of the section in meters
-     */
-    public double getDepth() {
-        double maxDepth = 0;
-        double stepSize = (getLength()) / 1000;
-        for (double x = start; x <= end; x += stepSize) {
-            double depth = profileCurve.value(x);
-            if (depth > maxDepth) {
-                maxDepth = depth;
-            }
-        }
-        return maxDepth;
-    }
-
-    /**
-     * Calculates the overall density of the section considering the bulkhead and concrete densities.
-     *
-     * @param concreteDensity the density of the concrete in kg/m^3
-     * @param bulkheadDensity the density of the styrofoam bulkhead in kg/m^3
-     * @return the overall density of the section in kg/m^3
-     */
-    public double getOverallDensity(double concreteDensity, double bulkheadDensity) {
-        return (getConcreteVolume() * concreteDensity + getBulkheadVolume() * bulkheadDensity) / getLength();
-    }
 
     /**
      * Calculates the approximate volume of the section excluding inner volume between inner hull walls
@@ -85,25 +77,31 @@ public class HullSection {
      * @return the volume of concrete of the section in cubic meters
      */
     public double getConcreteVolume() {
-        double hullSectionProfileArea = integrator.integrate(1000, profileCurve, start, end);
-        double wallsVolume = hullSectionProfileArea * wallThickness * 2;
+        double hullSectionProfileArea = -integrator.integrate(1000, profileCurve, start, end); // Negated as area is below y = 0 and is thus negative area
+        double wallsVolume = hullSectionProfileArea * thickness * 2;
         UnivariateFunction slopeFunction = x -> Math.sqrt(1 + Math.pow(MathUtils.derivative(profileCurve).value(x), 2));
-        double floorVolume = floorThickness * width * integrator.integrate(1000, slopeFunction, wallThickness, width - wallThickness);
-        return wallsVolume + floorVolume;
+        double floorVolume = thickness * width * integrator.integrate(1000, slopeFunction, thickness, width - thickness);
+
+        // Bulkheads covered by a flat top which matches floor thickness and extra wall facing into the center of the canoe
+        double casingWallHeight = Math.max(profileCurve.value(start), profileCurve.value(end));
+        double bulkheadCasingVolume = fillBulkhead ? thickness * width * getLength(): 0;
+
+        return wallsVolume + floorVolume + bulkheadCasingVolume;
     }
 
     /**
-     * Calculates the volume of the
-     * @return
+     * Calculates the volume of the bulkhead that fills the section between hull walls and the hull floor
+     * If fillBulkhead is set to false this is automatically 0
+     * @return the bulkhead volume
      */
     public double getBulkheadVolume() {
-        if (fillBulkhead) {
-            double hullSectionProfileArea = integrator.integrate(1000, profileCurve, start, end);
-            double fullSectionVolume = hullSectionProfileArea * width * 2;
+        if (!fillBulkhead)
+            return 0;
+        else {
+            double hullSectionProfileArea = -integrator.integrate(1000, profileCurve, start, end);
+            double fullSectionVolume = hullSectionProfileArea * width;
             return fullSectionVolume - getConcreteVolume();
         }
-        else
-            return 0;
     }
 
     /**
