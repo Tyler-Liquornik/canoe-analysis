@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * Primary controller for longitudinal analysis of a beam
@@ -678,6 +679,83 @@ public class BeamController implements Initializable
     }
 
     /**
+     * Hardcoded temporary test function
+     * @return a list of hull sections hard-coded to model the 2024 canoe "Shark Bait"
+     * This will serve as a benchmark to for results comparison for quality assurance with respect to business logic
+     */
+    public static List<HullSection> generateSections() {
+
+        // Define hull shape
+        double a = 1.0 / 67.0;
+        double b = 3.0;
+        double c = -0.4;
+        Function<Double, Double> hullBaseProfileCurve = x -> a * Math.pow((x - b), 2) + c;
+
+        // TODO
+        double k = 306716.0 / 250000.0;
+        Function<Double, Double> hullLeftEdgeCurve = x -> k * Math.pow((x - 0.5), 2) + hullBaseProfileCurve.apply(0.5);
+        Function<Double, Double> hullRightEdgeCurve = x -> k * Math.pow((x - 5.5), 2) + hullBaseProfileCurve.apply(5.5);
+
+        List<HullSection> sections = new ArrayList<>();
+
+        // Left edge curve
+        sections.add(new HullSection(hullLeftEdgeCurve, 0, 0.5, 0.2, 0.013, true));
+
+        // Generate sections along hullBaseProfileCurve with intervals of 0.1
+        sections.add(new HullSection(hullBaseProfileCurve, 0.5, 1, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1, 1.1, 0.35, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.1, 1.2, 0.4, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.2, 1.3, 0.45, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.3, 1.4, 0.5, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.4, 1.5, 0.55, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.5, 1.6, 0.6, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.6, 1.7, 0.65, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.7, 1.8, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.8, 1.9, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.9, 2, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2, 2.1, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.1, 2.2, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.2, 2.3, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.3, 2.4, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.4, 2.5, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.5, 2.6, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.6, 2.7, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.7, 2.8, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.8, 2.9, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.9, 3, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3, 3.1, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.1, 3.2, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.2, 3.3, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.3, 3.4, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.4, 3.5, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.5, 3.6, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.6, 3.7, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.7, 3.8, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.8, 3.9, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.9, 4, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4, 4.1, 0.65, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.1, 4.2, 0.6, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.2, 4.3, 0.55, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.3, 4.4, 0.5, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.4, 4.5, 0.45, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.5, 4.6, 0.4, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.6, 4.7, 0.35, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.7, 4.8, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.8, 4.9, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.9, 5, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 5, 5.1, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 5.1, 5.2, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 5.2, 5.3, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 5.3, 5.4, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 5.4, 5.5, 0.3, 0.013, false));
+
+        // Right edge curve
+        sections.add(new HullSection(hullRightEdgeCurve, 5.5, 6, 0.2, 0.013, true));
+
+        return sections;
+    }
+
+    /**
      * Operations called on initialization of the view
      * @param url unused, part of javafx framework
      * @param resourceBundle unused, part of javafx framework
@@ -692,7 +770,25 @@ public class BeamController implements Initializable
         addModuleToolBarButtons();
 
         // Instantiate the canoe
-        canoe = new Canoe();
+        canoe = new Canoe(1056, 28.83); // hardcoded to 2024 numbers for now
+
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // The Hull Sections model is currently in early testing in the console
+
+        // Add sections to the canoe
+        canoe.setSections(generateSections());
+
+        // Solve the floating case example
+        List<UniformDistributedLoad> loads = SolverService.solveFloatingSystem(canoe);
+        for (UniformDistributedLoad load : loads) {
+            System.out.println(load);
+        }
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
         // Reset module state if switching PADDL modules
         canoe.setLength(0);
