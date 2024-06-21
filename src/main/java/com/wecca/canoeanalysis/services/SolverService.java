@@ -1,9 +1,8 @@
 package com.wecca.canoeanalysis.services;
 
-import com.wecca.canoeanalysis.models.Canoe;
-import com.wecca.canoeanalysis.models.Load;
-import com.wecca.canoeanalysis.models.PointLoad;
-import com.wecca.canoeanalysis.models.UniformDistributedLoad;
+import com.wecca.canoeanalysis.models.*;
+import com.wecca.canoeanalysis.utils.PhysicalConstants;
+import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,27 +16,7 @@ public class SolverService {
     // Offset of the stands from either end of the canoe (assume equal offset on either side)
     // Hard coded for now with stands right on the edges (0 offset), subject to change later
     private final static int STAND_OFFSET = 0;
-
-    // Private constructor to enable utility class
-    private SolverService() {}
-
-    /**
-     * Convert a list of UniformDistributedLoads to a list of PointLoads.
-     * @param loads list of distributed loads.
-     * @return list of point loads.
-     */
-    private static List<PointLoad> distributedToPoint(List<UniformDistributedLoad> loads) {
-        List<PointLoad> pointLoads = new ArrayList<>();
-
-        for (UniformDistributedLoad load : loads) {
-            double dLoadLength = load.getRx() - load.getX();
-            double pLoadMagnitude = load.getMag() * dLoadLength;
-            double pLoadPosition = load.getX() + (dLoadLength / 2);
-            pointLoads.add(new PointLoad(pLoadMagnitude, pLoadPosition, false));
-        }
-
-        return pointLoads;
-    }
+    private final static SimpsonIntegrator integrator = new SimpsonIntegrator();
 
     /**
      * Solve the "stand" system to find point loads at ends of canoe, assuming loads already on canoe.
@@ -71,15 +50,87 @@ public class SolverService {
         return pointLoads;
     }
 
-    //TODO: later
-    public static List<Load> solveFloatingSystem(Canoe canoe) {
-        List<Load> loads = new ArrayList<>();
-        return null;
+
+    /**
+     * Convert a list of UniformDistributedLoads to a list of PointLoads.
+     * @param loads list of distributed loads.
+     * @return list of point loads.
+     */
+    private static List<PointLoad> distributedToPoint(List<UniformDistributedLoad> loads) {
+        List<PointLoad> pointLoads = new ArrayList<>();
+
+        for (UniformDistributedLoad load : loads) {
+            double dLoadLength = load.getRx() - load.getX();
+            double pLoadMagnitude = load.getMag() * dLoadLength;
+            double pLoadPosition = load.getX() + (dLoadLength / 2);
+            pointLoads.add(new PointLoad(pLoadMagnitude, pLoadPosition, false));
+        }
+
+        return pointLoads;
     }
 
-    //TODO: later
+
+    public static List<UniformDistributedLoad> solveFloatingSystem(Canoe canoe) {
+        double waterlineDepth = getWaterlineHeight(canoe);
+        List<Double> buoyantForces = getBuoyantForces(canoe, waterlineDepth);
+
+        List<UniformDistributedLoad> loads = new ArrayList<>();
+        for (int i = 0; i < buoyantForces.size(); i++) {
+            HullSection section = canoe.getSections().get(i);
+            double sectionLength = section.getLength();
+            double udlMagnitude = buoyantForces.get(i) / sectionLength;
+            loads.add(new UniformDistributedLoad(udlMagnitude, section.getStart(), section.getEnd()));
+        }
+        return loads;
+    }
+
+    // Function to calculate the submerged area A(h)
+    private static double getSubmergedVolume(double h, HullSection section) {
+        System.out.println("Section: [" + section.getStart() +", " + section.getEnd() + "]");
+        System.out.println(integrator.integrate(1000, x -> Math.min(section.getProfileCurve().value(x), h), section.getStart(), section.getEnd()) * section.getWidth());
+        return integrator.integrate(1000, x -> Math.min(section.getProfileCurve().value(x), h), section.getStart(), section.getEnd()) * section.getWidth();
+    }
+
+    // Function to calculate the buoyant force for a given depth h
+    private static double getBuoyantForceOnSection(double h, HullSection section) {
+        double submergedVolume = getSubmergedVolume(h, section);
+        return PhysicalConstants.DENSITY_OF_WATER.getValue() * PhysicalConstants.GRAVITY.getValue() * submergedVolume; // Buoyant force in Newtons
+    }
+
+    // Modified buoyantForce function to calculate total buoyant force for given depth h
+    private static double getBuoyantForceOnSections(double h, List<HullSection> sections) {
+        double totalBuoyantForce = 0;
+        for (HullSection section : sections) {
+            totalBuoyantForce += getBuoyantForceOnSection(h, section);
+        }
+        return totalBuoyantForce;
+    }
+
+    // Function to calculate the waterline depth considering total load
+    private static double getWaterlineHeight(Canoe canoe) {
+        double totalCanoeWeight = canoe.getTotalWeight();
+        double depth = 0.0;
+        while (getBuoyantForceOnSections(depth, canoe.getSections()) <= totalCanoeWeight) {
+           // System.out.println("getBuoyantForceOnSections(depth, canoe.getSections()) = " + getBuoyantForceOnSections(depth, canoe.getSections()));
+            depth += 0.01; // Increment depth in small steps
+        }
+        return depth;
+    }
+
+    // Function to calculate the buoyant forces for each section at the given waterline depth
+    private static List<Double> getBuoyantForces(Canoe canoe, double waterlineDepth) {
+        List<Double> buoyantForces = new ArrayList<>();
+        for (HullSection section : canoe.getSections()) {
+            double force = getBuoyantForceOnSection(waterlineDepth, section);
+            buoyantForces.add(force);
+        }
+        return buoyantForces;
+    }
+
+    // TODO: later
     public static List<Load> solveSubmergedSystem(Canoe canoe) {
         List<Load> loads = new ArrayList<>();
         return null;
     }
 }
+

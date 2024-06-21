@@ -138,7 +138,7 @@ public class MarshallingService {
         newLoads.addAll(canoe.getPLoads());
         newLoads.addAll(canoe.getDLoads());
 
-        Canoe newCanoe = new Canoe();
+        Canoe newCanoe = new Canoe(1056, 28.83); // hardcoded to 2024 numbers for now
         newCanoe.setLength(length);
         for (Load load : newLoads) {newCanoe.addLoad(load);}
 
