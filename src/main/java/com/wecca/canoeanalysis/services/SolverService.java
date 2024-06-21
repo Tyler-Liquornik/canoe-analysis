@@ -1,7 +1,6 @@
 package com.wecca.canoeanalysis.services;
 
 import com.wecca.canoeanalysis.models.*;
-import com.wecca.canoeanalysis.utils.MathUtils;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
 
@@ -70,14 +69,10 @@ public class SolverService {
         return pointLoads;
     }
 
-    /**
-     * Solve the floating system to find the waterline depth and distribute buoyant forces across sections.
-     * @param canoe the canoe system to solve.
-     * @return list of loads including the distributed buoyant forces.
-     */
+
     public static List<UniformDistributedLoad> solveFloatingSystem(Canoe canoe) {
-        double waterlineDepth = calculateWaterlineDepth(canoe);
-        List<Double> buoyantForces = calculateBuoyantForces(canoe, waterlineDepth);
+        double waterlineDepth = getWaterlineHeight(canoe);
+        List<Double> buoyantForces = getBuoyantForces(canoe, waterlineDepth);
 
         List<UniformDistributedLoad> loads = new ArrayList<>();
         for (int i = 0; i < buoyantForces.size(); i++) {
@@ -87,13 +82,6 @@ public class SolverService {
             loads.add(new UniformDistributedLoad(udlMagnitude, section.getStart(), section.getEnd()));
         }
         return loads;
-    }
-
-    // Hull shape function: Define the shape of the canoe's hull
-    // This is gonna stay hard coded for now
-    // TODO: increase the accuracy of the hardcoded function to have steeper edges
-    private static double f(double x, double a, double b) {
-        return a * (1 - Math.pow(x / b, 2));
     }
 
     // Function to calculate the submerged area A(h)
@@ -118,28 +106,11 @@ public class SolverService {
         return totalBuoyantForce;
     }
 
-    // Function to calculate the total load on the canoe
-    private static double calculateTotalLoad(Canoe canoe) {
-        double totalLoad = 0;
-        // Self-weight
-        for (HullSection section : canoe.getSections()) {
-            totalLoad += section.getConcreteVolume() * section.getOverallDensity(canoe.getConcreteDensity(), canoe.getBulkheadDensity()) * PhysicalConstants.GRAVITY.getValue(); // Section weight in Newtons
-        }
-        // External loads
-        for (PointLoad load : canoe.getPLoads()) {
-            totalLoad += load.getMag();
-        }
-        for (UniformDistributedLoad udl : canoe.getDLoads()) {
-            totalLoad += udl.getMag() * (udl.getRx() - udl.getX());
-        }
-        return totalLoad;
-    }
-
     // Function to calculate the waterline depth considering total load
-    private static double calculateWaterlineDepth(Canoe canoe) {
-        double totalLoad = calculateTotalLoad(canoe);
+    private static double getWaterlineHeight(Canoe canoe) {
+        double totalCanoeWeight = canoe.getTotalWeight();
         double depth = 0.0;
-        while (getBuoyantForceOnSections(depth, canoe.getSections()) <= totalLoad) {
+        while (getBuoyantForceOnSections(depth, canoe.getSections()) <= totalCanoeWeight) {
            // System.out.println("getBuoyantForceOnSections(depth, canoe.getSections()) = " + getBuoyantForceOnSections(depth, canoe.getSections()));
             depth += 0.01; // Increment depth in small steps
         }
@@ -147,7 +118,7 @@ public class SolverService {
     }
 
     // Function to calculate the buoyant forces for each section at the given waterline depth
-    private static List<Double> calculateBuoyantForces(Canoe canoe, double waterlineDepth) {
+    private static List<Double> getBuoyantForces(Canoe canoe, double waterlineDepth) {
         List<Double> buoyantForces = new ArrayList<>();
         for (HullSection section : canoe.getSections()) {
             double force = getBuoyantForceOnSection(waterlineDepth, section);
