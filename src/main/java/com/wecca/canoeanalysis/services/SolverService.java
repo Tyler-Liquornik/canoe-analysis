@@ -6,7 +6,6 @@ import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -76,16 +75,15 @@ public class SolverService {
      * @param canoe the canoe with a give hull geometry, material densities, and external loading to solve
      * @return a linked list of dLoads corresponding to the distributed buoyancy for that section in equilibrium in kN/m
      */
-    public static LinkedList<UniformDistributedLoad> solveFloatingSystem(Canoe canoe) {
+    public static List<UniformDistributedLoad> solveFloatingSystem(Canoe canoe) {
         double waterLine = getEquilibriumWaterLine(canoe);
         List<Double> buoyantForces = getBuoyantForceOnAllSections(waterLine, canoe);
-
-        LinkedList<UniformDistributedLoad> loads = new LinkedList<>();
+        List<UniformDistributedLoad> loads = new ArrayList<>();
         for (int i = 0; i < buoyantForces.size(); i++) {
-            HullSection section = canoe.getSections().get(i);
-            double sectionLength = section.getXLength();
+            HullSection section = canoe.getInternalSections().get(i);
+            double sectionLength = section.getLength();
             double dLoadMag = buoyantForces.get(i) / sectionLength;
-            loads.add(new UniformDistributedLoad(dLoadMag, section.getX(), section.getRX()));
+            loads.add(new UniformDistributedLoad(dLoadMag, section.getStart(), section.getEnd()));
         }
         return loads;
     }
@@ -98,7 +96,7 @@ public class SolverService {
      */
     private static double getSubmergedVolume(double waterline, HullSection section) {
 
-        double submergedArea = -integrator.integrate(1000, x -> (section.getProfileCurveXYPlane().value(x) + waterline), section.getX(), section.getRX());
+        double submergedArea = -integrator.integrate(1000, x -> (section.getProfileCurveXYPlane().value(x) + waterline), section.getStart(), section.getEnd());
         return submergedArea * section.getZWidth();
     }
 
@@ -118,9 +116,9 @@ public class SolverService {
      * @param canoe the canoe with sections to calculate the buoyancy forces of
      * @return a linked list in of buoyancy forces in the same order as the linked list of canoe sections
      */
-    private static LinkedList<Double> getBuoyantForceOnAllSections(double waterLine, Canoe canoe) {
-        LinkedList<Double> buoyantForces = new LinkedList<>();
-        for (HullSection section : canoe.getSections()) {
+    private static List<Double> getBuoyantForceOnAllSections(double waterLine, Canoe canoe) {
+        List<Double> buoyantForces = new ArrayList<>();
+        for (HullSection section : canoe.getInternalSections()) {
             double force = getBuoyantForceOnSection(waterLine, section);
             buoyantForces.add(force);
         }
@@ -134,7 +132,7 @@ public class SolverService {
      * @return the total buoyant in kN at the given waterline guess
      */
     private static double getBuoyantForceOnCanoe(Canoe canoe, double waterLine) {
-        LinkedList<HullSection> sections = canoe.getSections();
+        List<HullSection> sections = canoe.getInternalSections();
         double totalBuoyantForce = 0;
         for (HullSection section : sections) {totalBuoyantForce += getBuoyantForceOnSection(waterLine, section);}
         return totalBuoyantForce;
