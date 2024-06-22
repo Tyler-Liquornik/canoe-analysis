@@ -6,6 +6,7 @@ import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -70,61 +71,90 @@ public class SolverService {
     }
 
 
-    public static List<UniformDistributedLoad> solveFloatingSystem(Canoe canoe) {
-        double waterlineDepth = getWaterlineHeight(canoe);
-        List<Double> buoyantForces = getBuoyantForces(canoe, waterlineDepth);
+    /**
+     * Solve the overall floating case of the canoe
+     * @param canoe the canoe with a give hull geometry, material densities, and external loading to solve
+     * @return a linked list of dLoads corresponding to the distributed buoyancy for that section in equilibrium in kN/m
+     */
+    public static LinkedList<UniformDistributedLoad> solveFloatingSystem(Canoe canoe) {
+        double waterLine = getEquilibriumWaterLine(canoe);
+        List<Double> buoyantForces = getBuoyantForceOnAllSections(waterLine, canoe);
 
-        List<UniformDistributedLoad> loads = new ArrayList<>();
+        LinkedList<UniformDistributedLoad> loads = new LinkedList<>();
         for (int i = 0; i < buoyantForces.size(); i++) {
             HullSection section = canoe.getSections().get(i);
-            double sectionLength = section.getLength();
-            double udlMagnitude = buoyantForces.get(i) / sectionLength;
-            loads.add(new UniformDistributedLoad(udlMagnitude, section.getStart(), section.getEnd()));
+            double sectionLength = section.getXLength();
+            double dLoadMag = buoyantForces.get(i) / sectionLength;
+            loads.add(new UniformDistributedLoad(dLoadMag, section.getX(), section.getRX()));
         }
         return loads;
     }
 
-    // Function to calculate the submerged area A(h)
-    private static double getSubmergedVolume(double h, HullSection section) {
-        System.out.println("Section: [" + section.getStart() +", " + section.getEnd() + "]");
-        System.out.println(integrator.integrate(1000, x -> Math.min(section.getProfileCurve().value(x), h), section.getStart(), section.getEnd()) * section.getWidth());
-        return integrator.integrate(1000, x -> Math.min(section.getProfileCurve().value(x), h), section.getStart(), section.getEnd()) * section.getWidth();
+    /**
+     * Guess a waterline and get the volume of the submerged portion of the section
+     * @param waterline the level below y = 0 of the waterline guess
+     * @param section the section to calculate the buoyant force on
+     * @return the submerged volume in m^3 at the given waterline guess
+     */
+    private static double getSubmergedVolume(double waterline, HullSection section) {
+
+        double submergedArea = -integrator.integrate(1000, x -> (section.getProfileCurveXYPlane().value(x) + waterline), section.getX(), section.getRX());
+        return submergedArea * section.getZWidth();
     }
 
-    // Function to calculate the buoyant force for a given depth h
-    private static double getBuoyantForceOnSection(double h, HullSection section) {
-        double submergedVolume = getSubmergedVolume(h, section);
-        return PhysicalConstants.DENSITY_OF_WATER.getValue() * PhysicalConstants.GRAVITY.getValue() * submergedVolume; // Buoyant force in Newtons
+    /**
+     * Guess a waterline and get the buoyant force on the section at that waterline
+     * @param waterline the level below y = 0 of the waterline guess
+     * @param section the section to calculate the buoyant force on
+     * @return the buoyant force in kN
+     */
+    private static double getBuoyantForceOnSection(double waterline, HullSection section) {
+        return (PhysicalConstants.DENSITY_OF_WATER.getValue() * PhysicalConstants.GRAVITY.getValue() * getSubmergedVolume(waterline, section)) / 1000.0;
     }
 
-    // Modified buoyantForce function to calculate total buoyant force for given depth h
-    private static double getBuoyantForceOnSections(double h, List<HullSection> sections) {
-        double totalBuoyantForce = 0;
-        for (HullSection section : sections) {
-            totalBuoyantForce += getBuoyantForceOnSection(h, section);
-        }
-        return totalBuoyantForce;
-    }
-
-    // Function to calculate the waterline depth considering total load
-    private static double getWaterlineHeight(Canoe canoe) {
-        double totalCanoeWeight = canoe.getTotalWeight();
-        double depth = 0.0;
-        while (getBuoyantForceOnSections(depth, canoe.getSections()) <= totalCanoeWeight) {
-           // System.out.println("getBuoyantForceOnSections(depth, canoe.getSections()) = " + getBuoyantForceOnSections(depth, canoe.getSections()));
-            depth += 0.01; // Increment depth in small steps
-        }
-        return depth;
-    }
-
-    // Function to calculate the buoyant forces for each section at the given waterline depth
-    private static List<Double> getBuoyantForces(Canoe canoe, double waterlineDepth) {
-        List<Double> buoyantForces = new ArrayList<>();
+    /**
+     * Get the buoyant force on all section
+     * @param waterLine the level below y = 0 of the waterline guess
+     * @param canoe the canoe with sections to calculate the buoyancy forces of
+     * @return a linked list in of buoyancy forces in the same order as the linked list of canoe sections
+     */
+    private static LinkedList<Double> getBuoyantForceOnAllSections(double waterLine, Canoe canoe) {
+        LinkedList<Double> buoyantForces = new LinkedList<>();
         for (HullSection section : canoe.getSections()) {
-            double force = getBuoyantForceOnSection(waterlineDepth, section);
+            double force = getBuoyantForceOnSection(waterLine, section);
             buoyantForces.add(force);
         }
         return buoyantForces;
+    }
+
+    /**
+     * Guess a waterline and get the buoyant force on the whole canoe
+     * @param canoe the canoe with a given hull geometry
+     * @param waterLine the level below y = 0 of the waterline guess
+     * @return the total buoyant in kN at the given waterline guess
+     */
+    private static double getBuoyantForceOnCanoe(Canoe canoe, double waterLine) {
+        LinkedList<HullSection> sections = canoe.getSections();
+        double totalBuoyantForce = 0;
+        for (HullSection section : sections) {totalBuoyantForce += getBuoyantForceOnSection(waterLine, section);}
+        return totalBuoyantForce;
+    }
+
+    /**
+     * Iteratively solve for the equilibrium of the floating canoe
+     * This works by matching the total canoe internal/external weight with the buoyancy
+     * @param canoe the canoe with defined internal/external loads to get the waterline height for
+     * @return the waterline height of floating equilibrium
+     */
+    private static double getEquilibriumWaterLine(Canoe canoe) {
+        double totalWeight = canoe.getTotalWeight();
+        double totalBuoyancy = 0.0;
+        double waterLine = 0.0;
+        while (totalBuoyancy < totalWeight) {
+            totalBuoyancy = getBuoyantForceOnCanoe(canoe, waterLine);
+            waterLine += 0.01;
+        }
+        return waterLine;
     }
 
     // TODO: later
