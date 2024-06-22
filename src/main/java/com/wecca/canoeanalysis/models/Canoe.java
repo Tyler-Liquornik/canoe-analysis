@@ -1,12 +1,9 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.wecca.canoeanalysis.utils.MathUtils;
-import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.univariate.*;
 import java.util.*;
@@ -15,19 +12,20 @@ import java.util.*;
 public class Canoe
 {
     private double length;
-    private final ArrayList<Load> loads;
+    private final ArrayList<Load> externalLoads;
+    @JsonIgnore // TODO: Implement YAML Model
+    private List<DiscreteLoadDistribution> externalLoadDistributions;
+    @JsonIgnore // TODO: Implement YAML Model
+    private DiscreteLoadDistribution selfWeightDistribution;
     @JsonIgnore
     private double concreteDensity; // [kg/m^3]
     @JsonIgnore
     private double bulkheadDensity; // [kg/m^3]
 
-    // TODO: to be included in the YAML model once sections GUI component developed (remove @JsonIgnore)
-    @JsonIgnore
-    private LinkedList<HullSection> sections;
-
     public Canoe(double concreteDensity, double bulkheadDensity) {
-        this.sections = new LinkedList<>();
-        this.loads = new ArrayList<>();
+        this.selfWeightDistribution = null;
+        this.externalLoadDistributions = new ArrayList<>();
+        this.externalLoads = new ArrayList<>();
         this.concreteDensity = concreteDensity;
         this.bulkheadDensity = bulkheadDensity;
         this.length = 0;
@@ -35,13 +33,14 @@ public class Canoe
 
     // TODO: ideally this should also check that the derivative of the section endpoints at each piecewise function is equal to guarantee smoothness
     // Need to update the hard-coded 2024-Shark-Bait model to this first
-    private void validateContinuousHullShape() {
+    private void validateContinuousHullShape(List<HullSection> sections) {
+
         for (int i = 0; i < sections.size() - 1; i++)
         {
             HullSection current = sections.get(i);
             HullSection next = sections.get(i + 1);
-            double currentEnd = current.getRX();
-            double nextStart = next.getX();
+            double currentEnd = current.getEnd();
+            double nextStart = next.getStart();
             double currentEndDepth = current.getProfileCurveXYPlane().value(currentEnd);
             double nextStartDepth = next.getProfileCurveXYPlane().value(nextStart);
             if (Math.abs(currentEndDepth - nextStartDepth) > 1e-6) // small tolerance for discontinuities in case of floating point errors
@@ -84,7 +83,7 @@ public class Canoe
      * This convention allows waterline height h for a floating hull to be a distance below the top of the null at h = 0
      * Uses calculus to avoid checking all points individually by checking only critical points and domain endpoints
      */
-    private void validateFloorThickness() {
+    private void validateFloorThickness(List<HullSection> sections) {
 
         double canoeHeight = getMaxHeight();
 
@@ -100,7 +99,7 @@ public class Canoe
      * The two hull walls should not overlap and thus each hull wall can be at most half the canoes width
      * (Although realistically the number is way smaller this is the theoretical max)
      */
-    public void validateWallThickness() {
+    public void validateWallThickness(List<HullSection> sections) {
         for (HullSection section : sections)
         {
             if (section.getThickness() > section.getZWidth() / 2)
@@ -123,44 +122,44 @@ public class Canoe
                 if (pLoad.getX() == l.getX() && !((PointLoad) l).isSupport()) {
                     double newMag = pLoad.getMag() + l.getMag();
                     if (newMag == 0) {
-                        removeLoad(loads.indexOf(pLoad));
+                        removeLoad(externalLoads.indexOf(pLoad));
                         return AddLoadResult.REMOVED;
                     }
-                    loads.get(loads.indexOf(pLoad)).setMag(newMag);
+                    externalLoads.get(externalLoads.indexOf(pLoad)).setMag(newMag);
                     pLoad.setMag(newMag);
                     return AddLoadResult.COMBINED;
                 }
             }
-            loads.add(l);
-            loads.sort(Comparator.comparingDouble(Load::getX));
+            externalLoads.add(l);
+            externalLoads.sort(Comparator.comparingDouble(Load::getX));
         }
 
         else if (l instanceof UniformDistributedLoad) {
-            loads.add(l);
-            loads.sort(Comparator.comparingDouble(Load::getX));
+            externalLoads.add(l);
+            externalLoads.sort(Comparator.comparingDouble(Load::getX));
         }
 
         return AddLoadResult.ADDED;
     }
 
     public void removeLoad(int index) {
-        loads.remove(index);
+        externalLoads.remove(index);
     }
 
     public void clearLoads() {
-        loads.clear();
+        externalLoads.clear();
     }
 
     @JsonIgnore
     public int getMaxLoadIndex() {
-        if (loads.isEmpty()) {
+        if (externalLoads.isEmpty()) {
             return -1;
         }
 
         int maxIndex = 0;
         double max = 0;
-        for (int i = 0; i < loads.size(); i++) {
-            double mag = Math.abs(loads.get(i).getMag());
+        for (int i = 0; i < externalLoads.size(); i++) {
+            double mag = Math.abs(externalLoads.get(i).getMag());
             if (mag > max) {
                 max = mag;
                 maxIndex = i;
@@ -172,7 +171,7 @@ public class Canoe
     @JsonIgnore
     public List<PointLoad> getPLoads() {
         List<PointLoad> pLoads = new ArrayList<>();
-        for (Load load : loads) {
+        for (Load load : externalLoads) {
             if (load instanceof PointLoad pLoad)
                 pLoads.add(pLoad);
         }
@@ -182,7 +181,7 @@ public class Canoe
     @JsonIgnore
     public List<UniformDistributedLoad> getDLoads() {
         List<UniformDistributedLoad> dLoads = new ArrayList<>();
-        for (Load load : loads) {
+        for (Load load : externalLoads) {
             if (load instanceof UniformDistributedLoad dLoad)
                 dLoads.add(dLoad);
         }
@@ -192,12 +191,12 @@ public class Canoe
     @JsonIgnore
     public double getMaxHeight() {
         double canoeHeight = 0;
-        for (HullSection section : sections)
+        for (HullSection section : getInternalSections())
         {
             // Find the sections minimum
             // Function is negated as BrentOptimizer looks for the maximum
             UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(x -> -section.getProfileCurveXYPlane().value(x));
-            SearchInterval searchInterval = new SearchInterval(section.getX(), section.getRX());
+            SearchInterval searchInterval = new SearchInterval(section.getStart(), section.getEnd());
             UnivariatePointValuePair result = (new BrentOptimizer(1e-10, 1e-14)).optimize(
                     MaxEval.unlimited(),
                     objectiveFunction,
@@ -218,16 +217,9 @@ public class Canoe
     @JsonIgnore
     public double getSelfWeight() {
         double selfWeight = 0;
-        for (HullSection section : sections)
-        {
-            // Temp testing, total self-weight of the canoe should be around 1kN
-            double sectionConcreteVolume = section.getConcreteVolume();
-            double sectionBulkHeadVolume = section.getBulkheadVolume();
-
-            // Section weight downward in kN
-            selfWeight -= ((section.getConcreteVolume() * getConcreteDensity() + section.getBulkheadVolume() * getBulkheadDensity()) * PhysicalConstants.GRAVITY.getValue()) / 1000;
+        for (HullSection section : getInternalSections()) {
+            selfWeight -= section.getWeight();
         }
-
         return selfWeight;
     }
 
@@ -261,7 +253,7 @@ public class Canoe
      */
     @JsonIgnore
     public double getTotalVolume() {
-        return sections.stream().mapToDouble(HullSection::getVolume).sum();
+        return getInternalSections().stream().mapToDouble(HullSection::getVolume).sum();
     }
 
     /**
@@ -269,7 +261,7 @@ public class Canoe
      */
     @JsonIgnore
     public double getConcreteVolume() {
-        return sections.stream().mapToDouble(HullSection::getConcreteVolume).sum();
+        return getInternalSections().stream().mapToDouble(HullSection::getConcreteVolume).sum();
     }
 
     /**
@@ -277,9 +269,17 @@ public class Canoe
      */
     @JsonIgnore
     public double getBulkheadVolume() {
-        return sections.stream().mapToDouble(HullSection::getBulkheadVolume).sum();
+        return getInternalSections().stream().mapToDouble(HullSection::getBulkheadVolume).sum();
     }
 
+
+    public List<HullSection> getInternalSections() {
+        return selfWeightDistribution.getSectionToLoadMap()
+                .keySet()
+                .stream()
+                .map(HullSection.class::cast)
+                .toList();
+    }
 
     /**
      * @return the canoe lengthwise endpoints [0, L] always included in case they were missed earlier
@@ -300,7 +300,7 @@ public class Canoe
 
         // Add all point load x coords and endpoints of distributed loads
         TreeSet<Double> s = new TreeSet<>();
-        for (Load l : loads)
+        for (Load l : externalLoads)
         {
             s.add(l.getX());
             if (l instanceof UniformDistributedLoad distributedLoad)
@@ -319,10 +319,10 @@ public class Canoe
 
         // Add endpoints of hull sections if they are defined
         TreeSet<Double> s = new TreeSet<>();
-        if (!sections.isEmpty())
+        if (!getInternalSections().isEmpty())
         {
-            for (HullSection section : sections) {s.add(section.getX());}
-            s.add(sections.getLast().getRX());
+            for (HullSection section : getInternalSections()) {s.add(section.getStart());}
+            s.add(getInternalSections().getLast().getEnd());
         }
 
         return s;
@@ -340,25 +340,23 @@ public class Canoe
     }
 
     /**
-     * Setting the length will automatically reset sections as otherwise section lengths may not add up to the total canoe length
+     * Setting the length will automatically reset self-weight as otherwise section lengths may not add up to the total canoe length
      * @param length the length to set
      */
     public void setLength(double length){
         this.length = length;
-        this.sections = new LinkedList<>();
+        this.selfWeightDistribution = null;
     }
 
     /**
-     * Setting the sections sets the map according to the sum of the lengths of the sections
-     * Also re-triggers validations to ensure the sections make up a well-defined hull
-     * @param sections the sections to set
+     * @param hullSections the sections to set the self weight distribution from
      */
-    public void setSections(LinkedList<HullSection> sections) {
-        this.length = sections.stream().mapToDouble(HullSection::getXLength).sum();
-        this.sections = sections;
-        validateContinuousHullShape();
-        validateWallThickness();
-        validateFloorThickness();
+    public void setSelfWeightDistribution(List<HullSection> hullSections) {
+        DiscreteLoadDistribution discreteLoadDistribution = new DiscreteLoadDistribution(hullSections);
+        if (discreteLoadDistribution.getX() != 0 || discreteLoadDistribution.getX() != length)
+            throw new IllegalArgumentException("Self-weight distribution should cover the entire canoe length");
+        else
+            this.selfWeightDistribution = new DiscreteLoadDistribution(hullSections);
     }
 }
 

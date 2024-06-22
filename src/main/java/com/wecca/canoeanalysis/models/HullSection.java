@@ -2,35 +2,35 @@ package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.wecca.canoeanalysis.utils.MathUtils;
+import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.univariate.*;
 import java.util.function.Function;
 
-@Getter @Setter @NoArgsConstructor
-public class HullSection
+@Getter @Setter
+public class HullSection extends Section
 {
     private UnivariateFunction profileCurveXYPlane;
-    private double x;
-    private double rX;
     private double zWidth;
     private double thickness;
     private boolean fillBulkhead;
+    private double concreteDensity; // [kg/m^3]
+    private double bulkheadDensity; // [kg/m^3]
 
     /**
      * Let the following conventions by applied for dimensioning the canoe and it's sections.
+     *
      *         7 Z
      *       /
      *     /
      *    +-----------> X
-     *   |
      *   |               Length
      *   |         <------------------->
-     *   V Y        __________________
-     *         |   | \               |
+     *   V Y        ___________________
+     *         |   | \                |
      *         |   |  |`----......___|      7 Width
      *         |   𝘓_|______________|     /
      *         |   \|              |    /
@@ -39,7 +39,7 @@ public class HullSection
      * "Length" refers to the x direction
      * "Height" refers to the y direction
      * "Width" refers to the z direction
-     * "Thickness" refers to the normal direction of a surface to provide thickness oriented towards the sections centroid
+     * "Thickness" refers to the normal direction of a surface to provide thickness to (+/- orientation is context dependent)
      *
      * @param start the start x position of the section's profile curve interval
      * @param end the end x position of the section's profile curve interval
@@ -48,9 +48,8 @@ public class HullSection
      * @param profileCurveXYPlane the function that defines the shape of the hull in this section in the xy-plane bounded above by y = 0
      */
     public HullSection(Function<Double, Double> profileCurveXYPlane, double start, double end, double width, double thickness, boolean fillBulkhead) {
+        super(start, end);
         this.profileCurveXYPlane = profileCurveXYPlane::apply;
-        this.x = start;
-        this.rX = end;
         this.zWidth = width;
         this.thickness = thickness;
         this.fillBulkhead = fillBulkhead;
@@ -73,7 +72,7 @@ public class HullSection
         // Use BrentOptimizer to find the maximum value of the hull shape function on [start, end]
         UnivariateOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);
         UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(negatedProfileCurve);
-        SearchInterval searchInterval = new SearchInterval(x, rX);
+        SearchInterval searchInterval = new SearchInterval(start, end);
 
         // Optimize (find minimum of the negated function, which corresponds to the maximum of the original function)
         UnivariatePointValuePair result = optimizer.optimize(MaxEval.unlimited(), objectiveFunction, searchInterval);
@@ -87,21 +86,13 @@ public class HullSection
     }
 
     /**
-     * The x direction length of the section
-     */
-    @JsonIgnore
-    public double getXLength() {
-        return rX - x;
-    }
-
-    /**
      * @return the length of the curve profileCurve(x) on [x, rX]
      */
     @JsonIgnore
     public double getXYProfileArcLength() {
         UnivariateFunction profileArcLengthElementFunction =
                 x -> Math.sqrt(1 + Math.pow(MathUtils.differentiate(profileCurveXYPlane).value(x), 2));
-        return MathUtils.integrator.integrate(1000, profileArcLengthElementFunction, x, rX);
+        return MathUtils.integrator.integrate(1000, profileArcLengthElementFunction, start, end);
     }
 
     /**
@@ -109,7 +100,7 @@ public class HullSection
      */
     @JsonIgnore
     public double getXYProfileArea() {
-        return -MathUtils.integrator.integrate(1000, profileCurveXYPlane, x, rX);
+        return -MathUtils.integrator.integrate(1000, profileCurveXYPlane, start, end);
     }
 
     /**
@@ -129,7 +120,7 @@ public class HullSection
     public double getConcreteVolume() {
         double wallsVolume = 2 * getXYProfileArea() * thickness;
         double floorVolume = getXYProfileArcLength() * thickness * (zWidth - (2 * thickness));
-        double bulkheadTopCoverVolume = fillBulkhead ? getXLength() * thickness * zWidth : 0;
+        double bulkheadTopCoverVolume = fillBulkhead ? getLength() * thickness * zWidth : 0;
         return wallsVolume + floorVolume + bulkheadTopCoverVolume;
     }
 
@@ -141,5 +132,21 @@ public class HullSection
     @JsonIgnore
     public double getBulkheadVolume() {
         return fillBulkhead ? getVolume() - getConcreteVolume() : 0;
+    }
+
+    /**
+     * @return the mass of the section
+     */
+    @JsonIgnore
+    public double getMass() {
+        return getConcreteVolume() * concreteDensity + getBulkheadVolume() * getBulkheadDensity();
+    }
+
+    /**
+     * @return the weight of the section under earth's gravity
+     */
+    @JsonIgnore
+    public double getWeight() {
+        return getMass() * PhysicalConstants.GRAVITY.getValue();
     }
 }

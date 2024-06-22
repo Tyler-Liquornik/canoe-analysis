@@ -19,6 +19,7 @@ public class ArrowBox extends Group implements Graphic
     private double rX;
     private double startY;
     private double endY;
+    private ArrowBoxSectionState arrowBoxSectionState;
 
     private final Arrow lArrow;
     private final Arrow rArrow;
@@ -30,7 +31,7 @@ public class ArrowBox extends Group implements Graphic
     private final static double defaultThickness = 1;
 
     // Constructor
-    public ArrowBox(double lX, double startY, double rX, double endY)
+    public ArrowBox(double lX, double startY, double rX, double endY, ArrowBoxSectionState arrowBoxSectionState)
     {
         super();
 
@@ -40,8 +41,8 @@ public class ArrowBox extends Group implements Graphic
         this.endY = endY;
 
         // Arrows at left and right bound the rectangle
-        lArrow = new Arrow(lX, startY, lX, endY);
-        rArrow = new Arrow(rX, startY, rX, endY);
+        lArrow = arrowBoxSectionState.isShowLArrow() ? new Arrow(lX, startY, lX, endY) : null;
+        rArrow = arrowBoxSectionState.isShowRArrow() ? new Arrow(rX, startY, rX, endY) : null;
 
         // Box depends on if this is an upwards or downwards facing ArrowBox
         // Extra pixels to fill weird whitespaces
@@ -57,12 +58,14 @@ public class ArrowBox extends Group implements Graphic
         borderLine.setStroke(ColorPaletteService.getColor("white"));
         borderLine.setStrokeWidth(defaultThickness);
 
-        getChildren().addAll(box, lArrow, rArrow, borderLine);
+        getChildren().addAll(box, borderLine);
+        if (lArrow != null) {getChildren().add(lArrow);}
+        if (rArrow != null) {getChildren().add(rArrow);}
 
         JFXDepthManager.setDepth(this, 4);
 
         this.isColored = false;
-        ColorManagerService.registerForRecoloringFromColorPalette(this);
+        ColorManagerService.registerInColorPalette(this);
     }
 
     // Accessors
@@ -79,8 +82,10 @@ public class ArrowBox extends Group implements Graphic
         Color fillColor = setColored ? ColorPaletteService.getColor("primary-light") :
                 ColorPaletteService.getColor("above-surface");
 
-        lArrow.setFill(outlineColor);
-        rArrow.setFill(outlineColor);
+        if (lArrow != null)
+            lArrow.setFill(outlineColor);
+        if (rArrow != null)
+            rArrow.setFill(outlineColor);
         borderLine.setStroke(outlineColor);
         box.setFill(fillColor);
     }

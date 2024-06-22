@@ -67,7 +67,7 @@ public class Beam extends Group implements Graphic {
         JFXDepthManager.setDepth(this, 4);
 
         this.isColored = false;
-        ColorManagerService.registerForRecoloringFromColorPalette(this);
+        ColorManagerService.registerInColorPalette(this);
     }
 
     // Accessors

@@ -99,7 +99,7 @@ public class MarshallingService {
             canoe = null;
         }
 
-        for (Load load : canoe.getLoads())
+        for (Load load : canoe.getExternalLoads())
         {
             if (Math.abs(load.getMag()) < 0.01)
             {

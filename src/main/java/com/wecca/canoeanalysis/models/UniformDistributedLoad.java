@@ -7,16 +7,11 @@ import lombok.Setter;
 @Setter @Getter @NoArgsConstructor
 public class UniformDistributedLoad extends Load {
 
-    private double rx; // right bound of the distributed load
+    private double rx;
 
     public UniformDistributedLoad(double mag, double x, double rx) {
         super("Distributed Load", mag, x);
         this.rx = rx;
-    }
-
-    public double getRxScaled(double containerWidth, double canoeLength)
-    {
-        return this.rx / canoeLength * containerWidth;
     }
 
     @Override
