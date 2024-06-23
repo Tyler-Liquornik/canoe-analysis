@@ -9,6 +9,7 @@ public class ColorPaletteService {
     private static final Map<String, Color> COLORS = new HashMap<>();
 
     // Base palette
+    // TODO: implement dynamically changeable base palette between dark and light
     static {
         COLORS.put("background", Color.web("#121212"));
         COLORS.put("surface", Color.web("#202020"));

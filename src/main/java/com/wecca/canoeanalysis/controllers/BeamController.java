@@ -3,11 +3,13 @@ package com.wecca.canoeanalysis.controllers;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.graphics.*;
+import com.wecca.canoeanalysis.models.functions.VertexFormParabola;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.ControlUtils;
+import com.wecca.canoeanalysis.utils.GraphicsUtils;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -21,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
-import java.util.function.Function;
 
 /**
  * Primary controller for longitudinal analysis of a beam
@@ -183,10 +184,10 @@ public class BeamController implements Initializable
             // Only allow lengths in the specified range
             if (len >= 0.01) {
                 // Update model state
-                canoe.setLength(len);
+                canoe.setHull(new Hull(len));
 
                 // Change the label on the scale
-                axisLabelR.setText(String.format("%.2f m", canoe.getLength()));
+                axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
                 axisLabelR.setLayoutX(595); // TODO: this will not be hard coded anymore once axis labels for new loads are implemented
 
                 // Clear potential alert and reset access to controls
@@ -201,6 +202,12 @@ public class BeamController implements Initializable
                 // Set length button will now function as a reset length button
                 setCanoeLengthButton.setText("Reset Length");
                 setCanoeLengthButton.setOnAction(e -> resetLength());
+
+                // TODO: DELETE THIS IS TEMP
+                if (len == 6.0) {
+                    System.out.println("Hull has been to shark bait");
+                    canoe.setHull(generateSharkBaitHull());
+                }
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
             else
@@ -216,7 +223,7 @@ public class BeamController implements Initializable
     public void updateLoadListView()
     {
         // Get the new list of loads as strings, sorted by x position
-        List<Load> loads = new ArrayList<>(canoe.getLoads());
+        List<Load> loads = new ArrayList<>(canoe.getExternalLoads());
         loads.sort(Comparator.comparingDouble(Load::getX));
         List<String> stringLoads = loads.stream()
                 .map(Load::toString)
@@ -242,26 +249,33 @@ public class BeamController implements Initializable
 
         // Rescale all graphics relative to the max load
         List<Graphic> rescaledGraphics = new ArrayList<>();
-        for (int i = 0; i < canoe.getLoads().size(); i++)
+        for (int i = 0; i < canoe.getExternalLoads().size(); i++)
         {
-            Load l = canoe.getLoads().get(i);
+            Load load = canoe.getExternalLoads().get(i);
 
             // The ratio of the largest load (always rendered at max size) to this load
-            double loadMagnitudeRatio = Math.abs(l.getMag() / canoe.getLoads().get(maxIndex).getMag());
+            double loadMagnitudeRatio = Math.abs(load.getMag() / canoe.getExternalLoads().get(maxIndex).getMag());
 
             // Clip load length if too small (i.e. ratio is too large)
             if (loadMagnitudeRatio < Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]))
                 loadMagnitudeRatio = Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]);
 
             // Render at scaled size (deltaY calculates the downscaling factor)
-            double endY = l.getMag() < 0 ? acceptedGraphicHeightRange[1] : acceptedGraphicHeightRange[1] + (int) beam.getThickness();
+            double endY = load.getMag() < 0 ? acceptedGraphicHeightRange[1] : acceptedGraphicHeightRange[1] + (int) beam.getThickness();
             double deltaY = (acceptedGraphicHeightRange[1] - acceptedGraphicHeightRange[0]) * loadMagnitudeRatio;
-            double startY = l.getMag() < 0 ? acceptedGraphicHeightRange[1] - deltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
+            double startY = load.getMag() < 0 ? acceptedGraphicHeightRange[1] - deltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
 
-            if (l instanceof PointLoad)
-                rescaledGraphics.add(new Arrow(l.getXScaled(beam.getWidth(), canoe.getLength()), startY, l.getXScaled(beam.getWidth(), canoe.getLength()), endY));
-            else if (l instanceof UniformDistributedLoad)
-                rescaledGraphics.add(new ArrowBox(l.getXScaled(beam.getWidth(), canoe.getLength()), startY, ((UniformDistributedLoad) l).getRxScaled(beam.getWidth(), canoe.getLength()), endY));
+            if (load instanceof PointLoad pLoad)
+            {
+                double xScaled = GraphicsUtils.getXScaled(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
+                rescaledGraphics.add(new Arrow(xScaled, startY, xScaled, endY));
+            }
+            else if (load instanceof UniformDistributedLoad dLoad)
+            {
+                double xScaled = GraphicsUtils.getXScaled(dLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
+                double rxScaled = GraphicsUtils.getXScaled(dLoad.getRx(), beam.getWidth(), canoe.getHull().getLength());
+                rescaledGraphics.add(new ArrowBox(xScaled, startY, rxScaled, endY, ArrowBoxSectionState.NON_SECTIONED));
+            }
         }
 
         rescaledGraphics.sort(Comparator.comparingDouble(Graphic::getX));
@@ -289,7 +303,7 @@ public class BeamController implements Initializable
             if (Objects.equals(direction, "Down")) {mag *= -1;}
 
             // Validate the load is being added within the length of the canoe
-            if (!(0 <= x && x <= canoe.getLength()))
+            if (!(0 <= x && x <= canoe.getHull().getLength()))
                 mainController.showSnackbar("Load must be contained within the canoe's length");
             // Validate the load is in the accepted magnitude range
             else if (Math.abs(mag) < 0.01)
@@ -334,7 +348,7 @@ public class BeamController implements Initializable
             if (Objects.equals(direction, "Down")) {mag *= -1;}
 
             // User entry validations
-            if (!(0 <= x && xR <= canoe.getLength()))
+            if (!(0 <= x && xR <= canoe.getHull().getLength()))
                 mainController.showSnackbar("Load must be contained within the canoe's length");
             else if (!(xR > x))
                 mainController.showSnackbar("Right interval bound must be greater than the left bound");
@@ -379,7 +393,7 @@ public class BeamController implements Initializable
     private void addPointLoadGraphic(PointLoad pLoad)
     {
         // x coordinate in beamContainer for load
-        double scaledX = pLoad.getXScaled(beam.getWidth(), canoe.getLength()); // x position in the beamContainer
+        double scaledX = GraphicsUtils.getXScaled(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength()); // x position in the beamContainer
 
         AddLoadResult addResult = canoe.addLoad(pLoad);
 
@@ -606,7 +620,7 @@ public class BeamController implements Initializable
         MarshallingService.setBeamController(this);
 
         // Alert the user they will be overriding the current loads on the canoe by uploading a new one
-        if (!canoe.getLoads().isEmpty())
+        if (!canoe.getExternalLoads().isEmpty())
         {
             UploadAlertController.setBeamController(this);
             WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view.fxml", 350, 230);
@@ -623,10 +637,10 @@ public class BeamController implements Initializable
             canoe = uploadedCanoe;
 
             // Update UI to new canoe
-            enableEmptyLoadListSettings(uploadedCanoe.getLoads().isEmpty());
+            enableEmptyLoadListSettings(uploadedCanoe.getExternalLoads().isEmpty());
             updateLoadListView();
             refreshLoadGraphics();
-            axisLabelR.setText(String.format("%.2f m", canoe.getLength()));
+            axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
 
             // Notify the user of the result
             mainController.showSnackbar("Successfully uploaded Canoe Model");
@@ -679,41 +693,78 @@ public class BeamController implements Initializable
     }
 
     /**
-     * Hardcoded temporary test function
-     * @return a list of hull sections hard-coded to model the 2024 canoe "Shark Bait"
+     * Hardcoded temporary test function for the new canoe model TODO: remove once new model finished
      * This will serve as a benchmark to for results comparison for quality assurance with respect to business logic
      */
-    public static LinkedList<HullSection> generateSections() {
+    public static Hull generateSharkBaitHull() {
 
         // Define hull shape
         double a = 1.0 / 67.0;
-        double b = 3.0;
-        double c = -0.4;
-        Function<Double, Double> hullBaseProfileCurve = x -> a * Math.pow((x - b), 2) + c;
+        double h = 3.0;
+        double k = -0.4;
+        VertexFormParabola hullBaseProfileCurve = new VertexFormParabola(a, h, k);
 
-        // TODO
-        double k = 306716.0 / 250000.0;
-        Function<Double, Double> hullLeftEdgeCurve = x -> k * Math.pow((x - 0.5), 2) + hullBaseProfileCurve.apply(0.5);
-        Function<Double, Double> hullRightEdgeCurve = x -> k * Math.pow((x - 5.5), 2) + hullBaseProfileCurve.apply(5.5);
+        double aEdges = 306716.0 / 250000.0;
+        VertexFormParabola hullLeftEdgeCurve = new VertexFormParabola(aEdges, 0.5, hullBaseProfileCurve.value(0.5));
+        VertexFormParabola hullRightEdgeCurve = new VertexFormParabola(aEdges, 5.5, hullBaseProfileCurve.value(5.5));
 
-        LinkedList<HullSection> sections = new LinkedList<>();
+        List<HullSection> sections = new ArrayList<>();
+
+        // Left edge curve
+        sections.add(new HullSection(hullLeftEdgeCurve, 0, 0.5, 0.2, 0.013, true));
 
         // Generate sections along hullBaseProfileCurve with intervals of 0.1
-        // The user will be able to specify how many sections, but the more they add the more accurate it gets
-        sections.add(new HullSection(hullLeftEdgeCurve, 0, 0.5, 0.2, 0.013, true));
         sections.add(new HullSection(hullBaseProfileCurve, 0.5, 1, 0.3, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 1, 1.5, 0.4, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 1.5, 2, 0.5, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 2, 2.5, 0.65, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 2.5, 3, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 3, 3.5, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 3.5, 4, 0.65, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 4, 4.5, 0.5, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 4.5, 5, 0.4, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 5, 5.5, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1, 1.1, 0.35, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.1, 1.2, 0.4, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.2, 1.3, 0.45, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.3, 1.4, 0.5, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.4, 1.5, 0.55, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.5, 1.6, 0.6, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.6, 1.7, 0.65, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.7, 1.8, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.8, 1.9, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.9, 2, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2, 2.1, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.1, 2.2, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.2, 2.3, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.3, 2.4, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.4, 2.5, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.5, 2.6, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.6, 2.7, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.7, 2.8, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.8, 2.9, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.9, 3, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3, 3.1, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.1, 3.2, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.2, 3.3, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.3, 3.4, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.4, 3.5, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.5, 3.6, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.6, 3.7, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.7, 3.8, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.8, 3.9, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.9, 4, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4, 4.1, 0.65, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.1, 4.2, 0.6, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.2, 4.3, 0.55, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.3, 4.4, 0.5, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.4, 4.5, 0.45, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.5, 4.6, 0.4, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.6, 4.7, 0.35, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.7, 4.8, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.8, 4.9, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.9, 5, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 5, 5.1, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 5.1, 5.2, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 5.2, 5.3, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 5.3, 5.4, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 5.4, 5.5, 0.3, 0.013, false));
+
+        // Right edge curve
         sections.add(new HullSection(hullRightEdgeCurve, 5.5, 6, 0.2, 0.013, true));
 
-        return sections;
+        return new Hull(1056, 28.82, sections);
     }
 
     /**
@@ -731,31 +782,11 @@ public class BeamController implements Initializable
         addModuleToolBarButtons();
 
         // Instantiate the canoe
-        canoe = new Canoe(1056, 28.83); // hardcoded to 2024 numbers for now
-
-
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // The Hull Sections model is currently in early testing in the console
-
-        // Add sections to the canoe
-        canoe.setSections(generateSections());
-
-        // Solve the floating case example
-        List<UniformDistributedLoad> loads = SolverService.solveFloatingSystem(canoe);
-        for (UniformDistributedLoad load : loads) {
-            System.out.println(load);
-        }
-
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+        canoe = new Canoe();
 
         // Reset module state if switching PADDL modules
-        canoe.setLength(0);
-        canoe.getPLoads().clear();
-        canoe.getDLoads().clear();
-        canoe.getLoads().clear();
+        canoe.setHull(null);
+        canoe.getExternalLoads().clear();
         loadListView.getItems().clear();
         loadContainer.getChildren().clear();
 

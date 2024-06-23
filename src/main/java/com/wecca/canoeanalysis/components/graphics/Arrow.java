@@ -3,7 +3,6 @@ package com.wecca.canoeanalysis.components.graphics;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
@@ -76,7 +75,7 @@ public class Arrow extends Path implements Graphic {
         getElements().add(new LineTo(endX, endY));
 
         this.isColored = false;
-        ColorManagerService.registerForRecoloringFromColorPalette(this);
+        ColorManagerService.registerInColorPalette(this);
     }
 
     // Accessors

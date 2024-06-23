@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.services;
 
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
-import com.wecca.canoeanalysis.components.diagrams.Interval;
+import com.wecca.canoeanalysis.components.diagrams.DiagramInterval;
 import com.wecca.canoeanalysis.models.Canoe;
 import com.wecca.canoeanalysis.models.PointLoad;
 import com.wecca.canoeanalysis.models.UniformDistributedLoad;
@@ -65,7 +65,7 @@ public class DiagramService {
         xAxis.setAutoRanging(false);
         xAxis.setLabel("Distance [m]");
         xAxis.setLowerBound(0);
-        xAxis.setUpperBound(canoe.getLength());
+        xAxis.setUpperBound(canoe.getHull().getLength());
         return xAxis;
     }
 
@@ -171,7 +171,7 @@ public class DiagramService {
             points.removeFirst();
 
         // Same idea for last two points if they double up
-        if (points.getLast().getX() == canoe.getLength() && points.get(points.size() - 2).getX() == canoe.getLength())
+        if (points.getLast().getX() == canoe.getHull().getLength() && points.get(points.size() - 2).getX() == canoe.getHull().getLength())
             points.removeLast();
 
         // Remove zero from the partition list (always first as the TreeSet is sorted ascending)
@@ -283,23 +283,23 @@ public class DiagramService {
      * @param canoeLength the length of the canoe.
      * @return the generated map.
      */
-    private static Map<String, Point2D> getDiagramPointMap(List<Interval> intervals, double canoeLength)
+    private static Map<String, Point2D> getDiagramPointMap(List<DiagramInterval> intervals, double canoeLength)
     {
         Map<String, Point2D> diagramPoints = new LinkedHashMap<>();
         double rollingMag = 0;
-        for (Interval interval : intervals) {
-            Point2D start = new Point2D(interval.startX, rollingMag + interval.magnitude);
+        for (DiagramInterval interval : intervals) {
+            Point2D start = new Point2D(interval.getX(), rollingMag + interval.getMagnitude());
             if (!diagramPoints.containsKey(start.toString())) {
                 diagramPoints.put(start.toString(), start);
                 // Add the magnitude of the initial point load to the rolling magnitude
-                rollingMag += interval.magnitude;
+                rollingMag += interval.getMagnitude();
             }
 
-            Point2D end = new Point2D(interval.endX, rollingMag + interval.slope * (interval.endX - interval.startX));
+            Point2D end = new Point2D(interval.getRx(), rollingMag + interval.getSlope() * interval.getLength());
             if (!diagramPoints.containsKey(end.toString())) {
                 diagramPoints.put(end.toString(), end);
                 // Add the magnitude of the ending distributed load to the rolling magnitude
-                rollingMag += interval.slope * (interval.endX - interval.startX);
+                rollingMag += interval.getSlope() * interval.getLength();
             }
         }
 
@@ -377,16 +377,16 @@ public class DiagramService {
         double prevX = 0;
         double slope = 0;
         double magnitude = 0;
-        List<Interval> intervals = new ArrayList<>();
+        List<DiagramInterval> intervals = new ArrayList<>();
         // Go through each x index from 0 to [canoe length], incrementing it by 0.01 each time
         // This tests each possible starting point to check for a load beginning/ending/occurring at this x coordinate.
-        for (int i = 0; i < canoe.getLength() * 100; i ++) {
+        for (int i = 0; i < canoe.getHull().getLength() * 100; i ++) {
             double x = (double) i / 100;
 
             // If a distributed load starts here
             if (distributedLoadStartMap.containsKey(x)) {
                 // Apply the magnitude and the rolling slope
-                intervals.add(new Interval(prevX, x, magnitude, slope));
+                intervals.add(new DiagramInterval(prevX, x, magnitude, slope));
                 // Increment the slope, set the x coordinate, and clear the magnitude
                 for (UniformDistributedLoad load : distributedLoadStartMap.get(x)) {slope += load.getMag();}
                 prevX = x;
@@ -395,7 +395,7 @@ public class DiagramService {
             // If a distributed load ends here
             if (distributedLoadEndMap.containsKey(x)) {
                 // Apply the magnitude and the rolling slope
-                intervals.add(new Interval(prevX, x, magnitude, slope));
+                intervals.add(new DiagramInterval(prevX, x, magnitude, slope));
                 // Decrement the slope, set the x coordinate, and clear the magnitude
                 for (UniformDistributedLoad load : distributedLoadEndMap.get(x)) {slope -= load.getMag();}
                 prevX = x;
@@ -404,18 +404,18 @@ public class DiagramService {
             // If a point load occurs here
             if (pointLoadMap.containsKey(x)) {
                 // Apply the magnitude and the rolling slope
-                intervals.add(new Interval(prevX, x, magnitude, slope));
+                intervals.add(new DiagramInterval(prevX, x, magnitude, slope));
                 // Reset the magnitude and set the x coordinate
                 magnitude = pointLoadMap.get(x).getMag();
                 prevX = x;
             }
         }
         // Add a final interval to the end of the canoe with the current magnitude and slope
-        intervals.add(new Interval(prevX, canoe.getLength(), magnitude, slope));
+        intervals.add(new DiagramInterval(prevX, canoe.getHull().getLength(), magnitude, slope));
 
         // Sort the list, process them to a map of unique points, and return the points as a list
-        intervals.sort(Comparator.comparingDouble(a -> a.startX));
-        Map<String, Point2D> diagramPoints = getDiagramPointMap(intervals, canoe.getLength());
+        intervals.sort(Comparator.comparingDouble(DiagramInterval::getX));
+        Map<String, Point2D> diagramPoints = getDiagramPointMap(intervals, canoe.getHull().getLength());
         ArrayList<Point2D> sfdPoints = new ArrayList<>(diagramPoints.values());
 
         // Return the generated points
@@ -452,7 +452,7 @@ public class DiagramService {
                 currY = bmdPoints.getLast().getY();
             }
         }
-        bmdPoints.add(new Point2D(canoe.getLength(),0));
+        bmdPoints.add(new Point2D(canoe.getHull().getLength(),0));
 
         return bmdPoints;
     }

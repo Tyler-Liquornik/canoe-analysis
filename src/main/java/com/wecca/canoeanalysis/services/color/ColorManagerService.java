@@ -43,7 +43,7 @@ public class ColorManagerService {
             throw new RuntimeException("addEntryToStyleSheetMapping method only takes objects of type 'Scene' or 'Parent'");
     }
 
-    public static void registerForRecoloringFromColorPalette(Graphic graphic) {
+    public static void registerInColorPalette(Graphic graphic) {
         graphics.add(graphic);
     }
 

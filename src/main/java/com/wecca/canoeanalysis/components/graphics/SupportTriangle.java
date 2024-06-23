@@ -76,7 +76,7 @@ public class SupportTriangle extends Group implements Graphic
         JFXDepthManager.setDepth(this, 5);
 
         this.isColored = false;
-        ColorManagerService.registerForRecoloringFromColorPalette(this);
+        ColorManagerService.registerInColorPalette(this);
     }
 
     // Change the color of the support triangle

@@ -5,10 +5,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.wecca.canoeanalysis.controllers.BeamController;
 import com.wecca.canoeanalysis.controllers.MainController;
-import com.wecca.canoeanalysis.models.Canoe;
-import com.wecca.canoeanalysis.models.Load;
-import com.wecca.canoeanalysis.models.PointLoad;
-import com.wecca.canoeanalysis.models.UniformDistributedLoad;
+import com.wecca.canoeanalysis.models.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Setter;
@@ -17,6 +14,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+//TODO: completely rework with new hull model
 public class MarshallingService {
 
     @Setter
@@ -93,13 +91,13 @@ public class MarshallingService {
      */
     private static Canoe validateCanoe(Canoe canoe) {
 
-        if (canoe.getLength() < 0.01)
+        if (canoe.getHull().getLength() < 0.01)
         {
             mainController.showSnackbar("Length must be at least 0.01m");
             canoe = null;
         }
 
-        for (Load load : canoe.getLoads())
+        for (Load load : canoe.getExternalLoads())
         {
             if (Math.abs(load.getMag()) < 0.01)
             {
@@ -113,9 +111,9 @@ public class MarshallingService {
                 canoe = null;
             }
 
-            if ((load instanceof PointLoad pLoad && !(0 <= pLoad.getX() && pLoad.getX() <= canoe.getLength())) ||
-                    (load instanceof UniformDistributedLoad dLoad && !((0 <= dLoad.getX() && dLoad.getX() <= canoe.getLength()) ||
-                                (0 <= dLoad.getRx() && dLoad.getRx() <= canoe.getLength()))))
+            if ((load instanceof PointLoad pLoad && !(0 <= pLoad.getX() && pLoad.getX() <= canoe.getHull().getLength())) ||
+                    (load instanceof UniformDistributedLoad dLoad && !((0 <= dLoad.getX() && dLoad.getX() <= canoe.getHull().getLength()) ||
+                                (0 <= dLoad.getRx() && dLoad.getRx() <= canoe.getHull().getLength()))))
             {
                 mainController.showSnackbar("All loads must be contained within the canoe's length");
                 canoe = null;
@@ -133,13 +131,14 @@ public class MarshallingService {
      */
     private static Canoe combinePointLoads(Canoe canoe)
     {
-        double length = canoe.getLength();
+        double length = canoe.getHull().getLength();
+        Hull hull = canoe.getHull();
         List<Load> newLoads = new ArrayList<>();
         newLoads.addAll(canoe.getPLoads());
         newLoads.addAll(canoe.getDLoads());
 
-        Canoe newCanoe = new Canoe(1056, 28.83); // hardcoded to 2024 numbers for now
-        newCanoe.setLength(length);
+        Canoe newCanoe = new Canoe(); // hardcoded to 2024 numbers for now
+        newCanoe.setHull(hull);
         for (Load load : newLoads) {newCanoe.addLoad(load);}
 
         return newCanoe;

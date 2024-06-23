@@ -25,4 +25,6 @@ module com.wecca.canoeanalysis {
     opens com.wecca.canoeanalysis.components.graphics to javafx.fxml;
     exports com.wecca.canoeanalysis.services.color;
     opens com.wecca.canoeanalysis.services.color to javafx.fxml;
+    exports com.wecca.canoeanalysis.models.functions;
+    opens com.wecca.canoeanalysis.models.functions to javafx.fxml;
 }

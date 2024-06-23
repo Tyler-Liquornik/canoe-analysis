@@ -13,14 +13,8 @@ import lombok.Setter;
         @JsonSubTypes.Type(value = PointLoad.class, name = "Point Load"),
         @JsonSubTypes.Type(value = UniformDistributedLoad.class, name = "Distributed Load")
 })
-public abstract class Load{
-    String type;
-    double mag;
-    double x;
-
-    // Scaled on the canoe to the size of the canoe (beam) container in pixels on the GUI
-    public double getXScaled(double containerWidth, double canoeLength)
-    {
-        return (this.x / canoeLength) * containerWidth;
-    }
+public abstract class Load {
+    protected String type;
+    protected double mag;
+    public abstract double getX(); // method rather than field enables distributed loads to use Sections
 }
