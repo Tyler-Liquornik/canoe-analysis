@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis.controllers;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.graphics.*;
+import com.wecca.canoeanalysis.models.functions.VertexFormParabola;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.services.*;
@@ -22,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
-import java.util.function.Function;
 
 /**
  * Primary controller for longitudinal analysis of a beam
@@ -184,10 +184,10 @@ public class BeamController implements Initializable
             // Only allow lengths in the specified range
             if (len >= 0.01) {
                 // Update model state
-                canoe.setLength(len);
+                canoe.setHull(new Hull(len));
 
                 // Change the label on the scale
-                axisLabelR.setText(String.format("%.2f m", canoe.getLength()));
+                axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
                 axisLabelR.setLayoutX(595); // TODO: this will not be hard coded anymore once axis labels for new loads are implemented
 
                 // Clear potential alert and reset access to controls
@@ -202,6 +202,12 @@ public class BeamController implements Initializable
                 // Set length button will now function as a reset length button
                 setCanoeLengthButton.setText("Reset Length");
                 setCanoeLengthButton.setOnAction(e -> resetLength());
+
+                // TODO: DELETE THIS IS TEMP
+                if (len == 6.0) {
+                    System.out.println("Hull has been to shark bait");
+                    canoe.setHull(generateSharkBaitHull());
+                }
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
             else
@@ -261,13 +267,13 @@ public class BeamController implements Initializable
 
             if (load instanceof PointLoad pLoad)
             {
-                double xScaled = GraphicsUtils.getXScaled(pLoad.getX(), beam.getWidth(), canoe.getLength());
+                double xScaled = GraphicsUtils.getXScaled(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
                 rescaledGraphics.add(new Arrow(xScaled, startY, xScaled, endY));
             }
             else if (load instanceof UniformDistributedLoad dLoad)
             {
-                double xScaled = GraphicsUtils.getXScaled(dLoad.getX(), beam.getWidth(), canoe.getLength());
-                double rxScaled = GraphicsUtils.getXScaled(dLoad.getRx(), beam.getWidth(), canoe.getLength());
+                double xScaled = GraphicsUtils.getXScaled(dLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
+                double rxScaled = GraphicsUtils.getXScaled(dLoad.getRx(), beam.getWidth(), canoe.getHull().getLength());
                 rescaledGraphics.add(new ArrowBox(xScaled, startY, rxScaled, endY, ArrowBoxSectionState.NON_SECTIONED));
             }
         }
@@ -297,7 +303,7 @@ public class BeamController implements Initializable
             if (Objects.equals(direction, "Down")) {mag *= -1;}
 
             // Validate the load is being added within the length of the canoe
-            if (!(0 <= x && x <= canoe.getLength()))
+            if (!(0 <= x && x <= canoe.getHull().getLength()))
                 mainController.showSnackbar("Load must be contained within the canoe's length");
             // Validate the load is in the accepted magnitude range
             else if (Math.abs(mag) < 0.01)
@@ -342,7 +348,7 @@ public class BeamController implements Initializable
             if (Objects.equals(direction, "Down")) {mag *= -1;}
 
             // User entry validations
-            if (!(0 <= x && xR <= canoe.getLength()))
+            if (!(0 <= x && xR <= canoe.getHull().getLength()))
                 mainController.showSnackbar("Load must be contained within the canoe's length");
             else if (!(xR > x))
                 mainController.showSnackbar("Right interval bound must be greater than the left bound");
@@ -387,7 +393,7 @@ public class BeamController implements Initializable
     private void addPointLoadGraphic(PointLoad pLoad)
     {
         // x coordinate in beamContainer for load
-        double scaledX = GraphicsUtils.getXScaled(pLoad.getX(), beam.getWidth(), canoe.getLength()); // x position in the beamContainer
+        double scaledX = GraphicsUtils.getXScaled(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength()); // x position in the beamContainer
 
         AddLoadResult addResult = canoe.addLoad(pLoad);
 
@@ -634,7 +640,7 @@ public class BeamController implements Initializable
             enableEmptyLoadListSettings(uploadedCanoe.getExternalLoads().isEmpty());
             updateLoadListView();
             refreshLoadGraphics();
-            axisLabelR.setText(String.format("%.2f m", canoe.getLength()));
+            axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
 
             // Notify the user of the result
             mainController.showSnackbar("Successfully uploaded Canoe Model");
@@ -687,21 +693,20 @@ public class BeamController implements Initializable
     }
 
     /**
-     * Hardcoded temporary test function TODO: remove
+     * Hardcoded temporary test function for the new canoe model TODO: remove once new model finished
      * This will serve as a benchmark to for results comparison for quality assurance with respect to business logic
      */
-    public static DiscreteLoadDistribution generateSelfWeightDistribution() {
+    public static Hull generateSharkBaitHull() {
 
         // Define hull shape
         double a = 1.0 / 67.0;
-        double b = 3.0;
-        double c = -0.4;
-        Function<Double, Double> hullBaseProfileCurve = x -> a * Math.pow((x - b), 2) + c;
+        double h = 3.0;
+        double k = -0.4;
+        VertexFormParabola hullBaseProfileCurve = new VertexFormParabola(a, h, k);
 
-        // TODO
-        double k = 306716.0 / 250000.0;
-        Function<Double, Double> hullLeftEdgeCurve = x -> k * Math.pow((x - 0.5), 2) + hullBaseProfileCurve.apply(0.5);
-        Function<Double, Double> hullRightEdgeCurve = x -> k * Math.pow((x - 5.5), 2) + hullBaseProfileCurve.apply(5.5);
+        double aEdges = 306716.0 / 250000.0;
+        VertexFormParabola hullLeftEdgeCurve = new VertexFormParabola(aEdges, 0.5, hullBaseProfileCurve.value(0.5));
+        VertexFormParabola hullRightEdgeCurve = new VertexFormParabola(aEdges, 5.5, hullBaseProfileCurve.value(5.5));
 
         List<HullSection> sections = new ArrayList<>();
 
@@ -759,7 +764,7 @@ public class BeamController implements Initializable
         // Right edge curve
         sections.add(new HullSection(hullRightEdgeCurve, 5.5, 6, 0.2, 0.013, true));
 
-        return new DiscreteLoadDistribution(sections);
+        return new Hull(1056, 28.82, sections);
     }
 
     /**
@@ -777,12 +782,10 @@ public class BeamController implements Initializable
         addModuleToolBarButtons();
 
         // Instantiate the canoe
-        canoe = new Canoe(1056, 28.83); // hardcoded to 2024 numbers for now
+        canoe = new Canoe();
 
         // Reset module state if switching PADDL modules
-        canoe.setLength(0);
-        canoe.getPLoads().clear();
-        canoe.getDLoads().clear();
+        canoe.setHull(null);
         canoe.getExternalLoads().clear();
         loadListView.getItems().clear();
         loadContainer.getChildren().clear();

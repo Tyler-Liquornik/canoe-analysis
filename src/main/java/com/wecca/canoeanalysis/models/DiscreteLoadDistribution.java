@@ -1,92 +1,81 @@
 package com.wecca.canoeanalysis.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 
 import java.util.*;
 
+/**
+ * Represents a more complex loading with a distribution over some sub-interval of the hull [x, rx]
+ *
+ * Note: Written with the factory pattern as multiple constructor with a single list as a parameter is not allowed
+ * This is due to the type erasure implementation of Java generics
+ */
 @Getter
 public class DiscreteLoadDistribution {
-    private final double x;
-    private final double rx;
-    private final TreeMap<? extends Section, UniformDistributedLoad> sectionToLoadMap;
+    @JsonIgnore
+    private final Section section;
+    private final List<UniformDistributedLoad> loads;
 
-    // Constructor for hull sections (internal loading / self-weight distribution)
-    public DiscreteLoadDistribution(List<HullSection> hullSections) {
+    /**
+     * @param x the left endpoint of the distribution
+     * @param rx the right endpoint of the distribution
+     * @param loads the discretized distribution
+     * Note: the constructor is private to enable factory pattern
+     */
+    private DiscreteLoadDistribution(double x, double rx, List<UniformDistributedLoad> loads) {
+        this.section = new Section(x, rx);
+        this.loads = loads;
+    }
+
+    /**
+     * Factory method to create a self-weight distribution from a hull
+     * @param hull the hull to get the self-weight distribution of
+     */
+    public static DiscreteLoadDistribution fromHull(Hull hull) {
+        List<HullSection> hullSections = hull.getHullSections();
+        hullSections.sort(Comparator.comparingDouble(Section::getX));
         validateSectionsFormContinuousInterval(hullSections);
 
         List<UniformDistributedLoad> loads = new ArrayList<>();
         for (HullSection section : hullSections) {
             double mag = section.getWeight() / section.getLength();
-            double x = section.getStart();
-            double rx = section.getEnd();
+            double x = section.getX();
+            double rx = section.getRx();
             loads.add(new UniformDistributedLoad(mag, x, rx));
         }
 
-        TreeMap<HullSection, UniformDistributedLoad> sectionToLoadMap = new TreeMap<>(Comparator.comparingDouble(Section::getStart));
-        for (int i = 0; i < hullSections.size(); i++) {
-            sectionToLoadMap.put(hullSections.get(i), loads.get(i));
-        }
-
-        this.sectionToLoadMap = sectionToLoadMap;
-        this.x = hullSections.getFirst().getStart();
-        this.rx = hullSections.getLast().getEnd();
+        double x = hullSections.getFirst().getX();
+        double rx = hullSections.getLast().getRx();
+        return new DiscreteLoadDistribution(x, rx, loads);
     }
 
-    // Constructor for non-hull sections (external load distributions)
-    public DiscreteLoadDistribution(List<Section> sections, List<UniformDistributedLoad> loads) {
-        validateSectionsAgainstLoads(sections, loads);
-        validateSectionsAreNotHullSections(sections);
+    /**
+     * Factory method to create a distribution from loads directly (used for external loading distributions)
+     * @param dLoads make up the distribution
+     */
+    public static DiscreteLoadDistribution fromDistributedLoads(List<UniformDistributedLoad> dLoads) {
+        dLoads.sort(Comparator.comparingDouble(Load::getX));
+        List<Section> sections = dLoads.stream().map(UniformDistributedLoad::getSection).toList();
+        validateSectionsFormContinuousInterval(sections);
 
-        this.x = sections.getFirst().getStart();
-        this.rx = sections.getLast().getEnd();
-
-        TreeMap<Section, UniformDistributedLoad> sectionToLoadMap = new TreeMap<>(Comparator.comparingDouble(Section::getStart));
-        for (int i = 0; i < sections.size(); i++) {
-            sectionToLoadMap.put(sections.get(i), loads.get(i));}
-        this.sectionToLoadMap = sectionToLoadMap;
+        double x = dLoads.getFirst().getX();
+        double rx = dLoads.getLast().getRx();
+        return new DiscreteLoadDistribution(x, rx, dLoads);
     }
 
-    private void validateSectionsAreNotHullSections(List<Section> sections) {
-        for (Section section : sections) {
-            if (section instanceof HullSection) {
-                throw new IllegalArgumentException("Sections should not be instances of HullSection.");
-            }
-        }
-    }
-
-    private void validateSectionsAgainstLoads(List<Section> sections, List<UniformDistributedLoad> loads) {
-        if (sections.size() != loads.size())
-            throw new IllegalArgumentException("Cannot map sections to loads, unequal amount of sections and loads");
-        else {
-            validateSectionsFormContinuousInterval(sections);
-
-            TreeMap<Section, UniformDistributedLoad> sectionToLoadMap = new TreeMap<>(Comparator.comparingDouble(Section::getStart));
-            for (int i = 0; i < sections.size(); i++) {
-                sectionToLoadMap.put(sections.get(i), loads.get(i));}
-            for (Map.Entry<Section, UniformDistributedLoad> sectionToLoadMapEntry : sectionToLoadMap.entrySet() ){
-                validateSectionWeightDistributedAcrossEntireLength(sectionToLoadMapEntry);}
-        }
-    }
-
-    private void validateSectionsFormContinuousInterval(List<? extends Section> sections) {
+    /**
+     * A load distribution cannot have gaps, it must be defined everywhere on its interval
+     * @param sections the sections to validate
+     */
+    private static void validateSectionsFormContinuousInterval(List<? extends Section> sections) {
         for (int i = 0; i < sections.size() - 1; i++)
         {
             Section currentSection = sections.get(i);
             Section nextSection = sections.get(i + 1);
 
-            if (currentSection.getEnd() != nextSection.getStart())
+            if (currentSection.getRx() != nextSection.getX())
                 throw new IllegalArgumentException("Sections should not have gaps between them");
         }
-    }
-
-    private void validateSectionWeightDistributedAcrossEntireLength(Map.Entry<Section, UniformDistributedLoad> sectionToLoadMapEntry) {
-        double sectionStart = sectionToLoadMapEntry.getKey().getStart();
-        double sectionEnd = sectionToLoadMapEntry.getKey().getEnd();
-
-        double dLoadX = sectionToLoadMapEntry.getValue().getX();
-        double dLoadRx = sectionToLoadMapEntry.getValue().getRx();
-
-        if (sectionStart != dLoadX || sectionEnd != dLoadRx)
-            throw new IllegalArgumentException("Ensure the dLoad interval matches the section interval");
     }
 }
