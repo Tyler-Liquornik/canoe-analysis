@@ -1,8 +1,7 @@
 package com.wecca.canoeanalysis.components.diagrams;
 
-import com.wecca.canoeanalysis.models.Section;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 /**
  * Class to hold load intervals (intermediate between point/distributed loads and diagram points).
@@ -10,18 +9,17 @@ import lombok.Setter;
  * Solo point loads have a magnitude but no slope.
  * Solo distributed loads have a slope but no magnitude.
  * Combined loads may cause an interval to have both a magnitude and a slope.
+ * Note: this is separate from the rest of the canoe model as it's rules for sectioning / loading differ
  */
-@Getter @Setter
-public class DiagramSection
+@Data @AllArgsConstructor
+public class DiagramInterval
 {
-    private Section section;
+    private double x;
+    private double rx;
     private double magnitude;
     private double slope;
 
-    public DiagramSection(double x, double rx, double magnitude, double slope)
-    {
-        this.section = new Section(x, rx);
-        this.magnitude = magnitude;
-        this.slope = slope;
+    public double getLength() {
+        return rx - x;
     }
 }

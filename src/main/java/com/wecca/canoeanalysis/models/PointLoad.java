@@ -8,12 +8,13 @@ import lombok.Setter;
 @Setter @Getter @NoArgsConstructor
 public class PointLoad extends Load
 {
-    // Download / Upload buttons disabled after solve so this should never be included in the YAML model
+    private double x;
     @JsonIgnore
     private boolean isSupport;
 
     public PointLoad(double mag, double x, boolean isSupport) {
-        super("Point Load", mag, x);
+        super("Point Load", mag);
+        this.x = x;
         this.isSupport = isSupport;
     }
 

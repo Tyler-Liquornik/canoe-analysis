@@ -16,5 +16,5 @@ import lombok.Setter;
 public abstract class Load {
     protected String type;
     protected double mag;
-    protected double x;
+    public abstract double getX(); // method rather than field enables distributed loads to use Sections
 }
