@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.AllArgsConstructor;
@@ -15,6 +16,10 @@ import lombok.Setter;
 })
 public abstract class Load {
     protected String type;
-    protected double mag;
-    public abstract double getX(); // method rather than field enables distributed loads to use Sections
+    @JsonIgnore
+    public double getValue() {return getForce();} // represents
+    @JsonIgnore
+    public abstract double getForce();
+    @JsonIgnore
+    public abstract double getX();
 }

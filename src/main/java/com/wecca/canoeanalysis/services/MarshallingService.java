@@ -99,7 +99,7 @@ public class MarshallingService {
 
         for (Load load : canoe.getExternalLoads())
         {
-            if (Math.abs(load.getMag()) < 0.01)
+            if (Math.abs(load.getValue()) < 0.01)
             {
                 mainController.showSnackbar("All load magnitudes must be at least 0.01kN");
                 canoe = null;

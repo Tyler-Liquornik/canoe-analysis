@@ -243,8 +243,8 @@ public class DiagramService {
             {
                 // Supports will not combine with loads at the same position, so they are always included in the model
                 // We need to combine them here to prevent duplicate key issues
-                double mag = map.get(x).getMag();
-                mag += load.getMag();
+                double mag = map.get(x).getValue();
+                mag += load.getValue();
                 load = new PointLoad(mag, x, false);
             }
             map.put(x, load);
@@ -388,7 +388,7 @@ public class DiagramService {
                 // Apply the magnitude and the rolling slope
                 intervals.add(new DiagramInterval(prevX, x, magnitude, slope));
                 // Increment the slope, set the x coordinate, and clear the magnitude
-                for (UniformDistributedLoad load : distributedLoadStartMap.get(x)) {slope += load.getMag();}
+                for (UniformDistributedLoad load : distributedLoadStartMap.get(x)) {slope += load.getMagnitude();}
                 prevX = x;
                 magnitude = 0;
             }
@@ -397,7 +397,7 @@ public class DiagramService {
                 // Apply the magnitude and the rolling slope
                 intervals.add(new DiagramInterval(prevX, x, magnitude, slope));
                 // Decrement the slope, set the x coordinate, and clear the magnitude
-                for (UniformDistributedLoad load : distributedLoadEndMap.get(x)) {slope -= load.getMag();}
+                for (UniformDistributedLoad load : distributedLoadEndMap.get(x)) {slope -= load.getMagnitude();}
                 prevX = x;
                 magnitude = 0;
             }
@@ -406,7 +406,7 @@ public class DiagramService {
                 // Apply the magnitude and the rolling slope
                 intervals.add(new DiagramInterval(prevX, x, magnitude, slope));
                 // Reset the magnitude and set the x coordinate
-                magnitude = pointLoadMap.get(x).getMag();
+                magnitude = pointLoadMap.get(x).getValue();
                 prevX = x;
             }
         }

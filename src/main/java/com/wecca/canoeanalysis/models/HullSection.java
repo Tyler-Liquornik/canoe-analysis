@@ -139,6 +139,7 @@ public class HullSection extends Section
     public double getWeight() {
         return getMass() * PhysicalConstants.GRAVITY.getValue();
     }
+
     /**
      * Validates that the hull shape function is non-positive on its domain [start, end]
      * This convention allows waterline height y = h (downward is +y)

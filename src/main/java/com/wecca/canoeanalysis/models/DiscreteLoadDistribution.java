@@ -12,20 +12,27 @@ import java.util.*;
  * This is due to the type erasure implementation of Java generics
  */
 @Getter
-public class DiscreteLoadDistribution {
-    @JsonIgnore
-    private final Section section;
+public
+class DiscreteLoadDistribution extends Load {
     private final List<UniformDistributedLoad> loads;
 
     /**
-     * @param x the left endpoint of the distribution
-     * @param rx the right endpoint of the distribution
      * @param loads the discretized distribution
      * Note: the constructor is private to enable factory pattern
      */
-    private DiscreteLoadDistribution(double x, double rx, List<UniformDistributedLoad> loads) {
-        this.section = new Section(x, rx);
+    private DiscreteLoadDistribution(List<UniformDistributedLoad> loads) {
+        super("Distribution");
         this.loads = loads;
+    }
+
+    @Override
+    public double getForce() {
+        return loads.stream().mapToDouble(UniformDistributedLoad::getValue).sum();
+    }
+
+    @Override
+    public double getX() {
+        return loads.getFirst().getX();
     }
 
     /**
@@ -44,10 +51,7 @@ public class DiscreteLoadDistribution {
             double rx = section.getRx();
             loads.add(new UniformDistributedLoad(mag, x, rx));
         }
-
-        double x = hullSections.getFirst().getX();
-        double rx = hullSections.getLast().getRx();
-        return new DiscreteLoadDistribution(x, rx, loads);
+        return new DiscreteLoadDistribution(loads);
     }
 
     /**
@@ -59,9 +63,15 @@ public class DiscreteLoadDistribution {
         List<Section> sections = dLoads.stream().map(UniformDistributedLoad::getSection).toList();
         validateSectionsFormContinuousInterval(sections);
 
-        double x = dLoads.getFirst().getX();
-        double rx = dLoads.getLast().getRx();
-        return new DiscreteLoadDistribution(x, rx, dLoads);
+        return new DiscreteLoadDistribution(dLoads);
+    }
+
+    /**
+     * @return the section [x, rx] that the load distribution is on
+     */
+    @JsonIgnore
+    public Section getSection() {
+        return new Section(loads.getFirst().getX(), loads.getLast().getRx());
     }
 
     /**

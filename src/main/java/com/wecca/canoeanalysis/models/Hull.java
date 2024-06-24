@@ -111,6 +111,18 @@ public class Hull {
     }
 
     /**
+     * @return the mass of the hull in kg
+     */
+    @JsonIgnore
+    public double getMass() {
+        double mass = 0;
+        for (HullSection section : getHullSections()) {
+            mass += section.getMass();
+        }
+        return mass;
+    }
+
+    /**
      * @return the self weight distribution
      */
     @JsonIgnore
