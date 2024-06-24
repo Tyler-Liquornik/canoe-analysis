@@ -34,8 +34,8 @@ public class SolverService {
         double momentSum = 0;
         double sumOfPointLoads = 0;
         for (PointLoad pLoad : pointLoads) {
-            sumOfPointLoads += pLoad.getMag();
-            momentSum += (pLoad.getMag() * pLoad.getX());
+            sumOfPointLoads += pLoad.getValue();
+            momentSum += (pLoad.getValue() * pLoad.getX());
         }
 
         // Resulting forces combine to counteract the moments and total combined point load
@@ -61,7 +61,7 @@ public class SolverService {
 
         for (UniformDistributedLoad load : loads) {
             double dLoadLength = load.getRx() - load.getX();
-            double pLoadMagnitude = load.getMag() * dLoadLength;
+            double pLoadMagnitude = load.getMagnitude() * dLoadLength;
             double pLoadPosition = load.getX() + (dLoadLength / 2);
             pointLoads.add(new PointLoad(pLoadMagnitude, pLoadPosition, false));
         }
@@ -75,7 +75,7 @@ public class SolverService {
      * @param canoe the canoe with a give hull geometry, material densities, and external loading to solve
      * @return a linked list of dLoads corresponding to the distributed buoyancy for that section in equilibrium in kN/m
      */
-    public static List<UniformDistributedLoad> solveFloatingSystem(Canoe canoe) {
+    public static DiscreteLoadDistribution solveFloatingSystem(Canoe canoe) {
         double waterLine = getEquilibriumWaterLine(canoe);
         List<Double> buoyantForces = getBuoyantForceOnAllSections(waterLine, canoe);
         List<UniformDistributedLoad> loads = new ArrayList<>();
@@ -85,7 +85,7 @@ public class SolverService {
             double dLoadMag = buoyantForces.get(i) / sectionLength;
             loads.add(new UniformDistributedLoad(dLoadMag, section.getX(), section.getRx()));
         }
-        return loads;
+        return DiscreteLoadDistribution.fromDistributedLoads(loads);
     }
 
     /**

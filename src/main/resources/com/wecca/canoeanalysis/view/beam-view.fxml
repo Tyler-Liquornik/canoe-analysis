@@ -10,6 +10,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.shape.Line?>
 
+<?import com.jfoenix.controls.JFXTreeView?>
 <AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.BeamController">
    <children>
       <AnchorPane fx:id="upperAnchorPane" layoutY="25.0" maxHeight="200.0" maxWidth="850.0" minHeight="200.0" minWidth="850.0" prefHeight="200.0" prefWidth="850.0" styleClass="surface" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">
@@ -72,11 +73,11 @@
       </AnchorPane>
       <AnchorPane fx:id="lowerLeftAnchorPane" layoutX="25.0" layoutY="235.0" prefHeight="310.0" prefWidth="200.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="665.0" AnchorPane.topAnchor="225.0">
          <children>
-            <JFXListView fx:id="loadListView" layoutX="15.0" layoutY="15.0" onMouseClicked="#highlightLoad" prefHeight="250.0" prefWidth="190.0" styleClass="above-surface">
+            <JFXTreeView fx:id="loadsTreeView" layoutX="15.0" layoutY="15.0" onMouseClicked="#highlightLoad" prefHeight="250.0" prefWidth="190.0" styleClass="above-surface">
                <padding>
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </padding>
-            </JFXListView>
+            </JFXTreeView>
             <AnchorPane layoutX="30.0" layoutY="283.0" prefHeight="51.0" prefWidth="190.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="273.0">
                <children>
                   <JFXButton fx:id="deleteLoadButton" buttonType="RAISED" layoutX="20.0" mnemonicParsing="false" onAction="#deleteLoad" prefHeight="25.0" prefWidth="77.0" styleClass="action-object" text="Delete" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="100.0" />

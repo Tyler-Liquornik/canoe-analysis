@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.controllers;
 
+import com.jfoenix.controls.JFXTreeView;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.graphics.*;
@@ -34,7 +35,7 @@ public class BeamController implements Initializable
             pointTitleLabel, supportTitleLabel, distributedDirectionLabel, distributedMagntiudeLabel,
             distributedIntervalLabel, distributedTitleLabel;
     @FXML
-    private ListView<String> loadListView;
+    private JFXTreeView<String> loadsTreeView;
 
     @FXML
     private Button solveSystemButton, pointLoadButton, distributedLoadButton, setCanoeLengthButton, generateGraphsButton,
@@ -70,8 +71,8 @@ public class BeamController implements Initializable
         if (!enable)
         {
             // Apply settings
-            loadListView.setStyle("-fx-font-weight: normal");
-            loadListView.getItems().clear();
+            loadsTreeView.setStyle("-fx-font-weight: normal");
+            loadsTreeView.setRoot(null);
             deleteLoadButton.setDisable(false);
             clearLoadsButton.setDisable(false);
         }
@@ -80,9 +81,9 @@ public class BeamController implements Initializable
         else
         {
             // Apply settings
-            loadListView.setStyle("-fx-font-weight: bold");
-            loadListView.getItems().clear();
-            loadListView.getItems().add("View loads here");
+            loadsTreeView.setStyle("-fx-font-weight: bold");
+            loadsTreeView.setRoot(null);
+            loadsTreeView.setRoot(new TreeItem<>("View loads here"));
             deleteLoadButton.setDisable(true);
             clearLoadsButton.setDisable(true);
         }
@@ -124,7 +125,7 @@ public class BeamController implements Initializable
      */
     public void highlightLoad()
     {
-        int selectedIndex = loadListView.getSelectionModel().getSelectedIndex();
+        int selectedIndex = loadsTreeView.getSelectionModel().getSelectedIndex();
 
         updateViewOrder();
 
@@ -203,10 +204,15 @@ public class BeamController implements Initializable
                 setCanoeLengthButton.setText("Reset Length");
                 setCanoeLengthButton.setOnAction(e -> resetLength());
 
-                // TODO: DELETE THIS IS TEMP
+                // TODO: FOR TESTING NOT PERMANENT, NEED TO DELETE
                 if (len == 6.0) {
-                    System.out.println("Hull has been to shark bait");
+                    System.out.println("Hull has been set to shark bait");
                     canoe.setHull(generateSharkBaitHull());
+                    DiscreteLoadDistribution buoyancy = SolverService.solveFloatingSystem(canoe);
+                    for (UniformDistributedLoad dLoad: buoyancy.getLoads()) {
+                        addArrowBoxGraphic(dLoad);
+                    }
+                    System.out.println("Hull mass = " + canoe.getHull().getMass());
                 }
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
@@ -225,14 +231,16 @@ public class BeamController implements Initializable
         // Get the new list of loads as strings, sorted by x position
         List<Load> loads = new ArrayList<>(canoe.getExternalLoads());
         loads.sort(Comparator.comparingDouble(Load::getX));
-        List<String> stringLoads = loads.stream()
+        List<TreeItem<String>> stringLoads = loads.stream()
                 .map(Load::toString)
+                .map(TreeItem::new)
                 .toList();
 
-
         // Recreate the list view from the updated load list
-        loadListView.getItems().clear();
-        loadListView.getItems().addAll(stringLoads);
+        TreeItem<String> root = new TreeItem<>();
+        root.getChildren().addAll(stringLoads);
+        loadsTreeView.setRoot(root);
+        loadsTreeView.setShowRoot(false);
     }
 
     /**
@@ -254,16 +262,16 @@ public class BeamController implements Initializable
             Load load = canoe.getExternalLoads().get(i);
 
             // The ratio of the largest load (always rendered at max size) to this load
-            double loadMagnitudeRatio = Math.abs(load.getMag() / canoe.getExternalLoads().get(maxIndex).getMag());
+            double loadMagnitudeRatio = Math.abs(load.getValue() / canoe.getExternalLoads().get(maxIndex).getValue());
 
             // Clip load length if too small (i.e. ratio is too large)
             if (loadMagnitudeRatio < Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]))
                 loadMagnitudeRatio = Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]);
 
             // Render at scaled size (deltaY calculates the downscaling factor)
-            double endY = load.getMag() < 0 ? acceptedGraphicHeightRange[1] : acceptedGraphicHeightRange[1] + (int) beam.getThickness();
+            double endY = load.getValue() < 0 ? acceptedGraphicHeightRange[1] : acceptedGraphicHeightRange[1] + (int) beam.getThickness();
             double deltaY = (acceptedGraphicHeightRange[1] - acceptedGraphicHeightRange[0]) * loadMagnitudeRatio;
-            double startY = load.getMag() < 0 ? acceptedGraphicHeightRange[1] - deltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
+            double startY = load.getValue() < 0 ? acceptedGraphicHeightRange[1] - deltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
 
             if (load instanceof PointLoad pLoad)
             {
@@ -443,7 +451,7 @@ public class BeamController implements Initializable
             mainController.showSnackbar("Point load magnitudes cancelled");
 
         // Prevent rendering issues with zero-valued loads
-        if (pLoad.getMag() == 0)
+        if (pLoad.getValue() == 0)
             return;
 
         refreshLoadGraphics();
@@ -460,7 +468,7 @@ public class BeamController implements Initializable
         // Controls enabling/disabling for UX
         generateGraphsButton.setDisable(false);
         disableLoadingControls(true);
-        loadListView.setDisable(false);
+        loadsTreeView.setDisable(false);
 
         if (standsRadioButton.isSelected())
         {
@@ -503,9 +511,9 @@ public class BeamController implements Initializable
         undoSolveUpdateUI();
 
         // Simulate the user selecting and deleting the supports which are always the first and last load
-        loadListView.getSelectionModel().select(0);
+        loadsTreeView.getSelectionModel().select(0);
         deleteLoad();
-        loadListView.getSelectionModel().select(loadListView.getItems().size() - 1);
+        loadsTreeView.getSelectionModel().select(loadsTreeView.getRoot().getChildren().size() - 1);
         deleteLoad();
     }
 
@@ -553,7 +561,7 @@ public class BeamController implements Initializable
             submergedRadioButton, distributedMagnitudeComboBox, distributedMagnitudeTextField, pointMagnitudeComboBox,
             pointMagnitudeTextField, pointLocationTextField, pointLocationComboBox, pointDirectionComboBox,
             distributedIntervalTextFieldL, distributedIntervalTextFieldR, distributedIntervalComboBox,
-            distributedDirectionComboBox, deleteLoadButton, clearLoadsButton, loadListView, pointDirectionLabel,
+            distributedDirectionComboBox, deleteLoadButton, clearLoadsButton, loadsTreeView, pointDirectionLabel,
             pointMagnitudeLabel, pointLocationLabel, pointTitleLabel, supportTitleLabel, distributedDirectionLabel,
             distributedMagntiudeLabel, distributedIntervalLabel, distributedTitleLabel
         ));
@@ -581,7 +589,7 @@ public class BeamController implements Initializable
      */
     public void deleteLoad()
     {
-        int selectedIndex = loadListView.getSelectionModel().getSelectedIndex();
+        int selectedIndex = loadsTreeView.getSelectionModel().getSelectedIndex();
 
         // Handle case that no index was selected
         if (selectedIndex == -1)
@@ -590,7 +598,7 @@ public class BeamController implements Initializable
             return;
         }
 
-        loadListView.getItems().remove(selectedIndex);
+        loadsTreeView.getRoot().getChildren().remove(selectedIndex);
         loadContainer.getChildren().remove(selectedIndex);
         canoe.removeLoad(selectedIndex);
 
@@ -604,7 +612,7 @@ public class BeamController implements Initializable
      */
     public void clearLoads()
     {
-        loadListView.getItems().clear();
+        loadsTreeView.setRoot(null);
         loadContainer.getChildren().clear();
         canoe.clearLoads();
 
@@ -714,7 +722,11 @@ public class BeamController implements Initializable
         sections.add(new HullSection(hullLeftEdgeCurve, 0, 0.5, 0.2, 0.013, true));
 
         // Generate sections along hullBaseProfileCurve with intervals of 0.1
-        sections.add(new HullSection(hullBaseProfileCurve, 0.5, 1, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 0.5, 0.6, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 0.6, 0.7, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 0.7, 0.8, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 0.8, 0.9, 0.35, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 0.9, 1.0, 0.35, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 1, 1.1, 0.35, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 1.1, 1.2, 0.4, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 1.2, 1.3, 0.45, 0.013, false));
@@ -784,19 +796,13 @@ public class BeamController implements Initializable
         // Instantiate the canoe
         canoe = new Canoe();
 
-        // Reset module state if switching PADDL modules
-        canoe.setHull(null);
-        canoe.getExternalLoads().clear();
-        loadListView.getItems().clear();
-        loadContainer.getChildren().clear();
-
         // Disable most buttons on startup to prevent inputs in the wrong order
         disableLoadingControls(true);
         generateGraphsButton.setDisable(true);
         enableEmptyLoadListSettings(true);
 
         // Css styling
-        JFXDepthManager.setDepth(loadListView, 4);
+        JFXDepthManager.setDepth(loadsTreeView, 4);
 
         // Setting RadioButton Toggle Group
         ToggleGroup canoeSupportToggleGroup = new ToggleGroup();

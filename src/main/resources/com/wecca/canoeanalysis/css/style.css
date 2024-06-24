@@ -1,7 +1,7 @@
 @import url("font.css");
 
 * {
-    -fx-primary: #F96C37; /*Marker, generated at runtime*/
+    -fx-primary: #F96C37; /* Marker, generated at runtime */
 
     -fx-background: #121212;
     -fx-surface: #202020;
@@ -47,17 +47,38 @@
 .button,
 .combo-box,
 .combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell,
-.list-view > .virtual-flow > .clipped-container > .sheet > .list-cell {
+.jfx-tree-view,
+.jfx-tree-view-path > .viewport,
+.jfx-tree-view-path:focused > .viewport,
+.jfx-tree-view-path .buttons-container {
     -fx-cursor: hand;
 }
 
-.list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:focused,
-.list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:even,
-.list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:odd{
+.jfx-tree-view-path > .viewport,
+.jfx-tree-view-path:focused > .viewport,
+.jfx-tree-view-path .buttons-container {
     -fx-border-radius: 5;
     -fx-background-radius: 5;
     -fx-background-color: -fx-above-surface;
     -fx-text-fill: white;
+    -fx-padding: 10px;
+}
+
+.selection-bar {
+    -fx-background-color: -fx-primary;
+}
+
+.tree-cell,
+.tree-cell:filled,
+.tree-cell:focused,
+.tree-cell:selected {
+    -fx-background-color: -fx-above-surface;
+    -fx-text-fill: white;
+    -fx-padding: 10px;
+}
+
+.tree-cell > .jfx-rippler {
+    -jfx-rippler-fill: -fx-primary
 }
 
 .combo-box > .list-cell,

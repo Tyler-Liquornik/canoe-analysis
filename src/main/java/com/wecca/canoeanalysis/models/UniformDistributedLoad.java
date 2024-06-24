@@ -8,16 +8,29 @@ import lombok.Setter;
 @Setter @Getter @NoArgsConstructor
 public class UniformDistributedLoad extends Load {
 
+    @JsonIgnore
+    private double magnitude;
     private Section section;
 
-    public UniformDistributedLoad(double mag, double x, double rx) {
-        super("Distributed Load", mag);
+    public UniformDistributedLoad(double magnitude, double x, double rx) {
+        super("Distributed Load");
+        this.magnitude = magnitude;
         this.section = new Section(x, rx);
     }
 
     @Override
     public String toString() {
-        return String.format("Load: %.2fkN/m, [%.2fm, %.2fm]", mag, getX(), getRx());
+        return String.format("Load: %.2fkN/m, [%.2fm, %.2fm]", magnitude, getX(), getRx());
+    }
+
+    @JsonIgnore
+    public double getForce() {
+        return magnitude * section.getLength();
+    }
+
+    @JsonIgnore
+    public double getValue() {
+        return magnitude;
     }
 
     @Override
@@ -25,6 +38,7 @@ public class UniformDistributedLoad extends Load {
         return section.getX();
     }
 
+    @JsonIgnore
     public double getRx() {
         return section.getRx();
     }

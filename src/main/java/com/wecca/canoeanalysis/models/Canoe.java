@@ -26,38 +26,33 @@ public class Canoe
         this.externalLoads = new ArrayList<>();
     }
 
-    public AddLoadResult addLoad(Load l) {
-        if (l instanceof PointLoad) {
+    public AddLoadResult addLoad(Load load) {
+        if (load instanceof PointLoad pLoad) {
             // Do not add the load if it is zero valued unless if is a support
             // Zero-valued supports are still added as markers for the model and ListView
-            if (l.getMag() == 0)
-                if (!((PointLoad) l).isSupport())
+            if (pLoad.getValue() == 0)
+                if (!pLoad.isSupport())
                     return AddLoadResult.ADDED;
                 else
-                    l.setMag(0.00); // In case mag is -0 so that the negative doesn't display to the user
+                    pLoad.setForce(0.00); // In case mag is -0 so that the negative doesn't display to the user
 
             // Search for other loads at the same position, and combine their magnitudes
-            for (PointLoad pLoad : getPLoads()) {
-                if (pLoad.getX() == l.getX() && !((PointLoad) l).isSupport()) {
-                    double newMag = pLoad.getMag() + l.getMag();
-                    if (newMag == 0) {
-                        removeLoad(externalLoads.indexOf(pLoad));
+            for (PointLoad existingPLoad : getPLoads()) {
+                if (existingPLoad.getX() == pLoad.getX() && !pLoad.isSupport()) {
+                    double newForce = existingPLoad.getValue() + pLoad.getValue();
+                    if (newForce == 0) {
+                        removeLoad(externalLoads.indexOf(existingPLoad));
                         return AddLoadResult.REMOVED;
                     }
-                    externalLoads.get(externalLoads.indexOf(pLoad)).setMag(newMag);
-                    pLoad.setMag(newMag);
+                    ((PointLoad) (externalLoads.get(externalLoads.indexOf(existingPLoad)))).setForce(newForce);
+                    existingPLoad.setForce(newForce);
                     return AddLoadResult.COMBINED;
                 }
             }
-            externalLoads.add(l);
-            externalLoads.sort(Comparator.comparingDouble(Load::getX));
         }
 
-        else if (l instanceof UniformDistributedLoad) {
-            externalLoads.add(l);
-            externalLoads.sort(Comparator.comparingDouble(Load::getX));
-        }
-
+        externalLoads.add(load);
+        externalLoads.sort(Comparator.comparingDouble(Load::getX));
         return AddLoadResult.ADDED;
     }
 
@@ -78,7 +73,7 @@ public class Canoe
         int maxIndex = 0;
         double max = 0;
         for (int i = 0; i < externalLoads.size(); i++) {
-            double mag = Math.abs(externalLoads.get(i).getMag());
+            double mag = Math.abs(externalLoads.get(i).getValue());
             if (mag > max) {
                 max = mag;
                 maxIndex = i;
@@ -116,10 +111,10 @@ public class Canoe
         double externalWeight = 0;
         // External loads (sign included in magnitude)
         for (PointLoad pLoad : getPLoads()) {
-            externalWeight += pLoad.getMag();
+            externalWeight += pLoad.getValue();
         }
         for (UniformDistributedLoad dLoad : getDLoads()) {
-            externalWeight += dLoad.getMag() * (dLoad.getRx() - dLoad.getX());
+            externalWeight += dLoad.getMagnitude() * (dLoad.getRx() - dLoad.getX());
         }
         return externalWeight;
     }
