@@ -65,7 +65,15 @@ Currently, the program has one module to which will be used to model the canoe a
 - [X] Import/Export the canoe object as YAML
 - [X] Unification of color system between Java and CSS code
   - [X] Customizable colors in settings
-
+- [ ] Solve the case of a floating canoe [Epic]
+  - [X] Implement an improved model for breaking the canoe hull up into sections
+  - [X] Solve for a load distribution based on the self-weight distribution of the hull
+  - [X] Iteratively solve for the waterline of a floating hull in equilibrium to get a buoyancy distribution
+  - [ ] Update the YAML model and Marshalling process
+  - [ ] Provide a GUI to custom edit the curves that define the hull
+    - [X] Prefine a set of curves availalbe for hull shape (can start with just one for now)
+    - [ ] Edit curves by sliders for parameters for a given curve
+    
 <!-- CONTRIBUTING -->
 ## Contributing
 Starting in September for the 2024-2025 school year, any WECCA members involved on the software team can contribute to PADDL!
