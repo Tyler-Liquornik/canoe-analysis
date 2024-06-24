@@ -71,7 +71,7 @@ Currently, the program has one module to which will be used to model the canoe a
   - [X] Iteratively solve for the waterline of a floating hull in equilibrium to get a buoyancy distribution
   - [ ] Update the YAML model and Marshalling process
   - [ ] Provide a GUI to custom edit the curves that define the hull
-    - [X] Prefine a set of curves availalbe for hull shape (can start with just one for now)
+    - [X] Define a set of curves availalbe for hull shape (can start with just one for now)
     - [ ] Edit curves by sliders for parameters for a given curve
     
 <!-- CONTRIBUTING -->
