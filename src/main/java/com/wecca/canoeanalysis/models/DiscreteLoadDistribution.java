@@ -26,6 +26,14 @@ class DiscreteLoadDistribution extends Load {
     }
 
     @Override
+    public double getValue() {
+        return loads.stream()
+                .mapToDouble(UniformDistributedLoad::getValue)
+                .max()
+                .orElse(0.0);
+    }
+
+    @Override
     public double getForce() {
         return loads.stream().mapToDouble(UniformDistributedLoad::getValue).sum();
     }

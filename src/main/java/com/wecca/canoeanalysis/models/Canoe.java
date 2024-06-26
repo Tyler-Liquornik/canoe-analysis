@@ -13,11 +13,13 @@ import java.util.*;
  * External loads in typically real-world cases include paddlers, cargo, stand that hold the canoe up, buoyancy, etc.
  * External loads may be individual loads (point load or uniformly distributed loads), or a discrete distribution
  */
-@Getter @Setter @EqualsAndHashCode
+
+@Getter @EqualsAndHashCode
 public class Canoe
 {
     private final ArrayList<Load> externalLoads;
     private List<DiscreteLoadDistribution> externalLoadDistributions;
+    @Setter
     private Hull hull;
 
     public Canoe() {
@@ -58,10 +60,6 @@ public class Canoe
 
     public void removeLoad(int index) {
         externalLoads.remove(index);
-    }
-
-    public void clearLoads() {
-        externalLoads.clear();
     }
 
     @JsonIgnore

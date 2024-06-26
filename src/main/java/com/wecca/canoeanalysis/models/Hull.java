@@ -127,7 +127,10 @@ public class Hull {
      */
     @JsonIgnore
     public DiscreteLoadDistribution getSelfWeightDistribution() {
-        return DiscreteLoadDistribution.fromHull(this);
+        if (getTotalVolume() == 0)
+            return null;
+        else
+            return DiscreteLoadDistribution.fromHull(this);
     }
 
     /**

@@ -7,6 +7,7 @@ import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.jfoenix.controls.JFXSnackbarLayout;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.services.MarshallingService;
+import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import javafx.animation.*;
 import javafx.fxml.FXML;
@@ -52,35 +53,32 @@ public class MainController implements Initializable {
     private List<Button> moduleToolBarButtons = new ArrayList<>();
 
     /**
-     * Mouse pressed event handler to record the current mouse position
-     * @param event triggers the method
+     * Mouse clicked event to set the current location of the window
      */
     public void draggableWindowGetLocation(MouseEvent event) {
-        stageXOffset = event.getSceneX();
-        stageYOffset = event.getSceneY();
+        WindowManagerService.setStageOffsets(event);
     }
 
-    /** Mouse dragged event handler to move the window
-     * @param event triggers the method
+    /**
+     * Mouse dragged event handler to move the window
      */
-    public void draggableWindowMove(MouseEvent event)
-    {
-        if (primaryStage != null)
-        {
-            primaryStage.setX(event.getScreenX() - stageXOffset);
-            primaryStage.setY(event.getScreenY() - stageYOffset);
-        }
+    public void draggableWindowMove(MouseEvent event) {
+        WindowManagerService.moveStage(event, primaryStage);
     }
 
     /**
      * Close the window when the "X" button is pressed
      */
-    public void closeWindow() {primaryStage.close();}
+    public void closeWindow() {
+        WindowManagerService.closeWindow(primaryStage);
+    }
 
     /**
      * Minimize the window the "-" button is pressed
      */
-    public void minimizeWindow() {primaryStage.setIconified(true);}
+    public void minimizeWindow() {
+        WindowManagerService.minimizeWindow(primaryStage);
+    }
 
     public void toggleDrawer() {
         if (isDrawerOpen) {
