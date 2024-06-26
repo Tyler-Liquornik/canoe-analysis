@@ -21,7 +21,7 @@ class DiscreteLoadDistribution extends Load {
      * Note: the constructor is private to enable factory pattern
      */
     private DiscreteLoadDistribution(List<UniformlyDistributedLoad> loads) {
-        super("Distribution");
+        super("Discrete Load Function");
         this.loads = loads;
     }
 
