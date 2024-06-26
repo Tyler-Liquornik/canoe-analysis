@@ -56,10 +56,10 @@ public class SolverService {
      * @param loads list of distributed loads.
      * @return list of point loads.
      */
-    private static List<PointLoad> distributedToPoint(List<UniformDistributedLoad> loads) {
+    private static List<PointLoad> distributedToPoint(List<UniformlyDistributedLoad> loads) {
         List<PointLoad> pointLoads = new ArrayList<>();
 
-        for (UniformDistributedLoad load : loads) {
+        for (UniformlyDistributedLoad load : loads) {
             double dLoadLength = load.getRx() - load.getX();
             double pLoadMagnitude = load.getMagnitude() * dLoadLength;
             double pLoadPosition = load.getX() + (dLoadLength / 2);
@@ -78,12 +78,12 @@ public class SolverService {
     public static DiscreteLoadDistribution solveFloatingSystem(Canoe canoe) {
         double waterLine = getEquilibriumWaterLine(canoe);
         List<Double> buoyantForces = getBuoyantForceOnAllSections(waterLine, canoe);
-        List<UniformDistributedLoad> loads = new ArrayList<>();
+        List<UniformlyDistributedLoad> loads = new ArrayList<>();
         for (int i = 0; i < buoyantForces.size(); i++) {
             HullSection section = canoe.getHull().getHullSections().get(i);
             double sectionLength = section.getLength();
             double dLoadMag = buoyantForces.get(i) / sectionLength;
-            loads.add(new UniformDistributedLoad(dLoadMag, section.getX(), section.getRx()));
+            loads.add(new UniformlyDistributedLoad(dLoadMag, section.getX(), section.getRx()));
         }
         return DiscreteLoadDistribution.fromDistributedLoads(loads);
     }
