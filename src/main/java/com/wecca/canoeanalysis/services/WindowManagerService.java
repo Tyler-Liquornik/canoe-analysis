@@ -109,7 +109,8 @@ public class WindowManagerService {
     }
 
     /**
-     * JFXDecorator is built to be draggable already, but does not work on macOS, so this is required as a fix
+     * JFXDecorator is built to be draggable already, but does not work on macOS
+     * This is due to an unfixed bug in JFoenix, so a manual fix is required
      * See: https://github.com/sshahine/JFoenix/issues/590
      * @param popupStage the stage to move on drag
      * @param rootPane the root pane of the stage

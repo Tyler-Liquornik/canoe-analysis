@@ -6,13 +6,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Setter @Getter @NoArgsConstructor
-public class UniformDistributedLoad extends Load {
+public class UniformlyDistributedLoad extends Load {
 
     @JsonIgnore
     private double magnitude;
     private Section section;
 
-    public UniformDistributedLoad(double magnitude, double x, double rx) {
+    public UniformlyDistributedLoad(double magnitude, double x, double rx) {
         super("Distributed Load");
         this.magnitude = magnitude;
         this.section = new Section(x, rx);

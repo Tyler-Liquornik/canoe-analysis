@@ -18,14 +18,14 @@ import java.util.*;
 public class Canoe
 {
     private final ArrayList<Load> externalLoads;
-    private List<DiscreteLoadDistribution> externalLoadDistributions;
+    private final ArrayList<DiscreteLoadDistribution> externalLoadDistributions;
     @Setter
     private Hull hull;
 
     public Canoe() {
         this.hull = null;
-        this.externalLoadDistributions = new ArrayList<>();
         this.externalLoads = new ArrayList<>();
+        this.externalLoadDistributions = new ArrayList<>();
     }
 
     public AddLoadResult addLoad(Load load) {
@@ -91,10 +91,10 @@ public class Canoe
     }
 
     @JsonIgnore
-    public List<UniformDistributedLoad> getDLoads() {
-        List<UniformDistributedLoad> dLoads = new ArrayList<>();
+    public List<UniformlyDistributedLoad> getDLoads() {
+        List<UniformlyDistributedLoad> dLoads = new ArrayList<>();
         for (Load load : externalLoads) {
-            if (load instanceof UniformDistributedLoad dLoad)
+            if (load instanceof UniformlyDistributedLoad dLoad)
                 dLoads.add(dLoad);
         }
         return dLoads;
@@ -111,7 +111,7 @@ public class Canoe
         for (PointLoad pLoad : getPLoads()) {
             externalWeight += pLoad.getValue();
         }
-        for (UniformDistributedLoad dLoad : getDLoads()) {
+        for (UniformlyDistributedLoad dLoad : getDLoads()) {
             externalWeight += dLoad.getMagnitude() * (dLoad.getRx() - dLoad.getX());
         }
         return externalWeight;
@@ -138,7 +138,7 @@ public class Canoe
         for (Load l : externalLoads)
         {
             s.add(l.getX());
-            if (l instanceof UniformDistributedLoad distributedLoad)
+            if (l instanceof UniformlyDistributedLoad distributedLoad)
                 s.add(distributedLoad.getRx());
         }
 
@@ -156,6 +156,28 @@ public class Canoe
         s.add(hull.getSection().getX());
         s.add(hull.getSection().getRx());
         return s;
+    }
+
+    /**
+     * @return a sorted list of all external point loads and uniformly distributed loads, and external load distributions
+     */
+    @JsonIgnore
+    public List<Load> getAllLoads() {
+        List<Load> loads = new ArrayList<>(externalLoads);
+        loads.add(hull.getSelfWeightDistribution());
+        loads.addAll(externalLoadDistributions);
+
+        // Define the order to sort by type
+        Map<Class<? extends Load>, Integer> classOrder = new HashMap<>();
+        classOrder.put(PointLoad.class, 0);
+        classOrder.put(DiscreteLoadDistribution.class, 1);
+        classOrder.put(UniformlyDistributedLoad.class, 2);
+
+        // Sort by type, and then by x
+        loads.sort(Comparator.comparingInt(load -> classOrder.getOrDefault(load.getClass(), -1)));
+        loads.sort(Comparator.comparingDouble(Load::getX));
+
+        return loads;
     }
 }
 

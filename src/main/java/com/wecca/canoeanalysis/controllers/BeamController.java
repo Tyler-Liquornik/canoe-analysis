@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Primary controller for longitudinal analysis of a beam
@@ -176,12 +175,12 @@ public class BeamController implements Initializable
      */
     public void setLength()
     {
-        if (ParsingService.validateTextAsDouble(canoeLengthTextField.getText())) {
+        if (InputParsingService.validateTextAsDouble(canoeLengthTextField.getText())) {
             // Default list view message
             enableEmptyLoadListSettings(true);
 
             // Convert to metric
-            double len = ParsingService.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
+            double len = InputParsingService.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
 
             // Only allow lengths in the specified range
             if (len >= 0.01) {
@@ -223,79 +222,6 @@ public class BeamController implements Initializable
     }
 
     /**
-     * Update the ListView displaying loads to the user to be sorted by x position
-     */
-    public void updateLoadListView() {
-        // Collect all individual loads and loads from distributions
-        List<Load> allLoads = new ArrayList<>(canoe.getExternalLoads());
-
-        // Collect all distributions and their loads
-        List<DiscreteLoadDistribution> distributions = new ArrayList<>(canoe.getExternalLoadDistributions());
-        if (canoe.getHull().getSelfWeightDistribution() != null)
-            distributions.add(canoe.getHull().getSelfWeightDistribution());
-        distributions.sort(Comparator.comparingDouble(DiscreteLoadDistribution::getX));
-
-        for (DiscreteLoadDistribution distribution : distributions) {
-            allLoads.addAll(distribution.getLoads());
-        }
-
-        // Sort all loads by their x position
-        allLoads.sort(Comparator.comparing(Load::getX));
-
-        // Create a map for distribution to its tree item
-        Map<DiscreteLoadDistribution, TreeItem<String>> distributionTreeItemMap = distributions.stream()
-                .collect(Collectors.toMap(
-                        distribution -> distribution,
-                        distribution -> {
-                            TreeItem<String> distributionTreeItem = new TreeItem<>(distribution.getType());
-                            distribution.getLoads().forEach(dLoad -> distributionTreeItem.getChildren().add(createLoadTreeItem(dLoad)));
-                            return distributionTreeItem;
-                        }
-                ));
-
-        // Create the root tree item and add loads
-        TreeItem<String> root = new TreeItem<>();
-        for (Load load : allLoads)
-        {
-            if (load instanceof DiscreteLoadDistribution)
-                root.getChildren().add(distributionTreeItemMap.get(load));
-            else
-            {
-                TreeItem<String> loadTreeItem = createLoadTreeItem(load);
-                root.getChildren().add(loadTreeItem);
-            }
-        }
-
-        // Recreate the list view from the updated load list
-        loadsTreeView.setRoot(root);
-        loadsTreeView.setShowRoot(false);
-    }
-
-    /**
-     * Create tree items for a given load with its fields as children.
-     * @param load the load to create tree items for
-     * @return the root tree item representing the load
-     */
-    private TreeItem<String> createLoadTreeItem(Load load) {
-        TreeItem<String> rootItem = new TreeItem<>(load.getType());
-
-        if (load instanceof PointLoad pointLoad) {
-            rootItem.getChildren().add(new TreeItem<>(String.format("Force: %.2fkN", pointLoad.getForce())));
-            rootItem.getChildren().add(new TreeItem<>(String.format("Position: %.2fm", pointLoad.getX())));
-        } else if (load instanceof UniformDistributedLoad uLoad) {
-            rootItem.getChildren().add(new TreeItem<>(String.format("Force: %.2fkN/m", uLoad.getForce())));
-            rootItem.getChildren().add(new TreeItem<>(String.format("Position: [%.2fm, %.2fm]", uLoad.getX(), uLoad.getRx())));
-        } else if (load instanceof DiscreteLoadDistribution distribution) {
-            for (UniformDistributedLoad uLoad : distribution.getLoads()) {
-                TreeItem<String> uLoadItem = createLoadTreeItem(uLoad);
-                rootItem.getChildren().add(uLoadItem);
-            }
-        }
-
-        return rootItem;
-    }
-
-    /**
      * Rescales all point loads (arrows) and distributed loads (arrow boxes) based on the load with the highest mag.
      * Point and distributed load magnitudes are compared although their units differ (Force vs. Force / Length)
      */
@@ -330,7 +256,7 @@ public class BeamController implements Initializable
                 double xScaled = GraphicsUtils.getXScaled(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
                 rescaledGraphics.add(new Arrow(xScaled, startY, xScaled, endY));
             }
-            else if (load instanceof UniformDistributedLoad dLoad)
+            else if (load instanceof UniformlyDistributedLoad dLoad)
             {
                 double xScaled = GraphicsUtils.getXScaled(dLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
                 double rxScaled = GraphicsUtils.getXScaled(dLoad.getRx(), beam.getWidth(), canoe.getHull().getLength());
@@ -353,10 +279,10 @@ public class BeamController implements Initializable
         mainController.closeSnackBar(mainController.getSnackbar());
 
         // Validate the entered numbers are doubles
-        if (ParsingService.allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField)))
+        if (InputParsingService.allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField)))
         {
-            double x = ParsingService.getDistanceConverted(pointLocationComboBox, pointLocationTextField);
-            double mag = ParsingService.getLoadConverted(pointMagnitudeComboBox, pointMagnitudeTextField);
+            double x = InputParsingService.getDistanceConverted(pointLocationComboBox, pointLocationTextField);
+            double mag = InputParsingService.getLoadConverted(pointMagnitudeComboBox, pointMagnitudeTextField);
             String direction = pointDirectionComboBox.getSelectionModel().getSelectedItem();
 
             // Apply direction
@@ -376,8 +302,8 @@ public class BeamController implements Initializable
 
                 // Add the load to canoe, and the load arrow on the GUI
                 PointLoad p = new PointLoad(mag, x, false);
-                addPointLoad(p);
-                updateLoadListView();
+                addPointLoadToView(p);
+                LoadTreeManagerService.addLoadToTreeView(p);
             }
 
         }
@@ -396,12 +322,12 @@ public class BeamController implements Initializable
         mainController.closeSnackBar(mainController.getSnackbar());
 
         // Validate the entered numbers are doubles
-        if (ParsingService.allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
+        if (InputParsingService.allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
                 distributedIntervalTextFieldR)))
         {
-            double x = ParsingService.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldL);
-            double xR = ParsingService.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldR);
-            double mag = ParsingService.getLoadConverted(distributedMagnitudeComboBox, distributedMagnitudeTextField);
+            double x = InputParsingService.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldL);
+            double xR = InputParsingService.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldR);
+            double mag = InputParsingService.getLoadConverted(distributedMagnitudeComboBox, distributedMagnitudeTextField);
             String direction = distributedDirectionComboBox.getSelectionModel().getSelectedItem();
 
             // Apply direction
@@ -421,9 +347,9 @@ public class BeamController implements Initializable
                     enableEmptyLoadListSettings(false);
 
                     // Add the load to canoe, and update ui state
-                    UniformDistributedLoad d = new UniformDistributedLoad(mag, x, xR);
-                    addUniformDistributedLoad(d);
-                    updateLoadListView();
+                    UniformlyDistributedLoad d = new UniformlyDistributedLoad(mag, x, xR);
+                    addDistributedLoadToView(d);
+                    LoadTreeManagerService.addLoadToTreeView(d);
                 }
         }
         else
@@ -439,7 +365,7 @@ public class BeamController implements Initializable
 
         // Add the load to canoe, and update ui state
         canoe.addLoad(loadDistribution);
-        updateLoadListView();
+        LoadTreeManagerService.addLoadToTreeView(loadDistribution);
         refreshLoadGraphics();
     }
 
@@ -448,7 +374,7 @@ public class BeamController implements Initializable
      * This method was extracted to allow for reuse in system solver methods.
      * @param dLoad the distributed load to be added.
      */
-    private void addUniformDistributedLoad(UniformDistributedLoad dLoad) {
+    private void addDistributedLoadToView(UniformlyDistributedLoad dLoad) {
         // Label reset
         mainController.closeSnackBar(mainController.getSnackbar());
 
@@ -463,7 +389,7 @@ public class BeamController implements Initializable
      * Add a point load to the canoe object and JavaFX UI.
      * @param pLoad the point load to be added.
      */
-    private void addPointLoad(PointLoad pLoad)
+    private void addPointLoadToView(PointLoad pLoad)
     {
         // x coordinate in beamContainer for load
         double scaledX = GraphicsUtils.getXScaled(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength()); // x position in the beamContainer
@@ -556,7 +482,7 @@ public class BeamController implements Initializable
         solveSystemButton.setDisable(false);
 
         // Update state
-        updateLoadListView();
+        LoadTreeManagerService.buildLoadTreeView();
         updateViewOrder();
     }
 
@@ -569,7 +495,7 @@ public class BeamController implements Initializable
     {
         List<PointLoad> supportLoads = SolverService.solveStandSystem(canoe);
         for (PointLoad supportLoad : supportLoads) {
-            addPointLoad(supportLoad);}
+            addPointLoadToView(supportLoad);}
     }
 
     private void undoStandsSolve()
@@ -712,7 +638,7 @@ public class BeamController implements Initializable
 
             // Update UI to new canoe
             enableEmptyLoadListSettings(uploadedCanoe.getExternalLoads().isEmpty());
-            updateLoadListView();
+            LoadTreeManagerService.buildLoadTreeView();
             refreshLoadGraphics();
             axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
 
@@ -898,6 +824,10 @@ public class BeamController implements Initializable
         beam = new Beam(0, 84, beamContainer.getPrefWidth(), 25);
         JFXDepthManager.setDepth(beam, 4);
         beamContainer.getChildren().add(beam);
+
+        // Set up load tree management
+        LoadTreeManagerService.setCanoe(canoe);
+        LoadTreeManagerService.setLoadsTreeView(loadsTreeView);
 
         // Initialize maximum allowed graphics size from beam graphic and container dimensions
         double maxGraphicHeight = 84;

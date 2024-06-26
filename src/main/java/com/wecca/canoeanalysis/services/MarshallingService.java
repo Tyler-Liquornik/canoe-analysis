@@ -105,14 +105,14 @@ public class MarshallingService {
                 canoe = null;
             }
 
-            if (load instanceof UniformDistributedLoad dLoad && dLoad.getX() >= dLoad.getRx())
+            if (load instanceof UniformlyDistributedLoad dLoad && dLoad.getX() >= dLoad.getRx())
             {
                 mainController.showSnackbar("Right interval bound must be greater than the left bound");
                 canoe = null;
             }
 
             if ((load instanceof PointLoad pLoad && !(0 <= pLoad.getX() && pLoad.getX() <= canoe.getHull().getLength())) ||
-                    (load instanceof UniformDistributedLoad dLoad && !((0 <= dLoad.getX() && dLoad.getX() <= canoe.getHull().getLength()) ||
+                    (load instanceof UniformlyDistributedLoad dLoad && !((0 <= dLoad.getX() && dLoad.getX() <= canoe.getHull().getLength()) ||
                                 (0 <= dLoad.getRx() && dLoad.getRx() <= canoe.getHull().getLength()))))
             {
                 mainController.showSnackbar("All loads must be contained within the canoe's length");

@@ -14,13 +14,13 @@ import java.util.*;
 @Getter
 public
 class DiscreteLoadDistribution extends Load {
-    private final List<UniformDistributedLoad> loads;
+    private final List<UniformlyDistributedLoad> loads;
 
     /**
      * @param loads the discretized distribution
      * Note: the constructor is private to enable factory pattern
      */
-    private DiscreteLoadDistribution(List<UniformDistributedLoad> loads) {
+    private DiscreteLoadDistribution(List<UniformlyDistributedLoad> loads) {
         super("Distribution");
         this.loads = loads;
     }
@@ -28,14 +28,14 @@ class DiscreteLoadDistribution extends Load {
     @Override
     public double getValue() {
         return loads.stream()
-                .mapToDouble(UniformDistributedLoad::getValue)
+                .mapToDouble(UniformlyDistributedLoad::getValue)
                 .max()
                 .orElse(0.0);
     }
 
     @Override
     public double getForce() {
-        return loads.stream().mapToDouble(UniformDistributedLoad::getValue).sum();
+        return loads.stream().mapToDouble(UniformlyDistributedLoad::getValue).sum();
     }
 
     @Override
@@ -52,12 +52,12 @@ class DiscreteLoadDistribution extends Load {
         hullSections.sort(Comparator.comparingDouble(Section::getX));
         validateSectionsFormContinuousInterval(hullSections);
 
-        List<UniformDistributedLoad> loads = new ArrayList<>();
+        List<UniformlyDistributedLoad> loads = new ArrayList<>();
         for (HullSection section : hullSections) {
             double mag = section.getWeight() / section.getLength();
             double x = section.getX();
             double rx = section.getRx();
-            loads.add(new UniformDistributedLoad(mag, x, rx));
+            loads.add(new UniformlyDistributedLoad(mag, x, rx));
         }
         return new DiscreteLoadDistribution(loads);
     }
@@ -66,9 +66,9 @@ class DiscreteLoadDistribution extends Load {
      * Factory method to create a distribution from loads directly (used for external loading distributions)
      * @param dLoads make up the distribution
      */
-    public static DiscreteLoadDistribution fromDistributedLoads(List<UniformDistributedLoad> dLoads) {
+    public static DiscreteLoadDistribution fromDistributedLoads(List<UniformlyDistributedLoad> dLoads) {
         dLoads.sort(Comparator.comparingDouble(Load::getX));
-        List<Section> sections = dLoads.stream().map(UniformDistributedLoad::getSection).toList();
+        List<Section> sections = dLoads.stream().map(UniformlyDistributedLoad::getSection).toList();
         validateSectionsFormContinuousInterval(sections);
 
         return new DiscreteLoadDistribution(dLoads);
