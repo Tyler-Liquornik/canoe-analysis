@@ -80,9 +80,14 @@ public class HullSection extends Section
      */
     @JsonIgnore
     public double getXYProfileArcLength() {
-        UnivariateFunction profileArcLengthElementFunction =
-                x -> Math.sqrt(1 + Math.pow(MathUtils.differentiate(profileCurve).value(x), 2));
-        return MathUtils.integrator.integrate(1000, profileArcLengthElementFunction, x, rx);
+        if (profileCurve == null)
+            return 0;
+        else
+        {
+            UnivariateFunction profileArcLengthElementFunction =
+                    x -> Math.sqrt(1 + Math.pow(MathUtils.differentiate(profileCurve).value(x), 2));
+            return MathUtils.integrator.integrate(1000, profileArcLengthElementFunction, x, rx);
+        }
     }
 
     /**
@@ -90,7 +95,10 @@ public class HullSection extends Section
      */
     @JsonIgnore
     public double getXYProfileArea() {
-        return -MathUtils.integrator.integrate(1000, profileCurve, x, rx);
+        if (profileCurve == null)
+            return 0;
+        else
+            return -MathUtils.integrator.integrate(1000, profileCurve, x, rx);
     }
 
     /**

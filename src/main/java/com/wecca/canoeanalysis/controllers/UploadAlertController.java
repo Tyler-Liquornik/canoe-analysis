@@ -2,6 +2,7 @@ package com.wecca.canoeanalysis.controllers;
 
 import com.wecca.canoeanalysis.models.Canoe;
 import com.wecca.canoeanalysis.services.MarshallingService;
+import com.wecca.canoeanalysis.services.WindowManagerService;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
@@ -19,7 +20,7 @@ public class UploadAlertController implements Initializable {
     public static Canoe uploadedCanoe;
 
     public void closeWindow(ActionEvent e) {
-        ((Stage) ((Button) e.getSource()).getScene().getWindow()).close();
+        WindowManagerService.closeWindow(((Stage) ((Button) e.getSource()).getScene().getWindow()));
     }
 
     public void continueToCanoeUpload(ActionEvent e) {

@@ -9,6 +9,7 @@ import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.image.Image;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -23,8 +24,8 @@ import java.util.List;
  */
 public class WindowManagerService {
 
-
-    Scene test = null;
+    private static double stageXOffset = 0;
+    private static double stageYOffset = 0;
 
     /**
      * Set up the canvas/pane for a diagram.
@@ -51,7 +52,8 @@ public class WindowManagerService {
         chartPane.getChildren().add(chart);
 
         // Setting up the window with a decorator
-        JFXDecorator decorator = new JFXDecorator(popupStage, chartPane, false, false, true);
+        JFXDecorator decorator = getDraggableJFXDecorator(popupStage, chartPane);
+
         popupStage.setOnShown(event -> chartPane.requestFocus());
         Scene scene = new Scene(decorator, 1125, 775);
         addStyleSheet(scene, "css/chart.css");
@@ -69,7 +71,7 @@ public class WindowManagerService {
         AnchorPane rootPane = fxmlLoader.load();
 
         Stage stage = new Stage();
-        JFXDecorator decorator = new JFXDecorator(stage, new VBox(rootPane), false, false, true);
+        JFXDecorator decorator = getDraggableJFXDecorator(stage, new VBox(rootPane));
 
         Scene scene = new Scene(decorator, windowWidth, windowHeight);
         addStyleSheet(scene, "css/style.css");
@@ -88,5 +90,38 @@ public class WindowManagerService {
     private static void addStyleSheet(Scene scene, String path) {
         scene.getStylesheets().add(CanoeAnalysisApplication.class.getResource(path).toExternalForm());
         ColorManagerService.registerForRecoloringFromStylesheet(scene, path);
+    }
+
+    public static void closeWindow(Stage stage) {stage.close();}
+
+    public static void minimizeWindow(Stage stage) {stage.setIconified(true);}
+
+    public static void setStageOffsets(MouseEvent event) {
+        stageXOffset = event.getSceneX();
+        stageYOffset = event.getSceneY();
+    }
+
+    public static void moveStage(MouseEvent event, Stage stage) {
+        if (stage != null) {
+            stage.setX(event.getScreenX() - stageXOffset);
+            stage.setY(event.getScreenY() - stageYOffset);
+        }
+    }
+
+    /**
+     * JFXDecorator is built to be draggable already, but does not work on macOS, so this is required as a fix
+     * See: https://github.com/sshahine/JFoenix/issues/590
+     * @param popupStage the stage to move on drag
+     * @param rootPane the root pane of the stage
+     * @return a draggable JFXDecorator
+     */
+    private static JFXDecorator getDraggableJFXDecorator(Stage popupStage, Pane rootPane) {
+        JFXDecorator decorator = new JFXDecorator(popupStage, rootPane, false, false, true);
+        // Mouse pressed event handler
+        decorator.setOnMousePressed(WindowManagerService::setStageOffsets);
+
+        // Mouse dragged event handler
+        decorator.setOnMouseDragged(event -> moveStage(event, popupStage));
+        return decorator;
     }
 }
