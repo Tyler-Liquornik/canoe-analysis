@@ -3,20 +3,28 @@ package com.wecca.canoeanalysis.services;
 import com.jfoenix.controls.JFXTreeView;
 import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
 import com.wecca.canoeanalysis.models.*;
-import lombok.Setter;
+import javafx.scene.control.TreeItem;
 import java.util.List;
 
 public class LoadTreeManagerService {
-
-    @Setter
     private static JFXTreeView<String> loadsTreeView;
 
     private static final LoadTreeItem root = new LoadTreeItem();
 
+    private static  int numPLoads;
+    private static int numDLoads;
+    private static int numLoadDists;
+
+    public static void setLoadsTreeView(JFXTreeView<String> loadsTreeView) {
+        LoadTreeManagerService.loadsTreeView = loadsTreeView;
+        LoadTreeManagerService.loadsTreeView.setRoot(root);
+    }
+
     /**
      * Build the tree view model from the canoe
      */
-    public static void rebuildLoadTreeView(Canoe canoe) {
+    public static void buildLoadTreeView(Canoe canoe) {
+        numPLoads = numDLoads = numLoadDists = 0;
         root.getChildren().clear();
         List<Load> loads = canoe.getAllLoads();
         for (int i = 0; i < loads.size(); i++) {
@@ -26,19 +34,51 @@ public class LoadTreeManagerService {
         loadsTreeView.setShowRoot(false);
     }
 
-    public static void deleteSelectedLoadFromTreeView() {
+    /**
+     * Clear the tree and add text as a filler
+     * @param enable weather to enable the text with an empty tree
+     * @param text the text to display
+     */
+    public static void enableEmptyTreeFiller(boolean enable, String text) {
+        root.getChildren().clear();
+        root.getChildrenLoadItems().clear();
+        if (enable)
+            root.addChild(new LoadTreeItem(-1, -1, text));
+        loadsTreeView.setRoot(root);
+        loadsTreeView.setShowRoot(false);
     }
 
-    private static int getLoadTreeItemIndex() {
-        return 0;
+    /**
+     * @return the selected LoadTreeItem
+     */
+    private static LoadTreeItem getSelectedLoadTreeItem() {
+        TreeItem<String> selectedItem = loadsTreeView.getSelectionModel().getSelectedItem();
+        return selectedItem instanceof LoadTreeItem loadTreeItem ? loadTreeItem : null;
     }
 
-    private static int getLoadTreeItemNestedIndex() {
-        // If isNested
-        return 0;
+    /**
+     * @return the loadId of the selected LoadTreeItem
+     */
+    public static int getSelectedLoadId() {
+        LoadTreeItem selectedLoadTreeItem = getSelectedLoadTreeItem();
+        if (selectedLoadTreeItem != null) {
+            return selectedLoadTreeItem.getLoadId();
+        }
+        return -1;
     }
 
-    private static int getNumberOfLoadsInTreeView() {
+    /**
+     * @return the nestedId of the selected LoadTreeItem
+     */
+    public static int getSelectedNestedIndex() {
+        LoadTreeItem selectedLoadTreeItem = getSelectedLoadTreeItem();
+        if (selectedLoadTreeItem != null && selectedLoadTreeItem.getParent() instanceof LoadTreeItem parentLoadTreeItem) {
+            return parentLoadTreeItem.getChildren().indexOf(selectedLoadTreeItem);
+        }
+        return -1;
+    }
+
+    public static int getNumberOfLoadsInTreeView() {
         return root.getChildren().size();
     }
 
@@ -69,10 +109,9 @@ public class LoadTreeManagerService {
      */
     private static LoadTreeItem createPLoadTreeItem(int loadId, Load load) {
         if (load instanceof PointLoad pLoad) {
-            LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, load);
-
-            loadTreeItem.addChild(new LoadTreeItem(loadId, String.format("Force: %.2fkN/m", pLoad.getForce())));
-            loadTreeItem.addChild(new LoadTreeItem(loadId, String.format("Position: %.2fm", pLoad.getX())));
+            LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, numPLoads++, load);
+            loadTreeItem.addChild(new LoadTreeItem(loadId, 0, String.format("Force: %.2fkN", pLoad.getForce())));
+            loadTreeItem.addChild(new LoadTreeItem(loadId, 1, String.format("Position: %.2fm", pLoad.getX())));
 
             return loadTreeItem;
         }
@@ -87,10 +126,10 @@ public class LoadTreeManagerService {
      */
     private static LoadTreeItem createDLoadTreeItem(int loadId, Load load) {
         if (load instanceof UniformlyDistributedLoad dLoad) {
-            LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, load);
+            LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, numDLoads++, load);
 
-            loadTreeItem.addChild(new LoadTreeItem(loadId, String.format("Force: %.2fkN/m", dLoad.getMagnitude())));
-            loadTreeItem.addChild(new LoadTreeItem(loadId, String.format("Position: [%.2fm, %.2fm]", load.getX(), dLoad.getRx())));
+            loadTreeItem.addChild(new LoadTreeItem(loadId, 0, String.format("Force: %.2fkN/m", dLoad.getMagnitude())));
+            loadTreeItem.addChild(new LoadTreeItem(loadId, 1, String.format("Position: [%.2fm, %.2fm]", load.getX(), dLoad.getRx())));
 
             return loadTreeItem;
         }
@@ -103,7 +142,7 @@ public class LoadTreeManagerService {
      */
     private static LoadTreeItem createLoadDistTreeItem(int loadId, Load load) {
         if (load instanceof DiscreteLoadDistribution loadDist) {
-            LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, load);
+            LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, numLoadDists++, load);
             for (int i = 0; i < loadDist.getLoads().size(); i++) {
                 LoadTreeItem childLoadTreeItem = createNestedDLoadTreeItem(loadId, i, loadDist.getLoads().get(i));
                 loadTreeItem.addChild(childLoadTreeItem);
@@ -122,10 +161,10 @@ public class LoadTreeManagerService {
      */
     private static LoadTreeItem createNestedDLoadTreeItem(int loadId, int nestedLoadId, Load load) {
         if (load instanceof UniformlyDistributedLoad dLoad) {
-            LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, nestedLoadId, load);
+            LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, nestedLoadId, nestedLoadId, load);
 
-            loadTreeItem.addChild(new LoadTreeItem(loadId, nestedLoadId, String.format("Force: %.2fkN/m", dLoad.getMagnitude())));
-            loadTreeItem.addChild(new LoadTreeItem(loadId, nestedLoadId, String.format("Position: [%.2fm, %.2fm]", load.getX(), dLoad.getRx())));
+            loadTreeItem.addChild(new LoadTreeItem(loadId, nestedLoadId, 0, String.format("Force: %.2fkN/m", dLoad.getMagnitude())));
+            loadTreeItem.addChild(new LoadTreeItem(loadId, nestedLoadId, 1, String.format("Position: [%.2fm, %.2fm]", load.getX(), dLoad.getRx())));
 
             return loadTreeItem;
         }
