@@ -2,15 +2,14 @@
 
 <?import com.jfoenix.controls.JFXButton?>
 <?import com.jfoenix.controls.JFXComboBox?>
-<?import com.jfoenix.controls.JFXListView?>
 <?import com.jfoenix.controls.JFXRadioButton?>
 <?import com.jfoenix.controls.JFXTextField?>
+<?import com.jfoenix.controls.JFXTreeView?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.shape.Line?>
 
-<?import com.jfoenix.controls.JFXTreeView?>
 <AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.BeamController">
    <children>
       <AnchorPane fx:id="upperAnchorPane" layoutY="25.0" maxHeight="200.0" maxWidth="850.0" minHeight="200.0" minWidth="850.0" prefHeight="200.0" prefWidth="850.0" styleClass="surface" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">
@@ -21,32 +20,32 @@
                   <JFXRadioButton fx:id="floatingRadioButton" layoutX="10.0" layoutY="80.0" mnemonicParsing="false" text="Floating" />
                   <JFXRadioButton fx:id="standsRadioButton" layoutX="10.0" layoutY="45.0" mnemonicParsing="false" text="Stands" />
                   <JFXRadioButton fx:id="submergedRadioButton" layoutX="10.0" layoutY="115.0" mnemonicParsing="false" text="Submerged" />
-                  <JFXButton fx:id="solveSystemButton" buttonType="RAISED" layoutX="10.0" layoutY="150.0" onAction="#solveSystem" prefHeight="25.0" prefWidth="190.0" styleClass="action-object" text="Solve System" />
+                  <JFXButton fx:id="solveSystemButton" buttonType="RAISED" layoutX="10.0" layoutY="150.0" onAction="#solveSystem" prefHeight="25.0" prefWidth="210.0" styleClass="action-object" text="Solve System" />
                </children>
             </AnchorPane>
-            <AnchorPane layoutX="210.0" prefHeight="200.0" prefWidth="640.0" AnchorPane.leftAnchor="210.0">
+            <AnchorPane layoutX="210.0" prefHeight="200.0" prefWidth="620.0" AnchorPane.leftAnchor="240.0">
                <children>
-                  <Label fx:id="pointTitleLabel" layoutX="14.0" layoutY="14.0" styleClass="title" text="Point Load" />
-                  <Label fx:id="pointMagnitudeLabel" layoutX="15.0" layoutY="45.0" text="Magnitude:" />
-                  <Label fx:id="pointLocationLabel" layoutX="15.0" layoutY="80.0" text="Location:" />
-                  <Label fx:id="pointDirectionLabel" layoutX="15.0" layoutY="115.0" text="Direction:" />
-                  <JFXButton fx:id="pointLoadButton" buttonType="RAISED" layoutX="15.0" layoutY="150.0" mnemonicParsing="false" onAction="#handleAddPointLoad" prefHeight="25.0" prefWidth="250.0" styleClass="action-object" text="Add Point Load" />
-                  <JFXTextField fx:id="pointMagnitudeTextField" layoutX="85.0" layoutY="40.0" prefHeight="25.0" prefWidth="85.0" />
-                  <JFXTextField fx:id="pointLocationTextField" layoutX="85.0" layoutY="75.0" prefHeight="25.0" prefWidth="85.0" />
-                  <JFXComboBox fx:id="pointDirectionComboBox" layoutX="85.0" layoutY="110.0" prefHeight="25.0" prefWidth="85.0" />
-                  <JFXComboBox fx:id="pointMagnitudeComboBox" layoutX="180.0" layoutY="40.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="85.0" />
-                  <JFXComboBox fx:id="pointLocationComboBox" layoutX="180.0" layoutY="75.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="85.0" />
-                  <JFXButton fx:id="distributedLoadButton" buttonType="RAISED" layoutX="280.0" layoutY="150.0" mnemonicParsing="false" onAction="#handleAddDistributedLoad" prefHeight="25.0" prefWidth="340.0" styleClass="action-object" text="Add Uniformly Distributed Load" />
-                  <Label fx:id="distributedMagntiudeLabel" layoutX="280.0" layoutY="45.0" text="Magnitude:" />
-                  <Label fx:id="distributedIntervalLabel" layoutX="280.0" layoutY="80.0" text="Interval:" />
-                  <Label fx:id="distributedDirectionLabel" layoutX="280.0" layoutY="115.0" text="Direction:" />
-                  <JFXTextField fx:id="distributedMagnitudeTextField" layoutX="350.0" layoutY="40.0" prefHeight="25.0" prefWidth="85.0" />
-                  <JFXTextField fx:id="distributedIntervalTextFieldL" layoutX="350.0" layoutY="75.0" prefHeight="25.0" prefWidth="85.0" />
-                  <JFXTextField fx:id="distributedIntervalTextFieldR" layoutX="442.0" layoutY="75.0" prefHeight="25.0" prefWidth="85.0" />
-                  <JFXComboBox fx:id="distributedIntervalComboBox" layoutX="534.0" layoutY="75.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="85.0" />
-                  <JFXComboBox fx:id="distributedDirectionComboBox" layoutX="350.0" layoutY="110.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="85.0" />
-                  <JFXComboBox fx:id="distributedMagnitudeComboBox" layoutX="442.0" layoutY="40.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="85.0" />
-                  <Label fx:id="distributedTitleLabel" layoutX="280.0" layoutY="14.0" styleClass="title" text="Uniformly Distributed Load" />
+                  <Label fx:id="pointTitleLabel" layoutX="9.0" layoutY="14.0" styleClass="title" text="Point Load" />
+                  <Label fx:id="pointMagnitudeLabel" layoutX="10.0" layoutY="45.0" text="Magnitude:" />
+                  <Label fx:id="pointLocationLabel" layoutX="10.0" layoutY="80.0" text="Location:" />
+                  <Label fx:id="pointDirectionLabel" layoutX="10.0" layoutY="115.0" text="Direction:" />
+                  <JFXButton fx:id="pointLoadButton" buttonType="RAISED" layoutX="10.0" layoutY="150.0" mnemonicParsing="false" onAction="#handleAddPointLoad" prefHeight="25.0" prefWidth="240.0" styleClass="action-object" text="Add Point Load" />
+                  <JFXTextField fx:id="pointMagnitudeTextField" layoutX="85.0" layoutY="40.0" prefHeight="25.0" prefWidth="75.0" />
+                  <JFXTextField fx:id="pointLocationTextField" layoutX="85.0" layoutY="75.0" prefHeight="25.0" prefWidth="75.0" />
+                  <JFXComboBox fx:id="pointDirectionComboBox" layoutX="85.0" layoutY="110.0" prefHeight="25.0" prefWidth="75.0" />
+                  <JFXComboBox fx:id="pointMagnitudeComboBox" layoutX="170.0" layoutY="40.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="75.0" />
+                  <JFXComboBox fx:id="pointLocationComboBox" layoutX="170.0" layoutY="75.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="75.0" />
+                  <JFXButton fx:id="distributedLoadButton" buttonType="RAISED" layoutX="285.0" layoutY="150.0" mnemonicParsing="false" onAction="#handleAddDistributedLoad" prefHeight="25.0" prefWidth="315.0" styleClass="action-object" text="Add Uniformly Distributed Load" />
+                  <Label fx:id="distributedMagntiudeLabel" layoutX="285.0" layoutY="45.0" text="Magnitude:" />
+                  <Label fx:id="distributedIntervalLabel" layoutX="285.0" layoutY="80.0" text="Interval:" />
+                  <Label fx:id="distributedDirectionLabel" layoutX="285.0" layoutY="115.0" text="Direction:" />
+                  <JFXTextField fx:id="distributedMagnitudeTextField" layoutX="360.0" layoutY="40.0" prefHeight="25.0" prefWidth="75.0" />
+                  <JFXTextField fx:id="distributedIntervalTextFieldL" layoutX="360.0" layoutY="75.0" prefHeight="25.0" prefWidth="75.0" />
+                  <JFXTextField fx:id="distributedIntervalTextFieldR" layoutX="442.0" layoutY="75.0" prefHeight="25.0" prefWidth="75.0" />
+                  <JFXComboBox fx:id="distributedIntervalComboBox" layoutX="524.0" layoutY="75.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="75.0" />
+                  <JFXComboBox fx:id="distributedDirectionComboBox" layoutX="360.0" layoutY="110.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="75.0" />
+                  <JFXComboBox fx:id="distributedMagnitudeComboBox" layoutX="442.0" layoutY="40.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="75.0" />
+                  <Label fx:id="distributedTitleLabel" layoutX="285.0" layoutY="14.0" styleClass="title" text="Uniformly Distributed Load" />
                </children>
                <padding>
                   <Insets top="20.0" />
@@ -54,34 +53,34 @@
             </AnchorPane>
          </children>
       </AnchorPane>
-      <AnchorPane fx:id="lowerRightAnchorPane" layoutX="245.0" layoutY="235.0" prefHeight="325.0" prefWidth="640.0" styleClass="surface" AnchorPane.topAnchor="225.0">
+      <AnchorPane fx:id="lowerRightAnchorPane" layoutX="265.0" layoutY="235.0" prefHeight="325.0" prefWidth="620.0" styleClass="surface" AnchorPane.topAnchor="225.0">
          <children>
             <Label fx:id="lengthLabel" layoutX="25.0" layoutY="289.0" text="Canoe Length:">
             </Label>
             <JFXTextField fx:id="canoeLengthTextField" layoutX="115.0" layoutY="285.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="60.0" />
             <JFXComboBox fx:id="canoeLengthComboBox" layoutX="185.0" layoutY="285.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="60.0" />
-            <JFXButton fx:id="generateGraphsButton" buttonType="RAISED" layoutX="400.0" layoutY="285.0" mnemonicParsing="false" onAction="#generateDiagram" prefHeight="25.0" prefWidth="212.0" styleClass="action-object" text="Generate SFD / BMD" />
+            <JFXButton fx:id="generateGraphsButton" buttonType="RAISED" layoutX="390.0" layoutY="285.0" mnemonicParsing="false" onAction="#generateDiagram" prefHeight="25.0" prefWidth="197.0" styleClass="action-object" text="Generate SFD / BMD" />
             <JFXButton fx:id="setCanoeLengthButton" buttonType="RAISED" layoutX="260.0" layoutY="285.0" mnemonicParsing="false" onAction="#setLength" prefHeight="25.0" prefWidth="100.0" styleClass="action-object" text="Set Length" AnchorPane.bottomAnchor="15.0" />
-            <Line endX="290.0" layoutX="320.0" layoutY="255.0" startX="-290.0" stroke="WHITE" />
-            <Line endX="5.0" layoutX="30.0" layoutY="255.0" rotate="90.0" startX="-5.0" stroke="WHITE" />
-            <Line endX="5.0" layoutX="610.0" layoutY="255.0" rotate="90.0" startX="-5.0" stroke="WHITE" />
+            <Line endX="265.0" layoutX="320.0" layoutY="255.0" startX="-285.0" stroke="WHITE" />
+            <Line endX="5.0" layoutX="35.0" layoutY="255.0" rotate="90.0" startX="-5.0" stroke="WHITE" />
+            <Line endX="5.0" layoutX="585.0" layoutY="255.0" rotate="90.0" startX="-5.0" stroke="WHITE" />
             <Label fx:id="axisLabelL" alignment="CENTER" contentDisplay="CENTER" layoutX="15.0" layoutY="265.0" text="0.00 m" textAlignment="CENTER" />
-            <Label fx:id="axisLabelR" alignment="CENTER" contentDisplay="CENTER" layoutX="607.0" layoutY="265.0" text="X" textAlignment="CENTER" />
-            <AnchorPane fx:id="loadContainer" layoutX="30.0" layoutY="10.0" prefHeight="210.0" prefWidth="580.0" />
-            <AnchorPane fx:id="beamContainer" layoutX="30.0" layoutY="10.0" prefHeight="210.0" prefWidth="580.0" />
+            <Label fx:id="axisLabelR" alignment="CENTER" contentDisplay="CENTER" layoutX="581.0" layoutY="265.0" text="X" textAlignment="CENTER" />
+            <AnchorPane fx:id="loadContainer" layoutX="35.0" layoutY="10.0" prefHeight="210.0" prefWidth="550.0" />
+            <AnchorPane fx:id="beamContainer" layoutX="35.0" layoutY="10.0" prefHeight="210.0" prefWidth="550.0" />
          </children>
       </AnchorPane>
-      <AnchorPane fx:id="lowerLeftAnchorPane" layoutX="25.0" layoutY="235.0" prefHeight="310.0" prefWidth="200.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="665.0" AnchorPane.topAnchor="225.0">
+      <AnchorPane fx:id="lowerLeftAnchorPane" layoutX="25.0" layoutY="235.0" prefHeight="310.0" prefWidth="210.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="650.0" AnchorPane.topAnchor="225.0">
          <children>
-            <JFXTreeView fx:id="loadsTreeView" layoutX="15.0" layoutY="15.0" onMouseClicked="#highlightLoad" prefHeight="250.0" prefWidth="190.0" styleClass="above-surface">
+            <JFXTreeView fx:id="loadsTreeView" layoutX="15.0" layoutY="15.0" onMouseClicked="#highlightLoad" prefHeight="250.0" prefWidth="205.0" styleClass="above-surface">
                <padding>
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </padding>
             </JFXTreeView>
             <AnchorPane layoutX="30.0" layoutY="283.0" prefHeight="51.0" prefWidth="190.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="273.0">
                <children>
-                  <JFXButton fx:id="deleteLoadButton" buttonType="RAISED" layoutX="20.0" mnemonicParsing="false" onAction="#deleteSelectedLoad" prefHeight="25.0" prefWidth="77.0" styleClass="action-object" text="Delete" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="100.0" />
-                  <JFXButton fx:id="clearLoadsButton" buttonType="RAISED" layoutX="100.0" mnemonicParsing="false" onAction="#clearLoads" prefHeight="25.0" prefWidth="65.0" styleClass="action-object" text="Clear All" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="100.0" AnchorPane.rightAnchor="0.0" />
+                  <JFXButton fx:id="deleteLoadButton" buttonType="RAISED" layoutX="20.0" mnemonicParsing="false" onAction="#deleteSelectedLoad" prefHeight="25.0" prefWidth="77.0" styleClass="action-object" text="Delete" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="110.0" />
+                  <JFXButton fx:id="clearLoadsButton" buttonType="RAISED" layoutX="100.0" mnemonicParsing="false" onAction="#clearLoads" prefHeight="25.0" prefWidth="65.0" styleClass="action-object" text="Clear All" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="110.0" AnchorPane.rightAnchor="0.0" />
                </children>
             </AnchorPane>
          </children>
