@@ -218,17 +218,14 @@ public class BeamController implements Initializable
         // Clear load container of graphics
         loadContainer.getChildren().clear();
 
-        // The index in the canoes Load list of the maximum magnitude load
-        int maxIndex = canoe.getMaxLoadIndex();
-
         // Rescale all graphics relative to the max load
         List<Graphic> rescaledGraphics = new ArrayList<>();
-        for (int i = 0; i < canoe.getExternalLoads().size(); i++)
+        for (int i = 0; i < canoe.getAllLoads().size(); i++)
         {
-            Load load = canoe.getExternalLoads().get(i);
+            Load load = canoe.getAllLoads().get(i);
 
             // The ratio of the largest load (always rendered at max size) to this load
-            double loadMagnitudeRatio = Math.abs(load.getValue() / canoe.getExternalLoads().get(maxIndex).getValue());
+            double loadMagnitudeRatio = Math.abs(load.getValue() / canoe.getMaxLoadValue());
 
             // Clip load length if too small (i.e. ratio is too large)
             if (loadMagnitudeRatio < Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]))
@@ -239,16 +236,32 @@ public class BeamController implements Initializable
             double deltaY = (acceptedGraphicHeightRange[1] - acceptedGraphicHeightRange[0]) * loadMagnitudeRatio;
             double startY = load.getValue() < 0 ? acceptedGraphicHeightRange[1] - deltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
 
-            if (load instanceof PointLoad pLoad)
+            switch (load)
             {
-                double xScaled = GraphicsUtils.getXScaled(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
-                rescaledGraphics.add(new Arrow(xScaled, startY, xScaled, endY));
-            }
-            else if (load instanceof UniformlyDistributedLoad dLoad)
-            {
-                double xScaled = GraphicsUtils.getXScaled(dLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
-                double rxScaled = GraphicsUtils.getXScaled(dLoad.getRx(), beam.getWidth(), canoe.getHull().getLength());
-                rescaledGraphics.add(new ArrowBox(xScaled, startY, rxScaled, endY, ArrowBoxSectionState.NON_SECTIONED));
+                case PointLoad pLoad -> {
+                    double xScaled = GraphicsUtils.getXScaled(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
+                    rescaledGraphics.add(new Arrow(xScaled, startY, xScaled, endY));
+                }
+                case UniformlyDistributedLoad dLoad -> {
+                    double xScaled = GraphicsUtils.getXScaled(dLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
+                    double rxScaled = GraphicsUtils.getXScaled(dLoad.getRx(), beam.getWidth(), canoe.getHull().getLength());
+                    rescaledGraphics.add(new ArrowBox(xScaled, startY, rxScaled, endY, ArrowBoxSectionState.NON_SECTIONED));
+                }
+                case DiscreteLoadDistribution loadDist -> {
+                    List<ArrowBox> arrowBoxes = new ArrayList<>();
+                    for (UniformlyDistributedLoad dLoad : loadDist.getLoads())
+                    {
+                        double xScaled = GraphicsUtils.getXScaled(dLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
+                        double rxScaled = GraphicsUtils.getXScaled(dLoad.getRx(), beam.getWidth(), canoe.getHull().getLength());
+                        double nestedDLoadMagnitudeRatio = Math.abs(dLoad.getValue() / canoe.getMaxLoadValue());
+                        double nestedDLoadEndY = dLoad.getValue() < 0 ? acceptedGraphicHeightRange[1] : acceptedGraphicHeightRange[1] + (int) beam.getThickness();
+                        double nestedDLoadDeltaY = (acceptedGraphicHeightRange[1] - acceptedGraphicHeightRange[0]) * nestedDLoadMagnitudeRatio;
+                        double nestedDLoadStartY = dLoad.getValue() < 0 ? acceptedGraphicHeightRange[1] - nestedDLoadDeltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
+                        arrowBoxes.add(new ArrowBox(xScaled, nestedDLoadStartY, rxScaled, nestedDLoadEndY, ArrowBoxSectionState.NON_SECTIONED));
+                    }
+                    rescaledGraphics.add(new ArrowBoxGroup(arrowBoxes));
+                }
+                default -> throw new IllegalArgumentException("Invalid load type");
             }
         }
 

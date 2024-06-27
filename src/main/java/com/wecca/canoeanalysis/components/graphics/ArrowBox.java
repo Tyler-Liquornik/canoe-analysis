@@ -51,7 +51,6 @@ public class ArrowBox extends Group implements Graphic
         else
             box = new Rectangle(lX, endY - 2, rX - lX, startY - endY + 2);
 
-        // box.setFill(lighten(ColorPalette.ICON.getColor()));
         box.setFill(ColorPaletteService.getColor("above-surface"));
 
         borderLine = new Line(lX, startY, rX, startY);
@@ -62,7 +61,8 @@ public class ArrowBox extends Group implements Graphic
         if (lArrow != null) {getChildren().add(lArrow);}
         if (rArrow != null) {getChildren().add(rArrow);}
 
-        JFXDepthManager.setDepth(this, 4);
+        if (arrowBoxSectionState == ArrowBoxSectionState.NON_SECTIONED)
+            JFXDepthManager.setDepth(this, 4);
 
         this.isColored = false;
         ColorManagerService.registerInColorPalette(this);
