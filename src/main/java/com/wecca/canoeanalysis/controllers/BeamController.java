@@ -4,13 +4,13 @@ import com.jfoenix.controls.JFXTreeView;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.graphics.*;
-import com.wecca.canoeanalysis.models.functions.VertexFormParabola;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.ControlUtils;
 import com.wecca.canoeanalysis.utils.GraphicsUtils;
+import com.wecca.canoeanalysis.utils.TestData;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -60,30 +60,20 @@ public class BeamController implements Initializable
     // Size rules for load graphics (prevents them from rendering too big/small)
     private double[] acceptedGraphicHeightRange;
 
-
     /**
      * Toggles settings for empty load list
      * Includes a placeholder list item, enabled/disabled status of buttons, and styling
      */
-    public void enableEmptyLoadListSettings(boolean enable) {
-
-        // Load List not empty, toggle normal settings
-        if (!enable)
-        {
-            // Apply settings
+    public void enableEmptyLoadTreeSettings(boolean enable) {
+        LoadTreeManagerService.enableEmptyTreeFiller(enable, "View loads here");
+        if (!enable) {
             loadsTreeView.setStyle("-fx-font-weight: normal");
-            loadsTreeView.setRoot(null);
             deleteLoadButton.setDisable(false);
             clearLoadsButton.setDisable(false);
         }
-
-        // Load list empty, toggle empty settings
-        else
-        {
+        else {
             // Apply settings
             loadsTreeView.setStyle("-fx-font-weight: bold");
-            loadsTreeView.setRoot(null);
-            loadsTreeView.setRoot(new TreeItem<>("View loads here"));
             deleteLoadButton.setDisable(true);
             clearLoadsButton.setDisable(true);
         }
@@ -125,8 +115,7 @@ public class BeamController implements Initializable
      */
     public void highlightLoad()
     {
-        int selectedIndex = loadsTreeView.getSelectionModel().getSelectedIndex();
-
+        int selectedIndex = LoadTreeManagerService.getSelectedLoadId();
         updateViewOrder();
 
         // Color the selected load red and color the others black
@@ -177,7 +166,7 @@ public class BeamController implements Initializable
     {
         if (InputParsingService.validateTextAsDouble(canoeLengthTextField.getText())) {
             // Default list view message
-            enableEmptyLoadListSettings(true);
+            enableEmptyLoadTreeSettings(true);
 
             // Convert to metric
             double len = InputParsingService.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
@@ -207,8 +196,8 @@ public class BeamController implements Initializable
                 // TODO: FOR TESTING NOT PERMANENT, NEED TO DELETE
                 if (len == 6.0) {
                     System.out.println("Hull has been set to shark bait");
-                    canoe.setHull(generateSharkBaitHull());
-                    LoadTreeManagerService.rebuildLoadTreeView(canoe);
+                    canoe.setHull(TestData.generateSharkBaitHull());
+                    LoadTreeManagerService.buildLoadTreeView(canoe);
                     System.out.println("Hull mass = " + canoe.getHull().getMass());
                 }
             }
@@ -297,13 +286,13 @@ public class BeamController implements Initializable
             else
             {
                 // Removes the default list view message if this is the first load
-                enableEmptyLoadListSettings(false);
+                enableEmptyLoadTreeSettings(false);
 
                 // Add the load to canoe, and the load arrow on the GUI
                 PointLoad p = new PointLoad(mag, x, false);
                 AddLoadResult addResult = canoe.addLoad(p);
                 addPointLoadGraphic(p, addResult);
-                LoadTreeManagerService.rebuildLoadTreeView(canoe);
+                LoadTreeManagerService.buildLoadTreeView(canoe);
             }
 
         }
@@ -344,14 +333,14 @@ public class BeamController implements Initializable
             else
                 {
                     // Removes the default list view message if this is the first load
-                    enableEmptyLoadListSettings(false);
+                    enableEmptyLoadTreeSettings(false);
 
                     // Add the load to canoe, and update ui state
                     UniformlyDistributedLoad d = new UniformlyDistributedLoad(mag, x, xR);
                     mainController.closeSnackBar(mainController.getSnackbar());
                     canoe.addLoad(d);
                     refreshLoadGraphics();
-                    LoadTreeManagerService.rebuildLoadTreeView(canoe);
+                    LoadTreeManagerService.buildLoadTreeView(canoe);
                 }
         }
         else
@@ -363,11 +352,11 @@ public class BeamController implements Initializable
         mainController.closeSnackBar(mainController.getSnackbar());
 
         // Removes the default list view message if this is the first load
-        enableEmptyLoadListSettings(false);
+        enableEmptyLoadTreeSettings(false);
 
         // Add the load to canoe, and update ui state
         refreshLoadGraphics();
-        LoadTreeManagerService.rebuildLoadTreeView(canoe);
+        LoadTreeManagerService.buildLoadTreeView(canoe);
     }
 
     /**
@@ -438,7 +427,7 @@ public class BeamController implements Initializable
      */
     public void solveSystem() {
         // Removes the default list view message if this is the first load
-        enableEmptyLoadListSettings(false);
+        enableEmptyLoadTreeSettings(false);
 
         // Controls enabling/disabling for UX
         generateGraphsButton.setDisable(false);
@@ -466,7 +455,7 @@ public class BeamController implements Initializable
         solveSystemButton.setDisable(false);
 
         // Update state
-        LoadTreeManagerService.rebuildLoadTreeView(canoe);
+        LoadTreeManagerService.buildLoadTreeView(canoe);
         updateViewOrder();
     }
 
@@ -490,9 +479,9 @@ public class BeamController implements Initializable
 
         // Simulate the user selecting and deleting the supports which are always the first and last load
         loadsTreeView.getSelectionModel().select(0);
-        deleteLoad();
+        deleteSelectedLoad();
         loadsTreeView.getSelectionModel().select(loadsTreeView.getRoot().getChildren().size() - 1);
-        deleteLoad();
+        deleteSelectedLoad();
     }
 
     private void solveFloatingSystem()
@@ -566,9 +555,9 @@ public class BeamController implements Initializable
     /**
      * Delete the load selected in the list view
      */
-    public void deleteLoad()
+    public void deleteSelectedLoad()
     {
-        int selectedIndex = loadsTreeView.getSelectionModel().getSelectedIndex();
+        int selectedIndex = LoadTreeManagerService.getSelectedLoadId();
 
         // Handle case that no index was selected
         if (selectedIndex == -1)
@@ -577,13 +566,13 @@ public class BeamController implements Initializable
             return;
         }
 
-        loadsTreeView.getRoot().getChildren().remove(selectedIndex);
         loadContainer.getChildren().remove(selectedIndex);
         canoe.removeLoad(selectedIndex);
+        LoadTreeManagerService.buildLoadTreeView(canoe);
 
         // If the list is empty, toggle empty list settings
         if (loadContainer.getChildren().isEmpty())
-            enableEmptyLoadListSettings(true);
+            enableEmptyLoadTreeSettings(true);
     }
 
     /**
@@ -591,12 +580,14 @@ public class BeamController implements Initializable
      */
     public void clearLoads()
     {
-        loadsTreeView.setRoot(null);
         loadContainer.getChildren().clear();
+        canoe.getExternalLoadDistributions().clear();;
         canoe.getExternalLoads().clear();
+        canoe.setHull(new Hull(canoe.getHull().getLength()));
+        LoadTreeManagerService.buildLoadTreeView(canoe);
 
         // List is empty, toggle empty list settings
-        enableEmptyLoadListSettings(true);
+        enableEmptyLoadTreeSettings(true);
     }
 
     /**
@@ -624,9 +615,9 @@ public class BeamController implements Initializable
             canoe = uploadedCanoe;
 
             // Update UI to new canoe
-            enableEmptyLoadListSettings(uploadedCanoe.getExternalLoads().isEmpty());
+            enableEmptyLoadTreeSettings(uploadedCanoe.getExternalLoads().isEmpty());
             refreshLoadGraphics();
-            LoadTreeManagerService.rebuildLoadTreeView(canoe);
+            LoadTreeManagerService.buildLoadTreeView(canoe);
             axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
 
             // Notify the user of the result
@@ -680,93 +671,6 @@ public class BeamController implements Initializable
     }
 
     /**
-     * Hardcoded temporary test function for the new canoe model TODO: remove once new model finished
-     * This will serve as a benchmark to for results comparison for quality assurance with respect to business logic
-     */
-    public static Hull generateSharkBaitHull() {
-
-        // Define hull shape
-        double a = 1.0 / 67.0;
-        double h = 3.0;
-        double k = -0.4;
-        VertexFormParabola hullBaseProfileCurve = new VertexFormParabola(a, h, k);
-
-        double aEdges = 306716.0 / 250000.0;
-        VertexFormParabola hullLeftEdgeCurve = new VertexFormParabola(aEdges, 0.5, hullBaseProfileCurve.value(0.5));
-        VertexFormParabola hullRightEdgeCurve = new VertexFormParabola(aEdges, 5.5, hullBaseProfileCurve.value(5.5));
-
-        List<HullSection> sections = new ArrayList<>();
-
-        // Left edge curve
-        sections.add(new HullSection(hullLeftEdgeCurve, 0.0, 0.1, 0.03, 0.013, true));
-        sections.add(new HullSection(hullLeftEdgeCurve, 0.1, 0.2, 0.05, 0.013, true));
-        sections.add(new HullSection(hullLeftEdgeCurve, 0.2, 0.3, 0.1, 0.013, true));
-        sections.add(new HullSection(hullLeftEdgeCurve, 0.3, 0.4, 0.15, 0.013, true));
-        sections.add(new HullSection(hullLeftEdgeCurve, 0.4, 0.5, 0.2, 0.013, true));
-
-        // Generate sections along hullBaseProfileCurve with intervals of 0.1
-        sections.add(new HullSection(hullBaseProfileCurve, 0.5, 0.6, 0.3, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 0.6, 0.7, 0.3, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 0.7, 0.8, 0.3, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 0.8, 0.9, 0.35, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 0.9, 1.0, 0.35, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 1.0, 1.1, 0.35, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 1.1, 1.2, 0.4, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 1.2, 1.3, 0.45, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 1.3, 1.4, 0.5, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 1.4, 1.5, 0.55, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 1.5, 1.6, 0.6, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 1.6, 1.7, 0.65, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 1.7, 1.8, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 1.8, 1.9, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 1.9, 2.0, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 2.0, 2.1, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 2.1, 2.2, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 2.2, 2.3, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 2.3, 2.4, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 2.4, 2.5, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 2.5, 2.6, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 2.6, 2.7, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 2.7, 2.8, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 2.8, 2.9, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 2.9, 3.0, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 3.0, 3.1, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 3.1, 3.2, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 3.2, 3.3, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 3.3, 3.4, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 3.4, 3.5, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 3.5, 3.6, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 3.6, 3.7, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 3.7, 3.8, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 3.8, 3.9, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 3.9, 4.0, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 4.0, 4.1, 0.65, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 4.1, 4.2, 0.6, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 4.2, 4.3, 0.55, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 4.3, 4.4, 0.5, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 4.4, 4.5, 0.45, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 4.5, 4.6, 0.4, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 4.6, 4.7, 0.35, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 4.7, 4.8, 0.3, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 4.8, 4.9, 0.3, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 4.9, 5.0, 0.3, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 5.0, 5.1, 0.3, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 5.1, 5.2, 0.3, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 5.2, 5.3, 0.3, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 5.3, 5.4, 0.3, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 5.4, 5.5, 0.3, 0.013, false));
-
-        // Right edge curve
-        sections.add(new HullSection(hullRightEdgeCurve, 5.5, 5.6, 0.2, 0.013, true));
-        sections.add(new HullSection(hullRightEdgeCurve, 5.6, 5.7, 0.15, 0.013, true));
-        sections.add(new HullSection(hullRightEdgeCurve, 5.7, 5.8, 0.1, 0.013, true));
-        sections.add(new HullSection(hullRightEdgeCurve, 5.8, 5.9, 0.05, 0.013, true));
-        sections.add(new HullSection(hullRightEdgeCurve, 5.9, 6.0, 0.03, 0.013, true));
-
-        return new Hull(1056, 28.82, sections);
-    }
-
-    /**
      * Operations called on initialization of the view
      * @param url unused, part of javafx framework
      * @param resourceBundle unused, part of javafx framework
@@ -774,34 +678,30 @@ public class BeamController implements Initializable
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
-        // Set the local instance of the main controller
+        // Module init
         setMainController(CanoeAnalysisApplication.getMainController());
-
-        // Add module tool bar buttons
         addModuleToolBarButtons();
-
-        // Instantiate the canoe
         canoe = new Canoe();
 
-        // Disable most buttons on startup to prevent inputs in the wrong order
+        // Controls init
         disableLoadingControls(true);
         generateGraphsButton.setDisable(true);
-        enableEmptyLoadListSettings(true);
 
-        // Css styling
+        // Load tree init
+        LoadTreeManagerService.setLoadsTreeView(loadsTreeView);
+        enableEmptyLoadTreeSettings(true);
         JFXDepthManager.setDepth(loadsTreeView, 4);
 
-        // Setting RadioButton Toggle Group
+        // Radio Buttons init
         ToggleGroup canoeSupportToggleGroup = new ToggleGroup();
         RadioButton[] canoeSupportRButtons = new RadioButton[]{standsRadioButton, floatingRadioButton, submergedRadioButton};
         ControlUtils.addAllRadioButtonsToToggleGroup(canoeSupportToggleGroup, canoeSupportRButtons, 0);
 
-        // Populate ComboBoxes
+        // Combo Boxes init
         String[] directions = new String[]{"Down", "Up"};
         String[] loadUnits = new String[]{"kN", "N", "kg", "lb"};
         String[] distanceUnits = new String[]{"m", "ft"};
         String[] distributedLoadUnits = new String[]{"kN/m", "N/m", "kg/m", "lb/ft"};
-
         ControlUtils.initComboBoxesWithDefaultSelected(pointDirectionComboBox, directions, 0);
         ControlUtils.initComboBoxesWithDefaultSelected(pointMagnitudeComboBox, loadUnits, 0);
         ControlUtils.initComboBoxesWithDefaultSelected(pointLocationComboBox, distanceUnits, 0);
@@ -810,20 +710,17 @@ public class BeamController implements Initializable
         ControlUtils.initComboBoxesWithDefaultSelected(distributedMagnitudeComboBox, distributedLoadUnits, 0);
         ControlUtils.initComboBoxesWithDefaultSelected(canoeLengthComboBox, distanceUnits, 0);
 
-        // Populate the TextFields with default values
+        // Text field init
         TextField[] tfs = new TextField[]{pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
                 distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField};
         for (TextField tf : tfs) {tf.setText("0.00");}
 
-        // Beam initialization
+        // Beam init
         beam = new Beam(0, 84, beamContainer.getPrefWidth(), 25);
         JFXDepthManager.setDepth(beam, 4);
         beamContainer.getChildren().add(beam);
 
-        // Set up load tree management
-        LoadTreeManagerService.setLoadsTreeView(loadsTreeView);
-
-        // Initialize maximum allowed graphics size from beam graphic and container dimensions
+        // Graphics static field init
         double maxGraphicHeight = 84;
         double minimumGraphicHeight = 14;
         acceptedGraphicHeightRange = new double[] {minimumGraphicHeight, maxGraphicHeight};
