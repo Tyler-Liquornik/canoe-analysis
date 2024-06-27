@@ -147,7 +147,7 @@ public class BeamController implements Initializable
 
         clearLoads();
         axisLabelR.setText("X");
-        axisLabelR.setLayoutX(607); // TODO: this will not be hard coded anymore once axis labels for new loads are implemented
+        axisLabelR.setLayoutX(581); // TODO: this will not be hard coded anymore once axis labels for new loads are implemented
         canoeLengthTextField.setDisable(false);
         canoeLengthComboBox.setDisable(false);
         lengthLabel.setDisable(false);
@@ -178,7 +178,7 @@ public class BeamController implements Initializable
 
                 // Change the label on the scale
                 axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
-                axisLabelR.setLayoutX(595); // TODO: this will not be hard coded anymore once axis labels for new loads are implemented
+                axisLabelR.setLayoutX(565); // TODO: this will not be hard coded anymore once axis labels for new loads are implemented
 
                 // Clear potential alert and reset access to controls
                 mainController.closeSnackBar(mainController.getSnackbar());
@@ -254,6 +254,9 @@ public class BeamController implements Initializable
                         double xScaled = GraphicsUtils.getXScaled(dLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
                         double rxScaled = GraphicsUtils.getXScaled(dLoad.getRx(), beam.getWidth(), canoe.getHull().getLength());
                         double nestedDLoadMagnitudeRatio = Math.abs(dLoad.getValue() / canoe.getMaxLoadValue());
+                        // Clip load length if too small (i.e. ratio is too large)
+                        if (nestedDLoadMagnitudeRatio < Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]))
+                            nestedDLoadMagnitudeRatio = Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]);
                         double nestedDLoadEndY = dLoad.getValue() < 0 ? acceptedGraphicHeightRange[1] : acceptedGraphicHeightRange[1] + (int) beam.getThickness();
                         double nestedDLoadDeltaY = (acceptedGraphicHeightRange[1] - acceptedGraphicHeightRange[0]) * nestedDLoadMagnitudeRatio;
                         double nestedDLoadStartY = dLoad.getValue() < 0 ? acceptedGraphicHeightRange[1] - nestedDLoadDeltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
