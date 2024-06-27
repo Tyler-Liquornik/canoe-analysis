@@ -63,21 +63,19 @@ public class Canoe
     }
 
     @JsonIgnore
-    public int getMaxLoadIndex() {
-        if (externalLoads.isEmpty()) {
+    public double getMaxLoadValue() {
+        if (externalLoads.isEmpty() && externalLoadDistributions.isEmpty()) {
             return -1;
         }
-
-        int maxIndex = 0;
-        double max = 0;
-        for (int i = 0; i < externalLoads.size(); i++) {
-            double mag = Math.abs(externalLoads.get(i).getValue());
-            if (mag > max) {
-                max = mag;
-                maxIndex = i;
+        
+        double maxValue = 0;
+        for (Load externalLoad : getAllLoads()) {
+            double currValue = Math.abs(externalLoad.getValue());
+            if (currValue > maxValue) {
+                maxValue = currValue;
             }
         }
-        return maxIndex;
+        return maxValue;
     }
 
     @JsonIgnore
@@ -159,7 +157,7 @@ public class Canoe
     }
 
     /**
-     * @return a sorted list of all external point loads and uniformly distributed loads, and external load distributions
+     * @return a sorted list including external pLoads and dLoads, and external loadDists and the hull loadDist
      */
     @JsonIgnore
     public List<Load> getAllLoads() {
