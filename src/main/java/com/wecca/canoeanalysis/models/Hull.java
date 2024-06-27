@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.math3.optim.MaxEval;
@@ -98,16 +99,12 @@ public class Hull {
     }
 
     /**
-     * @return the canoe hull self-weight, in kN with a negative sign representing the downward load
+     * @return the canoe hull self-weight, in kN (returns with a negative sign representing the downward load)
      * Note: this includes bulkheads weight if specified with fillBulkhead
      */
     @JsonIgnore
     public double getSelfWeight() {
-        double selfWeight = 0;
-        for (HullSection section : getHullSections()) {
-            selfWeight -= section.getWeight();
-        }
-        return selfWeight;
+        return getHullSections().stream().mapToDouble(HullSection::getWeight).sum();
     }
 
     /**
@@ -115,11 +112,7 @@ public class Hull {
      */
     @JsonIgnore
     public double getMass() {
-        double mass = 0;
-        for (HullSection section : getHullSections()) {
-            mass += section.getMass();
-        }
-        return mass;
+        return getHullSections().stream().mapToDouble(HullSection::getMass).sum();
     }
 
     /**

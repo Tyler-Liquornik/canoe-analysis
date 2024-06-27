@@ -141,11 +141,11 @@ public class HullSection extends Section
     }
 
     /**
-     * @return the weight of the section under earth's gravity
+     * @return the weight of the section under earth's gravity in kN (negative for downward force)
      */
     @JsonIgnore
     public double getWeight() {
-        return getMass() * PhysicalConstants.GRAVITY.getValue();
+        return -getMass() * PhysicalConstants.GRAVITY.getValue() / 1000.0;
     }
 
     /**

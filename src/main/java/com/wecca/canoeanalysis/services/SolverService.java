@@ -27,6 +27,8 @@ public class SolverService {
     public static List<PointLoad> solveStandSystem(Canoe canoe) {
         List<PointLoad> pointLoads = new ArrayList<>();
         // Transform the distributed loads into point loads
+        if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null)
+            pointLoads.addAll(distributedToPoint(canoe.getHull().getSelfWeightDistribution().getLoads()));
         pointLoads.addAll(distributedToPoint(canoe.getDLoads()));
         pointLoads.addAll(canoe.getPLoads());
 
@@ -73,11 +75,11 @@ public class SolverService {
     /**
      * Solve the overall floating case of the canoe
      * @param canoe the canoe with a give hull geometry, material densities, and external loading to solve
-     * @return a linked list of dLoads corresponding to the distributed buoyancy for that section in equilibrium in kN/m
+     * @return the buoyancy reaction load distribution
      */
     public static DiscreteLoadDistribution solveFloatingSystem(Canoe canoe) {
         double waterLine = getEquilibriumWaterLine(canoe);
-        List<Double> buoyantForces = getBuoyantForceOnAllSections(waterLine, canoe);
+        List<Double> buoyantForces = getBuoyantForcesOnSections(waterLine, canoe);
         List<UniformlyDistributedLoad> loads = new ArrayList<>();
         for (int i = 0; i < buoyantForces.size(); i++) {
             HullSection section = canoe.getHull().getHullSections().get(i);
@@ -85,7 +87,10 @@ public class SolverService {
             double dLoadMag = buoyantForces.get(i) / sectionLength;
             loads.add(new UniformlyDistributedLoad(dLoadMag, section.getX(), section.getRx()));
         }
-        return DiscreteLoadDistribution.fromDistributedLoads(loads);
+        DiscreteLoadDistribution buoyancy = DiscreteLoadDistribution.fromDistributedLoads("Buoyancy", loads);
+        System.out.println("buoyancy.getForce() = " + buoyancy.getForce());
+        System.out.println("canoe.getHull().getSelfWeightDistribution().getForce() = " + canoe.getHull().getSelfWeightDistribution().getForce());
+        return buoyancy;
     }
 
     /**
@@ -96,7 +101,7 @@ public class SolverService {
      */
     private static double getSubmergedVolume(double waterline, HullSection section) {
 
-        double submergedArea = -integrator.integrate(1000, x -> (section.getProfileCurve().value(x) + waterline), section.getX(), section.getRx());
+        double submergedArea = integrator.integrate(10000000, x -> (waterline - Math.min(section.getProfileCurve().value(x), waterline)), section.getX(), section.getRx());
         return submergedArea * section.getWidth();
     }
 
@@ -116,7 +121,7 @@ public class SolverService {
      * @param canoe the canoe with sections to calculate the buoyancy forces of
      * @return a linked list in of buoyancy forces in the same order as the linked list of canoe sections
      */
-    private static List<Double> getBuoyantForceOnAllSections(double waterLine, Canoe canoe) {
+    private static List<Double> getBuoyantForcesOnSections(double waterLine, Canoe canoe) {
         List<Double> buoyantForces = new ArrayList<>();
         for (HullSection section : canoe.getHull().getHullSections()) {
             double force = getBuoyantForceOnSection(waterLine, section);
@@ -131,10 +136,12 @@ public class SolverService {
      * @param waterLine the level below y = 0 of the waterline guess
      * @return the total buoyant in kN at the given waterline guess
      */
-    private static double getBuoyantForceOnCanoe(Canoe canoe, double waterLine) {
+    private static double getBuoyantTotalForce(Canoe canoe, double waterLine) {
         List<HullSection> sections = canoe.getHull().getHullSections();
         double totalBuoyantForce = 0;
-        for (HullSection section : sections) {totalBuoyantForce += getBuoyantForceOnSection(waterLine, section);}
+        for (HullSection section : sections) {
+            totalBuoyantForce += getBuoyantForceOnSection(waterLine, section);
+        }
         return totalBuoyantForce;
     }
 
@@ -147,10 +154,10 @@ public class SolverService {
     private static double getEquilibriumWaterLine(Canoe canoe) {
         double totalWeight = canoe.getTotalWeight();
         double totalBuoyancy = 0.0;
-        double waterLine = 0.0;
-        while (totalBuoyancy < totalWeight) {
-            totalBuoyancy = getBuoyantForceOnCanoe(canoe, waterLine);
-            waterLine += 0.01;
+        double waterLine = -canoe.getHull().getMaxHeight();
+        while (totalBuoyancy < Math.abs(totalWeight)) {
+            totalBuoyancy = getBuoyantTotalForce(canoe, waterLine);
+            waterLine += 0.00001;
         }
         return waterLine;
     }

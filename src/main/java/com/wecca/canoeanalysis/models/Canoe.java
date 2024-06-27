@@ -164,7 +164,8 @@ public class Canoe
     @JsonIgnore
     public List<Load> getAllLoads() {
         List<Load> loads = new ArrayList<>(externalLoads);
-        loads.add(hull.getSelfWeightDistribution());
+        if (hull.getSelfWeightDistribution() != null)
+            loads.add(hull.getSelfWeightDistribution());
         loads.addAll(externalLoadDistributions);
 
         // Define the order to sort by type

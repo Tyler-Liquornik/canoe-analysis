@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis.services;
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.DiagramInterval;
 import com.wecca.canoeanalysis.models.Canoe;
+import com.wecca.canoeanalysis.models.DiscreteLoadDistribution;
 import com.wecca.canoeanalysis.models.PointLoad;
 import com.wecca.canoeanalysis.models.UniformlyDistributedLoad;
 import javafx.geometry.Point2D;
@@ -260,7 +261,26 @@ public class DiagramService {
     private static Multimap<Double, UniformlyDistributedLoad> getDistributedLoadStartMap(Canoe canoe)
     {
         Multimap<Double, UniformlyDistributedLoad> map = ArrayListMultimap.create();
-        for (UniformlyDistributedLoad load : canoe.getDLoads()) {map.put((double) Math.round(load.getX() * 100) / 100, load);}
+        for (UniformlyDistributedLoad load : canoe.getDLoads()) {
+            map.put((double) Math.round(load.getX() * 100) / 100, load);
+        }
+
+        if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null) {
+            for (UniformlyDistributedLoad load : canoe.getHull().getSelfWeightDistribution().getLoads()) {
+                map.put((double) Math.round(load.getX() * 100) / 100, load);
+            }
+        }
+
+        List<UniformlyDistributedLoad> externalDistributionDLoads = new ArrayList<>();
+        if (!canoe.getExternalLoadDistributions().isEmpty()) {
+            for (DiscreteLoadDistribution loadDist : canoe.getExternalLoadDistributions()) {
+                externalDistributionDLoads.addAll(loadDist.getLoads());
+            }
+            for (UniformlyDistributedLoad load : externalDistributionDLoads) {
+                map.put((double) Math.round(load.getX() * 100) / 100, load);
+            }
+        }
+
         return map;
     }
 
@@ -273,6 +293,23 @@ public class DiagramService {
     {
         Multimap<Double, UniformlyDistributedLoad> map = ArrayListMultimap.create();
         for (UniformlyDistributedLoad load : canoe.getDLoads()) {map.put((double) Math.round(load.getRx() * 100) / 100, load);}
+
+        if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null) {
+            for (UniformlyDistributedLoad load : canoe.getHull().getSelfWeightDistribution().getLoads()) {
+                map.put((double) Math.round(load.getRx() * 100) / 100, load);
+            }
+        }
+
+        List<UniformlyDistributedLoad> externalDistributionDLoads = new ArrayList<>();
+        if (!canoe.getExternalLoadDistributions().isEmpty()) {
+            for (DiscreteLoadDistribution loadDist : canoe.getExternalLoadDistributions()) {
+                externalDistributionDLoads.addAll(loadDist.getLoads());
+            }
+            for (UniformlyDistributedLoad load : externalDistributionDLoads) {
+                map.put((double) Math.round(load.getRx() * 100) / 100, load);
+            }
+        }
+
         return map;
     }
 

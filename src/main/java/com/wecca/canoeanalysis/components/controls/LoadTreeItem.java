@@ -16,7 +16,7 @@ public class LoadTreeItem extends TreeItem<String> {
     private int nestedLoadId;
     private final List<LoadTreeItem> children;
 
-    // Root node (should be set to not show)
+    // Root node
     public LoadTreeItem() {
         super("");
         this.loadId = -1;

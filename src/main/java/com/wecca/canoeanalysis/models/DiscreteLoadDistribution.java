@@ -20,11 +20,14 @@ class DiscreteLoadDistribution extends Load {
      * @param loads the discretized distribution
      * Note: the constructor is private to enable factory pattern
      */
-    private DiscreteLoadDistribution(List<UniformlyDistributedLoad> loads) {
-        super("Discrete Load Function");
+    private DiscreteLoadDistribution(String type, List<UniformlyDistributedLoad> loads) {
+        super(type);
         this.loads = loads;
     }
 
+    /**
+     * @return the maximum child dLoad value
+     */
     @Override
     public double getValue() {
         return loads.stream()
@@ -35,7 +38,7 @@ class DiscreteLoadDistribution extends Load {
 
     @Override
     public double getForce() {
-        return loads.stream().mapToDouble(UniformlyDistributedLoad::getValue).sum();
+        return loads.stream().mapToDouble(UniformlyDistributedLoad::getForce).sum();
     }
 
     @Override
@@ -59,19 +62,19 @@ class DiscreteLoadDistribution extends Load {
             double rx = section.getRx();
             loads.add(new UniformlyDistributedLoad(mag, x, rx));
         }
-        return new DiscreteLoadDistribution(loads);
+        return new DiscreteLoadDistribution("Hull Weight", loads);
     }
 
     /**
      * Factory method to create a distribution from loads directly (used for external loading distributions)
      * @param dLoads make up the distribution
      */
-    public static DiscreteLoadDistribution fromDistributedLoads(List<UniformlyDistributedLoad> dLoads) {
+    public static DiscreteLoadDistribution fromDistributedLoads(String type, List<UniformlyDistributedLoad> dLoads) {
         dLoads.sort(Comparator.comparingDouble(Load::getX));
         List<Section> sections = dLoads.stream().map(UniformlyDistributedLoad::getSection).toList();
         validateSectionsFormContinuousInterval(sections);
 
-        return new DiscreteLoadDistribution(dLoads);
+        return new DiscreteLoadDistribution(type, dLoads);
     }
 
     /**
