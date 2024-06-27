@@ -50,28 +50,25 @@ Currently, the program has one module to which will be used to model the canoe a
 
    Add the jar files from the boxed link. The list should show JFoenix and Scenebuilder as shown. </br> <br/>
 
-## Roadmap
-
-<b>Here as some features planned to be added as listed from 06/24:</b>
+## Feature Roadmap
 
 - [X] Side Menu Drawer
     - [X] Template links to other modules
     - [X] About Page
 - [X] Snackbar error popups
-- [ ] Get piecewise function for graph equations
-  - [ ] Get maximum SF/BM
-  - [ ] Display equations as LaTeX (formatted + raw)
-- [ ] Editable non-support loads
+- [ ] Get maximum SF/BM from graph as a tooltip
 - [X] Import/Export the canoe object as YAML
 - [X] Unification of color system between Java and CSS code
   - [X] Customizable colors in settings
 - [ ] Solve the case of a floating canoe [Epic]
   - [X] Implement an improved model for breaking the canoe hull up into sections
+  - [X] Display new Canoe model in a collapsable TreeView
+    - [ ] Editable cells
   - [X] Solve for a load distribution based on the self-weight distribution of the hull
   - [X] Iteratively solve for the waterline of a floating hull in equilibrium to get a buoyancy distribution
   - [ ] Update the YAML model and Marshalling process
   - [ ] Provide a GUI to custom edit the curves that define the hull
-    - [X] Define a set of curves availalbe for hull shape (can start with just one for now)
+    - [X] Define a set of curves availalbe for hull shape in the model (can start with just one for now)
     - [ ] Edit curves by sliders for parameters for a given curve
     
 <!-- CONTRIBUTING -->
