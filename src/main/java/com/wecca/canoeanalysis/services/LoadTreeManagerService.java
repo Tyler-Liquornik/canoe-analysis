@@ -9,8 +9,6 @@ import java.util.List;
 public class LoadTreeManagerService {
 
     @Setter
-    private static Canoe canoe;
-    @Setter
     private static JFXTreeView<String> loadsTreeView;
 
     private static final LoadTreeItem root = new LoadTreeItem();
@@ -18,20 +16,12 @@ public class LoadTreeManagerService {
     /**
      * Build the tree view model from the canoe
      */
-    public static void buildLoadTreeView() {
+    public static void rebuildLoadTreeView(Canoe canoe) {
+        root.getChildren().clear();
         List<Load> loads = canoe.getAllLoads();
         for (int i = 0; i < loads.size(); i++) {
             root.getChildren().add(createLoadTreeItem(i, loads.get(i)));
         }
-        updateTreeView();
-    }
-
-    public static void addLoadToTreeView(Load load) {
-        root.addChild(createLoadTreeItem(getNumberOfLoadsInTreeView(),load));
-        updateTreeView();
-    }
-
-    public static void updateTreeView() {
         loadsTreeView.setRoot(root);
         loadsTreeView.setShowRoot(false);
     }

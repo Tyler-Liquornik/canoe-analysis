@@ -208,8 +208,7 @@ public class BeamController implements Initializable
                 if (len == 6.0) {
                     System.out.println("Hull has been set to shark bait");
                     canoe.setHull(generateSharkBaitHull());
-                    DiscreteLoadDistribution buoyancy = SolverService.solveFloatingSystem(canoe);
-                    addLoadDistribution(buoyancy);
+                    LoadTreeManagerService.rebuildLoadTreeView(canoe);
                     System.out.println("Hull mass = " + canoe.getHull().getMass());
                 }
             }
@@ -302,8 +301,9 @@ public class BeamController implements Initializable
 
                 // Add the load to canoe, and the load arrow on the GUI
                 PointLoad p = new PointLoad(mag, x, false);
-                addPointLoadToView(p);
-                LoadTreeManagerService.addLoadToTreeView(p);
+                AddLoadResult addResult = canoe.addLoad(p);
+                addPointLoadGraphic(p, addResult);
+                LoadTreeManagerService.rebuildLoadTreeView(canoe);
             }
 
         }
@@ -348,8 +348,10 @@ public class BeamController implements Initializable
 
                     // Add the load to canoe, and update ui state
                     UniformlyDistributedLoad d = new UniformlyDistributedLoad(mag, x, xR);
-                    addDistributedLoadToView(d);
-                    LoadTreeManagerService.addLoadToTreeView(d);
+                    mainController.closeSnackBar(mainController.getSnackbar());
+                    canoe.addLoad(d);
+                    refreshLoadGraphics();
+                    LoadTreeManagerService.rebuildLoadTreeView(canoe);
                 }
         }
         else
@@ -364,43 +366,24 @@ public class BeamController implements Initializable
         enableEmptyLoadListSettings(false);
 
         // Add the load to canoe, and update ui state
-        canoe.addLoad(loadDistribution);
-        LoadTreeManagerService.addLoadToTreeView(loadDistribution);
         refreshLoadGraphics();
-    }
-
-    /**
-     * Add a distributed load to the canoe object and JavaFX UI.
-     * This method was extracted to allow for reuse in system solver methods.
-     * @param dLoad the distributed load to be added.
-     */
-    private void addDistributedLoadToView(UniformlyDistributedLoad dLoad) {
-        // Label reset
-        mainController.closeSnackBar(mainController.getSnackbar());
-
-        // Add the load to the model
-        canoe.addLoad(dLoad);
-
-        // Refresh load graphics
-        refreshLoadGraphics();
+        LoadTreeManagerService.rebuildLoadTreeView(canoe);
     }
 
     /**
      * Add a point load to the canoe object and JavaFX UI.
      * @param pLoad the point load to be added.
      */
-    private void addPointLoadToView(PointLoad pLoad)
+    private void addPointLoadGraphic(PointLoad pLoad, AddLoadResult result)
     {
         // x coordinate in beamContainer for load
         double scaledX = GraphicsUtils.getXScaled(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength()); // x position in the beamContainer
-
-        AddLoadResult addResult = canoe.addLoad(pLoad);
 
         // Render the correct graphic
         if (pLoad.isSupport())
             addSupportGraphic(scaledX);
         else
-            addArrowGraphic(pLoad, addResult);
+            addArrowGraphic(pLoad, result);
     }
 
     /**
@@ -425,6 +408,7 @@ public class BeamController implements Initializable
                 .map(load -> (Node) load).toList());
 
         // Update ui state
+        refreshLoadGraphics();
     }
 
     /**
@@ -482,7 +466,7 @@ public class BeamController implements Initializable
         solveSystemButton.setDisable(false);
 
         // Update state
-        LoadTreeManagerService.buildLoadTreeView();
+        LoadTreeManagerService.rebuildLoadTreeView(canoe);
         updateViewOrder();
     }
 
@@ -495,7 +479,9 @@ public class BeamController implements Initializable
     {
         List<PointLoad> supportLoads = SolverService.solveStandSystem(canoe);
         for (PointLoad supportLoad : supportLoads) {
-            addPointLoadToView(supportLoad);}
+            AddLoadResult addResult = canoe.addLoad(supportLoad);
+            addPointLoadGraphic(supportLoad, addResult);
+        }
     }
 
     private void undoStandsSolve()
@@ -511,8 +497,9 @@ public class BeamController implements Initializable
 
     private void solveFloatingSystem()
     {
-        // TODO: Implement (consult Design & Analysis)
-        mainController.showSnackbar("This has not yet been implemented - Tyler :-)");
+        DiscreteLoadDistribution buoyancy = SolverService.solveFloatingSystem(canoe);
+        canoe.getExternalLoadDistributions().add(buoyancy);
+        addLoadDistribution(buoyancy);
     }
 
     private void undoFloatingSolve()
@@ -638,8 +625,8 @@ public class BeamController implements Initializable
 
             // Update UI to new canoe
             enableEmptyLoadListSettings(uploadedCanoe.getExternalLoads().isEmpty());
-            LoadTreeManagerService.buildLoadTreeView();
             refreshLoadGraphics();
+            LoadTreeManagerService.rebuildLoadTreeView(canoe);
             axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
 
             // Notify the user of the result
@@ -711,7 +698,11 @@ public class BeamController implements Initializable
         List<HullSection> sections = new ArrayList<>();
 
         // Left edge curve
-        sections.add(new HullSection(hullLeftEdgeCurve, 0, 0.5, 0.2, 0.013, true));
+        sections.add(new HullSection(hullLeftEdgeCurve, 0.0, 0.1, 0.03, 0.013, true));
+        sections.add(new HullSection(hullLeftEdgeCurve, 0.1, 0.2, 0.05, 0.013, true));
+        sections.add(new HullSection(hullLeftEdgeCurve, 0.2, 0.3, 0.1, 0.013, true));
+        sections.add(new HullSection(hullLeftEdgeCurve, 0.3, 0.4, 0.15, 0.013, true));
+        sections.add(new HullSection(hullLeftEdgeCurve, 0.4, 0.5, 0.2, 0.013, true));
 
         // Generate sections along hullBaseProfileCurve with intervals of 0.1
         sections.add(new HullSection(hullBaseProfileCurve, 0.5, 0.6, 0.3, 0.013, false));
@@ -719,7 +710,7 @@ public class BeamController implements Initializable
         sections.add(new HullSection(hullBaseProfileCurve, 0.7, 0.8, 0.3, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 0.8, 0.9, 0.35, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 0.9, 1.0, 0.35, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 1, 1.1, 0.35, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.0, 1.1, 0.35, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 1.1, 1.2, 0.4, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 1.2, 1.3, 0.45, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 1.3, 1.4, 0.5, 0.013, false));
@@ -728,8 +719,8 @@ public class BeamController implements Initializable
         sections.add(new HullSection(hullBaseProfileCurve, 1.6, 1.7, 0.65, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 1.7, 1.8, 0.7, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 1.8, 1.9, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 1.9, 2, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 2, 2.1, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 1.9, 2.0, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.0, 2.1, 0.7, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 2.1, 2.2, 0.7, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 2.2, 2.3, 0.7, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 2.3, 2.4, 0.7, 0.013, false));
@@ -738,8 +729,8 @@ public class BeamController implements Initializable
         sections.add(new HullSection(hullBaseProfileCurve, 2.6, 2.7, 0.7, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 2.7, 2.8, 0.7, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 2.8, 2.9, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 2.9, 3, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 3, 3.1, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 2.9, 3.0, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.0, 3.1, 0.7, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 3.1, 3.2, 0.7, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 3.2, 3.3, 0.7, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 3.3, 3.4, 0.7, 0.013, false));
@@ -748,8 +739,8 @@ public class BeamController implements Initializable
         sections.add(new HullSection(hullBaseProfileCurve, 3.6, 3.7, 0.7, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 3.7, 3.8, 0.7, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 3.8, 3.9, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 3.9, 4, 0.7, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 4, 4.1, 0.65, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 3.9, 4.0, 0.7, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.0, 4.1, 0.65, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 4.1, 4.2, 0.6, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 4.2, 4.3, 0.55, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 4.3, 4.4, 0.5, 0.013, false));
@@ -758,15 +749,19 @@ public class BeamController implements Initializable
         sections.add(new HullSection(hullBaseProfileCurve, 4.6, 4.7, 0.35, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 4.7, 4.8, 0.3, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 4.8, 4.9, 0.3, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 4.9, 5, 0.3, 0.013, false));
-        sections.add(new HullSection(hullBaseProfileCurve, 5, 5.1, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 4.9, 5.0, 0.3, 0.013, false));
+        sections.add(new HullSection(hullBaseProfileCurve, 5.0, 5.1, 0.3, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 5.1, 5.2, 0.3, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 5.2, 5.3, 0.3, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 5.3, 5.4, 0.3, 0.013, false));
         sections.add(new HullSection(hullBaseProfileCurve, 5.4, 5.5, 0.3, 0.013, false));
 
         // Right edge curve
-        sections.add(new HullSection(hullRightEdgeCurve, 5.5, 6, 0.2, 0.013, true));
+        sections.add(new HullSection(hullRightEdgeCurve, 5.5, 5.6, 0.2, 0.013, true));
+        sections.add(new HullSection(hullRightEdgeCurve, 5.6, 5.7, 0.15, 0.013, true));
+        sections.add(new HullSection(hullRightEdgeCurve, 5.7, 5.8, 0.1, 0.013, true));
+        sections.add(new HullSection(hullRightEdgeCurve, 5.8, 5.9, 0.05, 0.013, true));
+        sections.add(new HullSection(hullRightEdgeCurve, 5.9, 6.0, 0.03, 0.013, true));
 
         return new Hull(1056, 28.82, sections);
     }
@@ -826,7 +821,6 @@ public class BeamController implements Initializable
         beamContainer.getChildren().add(beam);
 
         // Set up load tree management
-        LoadTreeManagerService.setCanoe(canoe);
         LoadTreeManagerService.setLoadsTreeView(loadsTreeView);
 
         // Initialize maximum allowed graphics size from beam graphic and container dimensions
