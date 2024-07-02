@@ -1,7 +1,6 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.math3.optim.MaxEval;
@@ -73,7 +72,7 @@ public class Hull {
         {
             // Find the sections minimum
             // Function is negated as BrentOptimizer looks for the maximum
-            UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(x -> -section.getProfileCurve().value(x));
+            UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(x -> -section.getSideProfileCurve().value(x));
             SearchInterval searchInterval = new SearchInterval(section.getX(), section.getRx());
             UnivariatePointValuePair result = (new BrentOptimizer(1e-10, 1e-14)).optimize(
                     MaxEval.unlimited(),
@@ -103,7 +102,7 @@ public class Hull {
      * Note: this includes bulkheads weight if specified with fillBulkhead
      */
     @JsonIgnore
-    public double getSelfWeight() {
+    public double getWeight() {
         return getHullSections().stream().mapToDouble(HullSection::getWeight).sum();
     }
 
@@ -177,8 +176,8 @@ public class Hull {
             HullSection next = sections.get(i + 1);
             double currentEnd = current.getRx();
             double nextStart = next.getX();
-            double currentEndDepth = current.getProfileCurve().value(currentEnd);
-            double nextStartDepth = next.getProfileCurve().value(nextStart);
+            double currentEndDepth = current.getSideProfileCurve().value(currentEnd);
+            double nextStartDepth = next.getSideProfileCurve().value(nextStart);
             if (Math.abs(currentEndDepth - nextStartDepth) > 1e-6) // small tolerance for discontinuities in case of floating point errors
                 throw new IllegalArgumentException("Hull shape functions must form a continuous curve at section boundaries.");
         }
@@ -208,7 +207,7 @@ public class Hull {
     private void validateWallThickness(List<HullSection> sections) {
         for (HullSection section : sections)
         {
-            if (section.getWallsThickness() > section.getWidth() / 2)
+            if (section.getWallsThickness() > section.getMaxWidth() / 2)
                 throw new IllegalArgumentException("Hull walls would be greater than the width of the canoe");
         }
     }
