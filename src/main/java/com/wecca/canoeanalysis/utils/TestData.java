@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 // This is purely for testing and should not be included in prod
+// See: https://www.desmos.com/calculator/ejinswudqi, https://www.desmos.com/calculator/nxrhgy1l8w
 public class TestData {
     /**
      * Hardcoded temporary test function for the new canoe model TODO: remove once new model finished

@@ -104,71 +104,55 @@ public class LoadTreeManagerService {
 
     /**
      * Create tree items for a given load with its fields as children.
-     * @param load the load to create tree item for
+     * @param pLoad the load to create tree item for
      * @return the root tree item representing the load
      */
-    private static LoadTreeItem createPLoadTreeItem(int loadId, Load load) {
-        if (load instanceof PointLoad pLoad) {
-            LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, numPLoads++, load);
+    private static LoadTreeItem createPLoadTreeItem(int loadId, PointLoad pLoad) {
+            LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, numPLoads++, pLoad);
             loadTreeItem.addChild(new LoadTreeItem(loadId, 0, String.format("Force: %.2fkN", pLoad.getForce())));
             loadTreeItem.addChild(new LoadTreeItem(loadId, 1, String.format("Position: %.2fm", pLoad.getX())));
 
             return loadTreeItem;
-        }
-        else
-            throw new IllegalArgumentException("Cannot process type" + load.getClass().getName());
     }
 
     /**
      * Create tree items for a given load with its fields as children.
-     * @param load the load to create tree items for
+     * @param dLoad the load to create tree items for
      * @return the root tree item representing the load
      */
-    private static LoadTreeItem createDLoadTreeItem(int loadId, Load load) {
-        if (load instanceof UniformlyDistributedLoad dLoad) {
-            LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, numDLoads++, load);
+    private static LoadTreeItem createDLoadTreeItem(int loadId, UniformlyDistributedLoad dLoad) {
+        LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, numDLoads++, dLoad);
 
-            loadTreeItem.addChild(new LoadTreeItem(loadId, 0, String.format("Force: %.2fkN/m", dLoad.getMagnitude())));
-            loadTreeItem.addChild(new LoadTreeItem(loadId, 1, String.format("Position: [%.2fm, %.2fm]", load.getX(), dLoad.getRx())));
+        loadTreeItem.addChild(new LoadTreeItem(loadId, 0, String.format("Force: %.2fkN/m", dLoad.getMagnitude())));
+        loadTreeItem.addChild(new LoadTreeItem(loadId, 1, String.format("Position: [%.2fm, %.2fm]", dLoad.getX(), dLoad.getRx())));
 
-            return loadTreeItem;
-        }
-        else
-            throw new IllegalArgumentException("Cannot process type" + load.getClass().getName());
+        return loadTreeItem;
     }
 
     /**
      * Create a LoadTreeItem for a DiscreteLoadDistribution with its children as its dLoads that make it up
      */
-    private static LoadTreeItem createLoadDistTreeItem(int loadId, Load load) {
-        if (load instanceof DiscreteLoadDistribution loadDist) {
-            LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, numLoadDists++, load);
-            for (int i = 0; i < loadDist.getLoads().size(); i++) {
-                LoadTreeItem childLoadTreeItem = createNestedDLoadTreeItem(loadId, i, loadDist.getLoads().get(i));
-                loadTreeItem.addChild(childLoadTreeItem);
-            }
-            return loadTreeItem;
+    private static LoadTreeItem createLoadDistTreeItem(int loadId, DiscreteLoadDistribution loadDist) {
+        LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, numLoadDists++, loadDist);
+        for (int i = 0; i < loadDist.getLoads().size(); i++) {
+            LoadTreeItem childLoadTreeItem = createNestedDLoadTreeItem(loadId, i, loadDist.getLoads().get(i));
+            loadTreeItem.addChild(childLoadTreeItem);
         }
-        else
-            throw new IllegalArgumentException("Cannot process type" + load.getClass().getName());
+        return loadTreeItem;
     }
 
 
     /**
      * Create tree items for a given load with its fields as children.
-     * @param load the load to create tree items for
+     * @param dLoad the load to create tree items for
      * @return the root tree item representing the load
      */
-    private static LoadTreeItem createNestedDLoadTreeItem(int loadId, int nestedLoadId, Load load) {
-        if (load instanceof UniformlyDistributedLoad dLoad) {
-            LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, nestedLoadId, nestedLoadId, load);
+    private static LoadTreeItem createNestedDLoadTreeItem(int loadId, int nestedLoadId, UniformlyDistributedLoad dLoad) {
+        LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, nestedLoadId, nestedLoadId, dLoad);
 
-            loadTreeItem.addChild(new LoadTreeItem(loadId, nestedLoadId, 0, String.format("Force: %.2fkN/m", dLoad.getMagnitude())));
-            loadTreeItem.addChild(new LoadTreeItem(loadId, nestedLoadId, 1, String.format("Position: [%.2fm, %.2fm]", load.getX(), dLoad.getRx())));
+        loadTreeItem.addChild(new LoadTreeItem(loadId, nestedLoadId, 0, String.format("Force: %.2fkN/m", dLoad.getMagnitude())));
+        loadTreeItem.addChild(new LoadTreeItem(loadId, nestedLoadId, 1, String.format("Position: [%.2fm, %.2fm]", dLoad.getX(), dLoad.getRx())));
 
-            return loadTreeItem;
-        }
-        else
-            throw new IllegalArgumentException("Cannot process type" + load.getClass().getName());
+        return loadTreeItem;
     }
 }

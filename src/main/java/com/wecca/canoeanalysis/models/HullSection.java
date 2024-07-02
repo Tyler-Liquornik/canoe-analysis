@@ -51,11 +51,23 @@ public class HullSection extends Section
     @JsonIgnore
     private double bulkheadDensity; // [kg/m^3]
 
-    // Adjusts for the fact that a front profile view x-section curve has about 85% the area of a rectangle encasing it
-    // See: https://www.desmos.com/calculator/bnimxixcax
-    // Note: Uses the front profile of 2024's as a rough approximation for all reasonable future front profiles
+    // Adjusts for difference in area of the section's curvature of the front profile view at a given height h
+    // See: https://www.desmos.com/calculator/gqnmaan6ae
+    // TLDR: Uses the front profile of 2024's Shark Bait as a rough approximation for all reasonable future front profiles
+    // Extrapolation occurs at heights greater than Shark Bait's max height of 0.4m
     @JsonIgnore
-    private final double crossSectionalAreaAdjustmentFactor = 0.7895;
+    private final Function<Double, Double> crossSectionalAreaAdjustmentFactorFunction = h -> {
+        if (0 <= h && h < 0.0404)
+            return 12 * h;
+        else if (0.0404 <= h && h < 0.15)
+            return -18.1233 * Math.pow((h - 0.15), 2) + 0.7025;
+        else if (0.15 <= h && h < 0.4)
+            return -1.50222 * Math.pow((h - 0.45), 2) + 0.8377;
+        else if (h >= 0.4) // Extrapolation
+            return (0.9 / (1 + Math.exp(-7 * (h - 0.05)))) + 0.005439;
+        else
+            return 0.0;
+    };
 
     /**
      * @param start the start x position of the section's profile curve interval
@@ -94,7 +106,7 @@ public class HullSection extends Section
         return x -> {
             double height = Math.abs(sideProfileCurve.value(x));
             double width = 2 * Math.abs(topProfileCurve.value(x)); // assuming this profile is symmetrical in the current model
-            return height * width * crossSectionalAreaAdjustmentFactor;
+            return height * width * crossSectionalAreaAdjustmentFactorFunction.apply(height);
         };
     }
 
@@ -116,7 +128,7 @@ public class HullSection extends Section
             double height = Math.abs(sideProfileCurve.value(x));
             double width = 2 * Math.abs(topProfileCurve.value(x)); // assuming this profile is symmetrical in the current model
             int numTopAndBottomWalls = hasBulkhead ? 2 : 1; // Include a top wall (ceiling) to cover the bulkhead (in addition to floor which is always present)
-            return ((height - numTopAndBottomWalls * wallsThickness) * (width - (2 * wallsThickness))) * crossSectionalAreaAdjustmentFactor; // inner area doesnt include walls or floor / ceiling
+            return ((height - numTopAndBottomWalls * wallsThickness) * (width - (2 * wallsThickness))) * crossSectionalAreaAdjustmentFactorFunction.apply(height); // inner area doesnt include walls or floor / ceiling
         };
     }
 
@@ -171,7 +183,7 @@ public class HullSection extends Section
      */
     @JsonIgnore
     public UnivariateFunction getWeightDistributionFunction() {
-        return x -> -getMassDistributionFunction().value(x) * PhysicalConstants.GRAVITY.getValue();
+        return x -> -getMassDistributionFunction().value(x) * PhysicalConstants.GRAVITY.getValue() / 1000.0;
     }
 
     /**

@@ -1,12 +1,15 @@
 package com.wecca.canoeanalysis.services;
 
 import com.wecca.canoeanalysis.models.*;
+import com.wecca.canoeanalysis.utils.MathUtils;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
-import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.optim.MaxEval;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Utility class for solving system equations
@@ -16,7 +19,6 @@ public class SolverService {
     // Offset of the stands from either end of the canoe (assume equal offset on either side)
     // Hard coded for now with stands right on the edges (0 offset), subject to change later
     private final static int STAND_OFFSET = 0;
-    private final static SimpsonIntegrator integrator = new SimpsonIntegrator();
 
     /**
      * Solve the "stand" system to find point loads at ends of canoe, assuming loads already on canoe.
@@ -100,9 +102,11 @@ public class SolverService {
      * @return the submerged volume in m^3 at the given waterline guess
      */
     private static double getSubmergedVolume(double waterline, HullSection section) {
-
-        double submergedArea = integrator.integrate(10000000, x -> (waterline - Math.min(section.getSideProfileCurve().value(x), waterline)), section.getX(), section.getRx());
-        return submergedArea * section.getMaxWidth();
+        UnivariateFunction f =  x -> {
+            double h = waterline - Math.min(section.getSideProfileCurve().value(x), waterline);
+            return section.getCrossSectionalAreaFunction().value(x) * h * section.getCrossSectionalAreaAdjustmentFactorFunction().apply(h);
+        };
+        return MathUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), f, section.getX(), section.getRx());
     }
 
     /**
@@ -157,7 +161,7 @@ public class SolverService {
         double waterLine = -canoe.getHull().getMaxHeight();
         while (totalBuoyancy < Math.abs(totalWeight)) {
             totalBuoyancy = getBuoyantTotalForce(canoe, waterLine);
-            waterLine += 0.00001;
+            waterLine += 0.000001; // will not properly solve equilibrium unless step size is small enough, trade off is it becomes slow
         }
         return waterLine;
     }
