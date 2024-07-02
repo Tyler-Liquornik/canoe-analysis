@@ -120,7 +120,7 @@ public class Canoe
      */
     @JsonIgnore
     public double getTotalWeight() {
-        return hull.getSelfWeight() + getExternalWeight();
+        return hull.getWeight() + getExternalWeight();
     }
 
 

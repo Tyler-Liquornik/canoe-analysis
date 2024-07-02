@@ -101,8 +101,8 @@ public class SolverService {
      */
     private static double getSubmergedVolume(double waterline, HullSection section) {
 
-        double submergedArea = integrator.integrate(10000000, x -> (waterline - Math.min(section.getProfileCurve().value(x), waterline)), section.getX(), section.getRx());
-        return submergedArea * section.getWidth();
+        double submergedArea = integrator.integrate(10000000, x -> (waterline - Math.min(section.getSideProfileCurve().value(x), waterline)), section.getX(), section.getRx());
+        return submergedArea * section.getMaxWidth();
     }
 
     /**
