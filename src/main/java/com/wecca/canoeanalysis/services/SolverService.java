@@ -9,7 +9,6 @@ import org.apache.commons.math3.optim.MaxEval;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * Utility class for solving system equations
@@ -29,8 +28,8 @@ public class SolverService {
     public static List<PointLoad> solveStandSystem(Canoe canoe) {
         List<PointLoad> pointLoads = new ArrayList<>();
         // Transform the distributed loads into point loads
-        if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null)
-            pointLoads.addAll(distributedToPoint(canoe.getHull().getSelfWeightDistribution().getLoads()));
+//        if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null)
+//            pointLoads.addAll(distributedToPoint(canoe.getHull().getSelfWeightDistribution().getLoads()));
         pointLoads.addAll(distributedToPoint(canoe.getDLoads()));
         pointLoads.addAll(canoe.getPLoads());
 
@@ -54,16 +53,15 @@ public class SolverService {
         return pointLoads;
     }
 
-
     /**
      * Convert a list of UniformDistributedLoads to a list of PointLoads.
      * @param loads list of distributed loads.
      * @return list of point loads.
      */
-    private static List<PointLoad> distributedToPoint(List<UniformlyDistributedLoad> loads) {
+    private static List<PointLoad> distributedToPoint(List<UniformLoadDistribution> loads) {
         List<PointLoad> pointLoads = new ArrayList<>();
 
-        for (UniformlyDistributedLoad load : loads) {
+        for (UniformLoadDistribution load : loads) {
             double dLoadLength = load.getRx() - load.getX();
             double pLoadMagnitude = load.getMagnitude() * dLoadLength;
             double pLoadPosition = load.getX() + (dLoadLength / 2);
@@ -73,23 +71,14 @@ public class SolverService {
         return pointLoads;
     }
 
-
     /**
      * Solve the overall floating case of the canoe
      * @param canoe the canoe with a give hull geometry, material densities, and external loading to solve
      * @return the buoyancy reaction load distribution
      */
-    public static DiscreteLoadDistribution solveFloatingSystem(Canoe canoe) {
+    public static PiecewiseContinuousLoadDistribution solveFloatingSystem(Canoe canoe) {
         double waterLine = getEquilibriumWaterLine(canoe);
-        List<Double> buoyantForces = getBuoyantForcesOnSections(waterLine, canoe);
-        List<UniformlyDistributedLoad> loads = new ArrayList<>();
-        for (int i = 0; i < buoyantForces.size(); i++) {
-            HullSection section = canoe.getHull().getHullSections().get(i);
-            double sectionLength = section.getLength();
-            double dLoadMag = buoyantForces.get(i) / sectionLength;
-            loads.add(new UniformlyDistributedLoad(dLoadMag, section.getX(), section.getRx()));
-        }
-        DiscreteLoadDistribution buoyancy = DiscreteLoadDistribution.fromDistributedLoads("Buoyancy", loads);
+        PiecewiseContinuousLoadDistribution buoyancy = getBuoyancyDistribution(waterLine, canoe);
         System.out.println("buoyancy.getForce() = " + buoyancy.getForce());
         System.out.println("canoe.getHull().getSelfWeightDistribution().getForce() = " + canoe.getHull().getSelfWeightDistribution().getForce());
         return buoyancy;
@@ -101,12 +90,21 @@ public class SolverService {
      * @param section the section to calculate the buoyant force on
      * @return the submerged volume in m^3 at the given waterline guess
      */
-    private static double getSubmergedVolume(double waterline, HullSection section) {
-        UnivariateFunction f =  x -> {
+    private static UnivariateFunction getSubmergedCrossSectionalAreaFunction(double waterline, HullSection section) {
+        return x -> {
             double h = waterline - Math.min(section.getSideProfileCurve().value(x), waterline);
             return section.getCrossSectionalAreaFunction().value(x) * h * section.getCrossSectionalAreaAdjustmentFactorFunction().apply(h);
         };
-        return MathUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), f, section.getX(), section.getRx());
+    }
+
+    /**
+     * Guess a waterline and get the volume of the submerged portion of the section
+     * @param waterline the level below y = 0 of the waterline guess
+     * @param section the section to calculate the buoyant force on
+     * @return the submerged volume in m^3 at the given waterline guess
+     */
+    private static double getSubmergedVolume(double waterline, HullSection section) {
+        return MathUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getSubmergedCrossSectionalAreaFunction(waterline, section), section.getX(), section.getRx());
     }
 
     /**
@@ -115,23 +113,8 @@ public class SolverService {
      * @param section the section to calculate the buoyant force on
      * @return the buoyant force in kN
      */
-    private static double getBuoyantForceOnSection(double waterline, HullSection section) {
+    private static double getBuoyancyOnSection(double waterline, HullSection section) {
         return (PhysicalConstants.DENSITY_OF_WATER.getValue() * PhysicalConstants.GRAVITY.getValue() * getSubmergedVolume(waterline, section)) / 1000.0;
-    }
-
-    /**
-     * Get the buoyant force on all section
-     * @param waterLine the level below y = 0 of the waterline guess
-     * @param canoe the canoe with sections to calculate the buoyancy forces of
-     * @return a linked list in of buoyancy forces in the same order as the linked list of canoe sections
-     */
-    private static List<Double> getBuoyantForcesOnSections(double waterLine, Canoe canoe) {
-        List<Double> buoyantForces = new ArrayList<>();
-        for (HullSection section : canoe.getHull().getHullSections()) {
-            double force = getBuoyantForceOnSection(waterLine, section);
-            buoyantForces.add(force);
-        }
-        return buoyantForces;
     }
 
     /**
@@ -140,11 +123,11 @@ public class SolverService {
      * @param waterLine the level below y = 0 of the waterline guess
      * @return the total buoyant in kN at the given waterline guess
      */
-    private static double getBuoyantTotalForce(Canoe canoe, double waterLine) {
+    private static double getTotalBuoyancy(Canoe canoe, double waterLine) {
         List<HullSection> sections = canoe.getHull().getHullSections();
         double totalBuoyantForce = 0;
         for (HullSection section : sections) {
-            totalBuoyantForce += getBuoyantForceOnSection(waterLine, section);
+            totalBuoyantForce += getBuoyancyOnSection(waterLine, section);
         }
         return totalBuoyantForce;
     }
@@ -155,15 +138,43 @@ public class SolverService {
      * @param canoe the canoe with defined internal/external loads to get the waterline height for
      * @return the waterline height of floating equilibrium
      */
-    private static double getEquilibriumWaterLine(Canoe canoe) {
+    public static double getEquilibriumWaterLine(Canoe canoe) {
         double totalWeight = canoe.getTotalWeight();
-        double totalBuoyancy = 0.0;
-        double waterLine = -canoe.getHull().getMaxHeight();
-        while (totalBuoyancy < Math.abs(totalWeight)) {
-            totalBuoyancy = getBuoyantTotalForce(canoe, waterLine);
-            waterLine += 0.000001; // will not properly solve equilibrium unless step size is small enough, trade off is it becomes slow
+        double minWaterLine = -canoe.getHull().getMaxHeight();
+        double maxWaterLine = 0;
+        double waterLine = (minWaterLine + maxWaterLine) / 2.0;
+        double totalBuoyancy;
+
+        // Iterate until equilibrium is reached within a reasonable tolerance
+        // Cut the step size in half each time, giving O(log(n)) time
+        while (maxWaterLine - minWaterLine > 1e-6) {
+            totalBuoyancy = getTotalBuoyancy(canoe, waterLine);
+            if (totalBuoyancy < Math.abs(totalWeight))
+                minWaterLine = waterLine;
+            else
+                maxWaterLine = waterLine;
+            waterLine = (minWaterLine + maxWaterLine) / 2.0;
         }
         return waterLine;
+    }
+
+    /**
+     * @param waterline the level below y = 0 of the waterline (pass in equilibrium waterline)
+     * @param canoe the canoe with sections to calculate the buoyancy forces of
+     * @return the buoyancy distribution of the canoe at the given waterline in kN/m
+     */
+    private static PiecewiseContinuousLoadDistribution getBuoyancyDistribution(double waterline, Canoe canoe) {
+        List<HullSection> sections = canoe.getHull().getHullSections();
+        List<UnivariateFunction> buoyancyPieces = new ArrayList<>();
+        List<Section> buoyancySections = new ArrayList<>();
+
+        for (HullSection section : sections) {
+            UnivariateFunction buoyancyPiece = x -> getSubmergedCrossSectionalAreaFunction(waterline, section).value(x) * PhysicalConstants.DENSITY_OF_WATER.getValue() * PhysicalConstants.GRAVITY.getValue() / 1000.0;
+            buoyancyPieces.add(buoyancyPiece);
+            buoyancySections.add(section);
+        }
+
+        return new PiecewiseContinuousLoadDistribution("Buoyancy", buoyancyPieces, buoyancySections);
     }
 
     // TODO: Consult Design and Analysis team for details. Strategy for this has not yet been developed.

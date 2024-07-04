@@ -5,6 +5,7 @@ import lombok.Getter;
 
 /**
  * Represents an interval [x, rx] where 0 <= x < rx
+ * In essence, this is just a sub-interval of R^+
  */
 @Getter
 public class Section {

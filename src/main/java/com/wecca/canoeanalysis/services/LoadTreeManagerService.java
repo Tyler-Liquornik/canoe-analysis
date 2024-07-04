@@ -26,7 +26,7 @@ public class LoadTreeManagerService {
     public static void buildLoadTreeView(Canoe canoe) {
         numPLoads = numDLoads = numLoadDists = 0;
         root.getChildren().clear();
-        List<Load> loads = canoe.getAllLoads();
+        List<Load> loads = canoe.getAllLoadsDiscretized();
         for (int i = 0; i < loads.size(); i++) {
             root.getChildren().add(createLoadTreeItem(i, loads.get(i)));
         }
@@ -92,7 +92,7 @@ public class LoadTreeManagerService {
             case PointLoad pLoad -> {
                 return createPLoadTreeItem(loadId, pLoad);
             }
-            case UniformlyDistributedLoad dLoad -> {
+            case UniformLoadDistribution dLoad -> {
                 return createDLoadTreeItem(loadId, dLoad);
             }
             case DiscreteLoadDistribution loadDist -> {
@@ -120,11 +120,12 @@ public class LoadTreeManagerService {
      * @param dLoad the load to create tree items for
      * @return the root tree item representing the load
      */
-    private static LoadTreeItem createDLoadTreeItem(int loadId, UniformlyDistributedLoad dLoad) {
+    private static LoadTreeItem createDLoadTreeItem(int loadId, UniformLoadDistribution dLoad) {
         LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, numDLoads++, dLoad);
 
         loadTreeItem.addChild(new LoadTreeItem(loadId, 0, String.format("Force: %.2fkN/m", dLoad.getMagnitude())));
-        loadTreeItem.addChild(new LoadTreeItem(loadId, 1, String.format("Position: [%.2fm, %.2fm]", dLoad.getX(), dLoad.getRx())));
+        loadTreeItem.addChild(new LoadTreeItem(loadId, 1, String.format("Interval L: %.2fm", dLoad.getX())));
+        loadTreeItem.addChild(new LoadTreeItem(loadId, 2, String.format("Interval R: %.2fm", dLoad.getRx())));
 
         return loadTreeItem;
     }
@@ -147,11 +148,12 @@ public class LoadTreeManagerService {
      * @param dLoad the load to create tree items for
      * @return the root tree item representing the load
      */
-    private static LoadTreeItem createNestedDLoadTreeItem(int loadId, int nestedLoadId, UniformlyDistributedLoad dLoad) {
+    private static LoadTreeItem createNestedDLoadTreeItem(int loadId, int nestedLoadId, UniformLoadDistribution dLoad) {
         LoadTreeItem loadTreeItem = new LoadTreeItem(loadId, nestedLoadId, nestedLoadId, dLoad);
 
-        loadTreeItem.addChild(new LoadTreeItem(loadId, nestedLoadId, 0, String.format("Force: %.2fkN/m", dLoad.getMagnitude())));
-        loadTreeItem.addChild(new LoadTreeItem(loadId, nestedLoadId, 1, String.format("Position: [%.2fm, %.2fm]", dLoad.getX(), dLoad.getRx())));
+        loadTreeItem.addChild(new LoadTreeItem(loadId, 0, String.format("Avg Force: %.2fkN/m", dLoad.getMagnitude())));
+        loadTreeItem.addChild(new LoadTreeItem(loadId, 1, String.format("Interval L: %.2fm", dLoad.getX())));
+        loadTreeItem.addChild(new LoadTreeItem(loadId, 2, String.format("Interval R: %.2fm", dLoad.getRx())));
 
         return loadTreeItem;
     }

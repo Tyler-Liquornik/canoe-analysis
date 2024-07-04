@@ -118,11 +118,11 @@ public class Hull {
      * @return the self weight distribution
      */
     @JsonIgnore
-    public DiscreteLoadDistribution getSelfWeightDistribution() {
+    public PiecewiseContinuousLoadDistribution getSelfWeightDistribution() {
         if (getTotalVolume() == 0)
             return null;
         else
-            return DiscreteLoadDistribution.fromHull(this);
+            return PiecewiseContinuousLoadDistribution.fromHull(this);
     }
 
     /**

@@ -5,7 +5,7 @@ import com.wecca.canoeanalysis.components.diagrams.DiagramInterval;
 import com.wecca.canoeanalysis.models.Canoe;
 import com.wecca.canoeanalysis.models.DiscreteLoadDistribution;
 import com.wecca.canoeanalysis.models.PointLoad;
-import com.wecca.canoeanalysis.models.UniformlyDistributedLoad;
+import com.wecca.canoeanalysis.models.UniformLoadDistribution;
 import javafx.geometry.Point2D;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
@@ -258,28 +258,28 @@ public class DiagramService {
      * @param canoe the canoe object.
      * @return the generated map.
      */
-    private static Multimap<Double, UniformlyDistributedLoad> getDistributedLoadStartMap(Canoe canoe)
+    private static Multimap<Double, UniformLoadDistribution> getDistributedLoadStartMap(Canoe canoe)
     {
-        Multimap<Double, UniformlyDistributedLoad> map = ArrayListMultimap.create();
-        for (UniformlyDistributedLoad load : canoe.getDLoads()) {
+        Multimap<Double, UniformLoadDistribution> map = ArrayListMultimap.create();
+        for (UniformLoadDistribution load : canoe.getDLoads()) {
             map.put((double) Math.round(load.getX() * 100) / 100, load);
         }
 
-        if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null) {
-            for (UniformlyDistributedLoad load : canoe.getHull().getSelfWeightDistribution().getLoads()) {
-                map.put((double) Math.round(load.getX() * 100) / 100, load);
-            }
-        }
+//        if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null) {
+//            for (UniformLoadDistribution load : canoe.getHull().getSelfWeightDistribution().getLoads()) {
+//                map.put((double) Math.round(load.getX() * 100) / 100, load);
+//            }
+//        }
 
-        List<UniformlyDistributedLoad> externalDistributionDLoads = new ArrayList<>();
-        if (!canoe.getExternalLoadDistributions().isEmpty()) {
-            for (DiscreteLoadDistribution loadDist : canoe.getExternalLoadDistributions()) {
-                externalDistributionDLoads.addAll(loadDist.getLoads());
-            }
-            for (UniformlyDistributedLoad load : externalDistributionDLoads) {
-                map.put((double) Math.round(load.getX() * 100) / 100, load);
-            }
-        }
+//        List<UniformLoadDistribution> externalDistributionDLoads = new ArrayList<>();
+//        if (!canoe.getExternalLoadDistributions().isEmpty()) {
+//            for (DiscreteLoadDistribution loadDist : canoe.getExternalLoadDistributions()) {
+//                externalDistributionDLoads.addAll(loadDist.getLoads());
+//            }
+//            for (UniformLoadDistribution load : externalDistributionDLoads) {
+//                map.put((double) Math.round(load.getX() * 100) / 100, load);
+//            }
+//        }
 
         return map;
     }
@@ -289,26 +289,26 @@ public class DiagramService {
      * @param canoe the canoe object.
      * @return the generated map.
      */
-    private static Multimap<Double, UniformlyDistributedLoad> getDistributedLoadEndMap(Canoe canoe)
+    private static Multimap<Double, UniformLoadDistribution> getDistributedLoadEndMap(Canoe canoe)
     {
-        Multimap<Double, UniformlyDistributedLoad> map = ArrayListMultimap.create();
-        for (UniformlyDistributedLoad load : canoe.getDLoads()) {map.put((double) Math.round(load.getRx() * 100) / 100, load);}
+        Multimap<Double, UniformLoadDistribution> map = ArrayListMultimap.create();
+        for (UniformLoadDistribution load : canoe.getDLoads()) {map.put((double) Math.round(load.getRx() * 100) / 100, load);}
 
-        if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null) {
-            for (UniformlyDistributedLoad load : canoe.getHull().getSelfWeightDistribution().getLoads()) {
-                map.put((double) Math.round(load.getRx() * 100) / 100, load);
-            }
-        }
+//        if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null) {
+//            for (UniformLoadDistribution load : canoe.getHull().getSelfWeightDistribution().getLoads()) {
+//                map.put((double) Math.round(load.getRx() * 100) / 100, load);
+//            }
+//        }
 
-        List<UniformlyDistributedLoad> externalDistributionDLoads = new ArrayList<>();
-        if (!canoe.getExternalLoadDistributions().isEmpty()) {
-            for (DiscreteLoadDistribution loadDist : canoe.getExternalLoadDistributions()) {
-                externalDistributionDLoads.addAll(loadDist.getLoads());
-            }
-            for (UniformlyDistributedLoad load : externalDistributionDLoads) {
-                map.put((double) Math.round(load.getRx() * 100) / 100, load);
-            }
-        }
+//        List<UniformLoadDistribution> externalDistributionDLoads = new ArrayList<>();
+//        if (!canoe.getExternalLoadDistributions().isEmpty()) {
+//            for (DiscreteLoadDistribution loadDist : canoe.getExternalLoadDistributions()) {
+//                externalDistributionDLoads.addAll(loadDist.getLoads());
+//            }
+//            for (UniformLoadDistribution load : externalDistributionDLoads) {
+//                map.put((double) Math.round(load.getRx() * 100) / 100, load);
+//            }
+//        }
 
         return map;
     }
@@ -407,8 +407,8 @@ public class DiagramService {
     {
         // Get maps for each load type for efficient processing
         Map<Double, PointLoad> pointLoadMap = getPointLoadMap(canoe);
-        Multimap<Double, UniformlyDistributedLoad> distributedLoadStartMap = getDistributedLoadStartMap(canoe);
-        Multimap<Double, UniformlyDistributedLoad> distributedLoadEndMap = getDistributedLoadEndMap(canoe);
+        Multimap<Double, UniformLoadDistribution> distributedLoadStartMap = getDistributedLoadStartMap(canoe);
+        Multimap<Double, UniformLoadDistribution> distributedLoadEndMap = getDistributedLoadEndMap(canoe);
 
         // Maintain the x coordinate, slope, and magnitude of the previous interval
         double prevX = 0;
@@ -425,7 +425,7 @@ public class DiagramService {
                 // Apply the magnitude and the rolling slope
                 intervals.add(new DiagramInterval(prevX, x, magnitude, slope));
                 // Increment the slope, set the x coordinate, and clear the magnitude
-                for (UniformlyDistributedLoad load : distributedLoadStartMap.get(x)) {slope += load.getMagnitude();}
+                for (UniformLoadDistribution load : distributedLoadStartMap.get(x)) {slope += load.getMagnitude();}
                 prevX = x;
                 magnitude = 0;
             }
@@ -434,7 +434,7 @@ public class DiagramService {
                 // Apply the magnitude and the rolling slope
                 intervals.add(new DiagramInterval(prevX, x, magnitude, slope));
                 // Decrement the slope, set the x coordinate, and clear the magnitude
-                for (UniformlyDistributedLoad load : distributedLoadEndMap.get(x)) {slope -= load.getMagnitude();}
+                for (UniformLoadDistribution load : distributedLoadEndMap.get(x)) {slope -= load.getMagnitude();}
                 prevX = x;
                 magnitude = 0;
             }

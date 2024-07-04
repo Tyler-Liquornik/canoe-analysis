@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.wecca.canoeanalysis.models.DiscreteLoadDistribution;
 import com.wecca.canoeanalysis.models.Load;
 import com.wecca.canoeanalysis.models.PointLoad;
-import com.wecca.canoeanalysis.models.UniformlyDistributedLoad;
+import com.wecca.canoeanalysis.models.UniformLoadDistribution;
 import javafx.scene.control.TreeItem;
 import lombok.Getter;
 import lombok.Setter;
@@ -75,7 +75,7 @@ public class LoadTreeItem extends TreeItem<String> {
     private static char getTypeChar(Load load) {
         switch (load) {
             case PointLoad ignoredLoad -> {return 'p';}
-            case UniformlyDistributedLoad ignoredLoad -> {return 'w';}
+            case UniformLoadDistribution ignoredLoad -> {return 'w';}
             case DiscreteLoadDistribution ignoredLoad -> {return 'd';}
             default -> throw new IllegalArgumentException("Provide a valid load");
         }

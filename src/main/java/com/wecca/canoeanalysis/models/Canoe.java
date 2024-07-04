@@ -18,7 +18,7 @@ import java.util.*;
 public class Canoe
 {
     private final ArrayList<Load> externalLoads;
-    private final ArrayList<DiscreteLoadDistribution> externalLoadDistributions;
+    private final ArrayList<PiecewiseContinuousLoadDistribution> externalLoadDistributions;
     @Setter
     private Hull hull;
 
@@ -89,10 +89,10 @@ public class Canoe
     }
 
     @JsonIgnore
-    public List<UniformlyDistributedLoad> getDLoads() {
-        List<UniformlyDistributedLoad> dLoads = new ArrayList<>();
+    public List<UniformLoadDistribution> getDLoads() {
+        List<UniformLoadDistribution> dLoads = new ArrayList<>();
         for (Load load : externalLoads) {
-            if (load instanceof UniformlyDistributedLoad dLoad)
+            if (load instanceof UniformLoadDistribution dLoad)
                 dLoads.add(dLoad);
         }
         return dLoads;
@@ -109,7 +109,7 @@ public class Canoe
         for (PointLoad pLoad : getPLoads()) {
             externalWeight += pLoad.getValue();
         }
-        for (UniformlyDistributedLoad dLoad : getDLoads()) {
+        for (UniformLoadDistribution dLoad : getDLoads()) {
             externalWeight += dLoad.getMagnitude() * (dLoad.getRx() - dLoad.getX());
         }
         return externalWeight;
@@ -136,7 +136,7 @@ public class Canoe
         for (Load l : externalLoads)
         {
             s.add(l.getX());
-            if (l instanceof UniformlyDistributedLoad distributedLoad)
+            if (l instanceof UniformLoadDistribution distributedLoad)
                 s.add(distributedLoad.getRx());
         }
 
@@ -169,14 +169,27 @@ public class Canoe
         // Define the order to sort by type
         Map<Class<? extends Load>, Integer> classOrder = new HashMap<>();
         classOrder.put(PointLoad.class, 0);
-        classOrder.put(DiscreteLoadDistribution.class, 1);
-        classOrder.put(UniformlyDistributedLoad.class, 2);
+        classOrder.put(UniformLoadDistribution.class, 1);
+        classOrder.put(DiscreteLoadDistribution.class, 2);
+        classOrder.put(PiecewiseContinuousLoadDistribution.class, 3);
 
         // Sort by type, and then by x
         loads.sort(Comparator.comparingInt(load -> classOrder.getOrDefault(load.getClass(), -1)));
         loads.sort(Comparator.comparingDouble(Load::getX));
 
         return loads;
+    }
+
+    /**
+     * @return all loads with piecewise continuous loads discretized
+     * This is for the TreeView, which will show the user loads discretized as it's a more palatable form to read
+     */
+    @JsonIgnore
+    public List<Load> getAllLoadsDiscretized() {
+        return getAllLoads().stream() // Only operate on piecewise continuous distributions (other kinds of loads aren't discretizable)
+                .map(load -> load instanceof PiecewiseContinuousLoadDistribution piecewise ?
+                        DiscreteLoadDistribution.fromPiecewiseContinuous(piecewise.type, piecewise): load)
+                .toList();
     }
 }
 

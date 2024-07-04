@@ -120,6 +120,7 @@ public class HullSection extends Section
 
     /**
      * Defines a function A_inner(x) which models the cross-sectional area interior of the canoe as a function of length x
+     * In essence, this is the inside section of the canoe hollowed to create hull walls of the specified hullThickness of this section
      * @return the function A_inner(x)
      */
     @JsonIgnore
@@ -182,8 +183,9 @@ public class HullSection extends Section
      * @return the function w(x)
      */
     @JsonIgnore
-    public UnivariateFunction getWeightDistributionFunction() {
-        return x -> -getMassDistributionFunction().value(x) * PhysicalConstants.GRAVITY.getValue() / 1000.0;
+    public ContinuousLoadDistribution getWeightDistributionFunction() {
+        UnivariateFunction distribution = x -> -getMassDistributionFunction().value(x) * PhysicalConstants.GRAVITY.getValue() / 1000.0;
+        return new ContinuousLoadDistribution("Section Weight", distribution, new Section(x, rx));
     }
 
     /**
@@ -191,7 +193,7 @@ public class HullSection extends Section
      */
     @JsonIgnore
     public double getWeight() {
-        return MathUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getWeightDistributionFunction(), x, rx);
+        return MathUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getWeightDistributionFunction().getDistribution(), x, rx);
     }
 
     /**

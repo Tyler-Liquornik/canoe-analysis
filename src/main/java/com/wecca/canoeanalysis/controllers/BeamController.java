@@ -242,14 +242,14 @@ public class BeamController implements Initializable
                     double xScaled = GraphicsUtils.getXScaled(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
                     rescaledGraphics.add(new Arrow(xScaled, startY, xScaled, endY));
                 }
-                case UniformlyDistributedLoad dLoad -> {
+                case UniformLoadDistribution dLoad -> {
                     double xScaled = GraphicsUtils.getXScaled(dLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
                     double rxScaled = GraphicsUtils.getXScaled(dLoad.getRx(), beam.getWidth(), canoe.getHull().getLength());
                     rescaledGraphics.add(new ArrowBox(xScaled, startY, rxScaled, endY, ArrowBoxSectionState.NON_SECTIONED));
                 }
                 case DiscreteLoadDistribution loadDist -> {
                     List<ArrowBox> arrowBoxes = new ArrayList<>();
-                    for (UniformlyDistributedLoad dLoad : loadDist.getLoads())
+                    for (UniformLoadDistribution dLoad : loadDist.getLoads())
                     {
                         double xScaled = GraphicsUtils.getXScaled(dLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
                         double rxScaled = GraphicsUtils.getXScaled(dLoad.getRx(), beam.getWidth(), canoe.getHull().getLength());
@@ -352,7 +352,7 @@ public class BeamController implements Initializable
                     enableEmptyLoadTreeSettings(false);
 
                     // Add the load to canoe, and update ui state
-                    UniformlyDistributedLoad d = new UniformlyDistributedLoad(mag, x, xR);
+                    UniformLoadDistribution d = new UniformLoadDistribution(mag, x, xR);
                     mainController.closeSnackBar(mainController.getSnackbar());
                     canoe.addLoad(d);
                     refreshLoadGraphics();
@@ -502,9 +502,9 @@ public class BeamController implements Initializable
 
     private void solveFloatingSystem()
     {
-        DiscreteLoadDistribution buoyancy = SolverService.solveFloatingSystem(canoe);
+        PiecewiseContinuousLoadDistribution buoyancy = SolverService.solveFloatingSystem(canoe);
         canoe.getExternalLoadDistributions().add(buoyancy);
-        addLoadDistribution(buoyancy);
+        addLoadDistribution(DiscreteLoadDistribution.fromPiecewiseContinuous("Buoyancy", buoyancy)); // change to take piecewise (list gets discrete, beam view and model get continuous)
     }
 
     private void undoFloatingSolve()

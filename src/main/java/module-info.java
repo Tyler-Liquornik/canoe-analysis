@@ -10,6 +10,7 @@ module com.wecca.canoeanalysis {
     requires com.fasterxml.jackson.dataformat.yaml;
     requires com.google.common;
     requires commons.math3;
+    requires org.checkerframework.checker.qual;
 
     exports com.wecca.canoeanalysis;
     opens com.wecca.canoeanalysis to javafx.fxml;

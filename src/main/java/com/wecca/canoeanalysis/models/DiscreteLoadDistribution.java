@@ -2,6 +2,7 @@ package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
+import org.apache.commons.math3.analysis.UnivariateFunction;
 
 import java.util.*;
 
@@ -14,13 +15,13 @@ import java.util.*;
 @Getter
 public
 class DiscreteLoadDistribution extends Load {
-    private final List<UniformlyDistributedLoad> loads;
+    private final List<UniformLoadDistribution> loads;
 
     /**
      * @param loads the discretized distribution
-     * Note: the constructor is private to enable factory pattern
+     * Note: the constructor is private as it is used by factory methods
      */
-    private DiscreteLoadDistribution(String type, List<UniformlyDistributedLoad> loads) {
+    public DiscreteLoadDistribution(String type, List<UniformLoadDistribution> loads) {
         super(type);
         this.loads = loads;
     }
@@ -31,14 +32,14 @@ class DiscreteLoadDistribution extends Load {
     @Override
     public double getValue() {
         return loads.stream()
-                .mapToDouble(UniformlyDistributedLoad::getValue)
+                .mapToDouble(UniformLoadDistribution::getValue)
                 .max()
                 .orElse(0.0);
     }
 
     @Override
     public double getForce() {
-        return loads.stream().mapToDouble(UniformlyDistributedLoad::getForce).sum();
+        return loads.stream().mapToDouble(UniformLoadDistribution::getForce).sum();
     }
 
     @Override
@@ -53,28 +54,34 @@ class DiscreteLoadDistribution extends Load {
     public static DiscreteLoadDistribution fromHull(Hull hull) {
         List<HullSection> hullSections = hull.getHullSections();
         hullSections.sort(Comparator.comparingDouble(Section::getX));
-        validateSectionsFormContinuousInterval(hullSections);
 
-        List<UniformlyDistributedLoad> loads = new ArrayList<>();
+        List<UniformLoadDistribution> loads = new ArrayList<>();
         for (HullSection section : hullSections) {
             double mag = section.getWeight() / section.getLength();
             double x = section.getX();
             double rx = section.getRx();
-            loads.add(new UniformlyDistributedLoad(mag, x, rx));
+            loads.add(new UniformLoadDistribution(mag, x, rx));
         }
-        return new DiscreteLoadDistribution("Hull Weight", loads);
+        return new DiscreteLoadDistribution("Hull Load", loads);
     }
 
     /**
-     * Factory method to create a distribution from loads directly (used for external loading distributions)
-     * @param dLoads make up the distribution
+     * Factory method to create a distribution from a univariate function
+     * Discretization implements a midpoint-based Riemann sum with intervals lengths (deltaX_i) matching intervals for pieces of the piecewise
+     * @param piecewise the function to discretize with average values of piecewise intervals
+     * @return a DiscreteLoadDistribution object
      */
-    public static DiscreteLoadDistribution fromDistributedLoads(String type, List<UniformlyDistributedLoad> dLoads) {
-        dLoads.sort(Comparator.comparingDouble(Load::getX));
-        List<Section> sections = dLoads.stream().map(UniformlyDistributedLoad::getSection).toList();
-        validateSectionsFormContinuousInterval(sections);
+    public static DiscreteLoadDistribution fromPiecewiseContinuous(String type, PiecewiseContinuousLoadDistribution piecewise) {
+        List<UniformLoadDistribution> loads = piecewise.getPieces().entrySet().stream()
+                .map(piece -> {
+                    Section section = piece.getKey();
+                    double midpoint = (section.getX() + section.getRx()) / 2.0;
+                    double mag = piece.getValue().value(midpoint);
+                    return new UniformLoadDistribution("Section", mag, section.getX(), section.getRx());
+                })
+                .toList();
 
-        return new DiscreteLoadDistribution(type, dLoads);
+        return new DiscreteLoadDistribution(type, loads);
     }
 
     /**
@@ -83,20 +90,5 @@ class DiscreteLoadDistribution extends Load {
     @JsonIgnore
     public Section getSection() {
         return new Section(loads.getFirst().getX(), loads.getLast().getRx());
-    }
-
-    /**
-     * A load distribution cannot have gaps, it must be defined everywhere on its interval
-     * @param sections the sections to validate
-     */
-    private static void validateSectionsFormContinuousInterval(List<? extends Section> sections) {
-        for (int i = 0; i < sections.size() - 1; i++)
-        {
-            Section currentSection = sections.get(i);
-            Section nextSection = sections.get(i + 1);
-
-            if (currentSection.getRx() != nextSection.getX())
-                throw new IllegalArgumentException("Sections should not have gaps between them");
-        }
     }
 }
