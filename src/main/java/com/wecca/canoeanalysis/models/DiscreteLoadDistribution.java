@@ -2,6 +2,7 @@ package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
+import org.apache.commons.math3.analysis.UnivariateFunction;
 
 import java.util.*;
 
@@ -79,6 +80,32 @@ class DiscreteLoadDistribution extends Load {
                     return new UniformLoadDistribution("Section", mag, section.getX(), section.getRx());
                 })
                 .toList();
+
+        return new DiscreteLoadDistribution(type, loads);
+    }
+
+    /**
+     * Factory method to create a distribution from a univariate function
+     * Discretization implements a midpoint-based Riemann sum with a custom defined number of intervals regardless of the sections of pieces
+     * @param type the type of the load distribution
+     * @param piecewise the function to discretize with average values of piecewise intervals
+     * @param numIntervals the number of subsections to split the function into
+     * @return a DiscreteLoadDistribution object
+     */
+    public static DiscreteLoadDistribution fromPiecewiseContinuous(String type, PiecewiseContinuousLoadDistribution piecewise, int numIntervals) {
+        UnivariateFunction piecedFunction = piecewise.getPiecedFunction();
+        double start = piecewise.getSection().getX();
+        double end = piecewise.getSection().getRx();
+        double step = (end - start) / (double) numIntervals;
+
+        List<UniformLoadDistribution> loads = new ArrayList<>();
+        for (int i = 0; i < numIntervals; i++) {
+            double sectionStart = start + i * step;
+            double sectionEnd = sectionStart + step;
+            double midpoint = (sectionStart + sectionEnd) / 2.0;
+            double mag = piecedFunction.value(midpoint);
+            loads.add(new UniformLoadDistribution("Section", mag, sectionStart, sectionEnd));
+        }
 
         return new DiscreteLoadDistribution(type, loads);
     }

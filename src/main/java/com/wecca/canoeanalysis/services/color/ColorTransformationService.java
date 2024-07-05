@@ -14,7 +14,7 @@ import javafx.scene.paint.Color;
  * Usage:
  * </p>
  * <p>
- * 1. Define a marker for the color variable in the universal CSS selector * {}
+ * 1. Define a marker for the base color variable in the universal CSS selector * {}
  *    - Examples:
  *     * {
  *         -fx-base: #000000 /* This is a marker, any valid hex color can go here
@@ -23,19 +23,19 @@ import javafx.scene.paint.Color;
  *       }
  * </p>
  * <p>
- * 2. Define any number color transformation methods in ColorTransformationService for a given base:
+ * 2. Define any number color of transformation methods in ColorTransformationService for a given base:
  *    - Methods public static and named in the format "base_transformation".
- *    - These are your custom defined methods to derive new colors
+ *    - These are your custom defined methods to derive new colors in the palette from the base
  *    - Examples:
  *      public static Color base_transformation(Color color) { ... }
  *      public static Color primary_light(Color color) { ... }
  *      public static Color secondary_complement(Color color) { ... }
  *
- *    - Note that each of base, primary, or secondary can have many transformations each
- *    - No transformations can be specified if you only want to dynamically change one color (the base)
+ *    - Note that each of base, primary, or secondary (any base) could have many transformations each
+ *    - No transformations need to be specified if you only want to dynamically change one color (the base) with no associated palette
  * </p>
  * <p>
- * 3. Use ColorManagerService derive colors:
+ * 3. Use ColorManagerService to derive colors:
  *    - deriveColors will scan ColorTransformationService for all transformation methods
  *      containing the specified base, and generate derived colors
  *    - Examples:
@@ -45,7 +45,7 @@ import javafx.scene.paint.Color;
  * </p>
  * <p>
  * 4. Access generated color
- *    - You can access colors generated at build time ass CSS variables
+ *    - You can access colors generated at build time via CSS variables (check the built CSS file, it should have the generated colors)
  *    - Result:
  *    * {
  *            -fx-base: #BB86FC
@@ -55,11 +55,11 @@ import javafx.scene.paint.Color;
  *            -fx-secondary: #5CE47B
  *            -fx-secondary-complement: COMPLEMENTED COLOR
  *      }
- *    - You can access colors in your Java code through ColorPalette
+ *    - You can also access colors in your Java code through ColorPalette
  *    - Result:
  *      Color baseTransform = ColorPalette.getColor("base-transform");
  *      Color primaryLight = ColorPalette.getColor("primary-light");
- *      Color secondaryComplement = ColorPalette.getColor("secondaryComplement")
+ *      Color secondaryComplement = ColorPalette.getColor("secondary-complement")
  * </p>
  */
 public class ColorTransformationService {

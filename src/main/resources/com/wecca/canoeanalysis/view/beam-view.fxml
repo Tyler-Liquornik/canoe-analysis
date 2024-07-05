@@ -20,7 +20,7 @@
                   <JFXRadioButton fx:id="floatingRadioButton" layoutX="10.0" layoutY="80.0" mnemonicParsing="false" text="Floating" />
                   <JFXRadioButton fx:id="standsRadioButton" layoutX="10.0" layoutY="45.0" mnemonicParsing="false" text="Stands" />
                   <JFXRadioButton fx:id="submergedRadioButton" layoutX="10.0" layoutY="115.0" mnemonicParsing="false" text="Submerged" />
-                  <JFXButton fx:id="solveSystemButton" buttonType="RAISED" layoutX="10.0" layoutY="150.0" onAction="#solveSystem" prefHeight="25.0" prefWidth="210.0" styleClass="action-object" text="Solve System" />
+                  <JFXButton fx:id="solveSystemButton" buttonType="RAISED" layoutX="10.0" layoutY="150.0" onAction="#solveSystem" prefHeight="25.0" prefWidth="200.0" styleClass="action-object" text="Solve System" />
                </children>
             </AnchorPane>
             <AnchorPane layoutX="210.0" prefHeight="200.0" prefWidth="620.0" AnchorPane.leftAnchor="240.0">

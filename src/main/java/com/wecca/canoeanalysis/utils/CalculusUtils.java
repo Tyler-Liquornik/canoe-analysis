@@ -8,24 +8,19 @@ import org.apache.commons.math3.analysis.solvers.BrentSolver;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.univariate.BrentOptimizer;
-import org.apache.commons.math3.optim.univariate.SearchInterval;
-import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
-import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
-
+import org.apache.commons.math3.optim.univariate.*;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public class CalculusUtils
 {
-
     // Provides integration
     public static SimpsonIntegrator integrator = new SimpsonIntegrator();
 
     /**
      * Returns the numerical derivative of a given function.
-     *
      * @param function the function to differentiate
      * @return the derivative function
      */
@@ -63,6 +58,11 @@ public class CalculusUtils
             Section currSec = sections.get(i);
             if (prevSec.getRx() != currSec.getX())
                 throw new IllegalArgumentException("Sections do not form a continuous interval.");
+        }
+
+        // Validate each piece for continuity on it's section
+        for (int i = 0; i < pieces.size(); i++) {
+           validateContinuity(pieces.get(i), sections.get(i));
         }
     }
 
@@ -162,8 +162,6 @@ public class CalculusUtils
         double minValue = getMaxOrMinValue(function, section, false);
         return Math.abs(maxValue) >= Math.abs(minValue) ? maxValue : minValue;
     }
-
-
 
     /**
      * Get the maximum signed value of the piecewise (i.e. the highest positive high or lowest negative low value or 0)

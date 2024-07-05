@@ -8,24 +8,23 @@ import lombok.Setter;
 import java.util.*;
 
 /**
- * The canoe model consists of a hull, defining the properties of the canoe itself
+ * The canoe model consists of a hull, defining the properties of the canoe itself including geometry and material properties
+ * The hull has an associated weight distribution to give the canoe mass
  * In addition, the canoe may have any amount of external loads on it
  * External loads in typically real-world cases include paddlers, cargo, stand that hold the canoe up, buoyancy, etc.
- * External loads may be individual loads (point load or uniformly distributed loads), or a discrete distribution
+ * External loads may be any type of load from simple point loads to complex distributions
  */
 
 @Getter @EqualsAndHashCode
 public class Canoe
 {
     private final ArrayList<Load> externalLoads;
-    private final ArrayList<PiecewiseContinuousLoadDistribution> externalLoadDistributions;
     @Setter
     private Hull hull;
 
     public Canoe() {
         this.hull = null;
         this.externalLoads = new ArrayList<>();
-        this.externalLoadDistributions = new ArrayList<>();
     }
 
     public AddLoadResult addLoad(Load load) {
@@ -39,7 +38,7 @@ public class Canoe
                     pLoad.setForce(0.00); // In case mag is -0 so that the negative doesn't display to the user
 
             // Search for other loads at the same position, and combine their magnitudes
-            for (PointLoad existingPLoad : getPLoads()) {
+            for (PointLoad existingPLoad : getAllLoads(PointLoad.class)) {
                 if (existingPLoad.getX() == pLoad.getX() && !pLoad.isSupport()) {
                     double newForce = existingPLoad.getMaxSignedValue() + pLoad.getMaxSignedValue();
                     if (newForce == 0) {
@@ -64,7 +63,7 @@ public class Canoe
 
     @JsonIgnore
     public double getMaxLoadValue() {
-        if (externalLoads.isEmpty() && externalLoadDistributions.isEmpty()) {
+        if (externalLoads.isEmpty()) {
             return -1;
         }
         
@@ -78,26 +77,6 @@ public class Canoe
         return maxValue;
     }
 
-    @JsonIgnore
-    public List<PointLoad> getPLoads() {
-        List<PointLoad> pLoads = new ArrayList<>();
-        for (Load load : externalLoads) {
-            if (load instanceof PointLoad pLoad)
-                pLoads.add(pLoad);
-        }
-        return pLoads;
-    }
-
-    @JsonIgnore
-    public List<UniformLoadDistribution> getDLoads() {
-        List<UniformLoadDistribution> dLoads = new ArrayList<>();
-        for (Load load : externalLoads) {
-            if (load instanceof UniformLoadDistribution dLoad)
-                dLoads.add(dLoad);
-        }
-        return dLoads;
-    }
-
     /**
      * @return the weight of all point loads and uniform distributed loads which doesn't include the canoe's self-weight
      */
@@ -106,10 +85,10 @@ public class Canoe
 
         double externalWeight = 0;
         // External loads (sign included in magnitude)
-        for (PointLoad pLoad : getPLoads()) {
+        for (PointLoad pLoad : getAllLoads(PointLoad.class)) {
             externalWeight += pLoad.getMaxSignedValue();
         }
-        for (UniformLoadDistribution dLoad : getDLoads()) {
+        for (UniformLoadDistribution dLoad : getAllLoads(UniformLoadDistribution.class)) {
             externalWeight += dLoad.getMagnitude() * (dLoad.getRx() - dLoad.getX());
         }
         return externalWeight;
@@ -164,15 +143,13 @@ public class Canoe
         List<Load> loads = new ArrayList<>(externalLoads);
         if (hull != null && hull.getSelfWeightDistribution() != null)
             loads.add(hull.getSelfWeightDistribution());
-        loads.addAll(externalLoadDistributions);
 
         // Define the order to sort by type
         Map<Class<? extends Load>, Integer> classOrder = new HashMap<>();
         classOrder.put(PointLoad.class, 0);
         classOrder.put(UniformLoadDistribution.class, 1);
         classOrder.put(DiscreteLoadDistribution.class, 2);
-        classOrder.put(ContinuousLoadDistribution.class, 3);
-        classOrder.put(PiecewiseContinuousLoadDistribution.class, 4);
+        classOrder.put(PiecewiseContinuousLoadDistribution.class, 3);
 
         // Sort by type, and then by position
         loads.sort(Comparator.comparingInt(load -> classOrder.getOrDefault(load.getClass(), -1)));
@@ -182,8 +159,21 @@ public class Canoe
     }
 
     /**
+     * @param <T> the type of load
+     * @param clazz the class literal for type T
+     * @return a list of all loads of specified subtype (i.e. PointLoad, UniformLoadDistribution, etc.)
+     */
+    @JsonIgnore
+    public <T extends Load> List<T> getAllLoads(Class<T> clazz) {
+        return getAllLoads().stream()
+                .filter(clazz::isInstance)
+                .map(clazz::cast)
+                .toList();
+    }
+
+    /**
      * @return all loads with piecewise continuous loads discretized
-     * This is for the TreeView, which will show the user loads discretized as it's a more palatable form to read
+     * This is for the TreeView, which will show the user loads discretized to avg values
      */
     @JsonIgnore
     public List<Load> getAllLoadsDiscretized() {

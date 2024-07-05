@@ -134,8 +134,8 @@ public class MarshallingService {
         double length = canoe.getHull().getLength();
         Hull hull = canoe.getHull();
         List<Load> newLoads = new ArrayList<>();
-        newLoads.addAll(canoe.getPLoads());
-        newLoads.addAll(canoe.getDLoads());
+        newLoads.addAll(canoe.getAllLoads(PointLoad.class));
+        newLoads.addAll(canoe.getAllLoads(PointLoad.class));
 
         Canoe newCanoe = new Canoe(); // hardcoded to 2024 numbers for now
         newCanoe.setHull(hull);

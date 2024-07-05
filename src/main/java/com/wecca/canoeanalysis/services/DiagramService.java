@@ -2,9 +2,7 @@ package com.wecca.canoeanalysis.services;
 
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.DiagramInterval;
-import com.wecca.canoeanalysis.models.Canoe;
-import com.wecca.canoeanalysis.models.PointLoad;
-import com.wecca.canoeanalysis.models.UniformLoadDistribution;
+import com.wecca.canoeanalysis.models.*;
 import javafx.geometry.Point2D;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
@@ -145,8 +143,9 @@ public class DiagramService {
 //    }
 
     /**
-     * Consider the list of points is a "pseudo piecewise function" (pseudo as discrete points are defined rather than a continuous function)
+     * Consider the list of points is a "pseudo piecewise function"
      * This method breaks it into a set of "pseudo functions"
+     * Pseudo because it's just a set of points rather with no clear partitions by their definition only
      * @param canoe to work with
      * @param points act together as a piecewise function
      * @param partitions the locations where the form of the piecewise changes
@@ -236,7 +235,7 @@ public class DiagramService {
     private static Map<Double, PointLoad> getPointLoadMap(Canoe canoe)
     {
         Map<Double, PointLoad> map = new HashMap<>();
-        for (PointLoad load : canoe.getPLoads())
+        for (PointLoad load : canoe.getAllLoads(PointLoad.class))
         {
             double x = (double) Math.round(load.getX() * 100) / 100;
             if (map.containsKey(x))
@@ -260,25 +259,24 @@ public class DiagramService {
     private static Multimap<Double, UniformLoadDistribution> getDistributedLoadStartMap(Canoe canoe)
     {
         Multimap<Double, UniformLoadDistribution> map = ArrayListMultimap.create();
-        for (UniformLoadDistribution load : canoe.getDLoads()) {
+        for (UniformLoadDistribution load : canoe.getAllLoads(UniformLoadDistribution.class)) {
             map.put((double) Math.round(load.getX() * 100) / 100, load);
         }
 
-//        if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null) {
-//            for (UniformLoadDistribution load : canoe.getHull().getSelfWeightDistribution().getLoads()) {
-//                map.put((double) Math.round(load.getX() * 100) / 100, load);
-//            }
-//        }
+        List<UniformLoadDistribution> distributionDLoads = new ArrayList<>();
+        if (!canoe.getAllLoads(PiecewiseContinuousLoadDistribution.class).isEmpty()) {
 
-//        List<UniformLoadDistribution> externalDistributionDLoads = new ArrayList<>();
-//        if (!canoe.getExternalLoadDistributions().isEmpty()) {
-//            for (DiscreteLoadDistribution loadDist : canoe.getExternalLoadDistributions()) {
-//                externalDistributionDLoads.addAll(loadDist.getLoads());
-//            }
-//            for (UniformLoadDistribution load : externalDistributionDLoads) {
-//                map.put((double) Math.round(load.getX() * 100) / 100, load);
-//            }
-//        }
+            List<DiscreteLoadDistribution> discretizations = canoe.getAllLoads(PiecewiseContinuousLoadDistribution.class).stream()
+                    .map(piecewise -> DiscreteLoadDistribution.fromPiecewiseContinuous("Section", piecewise, (int) (piecewise.getSection().getLength() * 100)))
+                    .toList();
+
+            for (DiscreteLoadDistribution loadDist : discretizations) {
+                distributionDLoads.addAll(loadDist.getLoads());
+            }
+            for (UniformLoadDistribution load : distributionDLoads) {
+                map.put((double) Math.round(load.getX() * 100) / 100, load);
+            }
+        }
 
         return map;
     }
@@ -291,23 +289,22 @@ public class DiagramService {
     private static Multimap<Double, UniformLoadDistribution> getDistributedLoadEndMap(Canoe canoe)
     {
         Multimap<Double, UniformLoadDistribution> map = ArrayListMultimap.create();
-        for (UniformLoadDistribution load : canoe.getDLoads()) {map.put((double) Math.round(load.getRx() * 100) / 100, load);}
+        for (UniformLoadDistribution load : canoe.getAllLoads(UniformLoadDistribution.class)) {map.put((double) Math.round(load.getRx() * 100) / 100, load);}
 
-//        if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null) {
-//            for (UniformLoadDistribution load : canoe.getHull().getSelfWeightDistribution().getLoads()) {
-//                map.put((double) Math.round(load.getRx() * 100) / 100, load);
-//            }
-//        }
+        List<UniformLoadDistribution> externalDistributionDLoads = new ArrayList<>();
+        if (!canoe.getAllLoads(PiecewiseContinuousLoadDistribution.class).isEmpty()) {
 
-//        List<UniformLoadDistribution> externalDistributionDLoads = new ArrayList<>();
-//        if (!canoe.getExternalLoadDistributions().isEmpty()) {
-//            for (DiscreteLoadDistribution loadDist : canoe.getExternalLoadDistributions()) {
-//                externalDistributionDLoads.addAll(loadDist.getLoads());
-//            }
-//            for (UniformLoadDistribution load : externalDistributionDLoads) {
-//                map.put((double) Math.round(load.getRx() * 100) / 100, load);
-//            }
-//        }
+            List<DiscreteLoadDistribution> discretizations = canoe.getAllLoads(PiecewiseContinuousLoadDistribution.class).stream()
+                    .map(piecewise -> DiscreteLoadDistribution.fromPiecewiseContinuous("Section", piecewise, (int) (piecewise.getSection().getLength() * 100)))
+                    .toList();
+
+            for (DiscreteLoadDistribution loadDist : discretizations) {
+                externalDistributionDLoads.addAll(loadDist.getLoads());
+            }
+            for (UniformLoadDistribution load : externalDistributionDLoads) {
+                map.put((double) Math.round(load.getRx() * 100) / 100, load);
+            }
+        }
 
         return map;
     }

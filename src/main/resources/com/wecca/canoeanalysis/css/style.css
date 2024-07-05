@@ -61,7 +61,6 @@
     -fx-background-radius: 5;
     -fx-background-color: -fx-above-surface;
     -fx-text-fill: white;
-    -fx-padding: 10px;
 }
 
 .selection-bar {
@@ -74,7 +73,7 @@
 .tree-cell:selected {
     -fx-background-color: -fx-above-surface;
     -fx-text-fill: white;
-    -fx-padding: 10px;
+    -fx-padding: 10 0 10 5;
 }
 
 .tree-cell > .jfx-rippler {

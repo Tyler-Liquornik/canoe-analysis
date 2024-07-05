@@ -102,7 +102,6 @@ public class BeamController implements Initializable
         for (Node node : loadContainerChildren) {
             if (node instanceof Arrow)
                 node.setViewOrder(viewOrder--);
-
         }
         for (Node node : loadContainerChildren) {
             if (node instanceof TriangleStand)
@@ -199,7 +198,8 @@ public class BeamController implements Initializable
                     System.out.println("Hull has been set to shark bait");
                     canoe.setHull(TestData.generateSharkBaitHull());
                     LoadTreeManagerService.buildLoadTreeView(canoe);
-                    System.out.println("Hull mass = " + canoe.getHull().getMass());
+                    System.out.println("Hull mass = " + canoe.getHull().getMass() + "kg");
+                    renderLoadGraphics();
                 }
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
@@ -388,7 +388,6 @@ public class BeamController implements Initializable
             Load load = canoe.getAllLoads().get(i);
 
             // The ratio of the largest load (always rendered at max size) to this load
-            double val = load.getMaxSignedValue();
             double loadMagnitudeRatio = Math.abs(load.getMaxSignedValue() / canoe.getMaxLoadValue());
 
             // Clip load length if too small (i.e. ratio is too large)
@@ -401,6 +400,7 @@ public class BeamController implements Initializable
             double startY = load.getMaxSignedValue() < 0 ? acceptedGraphicHeightRange[1] - deltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
             double xScaled = GraphicsUtils.getScaledFromModelToGraphic(load.getX(), beam.getWidth(), canoe.getHull().getLength());
 
+            // Render the correct graphic based on the subtype of the load
             switch (load)
             {
                 case PointLoad ignoredPLoad -> rescaledGraphics.add(new Arrow(xScaled, startY, xScaled, endY));
@@ -487,7 +487,7 @@ public class BeamController implements Initializable
     private void solveFloatingSystem()
     {
         PiecewiseContinuousLoadDistribution buoyancy = SolverService.solveFloatingSystem(canoe);
-        canoe.getExternalLoadDistributions().add(buoyancy);
+        canoe.addLoad(buoyancy);
         addPiecewise(buoyancy);
     }
 
@@ -581,7 +581,6 @@ public class BeamController implements Initializable
     public void clearLoads()
     {
         loadContainer.getChildren().clear();
-        canoe.getExternalLoadDistributions().clear();;
         canoe.getExternalLoads().clear();
         canoe.setHull(null);
         LoadTreeManagerService.buildLoadTreeView(canoe);

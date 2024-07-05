@@ -27,11 +27,11 @@ public class SolverService {
      */
     public static List<PointLoad> solveStandSystem(Canoe canoe) {
         List<PointLoad> pointLoads = new ArrayList<>();
-//        // Transform the distributed loads into point loads
-//        if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null)
-//            pointLoads.addAll(distributedToPoint(canoe.getHull().getSelfWeightDistribution().getLoads()));
-        pointLoads.addAll(distributedToPoint(canoe.getDLoads()));
-        pointLoads.addAll(canoe.getPLoads());
+        // Transform the distributed loads into point loads
+        if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null)
+            pointLoads.addAll(distributedToPoint(canoe.getHull().getSelfWeightDistributionDiscretized().getLoads()));
+        pointLoads.addAll(distributedToPoint(canoe.getAllLoads(UniformLoadDistribution.class)));
+        pointLoads.addAll(canoe.getAllLoads(PointLoad.class));
 
         // Find the sum of moments from the start and the total magnitude of combined point loads
         double momentSum = 0;
@@ -79,8 +79,8 @@ public class SolverService {
     public static PiecewiseContinuousLoadDistribution solveFloatingSystem(Canoe canoe) {
         double waterLine = getEquilibriumWaterLine(canoe);
         PiecewiseContinuousLoadDistribution buoyancy = getBuoyancyDistribution(waterLine, canoe);
-        System.out.println("buoyancy.getForce() = " + buoyancy.getForce());
-        System.out.println("canoe.getHull().getSelfWeightDistribution().getForce() = " + canoe.getHull().getSelfWeightDistribution().getForce());
+        System.out.println("Total Buoyancy Force = " + buoyancy.getForce() + "kN");
+        System.out.println("Total Hull Weight = " + canoe.getHull().getSelfWeightDistribution().getForce() + "kN");
         return buoyancy;
     }
 

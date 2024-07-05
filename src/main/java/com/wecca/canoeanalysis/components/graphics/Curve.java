@@ -56,7 +56,7 @@ public class Curve extends Group implements Graphic {
     }
 
     private void draw(UnivariateFunction function, Section section, double startX, double endX, double startY, double endY) {
-        int numSamples = 1000;
+        int numSamples = 5000;
         double step = (section.getRx() - section.getX()) / numSamples;
         double currentX = section.getX();
         double rangeY = endY - startY;

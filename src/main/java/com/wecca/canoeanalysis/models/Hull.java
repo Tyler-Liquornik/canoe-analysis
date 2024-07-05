@@ -128,6 +128,14 @@ public class Hull {
     }
 
     /**
+     * @return the self weight distribution discretized into intervals based on length
+     */
+    @JsonIgnore
+    public DiscreteLoadDistribution getSelfWeightDistributionDiscretized() {
+        return DiscreteLoadDistribution.fromPiecewiseContinuous("Discretization", getSelfWeightDistribution(), (int) (getSection().getLength() * 100));
+    }
+
+    /**
      * @return the total volume of the canoe by summing up the volumes of all sections.
      */
     @JsonIgnore

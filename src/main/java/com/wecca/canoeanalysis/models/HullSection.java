@@ -53,7 +53,7 @@ public class HullSection extends Section
     private double bulkheadDensity; // [kg/m^3]
 
     // Adjusts for difference in area of the section's curvature of the front profile view at a given height h
-    // See: https://www.desmos.com/calculator/mroxy1kc2t
+    // See: https://www.desmos.com/calculator/minprqcvro
     // TLDR: Uses the front profile of 2024's Shark Bait as a rough approximation for all reasonable future front profiles
     // Extrapolation occurs at heights greater than Shark Bait's max height of 0.4m
     @JsonIgnore

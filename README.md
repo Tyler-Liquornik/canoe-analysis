@@ -67,9 +67,7 @@ Currently, the program has one module to which will be used to model the canoe a
   - [X] Solve for a load distribution based on the self-weight distribution of the hull
   - [X] Iteratively solve for the waterline of a floating hull in equilibrium to get a buoyancy distribution
   - [ ] Update the YAML model and Marshalling process
-  - [ ] Provide a GUI to custom edit the curves that define the hull
-    - [X] Define a set of curves availalbe for hull shape in the model (can start with just one for now)
-    - [ ] Edit curves by sliders for parameters for a given curve
+  - [X] Define a set of curves for hull geometry (can start with just one hardcoded set for now, user not yet able to choose themselves)
     
 <!-- CONTRIBUTING -->
 ## Contributing
@@ -116,7 +114,7 @@ Project Link: [https://github.com/Tyler-Liquornik/canoe-analysis](https://github
 
 <!-- 
 These are VM options required to run PADDL prior to implementation of burningwave to manage the Java reflection API. 
-I've included these here in case burningwave has future issue, however it's possible more options are required as PADDL is built up from the time of burningwave implementation
+I've included these here in case burningwave has future issues, however it's possible more options are required as PADDL is built up from the time of burningwave implementation
 
 --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=com.jfoenix  --add-exports javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix
 
