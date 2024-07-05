@@ -27,8 +27,15 @@ public class LoadTreeManagerService {
         numPLoads = numDLoads = numLoadDists = 0;
         root.getChildren().clear();
         List<Load> loads = canoe.getAllLoadsDiscretized();
-        for (int i = 0; i < loads.size(); i++) {
-            root.getChildren().add(createLoadTreeItem(i, loads.get(i)));
+        // Filter out all zero-valued loads except point supports
+        List<Load> filteredLoads = loads.stream().filter(load -> {
+            if (!(load instanceof PointLoad pointLoad && pointLoad.isSupport()))
+                return load.getForce() != 0;
+            else
+                return true;
+        }).toList();
+        for (int i = 0; i < filteredLoads.size(); i++) {
+            root.getChildren().add(createLoadTreeItem(i, filteredLoads.get(i)));
         }
         loadsTreeView.setRoot(root);
         loadsTreeView.setShowRoot(false);

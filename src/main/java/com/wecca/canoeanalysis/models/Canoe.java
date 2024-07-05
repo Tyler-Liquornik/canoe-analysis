@@ -32,7 +32,7 @@ public class Canoe
         if (load instanceof PointLoad pLoad) {
             // Do not add the load if it is zero valued unless if is a support
             // Zero-valued supports are still added as markers for the model and ListView
-            if (pLoad.getValue() == 0)
+            if (pLoad.getMaxSignedValue() == 0)
                 if (!pLoad.isSupport())
                     return AddLoadResult.ADDED;
                 else
@@ -41,7 +41,7 @@ public class Canoe
             // Search for other loads at the same position, and combine their magnitudes
             for (PointLoad existingPLoad : getPLoads()) {
                 if (existingPLoad.getX() == pLoad.getX() && !pLoad.isSupport()) {
-                    double newForce = existingPLoad.getValue() + pLoad.getValue();
+                    double newForce = existingPLoad.getMaxSignedValue() + pLoad.getMaxSignedValue();
                     if (newForce == 0) {
                         removeLoad(externalLoads.indexOf(existingPLoad));
                         return AddLoadResult.REMOVED;
@@ -70,7 +70,7 @@ public class Canoe
         
         double maxValue = 0;
         for (Load externalLoad : getAllLoads()) {
-            double currValue = Math.abs(externalLoad.getValue());
+            double currValue = Math.abs(externalLoad.getMaxSignedValue());
             if (currValue > maxValue) {
                 maxValue = currValue;
             }
@@ -107,7 +107,7 @@ public class Canoe
         double externalWeight = 0;
         // External loads (sign included in magnitude)
         for (PointLoad pLoad : getPLoads()) {
-            externalWeight += pLoad.getValue();
+            externalWeight += pLoad.getMaxSignedValue();
         }
         for (UniformLoadDistribution dLoad : getDLoads()) {
             externalWeight += dLoad.getMagnitude() * (dLoad.getRx() - dLoad.getX());
@@ -162,7 +162,7 @@ public class Canoe
     @JsonIgnore
     public List<Load> getAllLoads() {
         List<Load> loads = new ArrayList<>(externalLoads);
-        if (hull.getSelfWeightDistribution() != null)
+        if (hull != null && hull.getSelfWeightDistribution() != null)
             loads.add(hull.getSelfWeightDistribution());
         loads.addAll(externalLoadDistributions);
 
@@ -171,9 +171,10 @@ public class Canoe
         classOrder.put(PointLoad.class, 0);
         classOrder.put(UniformLoadDistribution.class, 1);
         classOrder.put(DiscreteLoadDistribution.class, 2);
-        classOrder.put(PiecewiseContinuousLoadDistribution.class, 3);
+        classOrder.put(ContinuousLoadDistribution.class, 3);
+        classOrder.put(PiecewiseContinuousLoadDistribution.class, 4);
 
-        // Sort by type, and then by x
+        // Sort by type, and then by position
         loads.sort(Comparator.comparingInt(load -> classOrder.getOrDefault(load.getClass(), -1)));
         loads.sort(Comparator.comparingDouble(Load::getX));
 

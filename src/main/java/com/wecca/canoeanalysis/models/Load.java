@@ -17,7 +17,7 @@ import lombok.Setter;
 public abstract class Load {
     protected String type;
     @JsonIgnore
-    public double getValue() {return getForce();} // represents
+    public double getMaxSignedValue() {return getForce();}
     @JsonIgnore
     public abstract double getForce();
     @JsonIgnore

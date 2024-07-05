@@ -18,12 +18,7 @@ public class UniformLoadDistribution extends LoadDistribution {
     }
 
     public UniformLoadDistribution(double magnitude, double x, double rx) {
-        this("Uniform Load Distribution", magnitude, x, rx);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("Load: %.2fkN/m, [%.2fm, %.2fm]", magnitude, getX(), getRx());
+        this("Distributed Load", magnitude, x, rx);
     }
 
     @JsonIgnore
@@ -32,7 +27,7 @@ public class UniformLoadDistribution extends LoadDistribution {
     }
 
     @JsonIgnore
-    public double getValue() {
+    public double getMaxSignedValue() {
         return magnitude;
     }
 

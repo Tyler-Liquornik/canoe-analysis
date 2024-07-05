@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.services;
 
 import com.wecca.canoeanalysis.models.*;
-import com.wecca.canoeanalysis.utils.MathUtils;
+import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.optim.MaxEval;
@@ -27,7 +27,7 @@ public class SolverService {
      */
     public static List<PointLoad> solveStandSystem(Canoe canoe) {
         List<PointLoad> pointLoads = new ArrayList<>();
-        // Transform the distributed loads into point loads
+//        // Transform the distributed loads into point loads
 //        if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null)
 //            pointLoads.addAll(distributedToPoint(canoe.getHull().getSelfWeightDistribution().getLoads()));
         pointLoads.addAll(distributedToPoint(canoe.getDLoads()));
@@ -37,8 +37,8 @@ public class SolverService {
         double momentSum = 0;
         double sumOfPointLoads = 0;
         for (PointLoad pLoad : pointLoads) {
-            sumOfPointLoads += pLoad.getValue();
-            momentSum += (pLoad.getValue() * pLoad.getX());
+            sumOfPointLoads += pLoad.getMaxSignedValue();
+            momentSum += (pLoad.getMaxSignedValue() * pLoad.getX());
         }
 
         // Resulting forces combine to counteract the moments and total combined point load
@@ -46,8 +46,8 @@ public class SolverService {
         double forceStart = -1 * sumOfPointLoads - forceEnd;
 
         // Create and return resulting loads
-        PointLoad pLoadStart = new PointLoad(forceStart, STAND_OFFSET, true);
-        PointLoad pLoadEnd = new PointLoad(forceEnd, canoe.getHull().getLength() - STAND_OFFSET, true);
+        PointLoad pLoadStart = new PointLoad("Point Support", forceStart, STAND_OFFSET, true);
+        PointLoad pLoadEnd = new PointLoad("Point Support", forceEnd, canoe.getHull().getLength() - STAND_OFFSET, true);
         pointLoads.clear();
         pointLoads.addAll(Arrays.asList(pLoadStart, pLoadEnd));
         return pointLoads;
@@ -104,7 +104,7 @@ public class SolverService {
      * @return the submerged volume in m^3 at the given waterline guess
      */
     private static double getSubmergedVolume(double waterline, HullSection section) {
-        return MathUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getSubmergedCrossSectionalAreaFunction(waterline, section), section.getX(), section.getRx());
+        return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getSubmergedCrossSectionalAreaFunction(waterline, section), section.getX(), section.getRx());
     }
 
     /**

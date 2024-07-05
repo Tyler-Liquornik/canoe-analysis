@@ -13,18 +13,14 @@ public class PointLoad extends Load
     @JsonIgnore
     private boolean isSupport;
 
-    public PointLoad(double force, double x, boolean isSupport) {
-        super("Point Load");
+    public PointLoad(String type, double force, double x, boolean isSupport) {
+        super(type);
         this.force = force;
         this.x = x;
         this.isSupport = isSupport;
     }
 
-    // Stringification distinguishes supports from regular loads
-    @Override
-    public String toString()
-    {
-        String label = isSupport ? "Support" : "Load";
-        return String.format("%s: %.2fkN, %.2fm",label, force, x);
+    public PointLoad(double force, double x, boolean isSupport) {
+        this("Point Load", force, x, isSupport);
     }
 }

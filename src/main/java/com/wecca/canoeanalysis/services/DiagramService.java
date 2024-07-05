@@ -3,7 +3,6 @@ package com.wecca.canoeanalysis.services;
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.DiagramInterval;
 import com.wecca.canoeanalysis.models.Canoe;
-import com.wecca.canoeanalysis.models.DiscreteLoadDistribution;
 import com.wecca.canoeanalysis.models.PointLoad;
 import com.wecca.canoeanalysis.models.UniformLoadDistribution;
 import javafx.geometry.Point2D;
@@ -244,8 +243,8 @@ public class DiagramService {
             {
                 // Supports will not combine with loads at the same position, so they are always included in the model
                 // We need to combine them here to prevent duplicate key issues
-                double mag = map.get(x).getValue();
-                mag += load.getValue();
+                double mag = map.get(x).getMaxSignedValue();
+                mag += load.getMaxSignedValue();
                 load = new PointLoad(mag, x, false);
             }
             map.put(x, load);
@@ -443,7 +442,7 @@ public class DiagramService {
                 // Apply the magnitude and the rolling slope
                 intervals.add(new DiagramInterval(prevX, x, magnitude, slope));
                 // Reset the magnitude and set the x coordinate
-                magnitude = pointLoadMap.get(x).getValue();
+                magnitude = pointLoadMap.get(x).getMaxSignedValue();
                 prevX = x;
             }
         }

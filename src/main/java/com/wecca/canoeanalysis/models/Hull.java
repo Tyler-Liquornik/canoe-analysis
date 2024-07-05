@@ -9,6 +9,7 @@ import org.apache.commons.math3.optim.univariate.SearchInterval;
 import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
 import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -19,6 +20,7 @@ public class Hull {
     private List<HullSection> hullSections;
 
     public Hull(double concreteDensity, double bulkheadDensity, List<HullSection> hullSections) {
+        hullSections.sort(Comparator.comparingDouble(Section::getX));
         validateContinuousHullShape(hullSections);
         validateFloorThickness(hullSections);
         validateWallThickness(hullSections);
@@ -38,8 +40,8 @@ public class Hull {
      * Models the hull as a single section which is a 1D line of the given length
      * @param length the length
      */
-    public Hull(double length) {
-        this.hullSections = List.of(new HullSection(0, length));
+    public Hull(double length, double height, double width) {
+        this.hullSections = List.of(new HullSection(length, height, width));
         this.concreteDensity = 0;
         this.bulkheadDensity = 0;
     }
@@ -130,6 +132,8 @@ public class Hull {
      */
     @JsonIgnore
     public double getTotalVolume() {
+        if (getHullSections() == null || getHullSections().isEmpty())
+            return 0;
         return getHullSections().stream().mapToDouble(HullSection::getVolume).sum();
     }
 

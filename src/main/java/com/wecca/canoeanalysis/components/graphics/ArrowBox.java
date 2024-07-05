@@ -19,7 +19,6 @@ public class ArrowBox extends Group implements Graphic
     private double rX;
     private double startY;
     private double endY;
-    private ArrowBoxSectionState arrowBoxSectionState;
 
     private final Arrow lArrow;
     private final Arrow rArrow;
@@ -31,7 +30,7 @@ public class ArrowBox extends Group implements Graphic
     private final static double defaultThickness = 1;
 
     // Constructor
-    public ArrowBox(double lX, double startY, double rX, double endY, ArrowBoxSectionState arrowBoxSectionState)
+    public ArrowBox(double lX, double startY, double rX, double endY)
     {
         super();
 
@@ -41,8 +40,8 @@ public class ArrowBox extends Group implements Graphic
         this.endY = endY;
 
         // Arrows at left and right bound the rectangle
-        lArrow = arrowBoxSectionState.isShowLArrow() ? new Arrow(lX, startY, lX, endY) : null;
-        rArrow = arrowBoxSectionState.isShowRArrow() ? new Arrow(rX, startY, rX, endY) : null;
+        lArrow = new Arrow(lX, startY, lX, endY);
+        rArrow = new Arrow(rX, startY, rX, endY);
 
         // Box depends on if this is an upwards or downwards facing ArrowBox
         // Extra pixels to fill weird whitespaces
@@ -51,18 +50,16 @@ public class ArrowBox extends Group implements Graphic
         else
             box = new Rectangle(lX, endY - 2, rX - lX, startY - endY + 2);
 
+        // box.setFill(lighten(ColorPalette.ICON.getColor()));
         box.setFill(ColorPaletteService.getColor("above-surface"));
 
         borderLine = new Line(lX, startY, rX, startY);
         borderLine.setStroke(ColorPaletteService.getColor("white"));
         borderLine.setStrokeWidth(defaultThickness);
 
-        getChildren().addAll(box, borderLine);
-        if (lArrow != null) {getChildren().add(lArrow);}
-        if (rArrow != null) {getChildren().add(rArrow);}
+        getChildren().addAll(box, lArrow, rArrow, borderLine);
 
-        if (arrowBoxSectionState == ArrowBoxSectionState.NON_SECTIONED)
-            JFXDepthManager.setDepth(this, 4);
+        JFXDepthManager.setDepth(this, 4);
 
         this.isColored = false;
         ColorManagerService.registerInColorPalette(this);
@@ -82,10 +79,8 @@ public class ArrowBox extends Group implements Graphic
         Color fillColor = setColored ? ColorPaletteService.getColor("primary-light") :
                 ColorPaletteService.getColor("above-surface");
 
-        if (lArrow != null)
-            lArrow.setFill(outlineColor);
-        if (rArrow != null)
-            rArrow.setFill(outlineColor);
+        lArrow.setFill(outlineColor);
+        rArrow.setFill(outlineColor);
         borderLine.setStroke(outlineColor);
         box.setFill(fillColor);
     }

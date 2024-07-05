@@ -2,7 +2,8 @@ package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.wecca.canoeanalysis.models.functions.StringableUnivariateFunction;
-import com.wecca.canoeanalysis.utils.MathUtils;
+import com.wecca.canoeanalysis.models.functions.VertexFormParabola;
+import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import lombok.Getter;
 import lombok.Setter;
@@ -52,7 +53,7 @@ public class HullSection extends Section
     private double bulkheadDensity; // [kg/m^3]
 
     // Adjusts for difference in area of the section's curvature of the front profile view at a given height h
-    // See: https://www.desmos.com/calculator/gqnmaan6ae
+    // See: https://www.desmos.com/calculator/mroxy1kc2t
     // TLDR: Uses the front profile of 2024's Shark Bait as a rough approximation for all reasonable future front profiles
     // Extrapolation occurs at heights greater than Shark Bait's max height of 0.4m
     @JsonIgnore
@@ -88,11 +89,15 @@ public class HullSection extends Section
 
     /**
      * Basic constructor for a simple model, useful before the user defines geometry / material properties
-     * @param start the start x position of the section's profile curve interval
-     * @param end the end x position of the section's profile curve interval
+     * Models the hull as a rectangular prism
+     * @param length the length of the hull
+     * @param height the constant height of the hull
+     * @param width the constant width of the hull
      */
-    public HullSection(double start, double end) {
-        super(start, end);
+    public HullSection(double length, double height, double width) {
+        super(0, length);
+        this.sideProfileCurve = new VertexFormParabola(0, 0, -height);
+        this.topProfileCurve = new VertexFormParabola(0, 0, width / 2.0);
     }
 
     /**
@@ -115,7 +120,7 @@ public class HullSection extends Section
      */
     @JsonIgnore
     public double getVolume() {
-        return MathUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getCrossSectionalAreaFunction(), x, rx);
+        return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getCrossSectionalAreaFunction(), x, rx);
     }
 
     /**
@@ -138,7 +143,7 @@ public class HullSection extends Section
      */
     @JsonIgnore
     public double getBulkheadVolume() {
-        return hasBulkhead ? MathUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getInnerCrossSectionalAreaFunction(), x, rx) : 0;
+        return hasBulkhead ? CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getInnerCrossSectionalAreaFunction(), x, rx) : 0;
     }
 
     /**
@@ -156,7 +161,7 @@ public class HullSection extends Section
      */
     @JsonIgnore
     public double getConcreteVolume() {
-        return MathUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getConcreteCrossSectionalAreaFunction(), x, rx);
+        return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getConcreteCrossSectionalAreaFunction(), x, rx);
     }
 
     /**
@@ -175,7 +180,7 @@ public class HullSection extends Section
      */
     @JsonIgnore
     public double getMass() {
-        return MathUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getMassDistributionFunction(), x, rx);
+        return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getMassDistributionFunction(), x, rx);
     }
 
     /**
@@ -193,7 +198,7 @@ public class HullSection extends Section
      */
     @JsonIgnore
     public double getWeight() {
-        return MathUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getWeightDistributionFunction().getDistribution(), x, rx);
+        return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getWeightDistributionFunction().getDistribution(), x, rx);
     }
 
     /**

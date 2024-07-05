@@ -138,7 +138,6 @@ public class ColorManagerService {
 
     /**
      * Derives color variants for a given base color using transformation methods from ColorTransformationService.
-     *
      * @param baseName  the base color name (e.g., "primary")
      * @param baseColor the base color object
      * @return a map of CSS variable names to hex color values

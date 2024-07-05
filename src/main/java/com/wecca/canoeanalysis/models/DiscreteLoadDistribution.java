@@ -2,7 +2,6 @@ package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 
 import java.util.*;
 
@@ -30,9 +29,9 @@ class DiscreteLoadDistribution extends Load {
      * @return the maximum child dLoad value
      */
     @Override
-    public double getValue() {
+    public double getMaxSignedValue() {
         return loads.stream()
-                .mapToDouble(UniformLoadDistribution::getValue)
+                .mapToDouble(UniformLoadDistribution::getMaxSignedValue)
                 .max()
                 .orElse(0.0);
     }

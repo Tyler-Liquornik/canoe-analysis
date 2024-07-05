@@ -10,7 +10,7 @@ import lombok.Setter;
 
 // Pinned support icons
 @Getter @Setter
-public class SupportTriangle extends Group implements Graphic
+public class TriangleStand extends Group implements Graphic
 {
     // Fields
     private static final double defaultSideLength = 20.0;
@@ -23,7 +23,7 @@ public class SupportTriangle extends Group implements Graphic
     private boolean isColored;
 
     // Constructor
-    public SupportTriangle(double tipX, double tipY, double sideLength)
+    public TriangleStand(double tipX, double tipY, double sideLength)
     {
         super();
 
@@ -34,7 +34,7 @@ public class SupportTriangle extends Group implements Graphic
     }
 
     // Simpler constructor with default side length
-    public SupportTriangle(double tipX, double tipY)
+    public TriangleStand(double tipX, double tipY)
     {
         this(tipX, tipY, defaultSideLength);
     }

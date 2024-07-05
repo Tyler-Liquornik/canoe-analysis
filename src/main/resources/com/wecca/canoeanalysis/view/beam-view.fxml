@@ -29,13 +29,13 @@
                   <Label fx:id="pointMagnitudeLabel" layoutX="10.0" layoutY="45.0" text="Magnitude:" />
                   <Label fx:id="pointLocationLabel" layoutX="10.0" layoutY="80.0" text="Location:" />
                   <Label fx:id="pointDirectionLabel" layoutX="10.0" layoutY="115.0" text="Direction:" />
-                  <JFXButton fx:id="pointLoadButton" buttonType="RAISED" layoutX="10.0" layoutY="150.0" mnemonicParsing="false" onAction="#handleAddPointLoad" prefHeight="25.0" prefWidth="240.0" styleClass="action-object" text="Add Point Load" />
+                  <JFXButton fx:id="pointLoadButton" buttonType="RAISED" layoutX="10.0" layoutY="150.0" mnemonicParsing="false" onAction="#addPointLoad" prefHeight="25.0" prefWidth="240.0" styleClass="action-object" text="Add Point Load" />
                   <JFXTextField fx:id="pointMagnitudeTextField" layoutX="85.0" layoutY="40.0" prefHeight="25.0" prefWidth="75.0" />
                   <JFXTextField fx:id="pointLocationTextField" layoutX="85.0" layoutY="75.0" prefHeight="25.0" prefWidth="75.0" />
                   <JFXComboBox fx:id="pointDirectionComboBox" layoutX="85.0" layoutY="110.0" prefHeight="25.0" prefWidth="75.0" />
                   <JFXComboBox fx:id="pointMagnitudeComboBox" layoutX="170.0" layoutY="40.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="75.0" />
                   <JFXComboBox fx:id="pointLocationComboBox" layoutX="170.0" layoutY="75.0" maxHeight="25.0" minHeight="25.0" prefHeight="25.0" prefWidth="75.0" />
-                  <JFXButton fx:id="distributedLoadButton" buttonType="RAISED" layoutX="285.0" layoutY="150.0" mnemonicParsing="false" onAction="#handleAddDistributedLoad" prefHeight="25.0" prefWidth="315.0" styleClass="action-object" text="Add Uniformly Distributed Load" />
+                  <JFXButton fx:id="distributedLoadButton" buttonType="RAISED" layoutX="285.0" layoutY="150.0" mnemonicParsing="false" onAction="#addDistributedLoad" prefHeight="25.0" prefWidth="315.0" styleClass="action-object" text="Add Uniformly Distributed Load" />
                   <Label fx:id="distributedMagntiudeLabel" layoutX="285.0" layoutY="45.0" text="Magnitude:" />
                   <Label fx:id="distributedIntervalLabel" layoutX="285.0" layoutY="80.0" text="Interval:" />
                   <Label fx:id="distributedDirectionLabel" layoutX="285.0" layoutY="115.0" text="Direction:" />

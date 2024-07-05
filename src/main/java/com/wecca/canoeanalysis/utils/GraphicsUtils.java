@@ -2,13 +2,13 @@ package com.wecca.canoeanalysis.utils;
 
 public class GraphicsUtils {
     /**
-     * Scales an x value from a larger GUI container down to the canoe's for GUI positioning
-     * @param x the value to scale
-     * @param containerWidth the width of the
-     * @param canoeLength the length of the canoe
+     * Scales a value from the model for dimensioning to be displayed in a container in the UI
+     * @param value the value to scale
+     * @param UIContainerDistance the length / width of the container
+     * @param modelDistance the length / width in the model
      * @return the value scaled
      */
-    public static double getXScaled(double x, double containerWidth, double canoeLength) {
-        return (x/ canoeLength) * containerWidth;
+    public static double getScaledFromModelToGraphic(double value, double UIContainerDistance, double modelDistance) {
+        return (value / modelDistance) * UIContainerDistance;
     }
 }

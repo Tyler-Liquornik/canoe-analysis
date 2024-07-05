@@ -22,7 +22,6 @@ public class Arrow extends Path implements Graphic {
     private double endY;
 
     private boolean isColored;
-
     private boolean isHighlighted;
 
     private final double thickness;

@@ -89,22 +89,23 @@ public class BeamController implements Initializable
         List<Node> loadContainerChildren = loadContainer.getChildren().stream().toList();
 
         // Apply the unique view order for each node based on type
-        // Layering priority is SupportTriangles => above Arrows => above ArrowBoxes
+        // Layering priority is TriangleStands => above Arrows => above ArrowBoxes => above Curves
         int viewOrder = Integer.MAX_VALUE;
-        for (Node node : loadContainerChildren)
-        {
+        for (Node node : loadContainerChildren) {
+            if (node instanceof Curve)
+                node.setViewOrder(viewOrder--);
+        }
+        for (Node node : loadContainerChildren) {
             if (node instanceof ArrowBox)
                 node.setViewOrder(viewOrder--);
         }
-        for (Node node : loadContainerChildren)
-        {
+        for (Node node : loadContainerChildren) {
             if (node instanceof Arrow)
                 node.setViewOrder(viewOrder--);
 
         }
-        for (Node node : loadContainerChildren)
-        {
-            if (node instanceof SupportTriangle)
+        for (Node node : loadContainerChildren) {
+            if (node instanceof TriangleStand)
                 node.setViewOrder(viewOrder--);
         }
     }
@@ -173,8 +174,8 @@ public class BeamController implements Initializable
 
             // Only allow lengths in the specified range
             if (len >= 0.01) {
-                // Update model state
-                canoe.setHull(new Hull(len));
+                // Update model state to default simple rectangular prism geometry
+                canoe.setHull(new Hull(len, 0.4, 0.7));
 
                 // Change the label on the scale
                 axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
@@ -210,74 +211,10 @@ public class BeamController implements Initializable
     }
 
     /**
-     * Rescales all point loads (arrows) and distributed loads (arrow boxes) based on the load with the highest mag.
-     * Point and distributed load magnitudes are compared although their units differ (Force vs. Force / Length)
-     */
-    public void refreshLoadGraphics()
-    {
-        // Clear load container of graphics
-        loadContainer.getChildren().clear();
-
-        // Rescale all graphics relative to the max load
-        List<Graphic> rescaledGraphics = new ArrayList<>();
-        for (int i = 0; i < canoe.getAllLoads().size(); i++)
-        {
-            Load load = canoe.getAllLoads().get(i);
-
-            // The ratio of the largest load (always rendered at max size) to this load
-            double loadMagnitudeRatio = Math.abs(load.getValue() / canoe.getMaxLoadValue());
-
-            // Clip load length if too small (i.e. ratio is too large)
-            if (loadMagnitudeRatio < Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]))
-                loadMagnitudeRatio = Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]);
-
-            // Render at scaled size (deltaY calculates the downscaling factor)
-            double endY = load.getValue() < 0 ? acceptedGraphicHeightRange[1] : acceptedGraphicHeightRange[1] + (int) beam.getThickness();
-            double deltaY = (acceptedGraphicHeightRange[1] - acceptedGraphicHeightRange[0]) * loadMagnitudeRatio;
-            double startY = load.getValue() < 0 ? acceptedGraphicHeightRange[1] - deltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
-
-            switch (load)
-            {
-                case PointLoad pLoad -> {
-                    double xScaled = GraphicsUtils.getXScaled(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
-                    rescaledGraphics.add(new Arrow(xScaled, startY, xScaled, endY));
-                }
-                case UniformLoadDistribution dLoad -> {
-                    double xScaled = GraphicsUtils.getXScaled(dLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
-                    double rxScaled = GraphicsUtils.getXScaled(dLoad.getRx(), beam.getWidth(), canoe.getHull().getLength());
-                    rescaledGraphics.add(new ArrowBox(xScaled, startY, rxScaled, endY, ArrowBoxSectionState.NON_SECTIONED));
-                }
-                case DiscreteLoadDistribution loadDist -> {
-                    List<ArrowBox> arrowBoxes = new ArrayList<>();
-                    for (UniformLoadDistribution dLoad : loadDist.getLoads())
-                    {
-                        double xScaled = GraphicsUtils.getXScaled(dLoad.getX(), beam.getWidth(), canoe.getHull().getLength());
-                        double rxScaled = GraphicsUtils.getXScaled(dLoad.getRx(), beam.getWidth(), canoe.getHull().getLength());
-                        double nestedDLoadMagnitudeRatio = Math.abs(dLoad.getValue() / canoe.getMaxLoadValue());
-                        // Clip load length if too small (i.e. ratio is too large)
-                        if (nestedDLoadMagnitudeRatio < Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]))
-                            nestedDLoadMagnitudeRatio = Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]);
-                        double nestedDLoadEndY = dLoad.getValue() < 0 ? acceptedGraphicHeightRange[1] : acceptedGraphicHeightRange[1] + (int) beam.getThickness();
-                        double nestedDLoadDeltaY = (acceptedGraphicHeightRange[1] - acceptedGraphicHeightRange[0]) * nestedDLoadMagnitudeRatio;
-                        double nestedDLoadStartY = dLoad.getValue() < 0 ? acceptedGraphicHeightRange[1] - nestedDLoadDeltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
-                        arrowBoxes.add(new ArrowBox(xScaled, nestedDLoadStartY, rxScaled, nestedDLoadEndY, ArrowBoxSectionState.NON_SECTIONED));
-                    }
-                    rescaledGraphics.add(new ArrowBoxGroup(arrowBoxes));
-                }
-                default -> throw new IllegalArgumentException("Invalid load type");
-            }
-        }
-
-        rescaledGraphics.sort(Comparator.comparingDouble(Graphic::getX));
-        loadContainer.getChildren().addAll((rescaledGraphics.stream().map(element -> (Node) element)).toList());
-        updateViewOrder();
-    }
-
-    /**
      * Called by the "Add Point Load" button
      * Deals with parsing and validation user input.
      */
-    public void handleAddPointLoad()
+    public void addPointLoad()
     {
         // Clear previous alert label
         mainController.closeSnackBar(mainController.getSnackbar());
@@ -307,7 +244,7 @@ public class BeamController implements Initializable
                 // Add the load to canoe, and the load arrow on the GUI
                 PointLoad p = new PointLoad(mag, x, false);
                 AddLoadResult addResult = canoe.addLoad(p);
-                addPointLoadGraphic(p, addResult);
+                renderPointLoadGraphic(p, addResult);
                 LoadTreeManagerService.buildLoadTreeView(canoe);
             }
 
@@ -321,7 +258,7 @@ public class BeamController implements Initializable
      * Deals with parsing and validation user input.
      * Main logic handled in addDistributedLoadToCanoe method
      */
-    public void handleAddDistributedLoad()
+    public void addDistributedLoad()
     {
         // Clear previous alert labels
         mainController.closeSnackBar(mainController.getSnackbar());
@@ -355,7 +292,7 @@ public class BeamController implements Initializable
                     UniformLoadDistribution d = new UniformLoadDistribution(mag, x, xR);
                     mainController.closeSnackBar(mainController.getSnackbar());
                     canoe.addLoad(d);
-                    refreshLoadGraphics();
+                    renderLoadGraphics();
                     LoadTreeManagerService.buildLoadTreeView(canoe);
                 }
         }
@@ -363,7 +300,8 @@ public class BeamController implements Initializable
             mainController.showSnackbar("One or more entered values are not valid numbers");
     }
 
-    public void addLoadDistribution(DiscreteLoadDistribution loadDistribution) {
+    // Will eventually have validations on user input for the piecewise, unused parameter for now
+    public void addPiecewise(PiecewiseContinuousLoadDistribution piecewise) {
         // Clear previous alert labels
         mainController.closeSnackBar(mainController.getSnackbar());
 
@@ -371,7 +309,7 @@ public class BeamController implements Initializable
         enableEmptyLoadTreeSettings(false);
 
         // Add the load to canoe, and update ui state
-        refreshLoadGraphics();
+        renderLoadGraphics();
         LoadTreeManagerService.buildLoadTreeView(canoe);
     }
 
@@ -379,23 +317,23 @@ public class BeamController implements Initializable
      * Add a point load to the canoe object and JavaFX UI.
      * @param pLoad the point load to be added.
      */
-    private void addPointLoadGraphic(PointLoad pLoad, AddLoadResult result)
+    private void renderPointLoadGraphic(PointLoad pLoad, AddLoadResult result)
     {
         // x coordinate in beamContainer for load
-        double scaledX = GraphicsUtils.getXScaled(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength()); // x position in the beamContainer
+        double scaledX = GraphicsUtils.getScaledFromModelToGraphic(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength()); // x position in the beamContainer
 
         // Render the correct graphic
         if (pLoad.isSupport())
-            addSupportGraphic(scaledX);
+            renderSupportGraphic(scaledX);
         else
-            addArrowGraphic(pLoad, result);
+            renderArrowGraphic(pLoad, result);
     }
 
     /**
      * Add a point load to the load container as a graphic of a triangle to represent a pinned support
      * @param beamContainerX the x coordinate of the load within the load container
      */
-    private void addSupportGraphic(double beamContainerX)
+    private void renderSupportGraphic(double beamContainerX)
     {
         // Create the list of current load graphics
         List<Graphic> loadContainerChildren = new ArrayList<>(loadContainer.getChildren().stream()
@@ -403,7 +341,7 @@ public class BeamController implements Initializable
 
         // Create and add the support graphic
         double tipY = acceptedGraphicHeightRange[1] + (int) beam.getThickness(); // +126
-        SupportTriangle support = new SupportTriangle(beamContainerX, tipY);
+        TriangleStand support = new TriangleStand(beamContainerX, tipY);
         loadContainerChildren.add(support);
 
         // Clear graphics the load container and add the new list of load graphics including the support, all sorted
@@ -411,9 +349,6 @@ public class BeamController implements Initializable
         loadContainer.getChildren().addAll(loadContainerChildren.stream()
                 .sorted(Comparator.comparingDouble(Graphic::getX))
                 .map(load -> (Node) load).toList());
-
-        // Update ui state
-        refreshLoadGraphics();
     }
 
     /**
@@ -421,7 +356,7 @@ public class BeamController implements Initializable
      * @param pLoad the point load to add
      * @param result the enum result of adding the load
      */
-    private void addArrowGraphic(PointLoad pLoad, AddLoadResult result)
+    private void renderArrowGraphic(PointLoad pLoad, AddLoadResult result)
     {
         // Notify the user regarding point loads combining or cancelling
         mainController.closeSnackBar(mainController.getSnackbar());
@@ -431,10 +366,62 @@ public class BeamController implements Initializable
             mainController.showSnackbar("Point load magnitudes cancelled");
 
         // Prevent rendering issues with zero-valued loads
-        if (pLoad.getValue() == 0)
+        if (pLoad.getMaxSignedValue() == 0)
             return;
 
-        refreshLoadGraphics();
+        renderLoadGraphics();
+    }
+
+    /**
+     * Rescales all point loads (arrows) and distributed loads (arrow boxes) based on the load with the highest mag.
+     * Point and distributed load magnitudes are compared although their units differ (Force vs. Force / Length)
+     */
+    public void renderLoadGraphics()
+    {
+        // Clear load container of graphics
+        loadContainer.getChildren().clear();
+
+        // Rescale all graphics relative to the max load
+        List<Graphic> rescaledGraphics = new ArrayList<>();
+        for (int i = 0; i < canoe.getAllLoads().size(); i++)
+        {
+            Load load = canoe.getAllLoads().get(i);
+
+            // The ratio of the largest load (always rendered at max size) to this load
+            double val = load.getMaxSignedValue();
+            double loadMagnitudeRatio = Math.abs(load.getMaxSignedValue() / canoe.getMaxLoadValue());
+
+            // Clip load length if too small (i.e. ratio is too large)
+            if (loadMagnitudeRatio < Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]))
+                loadMagnitudeRatio = Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]);
+
+            // Render at scaled size (deltaY calculates the downscaling factor)
+            double endY = load.getMaxSignedValue() < 0 ? acceptedGraphicHeightRange[1] : acceptedGraphicHeightRange[1] + (int) beam.getThickness();
+            double deltaY = (acceptedGraphicHeightRange[1] - acceptedGraphicHeightRange[0]) * loadMagnitudeRatio;
+            double startY = load.getMaxSignedValue() < 0 ? acceptedGraphicHeightRange[1] - deltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
+            double xScaled = GraphicsUtils.getScaledFromModelToGraphic(load.getX(), beam.getWidth(), canoe.getHull().getLength());
+
+            switch (load)
+            {
+                case PointLoad ignoredPLoad -> rescaledGraphics.add(new Arrow(xScaled, startY, xScaled, endY));
+                case LoadDistribution dist -> {
+                    double rxScaled = GraphicsUtils.getScaledFromModelToGraphic(dist.getSection().getRx(), beam.getWidth(), canoe.getHull().getLength());
+                    switch (dist) {
+                        case UniformLoadDistribution ignoredDLoad -> rescaledGraphics.add(new ArrowBox(xScaled, startY, rxScaled, endY));
+                        case PiecewiseContinuousLoadDistribution piecewise -> {
+                            if (piecewise.getForce() != 0)
+                                rescaledGraphics.add(new Curve(piecewise.getPiecedFunction(), piecewise.getSection(), xScaled, rxScaled, startY, endY));
+                        }
+                        default -> throw new IllegalStateException("Invalid load type");
+                    }
+                }
+                default -> throw new IllegalArgumentException("Invalid load type");
+            }
+        }
+
+        rescaledGraphics.sort(Comparator.comparingDouble(Graphic::getX));
+        loadContainer.getChildren().addAll((rescaledGraphics.stream().map(element -> (Node) element)).toList());
+        updateViewOrder();
     }
 
     /**
@@ -450,18 +437,15 @@ public class BeamController implements Initializable
         disableLoadingControls(true);
         loadsTreeView.setDisable(false);
 
-        if (standsRadioButton.isSelected())
-        {
+        if (standsRadioButton.isSelected()) {
             solveStandSystem();
             solveSystemButton.setOnAction(e -> undoStandsSolve());
         }
-        else if (floatingRadioButton.isSelected())
-        {
+        else if (floatingRadioButton.isSelected()) {
             solveFloatingSystem();
             solveSystemButton.setOnAction(e -> undoFloatingSolve());
         }
-        else if (submergedRadioButton.isSelected())
-        {
+        else if (submergedRadioButton.isSelected()) {
             solveSubmergedSystem();
             solveSystemButton.setOnAction(e -> undoSubmergedSolve());
         }
@@ -485,7 +469,7 @@ public class BeamController implements Initializable
         List<PointLoad> supportLoads = SolverService.solveStandSystem(canoe);
         for (PointLoad supportLoad : supportLoads) {
             AddLoadResult addResult = canoe.addLoad(supportLoad);
-            addPointLoadGraphic(supportLoad, addResult);
+            renderPointLoadGraphic(supportLoad, addResult);
         }
     }
 
@@ -496,7 +480,7 @@ public class BeamController implements Initializable
         // Simulate the user selecting and deleting the supports which are always the first and last load
         loadsTreeView.getSelectionModel().select(0);
         deleteSelectedLoad();
-        loadsTreeView.getSelectionModel().select(loadsTreeView.getRoot().getChildren().size() - 1);
+        loadsTreeView.getSelectionModel().select(loadsTreeView.getRoot().getChildren().size() - 1); //TODO check if needs change (probably)
         deleteSelectedLoad();
     }
 
@@ -504,7 +488,7 @@ public class BeamController implements Initializable
     {
         PiecewiseContinuousLoadDistribution buoyancy = SolverService.solveFloatingSystem(canoe);
         canoe.getExternalLoadDistributions().add(buoyancy);
-        addLoadDistribution(DiscreteLoadDistribution.fromPiecewiseContinuous("Buoyancy", buoyancy)); // change to take piecewise (list gets discrete, beam view and model get continuous)
+        addPiecewise(buoyancy);
     }
 
     private void undoFloatingSolve()
@@ -599,7 +583,7 @@ public class BeamController implements Initializable
         loadContainer.getChildren().clear();
         canoe.getExternalLoadDistributions().clear();;
         canoe.getExternalLoads().clear();
-        canoe.setHull(new Hull(canoe.getHull().getLength()));
+        canoe.setHull(null);
         LoadTreeManagerService.buildLoadTreeView(canoe);
 
         // List is empty, toggle empty list settings
@@ -632,7 +616,7 @@ public class BeamController implements Initializable
 
             // Update UI to new canoe
             enableEmptyLoadTreeSettings(uploadedCanoe.getExternalLoads().isEmpty());
-            refreshLoadGraphics();
+            renderLoadGraphics();
             LoadTreeManagerService.buildLoadTreeView(canoe);
             axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
 
