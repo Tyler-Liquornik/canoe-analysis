@@ -53,7 +53,7 @@ public class LoadTreeItem extends TreeItem<String> {
 
     // Non-nested load (pLoad, dLoad, loadDist)
     public LoadTreeItem(int loadId, int loadTypeId, Load load) {
-        super(String.format("%s: %c_%d", load.getType(), getTypeChar(load), (loadTypeId + 1)));
+        super(String.format("%s: %c_%d", load.getType().getDescription(), load.getType().getVariable(), (loadTypeId + 1)));
         this.loadId = loadId;
         this.loadTypeId = loadTypeId;
         this.nestedLoadId = -1;
@@ -63,22 +63,12 @@ public class LoadTreeItem extends TreeItem<String> {
 
     // Nested load (dLoad child of loadDist)
     public LoadTreeItem(int loadId, int nestedLoadId, int loadTypeId, Load load) {
-        super(String.format("%s: %c_%s", load.getType(), getTypeChar(load), (loadTypeId + 1)));
+        super(String.format("%s: %c_%s", load.getType().getDescription(), load.getType().getVariable(), (loadTypeId + 1)));
         this.loadId = loadId;
         this.loadTypeId = loadTypeId;
         this.nestedLoadId = nestedLoadId;
         this.fieldId = -1;
         this.childrenLoadItems = new ArrayList<>();
-    }
-
-    @JsonIgnore
-    private static char getTypeChar(Load load) {
-        switch (load) {
-            case PointLoad ignoredLoad -> {return 'p';}
-            case UniformLoadDistribution ignoredLoad -> {return 'w';}
-            case DiscreteLoadDistribution ignoredLoad -> {return 'd';}
-            default -> throw new IllegalArgumentException("Provide a valid load");
-        }
     }
 
     /**

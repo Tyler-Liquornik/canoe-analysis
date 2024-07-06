@@ -26,6 +26,7 @@ public class CanoeAnalysisApplication extends Application {
     public void start(Stage stage) throws IOException, URISyntaxException {
         StaticComponentContainer.Modules.exportAllToAll();
 
+        // Stage setup
         FXMLLoader mainFxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/main-view.fxml"));
         Scene scene = new Scene(mainFxmlLoader.load(), 900, 600);
         stage.setTitle("PADDL");
@@ -33,7 +34,7 @@ public class CanoeAnalysisApplication extends Application {
         stage.initStyle(StageStyle.UNDECORATED);
         stage.show();
 
-        // Provide a references of stage, scene, controller between
+        // Main controller setup, load default module (beam module)
         setMainController(mainFxmlLoader.getController());
         mainController.setPrimaryStage(stage);
         mainController.setPrimaryScene(scene);
@@ -49,7 +50,7 @@ public class CanoeAnalysisApplication extends Application {
         Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png");
         stage.getIcons().add(icon);
 
-        // TODO: should come from a properties file that persists color (and other future) preferences
+        // TODO: should come from a properties file that locally persists color (and other future) preferences
         ColorManagerService.putColorPalette("primary", "#F96C37");
     }
 

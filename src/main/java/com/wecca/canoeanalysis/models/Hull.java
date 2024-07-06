@@ -132,7 +132,7 @@ public class Hull {
      */
     @JsonIgnore
     public DiscreteLoadDistribution getSelfWeightDistributionDiscretized() {
-        return DiscreteLoadDistribution.fromPiecewiseContinuous("Discretization", getSelfWeightDistribution(), (int) (getSection().getLength() * 100));
+        return DiscreteLoadDistribution.fromPiecewiseContinuous(LoadType.HULL, getSelfWeightDistribution(), (int) (getSection().getLength() * 100));
     }
 
     /**

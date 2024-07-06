@@ -11,14 +11,14 @@ public class UniformLoadDistribution extends LoadDistribution {
     private double magnitude;
     private Section section;
 
-    public UniformLoadDistribution(String type, double magnitude, double x, double rx) {
+    public UniformLoadDistribution(LoadType type, double magnitude, double x, double rx) {
         super(type);
         this.magnitude = magnitude;
         this.section = new Section(x, rx);
     }
 
     public UniformLoadDistribution(double magnitude, double x, double rx) {
-        this("Distributed Load", magnitude, x, rx);
+        this(LoadType.UNIFORM_LOAD_DISTRIBUTION, magnitude, x, rx);
     }
 
     @JsonIgnore

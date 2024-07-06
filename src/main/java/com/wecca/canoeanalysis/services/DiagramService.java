@@ -267,7 +267,7 @@ public class DiagramService {
         if (!canoe.getAllLoads(PiecewiseContinuousLoadDistribution.class).isEmpty()) {
 
             List<DiscreteLoadDistribution> discretizations = canoe.getAllLoads(PiecewiseContinuousLoadDistribution.class).stream()
-                    .map(piecewise -> DiscreteLoadDistribution.fromPiecewiseContinuous("Section", piecewise, (int) (piecewise.getSection().getLength() * 100)))
+                    .map(piecewise -> DiscreteLoadDistribution.fromPiecewiseContinuous(LoadType.DISCRETE_SECTION, piecewise, (int) (piecewise.getSection().getLength() * 100)))
                     .toList();
 
             for (DiscreteLoadDistribution loadDist : discretizations) {
@@ -295,7 +295,7 @@ public class DiagramService {
         if (!canoe.getAllLoads(PiecewiseContinuousLoadDistribution.class).isEmpty()) {
 
             List<DiscreteLoadDistribution> discretizations = canoe.getAllLoads(PiecewiseContinuousLoadDistribution.class).stream()
-                    .map(piecewise -> DiscreteLoadDistribution.fromPiecewiseContinuous("Section", piecewise, (int) (piecewise.getSection().getLength() * 100)))
+                    .map(piecewise -> DiscreteLoadDistribution.fromPiecewiseContinuous(LoadType.DISCRETE_SECTION, piecewise, (int) (piecewise.getSection().getLength() * 100)))
                     .toList();
 
             for (DiscreteLoadDistribution loadDist : discretizations) {

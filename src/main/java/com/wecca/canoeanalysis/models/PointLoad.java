@@ -13,7 +13,7 @@ public class PointLoad extends Load
     @JsonIgnore
     private boolean isSupport;
 
-    public PointLoad(String type, double force, double x, boolean isSupport) {
+    public PointLoad(LoadType type, double force, double x, boolean isSupport) {
         super(type);
         this.force = force;
         this.x = x;
@@ -21,6 +21,6 @@ public class PointLoad extends Load
     }
 
     public PointLoad(double force, double x, boolean isSupport) {
-        this("Point Load", force, x, isSupport);
+        this(LoadType.POINT_LOAD, force, x, isSupport);
     }
 }

@@ -18,7 +18,7 @@ public class ContinuousLoadDistribution extends PiecewiseContinuousLoadDistribut
      * @param section defines the distributions endpoints
      * Note: the constructor is private as it is used by factory methods
      */
-    public ContinuousLoadDistribution(String type, UnivariateFunction distribution, Section section) {
+    public ContinuousLoadDistribution(LoadType type, UnivariateFunction distribution, Section section) {
         super(type, List.of(distribution), List.of(section));
         CalculusUtils.validateContinuity(distribution, section);
         this.distribution = distribution;

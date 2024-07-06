@@ -48,7 +48,7 @@ public class HullSection extends Section
     private double wallsThickness;
     @JsonIgnore
     private double concreteDensity; // [kg/m^3]
-    private boolean hasBulkhead;
+    private boolean isFilledBulkhead;
     @JsonIgnore
     private double bulkheadDensity; // [kg/m^3]
 
@@ -84,7 +84,7 @@ public class HullSection extends Section
         this.sideProfileCurve = sideProfileCurve;
         this.topProfileCurve = topProfileCurve;
         this.wallsThickness = thickness;
-        this.hasBulkhead = hasBulkhead;
+        this.isFilledBulkhead = hasBulkhead;
     }
 
     /**
@@ -133,7 +133,7 @@ public class HullSection extends Section
         return x -> {
             double height = Math.abs(sideProfileCurve.value(x));
             double width = 2 * Math.abs(topProfileCurve.value(x)); // assuming this profile is symmetrical in the current model
-            int numTopAndBottomWalls = hasBulkhead ? 2 : 1; // Include a top wall (ceiling) to cover the bulkhead (in addition to floor which is always present)
+            int numTopAndBottomWalls = isFilledBulkhead ? 2 : 1; // Include a top wall (ceiling) to cover the bulkhead (in addition to floor which is always present)
             return ((height - numTopAndBottomWalls * wallsThickness) * (width - (2 * wallsThickness))) * crossSectionalAreaAdjustmentFactorFunction.apply(height); // inner area doesnt include walls or floor / ceiling
         };
     }
@@ -143,7 +143,7 @@ public class HullSection extends Section
      */
     @JsonIgnore
     public double getBulkheadVolume() {
-        return hasBulkhead ? CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getInnerCrossSectionalAreaFunction(), x, rx) : 0;
+        return isFilledBulkhead ? CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getInnerCrossSectionalAreaFunction(), x, rx) : 0;
     }
 
     /**
@@ -171,7 +171,7 @@ public class HullSection extends Section
      */
     @JsonIgnore
     public UnivariateFunction getMassDistributionFunction() {
-        return hasBulkhead ? x -> getConcreteCrossSectionalAreaFunction().value(x) * concreteDensity + getInnerCrossSectionalAreaFunction().value(x) * bulkheadDensity
+        return isFilledBulkhead ? x -> getConcreteCrossSectionalAreaFunction().value(x) * concreteDensity + getInnerCrossSectionalAreaFunction().value(x) * bulkheadDensity
                 : x -> getConcreteCrossSectionalAreaFunction().value(x) * concreteDensity;
     }
 
@@ -190,7 +190,7 @@ public class HullSection extends Section
     @JsonIgnore
     public ContinuousLoadDistribution getWeightDistributionFunction() {
         UnivariateFunction distribution = x -> -getMassDistributionFunction().value(x) * PhysicalConstants.GRAVITY.getValue() / 1000.0;
-        return new ContinuousLoadDistribution("Section Weight", distribution, new Section(x, rx));
+        return new ContinuousLoadDistribution(LoadType.DISCRETE_SECTION, distribution, new Section(x, rx));
     }
 
     /**

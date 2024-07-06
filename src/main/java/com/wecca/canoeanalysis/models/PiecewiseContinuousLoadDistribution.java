@@ -14,7 +14,7 @@ public class PiecewiseContinuousLoadDistribution extends LoadDistribution {
 
     private TreeMap<Section, UnivariateFunction> pieces;
 
-    public PiecewiseContinuousLoadDistribution(String type, List<UnivariateFunction> pieces, List<Section> subSections) {
+    public PiecewiseContinuousLoadDistribution(LoadType type, List<UnivariateFunction> pieces, List<Section> subSections) {
         super(type);
         CalculusUtils.validatePiecewiseContinuity(pieces, subSections);
         this.pieces = new TreeMap<>(Comparator.comparingDouble(Section::getX));
@@ -38,7 +38,7 @@ public class PiecewiseContinuousLoadDistribution extends LoadDistribution {
 
         CalculusUtils.validatePiecewiseContinuity(pieces, sections);
         CalculusUtils.validatePiecewiseAsUpOrDown(pieces, sections);
-        return new PiecewiseContinuousLoadDistribution("Hull Weight", pieces, sections);
+        return new PiecewiseContinuousLoadDistribution(LoadType.HULL, pieces, sections);
     }
 
     /**

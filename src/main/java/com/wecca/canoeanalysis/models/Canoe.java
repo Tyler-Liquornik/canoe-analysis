@@ -144,17 +144,6 @@ public class Canoe
         if (hull != null && hull.getSelfWeightDistribution() != null)
             loads.add(hull.getSelfWeightDistribution());
 
-        // Define the order to sort by type
-        Map<Class<? extends Load>, Integer> classOrder = new HashMap<>();
-        classOrder.put(PointLoad.class, 0);
-        classOrder.put(UniformLoadDistribution.class, 1);
-        classOrder.put(DiscreteLoadDistribution.class, 2);
-        classOrder.put(PiecewiseContinuousLoadDistribution.class, 3);
-
-        // Sort by type, and then by position
-        loads.sort(Comparator.comparingInt(load -> classOrder.getOrDefault(load.getClass(), -1)));
-        loads.sort(Comparator.comparingDouble(Load::getX));
-
         return loads;
     }
 
@@ -177,10 +166,27 @@ public class Canoe
      */
     @JsonIgnore
     public List<Load> getAllLoadsDiscretized() {
-        return getAllLoads().stream() // Only operate on piecewise continuous distributions (other kinds of loads aren't discretizable)
+        List<Load> loads = new ArrayList<>(externalLoads.stream()
                 .map(load -> load instanceof PiecewiseContinuousLoadDistribution piecewise ?
-                        DiscreteLoadDistribution.fromPiecewiseContinuous(piecewise.type, piecewise): load)
-                .toList();
+                        DiscreteLoadDistribution.fromPiecewiseContinuous(piecewise.type, piecewise) : load)
+                .toList());
+
+        // Add the hull self-weight load separately
+        if (hull != null && hull.getSelfWeightDistribution() != null) {
+            loads.add(DiscreteLoadDistribution.fromHull(hull));
+        }
+
+        // Define the order to sort by type
+        Map<Class<? extends Load>, Integer> classOrder = new HashMap<>();
+        classOrder.put(PointLoad.class, 0);
+        classOrder.put(UniformLoadDistribution.class, 1);
+        classOrder.put(DiscreteLoadDistribution.class, 2);
+        classOrder.put(PiecewiseContinuousLoadDistribution.class, 3);
+
+        // Sort by type, and then by position
+        loads.sort(Comparator.comparingInt(load -> classOrder.getOrDefault(load.getClass(), -1)));
+        loads.sort(Comparator.comparingDouble(Load::getX));
+        return loads;
     }
 }
 

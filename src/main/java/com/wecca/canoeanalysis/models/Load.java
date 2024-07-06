@@ -11,12 +11,12 @@ import lombok.Setter;
 @Setter @Getter @AllArgsConstructor @NoArgsConstructor
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = PointLoad.class, name = "Point Load"),
-        @JsonSubTypes.Type(value = UniformLoadDistribution.class, name = "Simple Load Distribution"),
-        @JsonSubTypes.Type(value = PiecewiseContinuousLoadDistribution.class, name = "Complex Load Distribution")
+        @JsonSubTypes.Type(value = PointLoad.class, names = {"Point Load", "Point Support"}),
+        @JsonSubTypes.Type(value = UniformLoadDistribution.class, name = "Distributed Load"),
+        @JsonSubTypes.Type(value = PiecewiseContinuousLoadDistribution.class, names = {"Hull Weight", "Buoyancy"})
 })
 public abstract class Load {
-    protected String type;
+    protected LoadType type;
     @JsonIgnore
     public double getMaxSignedValue() {return getForce();}
     @JsonIgnore
