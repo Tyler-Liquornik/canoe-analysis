@@ -52,7 +52,7 @@ Currently, the program has one module to which will be used to model the canoe a
 
 ## Feature Roadmap
 
-- [X] Side Menu Drawer
+- [X] Side Menu Drawer for future modules
     - [X] Template links to other modules
     - [X] About Page
 - [X] Snackbar error popups
@@ -60,14 +60,18 @@ Currently, the program has one module to which will be used to model the canoe a
 - [X] Import/Export the canoe object as YAML
 - [X] Unification of color system between Java and CSS code
   - [X] Customizable colors in settings
+  - [ ] Persist color settings accross sessions in a properties file
 - [ ] Solve the case of a floating canoe [Epic]
   - [X] Implement an improved model for breaking the canoe hull up into sections
-  - [X] Display new Canoe model in a collapsable TreeView
-    - [ ] Editable cells
-  - [X] Solve for a load distribution based on the self-weight distribution of the hull
+    - [ ] Update the YAML model and Marshalling process
+    - [X] Create new graphics for ciomplex load distributions for the beam
+    - [X] Display new Canoe model in a collapsable TreeView
+  - [X] Solve for a buoyancy load distribution based on the self-weight distribution of the hull
+    - [ ] Solve for a buoyancy load distribution including the hull and external loads
   - [X] Iteratively solve for the waterline of a floating hull in equilibrium to get a buoyancy distribution
-  - [ ] Update the YAML model and Marshalling process
   - [X] Define a set of curves for hull geometry (can start with just one hardcoded set for now, user not yet able to choose themselves)
+     
+PADDL v0 to be released after finishing the roadmap
     
 <!-- CONTRIBUTING -->
 ## Contributing
