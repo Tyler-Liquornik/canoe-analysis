@@ -11,9 +11,8 @@ import lombok.Setter;
 @Setter @Getter @AllArgsConstructor @NoArgsConstructor
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = PointLoad.class, names = {"Point Load", "Point Support"}),
-        @JsonSubTypes.Type(value = UniformLoadDistribution.class, name = "Distributed Load"),
-        @JsonSubTypes.Type(value = PiecewiseContinuousLoadDistribution.class, names = {"Hull Weight", "Buoyancy"})
+        @JsonSubTypes.Type(value = PointLoad.class, names = {"Point Load"}),
+        @JsonSubTypes.Type(value = UniformLoadDistribution.class, name = "Distributed Load")
 })
 public abstract class Load {
     protected LoadType type;

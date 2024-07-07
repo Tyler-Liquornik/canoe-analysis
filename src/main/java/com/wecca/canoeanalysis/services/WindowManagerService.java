@@ -66,21 +66,25 @@ public class WindowManagerService {
     /**
      * @param title the title of the window
      */
-    public static void openUtilityWindow(String title, String fxmlPath, int windowWidth, int windowHeight) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource(fxmlPath));
-        AnchorPane rootPane = fxmlLoader.load();
+    public static void openUtilityWindow(String title, String fxmlPath, int windowWidth, int windowHeight) {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource(fxmlPath));
+            AnchorPane rootPane = fxmlLoader.load();
 
-        Stage stage = new Stage();
-        JFXDecorator decorator = getDraggableJFXDecorator(stage, new VBox(rootPane));
+            Stage stage = new Stage();
+            JFXDecorator decorator = getDraggableJFXDecorator(stage, new VBox(rootPane));
 
-        Scene scene = new Scene(decorator, windowWidth, windowHeight);
-        addStyleSheet(scene, "css/style.css");
-        stage.setTitle(title);
-        stage.setOnShown(event -> rootPane.requestFocus());
-        stage.setResizable(false);
-        stage.getIcons().add(new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png"));
-        stage.setScene(scene);
-        stage.show();
+            Scene scene = new Scene(decorator, windowWidth, windowHeight);
+            addStyleSheet(scene, "css/style.css");
+            stage.setTitle(title);
+            stage.setOnShown(event -> rootPane.requestFocus());
+            stage.setResizable(false);
+            stage.getIcons().add(new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png"));
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

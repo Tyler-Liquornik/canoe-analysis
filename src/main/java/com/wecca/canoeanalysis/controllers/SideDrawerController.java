@@ -45,11 +45,11 @@ public class SideDrawerController implements Initializable {
     public void clickPoaButton() throws IOException {selectModule(Module.PERCENT_OPEN_AREA, poaIcon);}
 
     // Auxiliary button handlers
-    public void clickSettingsButton() throws IOException {
+    public void clickSettingsButton() {
         WindowManagerService.openUtilityWindow("Settings", "view/settings-view.fxml", 550, 325);
     }
 
-    public void clickAboutButton() throws IOException {
+    public void clickAboutButton() {
         WindowManagerService.openUtilityWindow("About Me", "view/about-view.fxml", 550, 325);
     }
 

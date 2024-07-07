@@ -3,15 +3,14 @@ package com.wecca.canoeanalysis.controllers;
 import com.jfoenix.controls.JFXTreeView;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
 import com.wecca.canoeanalysis.components.graphics.*;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.services.*;
-import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.ControlUtils;
 import com.wecca.canoeanalysis.utils.GraphicsUtils;
-import com.wecca.canoeanalysis.utils.TestData;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
@@ -21,7 +20,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
@@ -53,7 +51,7 @@ public class BeamController implements Initializable
 
     @Getter @Setter
     private MainController mainController;
-    @Getter @Setter
+    @Getter
     private Canoe canoe; // entity class that models the canoe as a beam
     private Beam beam; // The graphic of the beam
 
@@ -83,8 +81,7 @@ public class BeamController implements Initializable
      * Updates the view order (z-axis rendering) property of all graphics for rendering
      * Supports are above point loads which are above distributed loads as the preferred order
      */
-    public void updateViewOrder()
-    {
+    public void updateViewOrder() {
         // Create the list of current load graphics
         List<Node> loadContainerChildren = loadContainer.getChildren().stream().toList();
 
@@ -113,8 +110,7 @@ public class BeamController implements Initializable
      * Highlights the selected load in the UI
      * Called by the list view of loads when a load is selected
      */
-    public void highlightLoad()
-    {
+    public void highlightLoad() {
         int selectedIndex = LoadTreeManagerService.getSelectedLoadId();
         updateViewOrder();
 
@@ -140,8 +136,7 @@ public class BeamController implements Initializable
     /**
      * Resets the length of the canoe, clearing all loads
      */
-    public void resetLength()
-    {
+    public void resetLength() {
         if (Objects.equals(solveSystemButton.getText(), "Undo Solve")) // TODO: fix lazy implementation, should manage the state properly
             solveSystemButton.fire();
 
@@ -162,19 +157,18 @@ public class BeamController implements Initializable
      * Called by the "Set Length" button
      * Updates both the model and the UI, showing the length of the canoe
      */
-    public void setLength()
-    {
+    public void setLength() {
         if (InputParsingService.validateTextAsDouble(canoeLengthTextField.getText())) {
             // Default list view message
             enableEmptyLoadTreeSettings(true);
 
             // Convert to metric
-            double len = InputParsingService.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
+            double length = InputParsingService.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
 
             // Only allow lengths in the specified range
-            if (len >= 0.01) {
+            if (length >= 0.01) {
                 // Update model state to default simple rectangular prism geometry
-                canoe.setHull(new Hull(len, 0.4, 0.7));
+                canoe.setHull(SharkBaitHullLibrary.generateSimplifiedSharkBaitHullScaled(length));
 
                 // Change the label on the scale
                 axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
@@ -192,15 +186,6 @@ public class BeamController implements Initializable
                 // Set length button will now function as a reset length button
                 setCanoeLengthButton.setText("Reset Length");
                 setCanoeLengthButton.setOnAction(e -> resetLength());
-
-                // TODO: FOR TESTING NOT PERMANENT, NEED TO DELETE
-                if (len == 6.0) {
-                    System.out.println("Hull has been set to shark bait");
-                    canoe.setHull(TestData.generateSharkBaitHull());
-                    LoadTreeManagerService.buildLoadTreeView(canoe);
-                    System.out.println("Hull mass = " + canoe.getHull().getMass() + "kg");
-                    renderLoadGraphics();
-                }
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
             else
@@ -214,8 +199,7 @@ public class BeamController implements Initializable
      * Called by the "Add Point Load" button
      * Deals with parsing and validation user input.
      */
-    public void addPointLoad()
-    {
+    public void addPointLoad() {
         // Clear previous alert label
         mainController.closeSnackBar(mainController.getSnackbar());
 
@@ -258,8 +242,7 @@ public class BeamController implements Initializable
      * Deals with parsing and validation user input.
      * Main logic handled in addDistributedLoadToCanoe method
      */
-    public void addDistributedLoad()
-    {
+    public void addDistributedLoad() {
         // Clear previous alert labels
         mainController.closeSnackBar(mainController.getSnackbar());
 
@@ -300,7 +283,7 @@ public class BeamController implements Initializable
             mainController.showSnackbar("One or more entered values are not valid numbers");
     }
 
-    // Will eventually have validations on user input for the piecewise, unused parameter for now
+    // TODO: Will eventually have validations on user input for the piecewise, unused parameter for now
     public void addPiecewise(PiecewiseContinuousLoadDistribution piecewise) {
         // Clear previous alert labels
         mainController.closeSnackBar(mainController.getSnackbar());
@@ -317,8 +300,7 @@ public class BeamController implements Initializable
      * Add a point load to the canoe object and JavaFX UI.
      * @param pLoad the point load to be added.
      */
-    private void renderPointLoadGraphic(PointLoad pLoad, AddLoadResult result)
-    {
+    private void renderPointLoadGraphic(PointLoad pLoad, AddLoadResult result) {
         // x coordinate in beamContainer for load
         double scaledX = GraphicsUtils.getScaledFromModelToGraphic(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength()); // x position in the beamContainer
 
@@ -333,8 +315,7 @@ public class BeamController implements Initializable
      * Add a point load to the load container as a graphic of a triangle to represent a pinned support
      * @param beamContainerX the x coordinate of the load within the load container
      */
-    private void renderSupportGraphic(double beamContainerX)
-    {
+    private void renderSupportGraphic(double beamContainerX) {
         // Create the list of current load graphics
         List<Graphic> loadContainerChildren = new ArrayList<>(loadContainer.getChildren().stream()
                 .map(node -> (Graphic) node).toList());
@@ -356,8 +337,7 @@ public class BeamController implements Initializable
      * @param pLoad the point load to add
      * @param result the enum result of adding the load
      */
-    private void renderArrowGraphic(PointLoad pLoad, AddLoadResult result)
-    {
+    private void renderArrowGraphic(PointLoad pLoad, AddLoadResult result) {
         // Notify the user regarding point loads combining or cancelling
         mainController.closeSnackBar(mainController.getSnackbar());
         if (result == AddLoadResult.COMBINED)
@@ -376,8 +356,7 @@ public class BeamController implements Initializable
      * Rescales all point loads (arrows) and distributed loads (arrow boxes) based on the load with the highest mag.
      * Point and distributed load magnitudes are compared although their units differ (Force vs. Force / Length)
      */
-    public void renderLoadGraphics()
-    {
+    public void renderLoadGraphics() {
         // Clear load container of graphics
         loadContainer.getChildren().clear();
 
@@ -429,6 +408,12 @@ public class BeamController implements Initializable
      * Distributes call to appropriate method and re-renders loads.
      */
     public void solveSystem() {
+        // TODO: move to bottom like other cases when submerged logic is implemented
+        if (submergedRadioButton.isSelected()) {
+            solveSubmergedSystem();
+            return;
+        }
+
         // Removes the default list view message if this is the first load
         enableEmptyLoadTreeSettings(false);
 
@@ -445,10 +430,6 @@ public class BeamController implements Initializable
             solveFloatingSystem();
             solveSystemButton.setOnAction(e -> undoFloatingSolve());
         }
-        else if (submergedRadioButton.isSelected()) {
-            solveSubmergedSystem();
-            solveSystemButton.setOnAction(e -> undoSubmergedSolve());
-        }
 
         // Update UI to disable loading and enable undo solve functionality
         solveSystemButton.setText("Undo Solve");
@@ -462,10 +443,8 @@ public class BeamController implements Initializable
     /**
      * Solve and display the result of the "stand" system load case.
      * This entails two supports at each end of the canoe, symmetrically offset from the beam bounds
-     * This interval is currently hardcoded as 0 in SystemSolver, so supports on beam endpoints
      */
-    private void solveStandSystem()
-    {
+    private void solveStandSystem() {
         List<PointLoad> supportLoads = SolverService.solveStandSystem(canoe);
         for (PointLoad supportLoad : supportLoads) {
             AddLoadResult addResult = canoe.addLoad(supportLoad);
@@ -473,44 +452,53 @@ public class BeamController implements Initializable
         }
     }
 
-    private void undoStandsSolve()
-    {
+    /**
+     * Undo the effects of the stands solve
+     */
+    private void undoStandsSolve() {
         undoSolveUpdateUI();
-
-        // Simulate the user selecting and deleting the supports which are always the first and last load
-        loadsTreeView.getSelectionModel().select(0);
-        deleteSelectedLoad();
-        loadsTreeView.getSelectionModel().select(loadsTreeView.getRoot().getChildren().size() - 1); //TODO check if needs change (probably)
-        deleteSelectedLoad();
+        clearLoadsOfType(LoadType.POINT_LOAD_SUPPORT);
     }
 
-    private void solveFloatingSystem()
-    {
+    /**
+     * Solve and display the result of the "floating" system load case.
+     * This entails a buoyancy distribution that keeps the canoe afloat
+     */
+    private void solveFloatingSystem() {
         PiecewiseContinuousLoadDistribution buoyancy = SolverService.solveFloatingSystem(canoe);
         canoe.addLoad(buoyancy);
         addPiecewise(buoyancy);
     }
 
-    private void undoFloatingSolve()
-    {
-        // TODO: Implement (after solveFloatingSystem())
+    /**
+     * Undo the effects of the floating solve
+     */
+    private void undoFloatingSolve() {
         undoSolveUpdateUI();
+        clearLoadsOfType(LoadType.BUOYANCY);
     }
 
-    private void solveSubmergedSystem()
-    {
+    /**
+     * Solve and display the result of the "submerged" system load case.
+     * This entails a canoe fully underwater
+     */
+    private void solveSubmergedSystem() {
         // TODO: Implement (consult Design & Analysis)
-        mainController.showSnackbar("This has not yet been implemented - Tyler :-)");
+        mainController.showSnackbar("The team is still working on their methods for this! Try again later.");
     }
 
-    private void undoSubmergedSolve()
-    {
+    /**
+     * Undo the effects of the submerged solve
+     */
+    private void undoSubmergedSolve() {
         // TODO: Implement (after solveSubmergedSystem())
         undoSolveUpdateUI();
     }
 
-    private void undoSolveUpdateUI()
-    {
+    /**
+     * Change the solve system button back into to a button to solve system instead of undo solve
+     */
+    private void undoSolveUpdateUI() {
         solveSystemButton.setText("Solve System");
         solveSystemButton.setOnAction(e -> solveSystem());
         generateGraphsButton.setDisable(true);
@@ -521,8 +509,7 @@ public class BeamController implements Initializable
      * Bulk package to toggle enabling all the controls related to loading
      * @param b disables controls
      */
-    private void disableLoadingControls(boolean b)
-    {
+    private void disableLoadingControls(boolean b) {
         List<Control> controls = new ArrayList<>(Arrays.asList
         (
             solveSystemButton, pointLoadButton, distributedLoadButton, floatingRadioButton, standsRadioButton,
@@ -546,42 +533,64 @@ public class BeamController implements Initializable
     /**
      * Generates an SFD and BMD based on the canoe's load state.
      */
-    public void generateDiagram()
-    {
+    public void generateDiagram() {
         WindowManagerService.openDiagramWindow("Shear Force Diagram", canoe, DiagramService.generateSfdPoints(canoe), "Force [kN]");
         WindowManagerService.openDiagramWindow("Bending Moment Diagram", canoe, DiagramService.generateBmdPoints(canoe), "Moment [kN·m]");
     }
 
     /**
-     * Delete the load selected in the list view
+     * Delete the load selected in the LoadTreeView
      */
-    public void deleteSelectedLoad()
-    {
+    public void deleteSelectedLoad() {
+        LoadTreeItem selectedItem = LoadTreeManagerService.getSelectedLoadTreeItem();
         int selectedIndex = LoadTreeManagerService.getSelectedLoadId();
 
         // Handle case that no index was selected
-        if (selectedIndex == -1)
-        {
+        if (selectedIndex == -1) {
             mainController.showSnackbar("Cannot perform delete, no load selected");
             return;
         }
 
+        if (selectedItem != null ) {
+            // Select up the hierarchy of nested LoadTreeItems for the hull
+            if (selectedItem.isField())
+                selectedItem = selectedItem.getParentLoadItem();
+            if (selectedItem.isNested())
+                selectedItem = selectedItem.getParentLoadItem();
+            if (selectedItem.getLoad() != null && selectedItem.getLoad().getType() != null &&
+                    selectedItem.getLoad().getType() == LoadType.HULL)
+                canoe.setHull(SharkBaitHullLibrary.generateSimplifiedSharkBaitHullScaled(canoe.getHull().getLength()));
+            else
+                canoe.getLoads().remove(selectedIndex);
+        }
         loadContainer.getChildren().remove(selectedIndex);
-        canoe.removeLoad(selectedIndex);
         LoadTreeManagerService.buildLoadTreeView(canoe);
 
-        // If the list is empty, toggle empty list settings
         if (loadContainer.getChildren().isEmpty())
             enableEmptyLoadTreeSettings(true);
     }
 
     /**
+     * Clear all load's of a specific load type
+     * This is achieved by simulating the user selecting and deleting the load
+     * @param loadType the type to delete loads of
+     */
+    public void clearLoadsOfType(LoadType loadType) {
+        for (int i = 0; i < LoadTreeManagerService.getNumberOfLoadsInTreeView(); i++) {
+            loadsTreeView.getSelectionModel().select(i);
+            LoadTreeItem selectedItem = LoadTreeManagerService.getSelectedLoadTreeItem();
+            if (selectedItem != null && selectedItem.getLoad() != null && selectedItem.getLoad().getType() != null &&
+                    selectedItem.getLoad().getType() == loadType)
+                deleteSelectedLoad();
+        }
+    }
+
+    /**
      * Clear all loads
      */
-    public void clearLoads()
-    {
+    public void clearLoads() {
         loadContainer.getChildren().clear();
-        canoe.getExternalLoads().clear();
+        canoe.getLoads().clear();
         canoe.setHull(null);
         LoadTreeManagerService.buildLoadTreeView(canoe);
 
@@ -593,11 +602,11 @@ public class BeamController implements Initializable
      * Upload a YAML file representing the Canoe object model
      * This populates the list view and beam graphic with the new model
      */
-    public void uploadCanoe() throws IOException {
+    public void uploadCanoe() {
         MarshallingService.setBeamController(this);
 
         // Alert the user they will be overriding the current loads on the canoe by uploading a new one
-        if (!canoe.getExternalLoads().isEmpty())
+        if (!canoe.getLoads().isEmpty())
         {
             UploadAlertController.setBeamController(this);
             WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view.fxml", 350, 230);
@@ -606,21 +615,16 @@ public class BeamController implements Initializable
             MarshallingService.importCanoeFromYAML(mainController.getPrimaryStage());
     }
 
-    public void setUploadedCanoe(Canoe uploadedCanoe)
-    {
-        if (uploadedCanoe != null)
-        {
+    public void setCanoe(Canoe canoe) {
+        if (canoe != null) {
             // Update the canoe model
-            canoe = uploadedCanoe;
+            this.canoe = canoe;
 
             // Update UI to new canoe
-            enableEmptyLoadTreeSettings(uploadedCanoe.getExternalLoads().isEmpty());
+            enableEmptyLoadTreeSettings(canoe.getLoads().isEmpty());
             renderLoadGraphics();
-            LoadTreeManagerService.buildLoadTreeView(canoe);
-            axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
-
-            // Notify the user of the result
-            mainController.showSnackbar("Successfully uploaded Canoe Model");
+            LoadTreeManagerService.buildLoadTreeView(this.canoe);
+            axisLabelR.setText(String.format("%.2f m", this.canoe.getHull().getLength()));
         }
     }
 
@@ -628,7 +632,7 @@ public class BeamController implements Initializable
      * Download the Canoe object model with the loads currently on the canoe as a YAML file
      * This can be uploaded later with uploadCanoe() or manually modified
      */
-    public void downloadCanoe() throws IOException {
+    public void downloadCanoe() {
         File downloadedFile = MarshallingService.exportCanoeToYAML(canoe, mainController.getPrimaryStage());
 
         String message = downloadedFile != null ? "Successfully downloaded canoe as \"" + downloadedFile.getName()
@@ -638,33 +642,23 @@ public class BeamController implements Initializable
     }
 
     /**
+     * Open the hull builder submodule (just a utility window for now until fully developed)
+     */
+    public void openHullBuilder() {
+        HullBuilderController.setMainController(mainController);
+        HullBuilderController.setBeamController(this);
+        WindowManagerService.openUtilityWindow("Hull Builder Beta", "view/hull-builder-view.fxml", 350, 230);
+    }
+
+    /**
      * Clears the toolbar of buttons from other modules and adds ones from this module
      * Currently, this provides buttons to download and upload the Canoe object as JSON
      */
-    public void addModuleToolBarButtons()
-    {
+    public void addModuleToolBarButtons() {
         List<Button> beamModuleButtons = new ArrayList<>();
-
-        Button downloadCanoeButton = new Button();
-        downloadCanoeButton.getStyleClass().add("transparent-button");
-        downloadCanoeButton.setOnAction(event -> {try {downloadCanoe();} catch (IOException e) {throw new RuntimeException(e);}});
-        FontAwesomeIcon downloadIcon = new FontAwesomeIcon();
-        downloadIcon.setFill(ColorPaletteService.getColor("white"));
-        downloadIcon.setGlyphName("ARROW_CIRCLE_O_DOWN");
-        downloadIcon.setSize("25");
-        downloadCanoeButton.setGraphic(downloadIcon);
-        beamModuleButtons.add(downloadCanoeButton);
-
-        Button uploadCanoeButton = new Button();
-        uploadCanoeButton.getStyleClass().add("transparent-button");
-        uploadCanoeButton.setOnAction(event -> {try {uploadCanoe();} catch (IOException e) {throw new RuntimeException(e);}});
-        FontAwesomeIcon uploadIcon = new FontAwesomeIcon();
-        uploadIcon.setFill(ColorPaletteService.getColor("white"));
-        uploadIcon.setGlyphName("ARROW_CIRCLE_O_UP");
-        uploadIcon.setSize("25");
-        uploadCanoeButton.setGraphic(uploadIcon);
-        beamModuleButtons.add(uploadCanoeButton);
-
+        beamModuleButtons.add(mainController.getIconButton("ARROW_CIRCLE_O_DOWN", e -> downloadCanoe()));
+        beamModuleButtons.add(mainController.getIconButton("ARROW_CIRCLE_O_UP", e -> uploadCanoe()));
+        beamModuleButtons.add(mainController.getIconButton("WRENCH", e -> openHullBuilder()));
         mainController.resetToolBarButtons();
         mainController.addToolBarButtons(beamModuleButtons);
     }

@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.utils;
 
+import com.wecca.canoeanalysis.models.LoadType;
 import com.wecca.canoeanalysis.models.PiecewiseContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.Section;
 import org.apache.commons.math3.analysis.UnivariateFunction;
@@ -60,7 +61,7 @@ public class CalculusUtils
                 throw new IllegalArgumentException("Sections do not form a continuous interval.");
         }
 
-        // Validate each piece for continuity on it's section
+            // Validate each piece for continuity on it's section
         for (int i = 0; i < pieces.size(); i++) {
            validateContinuity(pieces.get(i), sections.get(i));
         }
@@ -118,12 +119,13 @@ public class CalculusUtils
      */
     public static void validateContinuity(UnivariateFunction function, Section section) {
         // Note: it's very possible this can cause false negatives and these numbers need to be tweaked in magnitude
+        // It completely depends on how fast the function grows
         double tolerance = 1e-3;
         double numSamples = 10000.0;
         double step = section.getLength() / numSamples;
 
         double previousValue = function.value(section.getX());
-        for (int i = 1; i < numSamples; i++) {
+        for (int i = 1; i < numSamples - 1; i++) {
             double x = section.getX() + i * step;
             double currentValue = function.value(x);
             if (Math.abs(currentValue - previousValue) > tolerance)

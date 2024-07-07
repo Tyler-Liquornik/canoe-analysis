@@ -34,7 +34,7 @@ public class MarshallingService {
      * @param stage the stage to have the FileChooser model popup onto
      * @return the YAML file downloaded, or null if no file was downloaded
      */
-    public static File exportCanoeToYAML(Canoe canoe, Stage stage) throws IOException {
+    public static File exportCanoeToYAML(Canoe canoe, Stage stage){
         // Create a file chooser
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Download Canoe");
@@ -50,7 +50,11 @@ public class MarshallingService {
         File fileToDownload = fileChooser.showSaveDialog(stage);
 
         if (fileToDownload != null)
-            yamlMapper.writeValue(fileToDownload, canoe);
+            try {
+                yamlMapper.writeValue(fileToDownload, canoe);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
         return fileToDownload;
     }
@@ -76,7 +80,8 @@ public class MarshallingService {
             try
             {
                 Canoe canoe = combinePointLoads(validateCanoe(yamlMapper.readValue(fileToUpload, Canoe.class)));
-                beamController.setUploadedCanoe(canoe);
+                beamController.setCanoe(canoe);
+                mainController.showSnackbar("Successfully uploaded Canoe Model");
             } catch (IOException ex) {
                 System.out.println(ex.getMessage());
                 mainController.showSnackbar("Could not parse \"" + fileToUpload.getName() + "\".");
@@ -97,7 +102,7 @@ public class MarshallingService {
             canoe = null;
         }
 
-        for (Load load : canoe.getExternalLoads())
+        for (Load load : canoe.getLoads())
         {
             if (Math.abs(load.getMaxSignedValue()) < 0.01)
             {

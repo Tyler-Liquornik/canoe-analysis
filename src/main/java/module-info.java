@@ -16,6 +16,8 @@ module com.wecca.canoeanalysis {
     opens com.wecca.canoeanalysis to javafx.fxml;
     exports com.wecca.canoeanalysis.components.diagrams;
     opens com.wecca.canoeanalysis.components.diagrams to javafx.fxml;
+    exports com.wecca.canoeanalysis.components.controls;
+    opens com.wecca.canoeanalysis.components.controls to javafx.fxml;
     exports com.wecca.canoeanalysis.models;
     opens com.wecca.canoeanalysis.models to javafx.fxml;
     exports com.wecca.canoeanalysis.services;

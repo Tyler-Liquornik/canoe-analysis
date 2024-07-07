@@ -40,7 +40,7 @@ public class VertexFormParabola implements StringableUnivariateFunction {
 
     @Override
     public String getStringRepresentation() {
-        char hSign = h < 0 ? '-' : '+';
+        char hSign = h > 0 ? '-' : '+';
         char kSign = k < 0 ? '-' : '+';
 
         return String.format("%f * (x %s %f)^2 %s %f", a, hSign, Math.abs(h), kSign, Math.abs(k));

@@ -46,8 +46,8 @@ public class SolverService {
         double forceStart = -1 * sumOfPointLoads - forceEnd;
 
         // Create and return resulting loads
-        PointLoad pLoadStart = new PointLoad(LoadType.POINT_LOAD_IS_SUPPORT, forceStart, STAND_OFFSET, true);
-        PointLoad pLoadEnd = new PointLoad(LoadType.POINT_LOAD_IS_SUPPORT, forceEnd, canoe.getHull().getLength() - STAND_OFFSET, true);
+        PointLoad pLoadStart = new PointLoad(LoadType.POINT_LOAD_SUPPORT, forceStart, STAND_OFFSET, true);
+        PointLoad pLoadEnd = new PointLoad(LoadType.POINT_LOAD_SUPPORT, forceEnd, canoe.getHull().getLength() - STAND_OFFSET, true);
         pointLoads.clear();
         pointLoads.addAll(Arrays.asList(pLoadStart, pLoadEnd));
         return pointLoads;

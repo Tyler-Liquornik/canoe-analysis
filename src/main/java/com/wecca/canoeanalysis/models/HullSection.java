@@ -4,10 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.wecca.canoeanalysis.models.functions.StringableUnivariateFunction;
 import com.wecca.canoeanalysis.models.functions.VertexFormParabola;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
+import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.univariate.*;
 import java.util.function.Function;
@@ -53,21 +55,25 @@ public class HullSection extends Section
     private double bulkheadDensity; // [kg/m^3]
 
     // Adjusts for difference in area of the section's curvature of the front profile view at a given height h
-    // See: https://www.desmos.com/calculator/minprqcvro
+    // See: https://www.desmos.com/calculator/9ookcwgenx
     // TLDR: Uses the front profile of 2024's Shark Bait as a rough approximation for all reasonable future front profiles
     // Extrapolation occurs at heights greater than Shark Bait's max height of 0.4m
     @JsonIgnore
     private final Function<Double, Double> crossSectionalAreaAdjustmentFactorFunction = h -> {
-        if (0 <= h && h < 0.0404)
-            return 12 * h;
-        else if (0.0404 <= h && h < 0.15)
-            return -18.1233 * Math.pow((h - 0.15), 2) + 0.7025;
-        else if (0.15 <= h && h < 0.4)
-            return -1.50222 * Math.pow((h - 0.45), 2) + 0.8377;
-        else if (h >= 0.4) // Extrapolation
-            return (0.9 / (1 + Math.exp(-7 * (h - 0.05)))) + 0.005439;
+        // Build and scale the coefficients of the polynomial
+        // This 7th degree polynomial regression has R^2 = 0.9967, removing the need for the actual integral defined function
+        // While more accurate, the frequent need to call this function would mean evaluating many integrals per second
+        double[] coefficients = new double[] {0, 17.771, -210.367, 1409.91, -5420.6, 11769.4, -13242.7, 5880.62};
+        for (int i = 0; i < coefficients.length; i++) {
+            coefficients[i] = coefficients[i] / Math.pow(SharkBaitHullLibrary.scalingFactor, i);
+        }
+        PolynomialFunction regressionFit = new PolynomialFunction(coefficients);
+        if (0 <= h && h <= 0.4 * SharkBaitHullLibrary.scalingFactor)
+            return regressionFit.value(h);
+        else if (h > 0.4 * SharkBaitHullLibrary.scalingFactor)
+            return regressionFit.value(0.4 * SharkBaitHullLibrary.scalingFactor);
         else
-            return 0.0;
+            throw new IllegalArgumentException("Function undefined for negative values");
     };
 
     /**

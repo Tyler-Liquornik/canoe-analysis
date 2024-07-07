@@ -18,13 +18,13 @@ import java.util.*;
 @Getter @EqualsAndHashCode
 public class Canoe
 {
-    private final ArrayList<Load> externalLoads;
+    private final ArrayList<Load> loads;
     @Setter
     private Hull hull;
 
     public Canoe() {
         this.hull = null;
-        this.externalLoads = new ArrayList<>();
+        this.loads = new ArrayList<>();
     }
 
     public AddLoadResult addLoad(Load load) {
@@ -42,34 +42,30 @@ public class Canoe
                 if (existingPLoad.getX() == pLoad.getX() && !pLoad.isSupport()) {
                     double newForce = existingPLoad.getMaxSignedValue() + pLoad.getMaxSignedValue();
                     if (newForce == 0) {
-                        removeLoad(externalLoads.indexOf(existingPLoad));
+                        loads.remove(existingPLoad);
                         return AddLoadResult.REMOVED;
                     }
-                    ((PointLoad) (externalLoads.get(externalLoads.indexOf(existingPLoad)))).setForce(newForce);
+                    ((PointLoad) (loads.get(loads.indexOf(existingPLoad)))).setForce(newForce);
                     existingPLoad.setForce(newForce);
                     return AddLoadResult.COMBINED;
                 }
             }
         }
 
-        externalLoads.add(load);
-        externalLoads.sort(Comparator.comparingDouble(Load::getX));
+        loads.add(load);
+        loads.sort(Comparator.comparingDouble(Load::getX));
         return AddLoadResult.ADDED;
-    }
-
-    public void removeLoad(int index) {
-        externalLoads.remove(index);
     }
 
     @JsonIgnore
     public double getMaxLoadValue() {
-        if (externalLoads.isEmpty()) {
+        if (getAllLoads().isEmpty()) {
             return -1;
         }
         
         double maxValue = 0;
-        for (Load externalLoad : getAllLoads()) {
-            double currValue = Math.abs(externalLoad.getMaxSignedValue());
+        for (Load load : getAllLoads()) {
+            double currValue = Math.abs(load.getMaxSignedValue());
             if (currValue > maxValue) {
                 maxValue = currValue;
             }
@@ -112,7 +108,7 @@ public class Canoe
 
         // Add all point load x coords and endpoints of distributed loads
         TreeSet<Double> s = new TreeSet<>();
-        for (Load l : externalLoads)
+        for (Load l : loads)
         {
             s.add(l.getX());
             if (l instanceof UniformLoadDistribution distributedLoad)
@@ -140,7 +136,7 @@ public class Canoe
      */
     @JsonIgnore
     public List<Load> getAllLoads() {
-        List<Load> loads = new ArrayList<>(externalLoads);
+        List<Load> loads = new ArrayList<>(this.loads);
         if (hull != null && hull.getSelfWeightDistribution() != null)
             loads.add(hull.getSelfWeightDistribution());
 
@@ -166,7 +162,7 @@ public class Canoe
      */
     @JsonIgnore
     public List<Load> getAllLoadsDiscretized() {
-        List<Load> loads = new ArrayList<>(externalLoads.stream()
+        List<Load> loads = new ArrayList<>(this.loads.stream()
                 .map(load -> load instanceof PiecewiseContinuousLoadDistribution piecewise ?
                         DiscreteLoadDistribution.fromPiecewiseContinuous(piecewise.type, piecewise) : load)
                 .toList());

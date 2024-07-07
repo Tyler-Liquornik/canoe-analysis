@@ -53,7 +53,7 @@ class DiscreteLoadDistribution extends Load {
      * @param hull the hull to get the self-weight distribution of
      */
     public static DiscreteLoadDistribution fromHull(Hull hull) {
-        List<HullSection> hullSections = hull.getHullSections();
+        List<HullSection> hullSections = new ArrayList<>(hull.getHullSections());
         hullSections.sort(Comparator.comparingDouble(Section::getX));
 
         List<UniformLoadDistribution> loads = new ArrayList<>();

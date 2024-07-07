@@ -9,7 +9,10 @@ import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
+import com.wecca.canoeanalysis.services.color.ColorPaletteService;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.animation.*;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -24,6 +27,7 @@ import lombok.Setter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.function.Consumer;
 
 @Getter @Setter
 public class MainController implements Initializable {
@@ -200,6 +204,18 @@ public class MainController implements Initializable {
             menuDrawer.setTranslateX(-menuDrawer.getPrefWidth());
             JFXDepthManager.setDepth(menuDrawer, 5);
         } catch (IOException ignored) {}
+    }
+
+    public Button getIconButton(String iconName, Consumer<ActionEvent> onClick) {
+        Button button = new Button();
+        button.getStyleClass().add("transparent-button");
+        button.setOnAction(onClick::accept);
+        FontAwesomeIcon icon = new FontAwesomeIcon();
+        icon.setFill(ColorPaletteService.getColor("white"));
+        icon.setGlyphName(iconName);
+        icon.setSize("25");
+        button.setGraphic(icon);
+        return button;
     }
 
     public void addToolBarButtons(List<Button> buttons) {

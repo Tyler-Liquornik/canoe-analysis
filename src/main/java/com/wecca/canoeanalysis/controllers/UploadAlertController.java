@@ -1,6 +1,5 @@
 package com.wecca.canoeanalysis.controllers;
 
-import com.wecca.canoeanalysis.models.Canoe;
 import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import javafx.fxml.Initializable;
@@ -15,9 +14,7 @@ import java.util.ResourceBundle;
 public class UploadAlertController implements Initializable {
 
     @Setter
-    public static BeamController beamController;
-    @Setter
-    public static Canoe uploadedCanoe;
+    private static BeamController beamController;
 
     public void closeWindow(ActionEvent e) {
         WindowManagerService.closeWindow(((Stage) ((Button) e.getSource()).getScene().getWindow()));

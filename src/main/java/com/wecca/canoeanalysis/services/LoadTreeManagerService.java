@@ -58,7 +58,7 @@ public class LoadTreeManagerService {
     /**
      * @return the selected LoadTreeItem
      */
-    private static LoadTreeItem getSelectedLoadTreeItem() {
+    public static LoadTreeItem getSelectedLoadTreeItem() {
         TreeItem<String> selectedItem = loadsTreeView.getSelectionModel().getSelectedItem();
         return selectedItem instanceof LoadTreeItem loadTreeItem ? loadTreeItem : null;
     }
