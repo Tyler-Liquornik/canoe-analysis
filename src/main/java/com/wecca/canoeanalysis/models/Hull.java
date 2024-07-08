@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.math3.optim.MaxEval;
@@ -13,7 +14,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.TreeSet;
 
-@Getter @Setter
+@Getter @Setter @EqualsAndHashCode
 public class Hull {
     private double concreteDensity; // [kg/m^3]
     private double bulkheadDensity; // [kg/m^3]

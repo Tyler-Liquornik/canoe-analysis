@@ -1,13 +1,14 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 /**
  * Represents an interval [x, rx] where 0 <= x < rx
  * In essence, this is just a sub-interval of R^+
  */
-@Getter
+@Getter @EqualsAndHashCode
 public class Section {
     protected double x;
     protected double rx;

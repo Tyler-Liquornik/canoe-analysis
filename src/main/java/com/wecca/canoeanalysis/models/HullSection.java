@@ -6,6 +6,7 @@ import com.wecca.canoeanalysis.models.functions.VertexFormParabola;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.math3.analysis.UnivariateFunction;
@@ -42,7 +43,7 @@ import java.util.function.Function;
  * "Width" refers to the z direction (into / out of the screen) (defined by topProfileCurve)
  * "Thickness" refers to the normal direction of a surface to provide thickness to (+/- orientation is context dependent)
  */
-@Getter @Setter
+@Getter @Setter @EqualsAndHashCode
 public class HullSection extends Section
 {
     private StringableUnivariateFunction sideProfileCurve;

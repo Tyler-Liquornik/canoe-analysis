@@ -53,8 +53,21 @@ public class Canoe
         }
 
         loads.add(load);
-        loads.sort(Comparator.comparingDouble(Load::getX));
+        sortLoads(loads);
         return AddLoadResult.ADDED;
+    }
+
+    public void sortLoads(List<Load> loads) {
+        // Define the order to sort by type
+        Map<Class<? extends Load>, Integer> classOrder = new HashMap<>();
+        classOrder.put(PointLoad.class, 0);
+        classOrder.put(UniformLoadDistribution.class, 1);
+        classOrder.put(DiscreteLoadDistribution.class, 2);
+        classOrder.put(PiecewiseContinuousLoadDistribution.class, 3);
+
+        // Sort by type, and then by position
+        loads.sort(Comparator.comparingInt(l -> classOrder.getOrDefault(l.getClass(), -1)));
+        loads.sort(Comparator.comparingDouble(Load::getX));
     }
 
     @JsonIgnore
@@ -139,7 +152,7 @@ public class Canoe
         List<Load> loads = new ArrayList<>(this.loads);
         if (hull != null && hull.getSelfWeightDistribution() != null)
             loads.add(hull.getSelfWeightDistribution());
-
+        sortLoads(loads);
         return loads;
     }
 
@@ -171,17 +184,7 @@ public class Canoe
         if (hull != null && hull.getSelfWeightDistribution() != null) {
             loads.add(DiscreteLoadDistribution.fromHull(hull));
         }
-
-        // Define the order to sort by type
-        Map<Class<? extends Load>, Integer> classOrder = new HashMap<>();
-        classOrder.put(PointLoad.class, 0);
-        classOrder.put(UniformLoadDistribution.class, 1);
-        classOrder.put(DiscreteLoadDistribution.class, 2);
-        classOrder.put(PiecewiseContinuousLoadDistribution.class, 3);
-
-        // Sort by type, and then by position
-        loads.sort(Comparator.comparingInt(load -> classOrder.getOrDefault(load.getClass(), -1)));
-        loads.sort(Comparator.comparingDouble(Load::getX));
+        sortLoads(loads);
         return loads;
     }
 }

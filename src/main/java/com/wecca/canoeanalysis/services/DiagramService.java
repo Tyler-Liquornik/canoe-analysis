@@ -157,13 +157,6 @@ public class DiagramService {
         List<List<Point2D>> partitionedIntervals = new ArrayList<>();
         List<Double> partitionsList = new ArrayList<>(partitions);
 
-        // Testing
-        System.out.println("\nPartition Points:");
-        for (double point : partitionsList)
-        {
-            System.out.println("point = " + point);
-        }
-
         // If the first point is doubled up due to a jump discontinuity then throw away the first point (0, 0)
         // By "doubled up" I mean two points at the same x coordinate
         if (points.getFirst().getX() == 0 && points.get(1).getX() == 0)

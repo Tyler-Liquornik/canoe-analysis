@@ -168,7 +168,7 @@ public class BeamController implements Initializable
             // Only allow lengths in the specified range
             if (length >= 0.01) {
                 // Update model state to default simple rectangular prism geometry
-                canoe.setHull(SharkBaitHullLibrary.generateSimplifiedSharkBaitHullScaled(length));
+                canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(length));
 
                 // Change the label on the scale
                 axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
@@ -521,13 +521,15 @@ public class BeamController implements Initializable
             distributedMagntiudeLabel, distributedIntervalLabel, distributedTitleLabel
         ));
 
-        for (Button button : mainController.getModuleToolBarButtons()) {
-            controls.add(button);
-            double opacity = b ? 0.4 : 1.0;
-            button.setStyle("-fx-opacity: " + opacity);
-        }
-
         for (Control control : controls) {control.setDisable(b);}
+        mainController.disableAllModuleToolbarButton(b);
+
+        // Only enable the hull builder if a custom hull hasn't yet been set
+        if (canoe.getHull() != null) {
+            boolean disableHullBuilder = !canoe.getHull().equals(
+                    SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
+            mainController.disableModuleToolBarButton(disableHullBuilder, 2);
+        }
     }
 
     /**
@@ -552,16 +554,29 @@ public class BeamController implements Initializable
         }
 
         if (selectedItem != null ) {
-            // Select up the hierarchy of nested LoadTreeItems for the hull
+            // Select up the hierarchy of nested LoadTreeItems to the highest ancestor of the tree below the root
             if (selectedItem.isField())
                 selectedItem = selectedItem.getParentLoadItem();
             if (selectedItem.isNested())
                 selectedItem = selectedItem.getParentLoadItem();
+            // Deleting the hull is a special case
             if (selectedItem.getLoad() != null && selectedItem.getLoad().getType() != null &&
-                    selectedItem.getLoad().getType() == LoadType.HULL)
-                canoe.setHull(SharkBaitHullLibrary.generateSimplifiedSharkBaitHullScaled(canoe.getHull().getLength()));
-            else
-                canoe.getLoads().remove(selectedIndex);
+                    selectedItem.getLoad().getType() == LoadType.HULL) {
+                canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
+                mainController.disableModuleToolBarButton(false, 2);
+            }
+            else {
+                // If the hull is present in the treeView it will disrupt the order sync between canoe.loads and loadContainer.children, we need to adjust for this
+                boolean hullHasWeight = canoe.getHull().getSelfWeightDistribution().getForce() != 0;
+                int hullWeightLoadId = LoadTreeManagerService.getHullLoadTreeItemLoadId();
+                boolean loadIsAfterHullInTreeView = selectedItem.getLoadId() > hullWeightLoadId;
+                if (hullHasWeight && loadIsAfterHullInTreeView) {
+                    canoe.getLoads().remove(--selectedIndex);
+                    selectedIndex++;
+                }
+                else
+                    canoe.getLoads().remove(selectedIndex);
+            }
         }
         loadContainer.getChildren().remove(selectedIndex);
         LoadTreeManagerService.buildLoadTreeView(canoe);

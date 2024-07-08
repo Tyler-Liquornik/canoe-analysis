@@ -1,10 +1,11 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
-@Setter @Getter
+@Setter @Getter @EqualsAndHashCode(callSuper = true)
 public class UniformLoadDistribution extends LoadDistribution {
 
     @JsonIgnore

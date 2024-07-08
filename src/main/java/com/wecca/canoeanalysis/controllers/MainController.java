@@ -245,6 +245,28 @@ public class MainController implements Initializable {
         toolBarPane.getChildren().addAll(1, moduleToolBarButtons);
     }
 
+    /**
+     * Disable a module toolbar button (doesn't include the hamburger, minus, or X buttons)
+     * @param b choose whether to enable or disable
+     * @param index to choose which button to disable
+     */
+    public void disableModuleToolBarButton(boolean b, int index) {
+        Button button = getModuleToolBarButtons().get(index);
+        double opacity = b ? 0.4 : 1.0;
+        button.setStyle("-fx-opacity: " + opacity);
+        button.setDisable(b);
+    }
+
+    /**
+     * Disable all module toolbar buttons (doesn't include the hamburger, minus, or X buttons)
+     * @param b choose whether to enable or disable
+     */
+    public void disableAllModuleToolbarButton(boolean b) {
+        for (int i = 0; i < getModuleToolBarButtons().size(); i++) {
+            disableModuleToolBarButton(b, i);
+        }
+    }
+
     public void resetToolBarButtons() {
         if (!moduleToolBarButtons.isEmpty())
         {

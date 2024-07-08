@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.models.functions;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import java.util.function.Function;
@@ -11,7 +12,7 @@ import java.util.regex.Pattern;
  * For now, this will serve as the only function to define hull shape
  * More will be added later
  */
-@Getter @Setter
+@Getter @Setter @EqualsAndHashCode
 public class VertexFormParabola implements StringableUnivariateFunction {
 
     @JsonIgnore

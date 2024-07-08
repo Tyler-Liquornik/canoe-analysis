@@ -164,4 +164,18 @@ public class LoadTreeManagerService {
 
         return loadTreeItem;
     }
+
+    /**
+     * @return the loadId of the hull weight, or -1 if no hull weight is present in the tree
+     */
+    public static int getHullLoadTreeItemLoadId() {
+        for (TreeItem<String> child : root.getChildren()) {
+            if (child instanceof LoadTreeItem loadTreeItem && loadTreeItem.getLoad() != null) {
+                if (loadTreeItem.getLoad().getType() == LoadType.HULL) {
+                    return loadTreeItem.getLoadId();
+                }
+            }
+        }
+        return -1;
+    }
 }

@@ -2,6 +2,7 @@ package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.math3.analysis.UnivariateFunction;
@@ -9,7 +10,7 @@ import org.apache.commons.math3.optim.MaxEval;
 
 import java.util.*;
 
-@Getter @Setter
+@Getter @Setter @EqualsAndHashCode(callSuper = true)
 public class PiecewiseContinuousLoadDistribution extends LoadDistribution {
 
     private TreeMap<Section, UnivariateFunction> pieces;

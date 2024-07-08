@@ -1,11 +1,12 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Setter @Getter @NoArgsConstructor
+@Setter @Getter @NoArgsConstructor @EqualsAndHashCode(callSuper = true)
 public class PointLoad extends Load
 {
     private double force;
@@ -22,5 +23,10 @@ public class PointLoad extends Load
 
     public PointLoad(double force, double x, boolean isSupport) {
         this(LoadType.POINT_LOAD, force, x, isSupport);
+    }
+
+    @Override
+    public double getMaxSignedValue() {
+        return getForce();
     }
 }

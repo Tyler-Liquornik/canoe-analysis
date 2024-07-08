@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 
@@ -12,9 +13,8 @@ import java.util.*;
  * Note: Written with the factory pattern as multiple constructor with a single list as a parameter is not allowed
  * This is due to the type erasure implementation of Java generics
  */
-@Getter
-public
-class DiscreteLoadDistribution extends Load {
+@Getter @EqualsAndHashCode(callSuper = true)
+public class DiscreteLoadDistribution extends Load {
     private final List<UniformLoadDistribution> loads;
 
     /**

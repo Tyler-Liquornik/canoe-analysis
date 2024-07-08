@@ -51,12 +51,12 @@ public class SharkBaitHullLibrary {
     }
 
     /**
-     * Returns a hull with the geometry of the rectangular prism that encases generateSharkBaitHullScaled, with material densities at 0.
+     * Returns a hull with the geometry of the rectangular prism that encases the scaled Shark Bait Hull
      * This means that the hull has no mass of weight, and a self weight distribution of f(x) = 0
      * @param length the length to scale to
      * @return the scaled hull
      */
-    public static Hull generateSimplifiedSharkBaitHullScaled(double length) {
+    public static Hull generateDefaultHull(double length) {
         // Scale compared to the actual length of Shark Bait
         scalingFactor = length / SHARK_BAIT_LENGTH;
         return new Hull(length, 0.4 * scalingFactor, 0.7 * scalingFactor);
