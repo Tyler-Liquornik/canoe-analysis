@@ -123,3 +123,5 @@ I've included these here in case burningwave has future issues, however it's pos
 --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=com.jfoenix  --add-exports javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix
 
 -->
+
+<!--Test commit author-->
