@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -13,10 +14,11 @@ import java.util.*;
 @Getter @Setter @EqualsAndHashCode(callSuper = true)
 public class PiecewiseContinuousLoadDistribution extends LoadDistribution {
 
+    @JsonProperty("pieces")
     private TreeMap<Section, UnivariateFunction> pieces;
 
     public PiecewiseContinuousLoadDistribution(LoadType type, List<UnivariateFunction> pieces, List<Section> subSections) {
-        super(type);
+        super(type, new Section(subSections.getFirst().getX(), subSections.getLast().getRx()));
         CalculusUtils.validatePiecewiseContinuity(pieces, subSections);
         this.pieces = new TreeMap<>(Comparator.comparingDouble(Section::getX));
         for (int i = 0; i < pieces.size(); i++) {

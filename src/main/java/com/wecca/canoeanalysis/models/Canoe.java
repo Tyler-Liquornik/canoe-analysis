@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,8 +19,9 @@ import java.util.*;
 @Getter @EqualsAndHashCode
 public class Canoe
 {
+    @JsonProperty("loads")
     private final ArrayList<Load> loads;
-    @Setter
+    @JsonProperty("hull") @Setter
     private Hull hull;
 
     public Canoe() {

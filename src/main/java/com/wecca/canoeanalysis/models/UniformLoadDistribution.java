@@ -10,10 +10,9 @@ public class UniformLoadDistribution extends LoadDistribution {
 
     @JsonIgnore
     private double magnitude;
-    private Section section;
 
     public UniformLoadDistribution(LoadType type, double magnitude, double x, double rx) {
-        super(type);
+        super(type, new Section(x, rx));
         this.magnitude = magnitude;
         this.section = new Section(x, rx);
     }

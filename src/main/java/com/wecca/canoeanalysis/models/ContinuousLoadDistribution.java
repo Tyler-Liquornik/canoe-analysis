@@ -1,6 +1,8 @@
 package com.wecca.canoeanalysis.models;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -11,7 +13,9 @@ import java.util.List;
 @Getter @EqualsAndHashCode(callSuper = true)
 public class ContinuousLoadDistribution extends PiecewiseContinuousLoadDistribution {
 
+    @JsonProperty("distribution")
     private final UnivariateFunction distribution; // in kN/m by default
+    @JsonProperty("section")
     private final Section section;
 
     /**

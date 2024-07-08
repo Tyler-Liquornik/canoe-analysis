@@ -445,7 +445,7 @@ public class BeamController implements Initializable
      * This entails two supports at each end of the canoe, symmetrically offset from the beam bounds
      */
     private void solveStandSystem() {
-        List<PointLoad> supportLoads = SolverService.solveStandSystem(canoe);
+        List<PointLoad> supportLoads = BeamSolverService.solveStandSystem(canoe);
         for (PointLoad supportLoad : supportLoads) {
             AddLoadResult addResult = canoe.addLoad(supportLoad);
             renderPointLoadGraphic(supportLoad, addResult);
@@ -465,7 +465,7 @@ public class BeamController implements Initializable
      * This entails a buoyancy distribution that keeps the canoe afloat
      */
     private void solveFloatingSystem() {
-        PiecewiseContinuousLoadDistribution buoyancy = SolverService.solveFloatingSystem(canoe);
+        PiecewiseContinuousLoadDistribution buoyancy = BeamSolverService.solveFloatingSystem(canoe);
         canoe.addLoad(buoyancy);
         addPiecewise(buoyancy);
     }
@@ -618,7 +618,7 @@ public class BeamController implements Initializable
      * This populates the list view and beam graphic with the new model
      */
     public void uploadCanoe() {
-        MarshallingService.setBeamController(this);
+        CanoeMarshallingService.setBeamController(this);
 
         // Alert the user they will be overriding the current loads on the canoe by uploading a new one
         if (!canoe.getLoads().isEmpty())
@@ -627,7 +627,7 @@ public class BeamController implements Initializable
             WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view.fxml", 350, 230);
         }
         else
-            MarshallingService.importCanoeFromYAML(mainController.getPrimaryStage());
+            CanoeMarshallingService.importCanoeFromYAML(mainController.getPrimaryStage());
     }
 
     public void setCanoe(Canoe canoe) {
@@ -648,7 +648,7 @@ public class BeamController implements Initializable
      * This can be uploaded later with uploadCanoe() or manually modified
      */
     public void downloadCanoe() {
-        File downloadedFile = MarshallingService.exportCanoeToYAML(canoe, mainController.getPrimaryStage());
+        File downloadedFile = CanoeMarshallingService.exportCanoeToYAML(canoe, mainController.getPrimaryStage());
 
         String message = downloadedFile != null ? "Successfully downloaded canoe as \"" + downloadedFile.getName()
                 + "\" to " + downloadedFile.getParentFile().getName() : "Download cancelled";

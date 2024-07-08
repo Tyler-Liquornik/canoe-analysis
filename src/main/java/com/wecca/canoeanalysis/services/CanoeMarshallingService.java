@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 //TODO: completely rework with new hull model
-public class MarshallingService {
+public class CanoeMarshallingService {
 
     @Setter
     private static MainController mainController;

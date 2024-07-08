@@ -1,8 +1,7 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.wecca.canoeanalysis.models.functions.StringableUnivariateFunction;
-import com.wecca.canoeanalysis.models.functions.VertexFormParabola;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
@@ -46,24 +45,33 @@ import java.util.function.Function;
 @Getter @Setter @EqualsAndHashCode
 public class HullSection extends Section
 {
-    private StringableUnivariateFunction sideProfileCurve;
-    private StringableUnivariateFunction topProfileCurve;
+    @JsonProperty("sideProfileCurve")
+    private UnivariateFunction sideProfileCurve;
+    @JsonProperty("topProfileCurve")
+    private UnivariateFunction topProfileCurve;
+    @JsonProperty("wallsThickness")
     private double wallsThickness;
     @JsonIgnore
     private double concreteDensity; // [kg/m^3]
+    @JsonProperty("isFilledBulkhead")
     private boolean isFilledBulkhead;
     @JsonIgnore
     private double bulkheadDensity; // [kg/m^3]
 
-    // Adjusts for difference in area of the section's curvature of the front profile view at a given height h
-    // See: https://www.desmos.com/calculator/9ookcwgenx
-    // TLDR: Uses the front profile of 2024's Shark Bait as a rough approximation for all reasonable future front profiles
-    // Extrapolation occurs at heights greater than Shark Bait's max height of 0.4m
+    /**
+     * Adjusts for difference in area of the section's curvature of the front profile view at a given height h
+     * See: https://www.desmos.com/calculator/9ookcwgenx
+     * TLDR: Uses the front profile of 2024's Shark Bait as a rough approximation for all reasonable future front profiles
+     * The hull curve is scaled based on the length of the user's hull design compared to Shark Bait
+     *
+     * This function encodes a relationship on the difference between a hull front profile, and it's encasing rectangle
+     * This idea is then extended into a function of waterline height h to get an integral defined function
+     * This is inefficient because this function is called for every h in the iterative floating case solution algorithm
+     * Instead I have built a polynomial regression fit for it which is faster to evaluate
+     * The 7th degree polynomial has R^2 = 0.9967 for the fully accurate function and was solved on Desmos
+     */
     @JsonIgnore
     private final Function<Double, Double> crossSectionalAreaAdjustmentFactorFunction = h -> {
-        // Build and scale the coefficients of the polynomial
-        // This 7th degree polynomial regression has R^2 = 0.9967, removing the need for the actual integral defined function
-        // While more accurate, the frequent need to call this function would mean evaluating many integrals per second
         double[] coefficients = new double[] {0, 17.771, -210.367, 1409.91, -5420.6, 11769.4, -13242.7, 5880.62};
         for (int i = 0; i < coefficients.length; i++) {
             coefficients[i] = coefficients[i] / Math.pow(SharkBaitHullLibrary.scalingFactor, i);
@@ -84,10 +92,10 @@ public class HullSection extends Section
      * @param sideProfileCurve the function that defines the shape of the hull in this section in the xy-plane bounded above by y = 0
      * @param topProfileCurve the function that defines half the shape of the hull in the xz-plane bounded below by y = 0 (reflects across the line x = 0 to give the other half)
      */
-    public HullSection(StringableUnivariateFunction sideProfileCurve, StringableUnivariateFunction topProfileCurve, double start, double end, double thickness, boolean hasBulkhead) {
+    public HullSection(UnivariateFunction sideProfileCurve, UnivariateFunction topProfileCurve, double start, double end, double thickness, boolean hasBulkhead) {
         super(start, end);
-        validateSign(sideProfileCurve.getFunction(), false);
-        validateSign(topProfileCurve.getFunction(), true);
+        validateSign(sideProfileCurve::value, false);
+        validateSign(topProfileCurve::value, true);
         this.sideProfileCurve = sideProfileCurve;
         this.topProfileCurve = topProfileCurve;
         this.wallsThickness = thickness;

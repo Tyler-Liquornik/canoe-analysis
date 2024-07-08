@@ -1,18 +1,12 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
-@Setter @Getter @AllArgsConstructor @NoArgsConstructor
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = PointLoad.class, names = {"Point Load"}),
-        @JsonSubTypes.Type(value = UniformLoadDistribution.class, name = "Distributed Load")
-})
-@EqualsAndHashCode
+@Setter @Getter @AllArgsConstructor @NoArgsConstructor @EqualsAndHashCode
 public abstract class Load {
+    @JsonProperty("type")
     protected LoadType type;
     @JsonIgnore
     public abstract double getMaxSignedValue();

@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,8 +17,11 @@ import java.util.TreeSet;
 
 @Getter @Setter @EqualsAndHashCode
 public class Hull {
+    @JsonProperty("concreteDensity")
     private double concreteDensity; // [kg/m^3]
+    @JsonProperty("bulkheadDensity")
     private double bulkheadDensity; // [kg/m^3]
+    @JsonProperty("hullSections")
     private List<HullSection> hullSections;
 
     public Hull(double concreteDensity, double bulkheadDensity, List<HullSection> hullSections) {

@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.commons.math3.analysis.UnivariateFunction;
@@ -15,6 +16,7 @@ import java.util.*;
  */
 @Getter @EqualsAndHashCode(callSuper = true)
 public class DiscreteLoadDistribution extends Load {
+    @JsonProperty("loads")
     private final List<UniformLoadDistribution> loads;
 
     /**
