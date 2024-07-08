@@ -2,7 +2,7 @@ package com.wecca.canoeanalysis.utils;
 
 import com.wecca.canoeanalysis.models.Hull;
 import com.wecca.canoeanalysis.models.HullSection;
-import com.wecca.canoeanalysis.models.VertexFormParabola;
+import com.wecca.canoeanalysis.models.function.VertexFormParabola;
 
 import java.util.ArrayList;
 import java.util.List;

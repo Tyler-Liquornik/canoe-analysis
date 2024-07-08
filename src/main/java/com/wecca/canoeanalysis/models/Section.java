@@ -1,6 +1,8 @@
 package com.wecca.canoeanalysis.models;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -10,10 +12,13 @@ import lombok.Getter;
  */
 @Getter @EqualsAndHashCode
 public class Section {
+    @JsonProperty("x")
     protected double x;
+    @JsonProperty("rx")
     protected double rx;
 
-    public Section(double x, double rx) {
+    @JsonCreator
+    public Section(@JsonProperty("x") double x, @JsonProperty("rx") double rx) {
         if (rx <= x || x < 0) {
             throw new IllegalArgumentException("Invalid values: start must be non-negative and less than end.");
         }

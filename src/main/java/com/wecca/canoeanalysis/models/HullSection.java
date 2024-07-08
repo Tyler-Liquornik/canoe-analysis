@@ -2,6 +2,9 @@ package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.wecca.canoeanalysis.models.function.VertexFormParabola;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
@@ -46,8 +49,16 @@ import java.util.function.Function;
 public class HullSection extends Section
 {
     @JsonProperty("sideProfileCurve")
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+    @JsonSubTypes({
+            @JsonSubTypes.Type(value = VertexFormParabola.class, name = "VertexFormParabola")
+    })
     private UnivariateFunction sideProfileCurve;
     @JsonProperty("topProfileCurve")
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+    @JsonSubTypes({
+            @JsonSubTypes.Type(value = VertexFormParabola.class, name = "VertexFormParabola")
+    })
     private UnivariateFunction topProfileCurve;
     @JsonProperty("wallsThickness")
     private double wallsThickness;
@@ -86,19 +97,24 @@ public class HullSection extends Section
     };
 
     /**
-     * @param start the start x position of the section's profile curve interval
-     * @param end the end x position of the section's profile curve interval
+     * @param x the start x position of the section's profile curve interval
+     * @param rx the end x position of the section's profile curve interval
      * @param hasBulkhead whether the empty space between the inner hull walls should be filled with a styrofoam bulkhead
      * @param sideProfileCurve the function that defines the shape of the hull in this section in the xy-plane bounded above by y = 0
      * @param topProfileCurve the function that defines half the shape of the hull in the xz-plane bounded below by y = 0 (reflects across the line x = 0 to give the other half)
      */
-    public HullSection(UnivariateFunction sideProfileCurve, UnivariateFunction topProfileCurve, double start, double end, double thickness, boolean hasBulkhead) {
-        super(start, end);
+    public HullSection(@JsonProperty("sideProfileCurve") UnivariateFunction sideProfileCurve,
+                       @JsonProperty("topProfileCurve") UnivariateFunction topProfileCurve,
+                       @JsonProperty("x") double x,
+                       @JsonProperty("rx") double rx,
+                       @JsonProperty("wallsThickness") double wallsThickness,
+                       @JsonProperty("hasBulkhead") boolean hasBulkhead) {
+        super(x, rx);
         validateSign(sideProfileCurve::value, false);
         validateSign(topProfileCurve::value, true);
         this.sideProfileCurve = sideProfileCurve;
         this.topProfileCurve = topProfileCurve;
-        this.wallsThickness = thickness;
+        this.wallsThickness = wallsThickness;
         this.isFilledBulkhead = hasBulkhead;
     }
 

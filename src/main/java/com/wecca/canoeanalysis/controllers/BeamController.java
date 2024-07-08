@@ -502,6 +502,7 @@ public class BeamController implements Initializable
         solveSystemButton.setText("Solve System");
         solveSystemButton.setOnAction(e -> solveSystem());
         generateGraphsButton.setDisable(true);
+        LoadTreeManagerService.buildLoadTreeView(canoe);
         disableLoadingControls(false);
     }
 
@@ -621,8 +622,7 @@ public class BeamController implements Initializable
         CanoeMarshallingService.setBeamController(this);
 
         // Alert the user they will be overriding the current loads on the canoe by uploading a new one
-        if (!canoe.getLoads().isEmpty())
-        {
+        if (!canoe.getLoads().isEmpty()) {
             UploadAlertController.setBeamController(this);
             WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view.fxml", 350, 230);
         }

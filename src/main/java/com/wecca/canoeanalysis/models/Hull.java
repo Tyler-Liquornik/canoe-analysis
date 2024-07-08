@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.models;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
@@ -24,7 +25,10 @@ public class Hull {
     @JsonProperty("hullSections")
     private List<HullSection> hullSections;
 
-    public Hull(double concreteDensity, double bulkheadDensity, List<HullSection> hullSections) {
+    @JsonCreator
+    public Hull(@JsonProperty("concreteDensity") double concreteDensity,
+                @JsonProperty("bulkheadDensity") double bulkheadDensity,
+                @JsonProperty("hullSections") List<HullSection> hullSections) {
         hullSections.sort(Comparator.comparingDouble(Section::getX));
         validateContinuousHullShape(hullSections);
         validateFloorThickness(hullSections);

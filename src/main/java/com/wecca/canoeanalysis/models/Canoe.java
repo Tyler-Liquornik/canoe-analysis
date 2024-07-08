@@ -21,7 +21,7 @@ public class Canoe
 {
     @JsonProperty("loads")
     private final ArrayList<Load> loads;
-    @JsonProperty("hull") @Setter
+    @JsonProperty("hull")
     private Hull hull;
 
     public Canoe() {
@@ -29,7 +29,16 @@ public class Canoe
         this.loads = new ArrayList<>();
     }
 
+    public void setHull(Hull hull) {
+        if (hull.getLength() < 0.01)
+            throw new IllegalArgumentException("Hull must be at least 0.01m in length");
+        this.hull = hull;
+    }
+
     public AddLoadResult addLoad(Load load) {
+        if (!isLoadWithinCanoeLength(load))
+            throw new IllegalArgumentException("Load must be contained inside the canoe's length");
+
         if (load instanceof PointLoad pLoad) {
             // Do not add the load if it is zero valued unless if is a support
             // Zero-valued supports are still added as markers for the model and ListView
@@ -57,6 +66,29 @@ public class Canoe
         loads.add(load);
         sortLoads(loads);
         return AddLoadResult.ADDED;
+    }
+
+    /**
+     * Check that a load is positioned within the canoe's hull
+     * @param load the load to check
+     * @return if the validation is passed
+     */
+    private boolean isLoadWithinCanoeLength(Load load) {
+        double hullLength = getHull().getLength();
+
+        // Check if a point load has its position inside the hull length
+        if (load instanceof PointLoad pLoad) {
+            return 0 <= pLoad.getX() && pLoad.getX() <= hullLength;
+        }
+
+        // Check if a load distribution has its full interval inside the hull length
+        if (load instanceof LoadDistribution dist) {
+            boolean isDistStartWithinBounds = 0 <= dist.getX() && dist.getX() <= hullLength;
+            boolean isDistEndWithinBounds = 0 <= dist.getSection().getRx() && dist.getSection().getRx() <= hullLength;
+            return isDistStartWithinBounds || isDistEndWithinBounds;
+        }
+
+        return false;
     }
 
     public void sortLoads(List<Load> loads) {

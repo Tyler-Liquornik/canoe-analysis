@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.models;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
@@ -16,6 +17,16 @@ public class PointLoad extends Load
     private double x;
     @JsonIgnore
     private boolean isSupport;
+
+    @JsonCreator
+    public PointLoad(@JsonProperty("type") LoadType type,
+                     @JsonProperty("force") double force,
+                     @JsonProperty("x") double x) {
+        super(type);
+        this.force = force;
+        this.x = x;
+        this.isSupport = false;
+    }
 
     public PointLoad(LoadType type, double force, double x, boolean isSupport) {
         super(type);
