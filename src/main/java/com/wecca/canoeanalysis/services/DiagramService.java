@@ -2,7 +2,8 @@ package com.wecca.canoeanalysis.services;
 
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.DiagramInterval;
-import com.wecca.canoeanalysis.models.*;
+import com.wecca.canoeanalysis.models.canoe.Canoe;
+import com.wecca.canoeanalysis.models.load.*;
 import javafx.geometry.Point2D;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;

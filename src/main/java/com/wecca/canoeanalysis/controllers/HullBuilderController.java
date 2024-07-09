@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.controllers;
 
-import com.wecca.canoeanalysis.models.Canoe;
-import com.wecca.canoeanalysis.models.Hull;
+import com.wecca.canoeanalysis.models.canoe.Canoe;
+import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.services.LoadTreeManagerService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;

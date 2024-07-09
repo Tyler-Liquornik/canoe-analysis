@@ -1,6 +1,6 @@
 package com.wecca.canoeanalysis.components.controls;
 
-import com.wecca.canoeanalysis.models.Load;
+import com.wecca.canoeanalysis.models.load.Load;
 import javafx.scene.control.TreeItem;
 import lombok.Getter;
 import lombok.Setter;

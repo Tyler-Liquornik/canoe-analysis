@@ -5,8 +5,9 @@ import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
 import com.wecca.canoeanalysis.components.graphics.*;
+import com.wecca.canoeanalysis.models.canoe.Canoe;
+import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.services.DiagramService;
-import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.utils.ControlUtils;
 import com.wecca.canoeanalysis.utils.GraphicsUtils;
@@ -636,7 +637,7 @@ public class BeamController implements Initializable
      * This populates the list view and beam graphic with the new model
      */
     public void uploadCanoe() {
-        CanoeMarshallingService.setBeamController(this);
+        YamlMarshallingService.setBeamController(this);
 
         // Alert the user they will be overriding the current loads on the canoe by uploading a new one
         if (!canoe.getAllLoads().isEmpty()) {
@@ -644,7 +645,7 @@ public class BeamController implements Initializable
             WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view.fxml", 350, 230);
         }
         else
-            CanoeMarshallingService.importCanoeFromYAML(mainController.getPrimaryStage());
+            YamlMarshallingService.importCanoeFromYAML(mainController.getPrimaryStage());
     }
 
     /**
@@ -669,7 +670,7 @@ public class BeamController implements Initializable
      * This can be uploaded later with uploadCanoe() or manually modified
      */
     public void downloadCanoe() {
-        File downloadedFile = CanoeMarshallingService.exportCanoeToYAML(canoe, mainController.getPrimaryStage());
+        File downloadedFile = YamlMarshallingService.exportCanoeToYAML(canoe, mainController.getPrimaryStage());
 
         String message = downloadedFile != null ? "Successfully downloaded canoe as \"" + downloadedFile.getName()
                 + "\" to " + downloadedFile.getParentFile().getName() : "Download cancelled";

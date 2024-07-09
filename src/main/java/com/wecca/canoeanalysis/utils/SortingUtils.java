@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.utils;
 
 import com.wecca.canoeanalysis.components.graphics.*;
-import com.wecca.canoeanalysis.models.*;
+import com.wecca.canoeanalysis.models.load.*;
 
 import java.util.Comparator;
 import java.util.HashMap;

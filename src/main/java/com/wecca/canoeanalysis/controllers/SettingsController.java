@@ -1,5 +1,7 @@
 package com.wecca.canoeanalysis.controllers;
 
+import com.wecca.canoeanalysis.models.data.Settings;
+import com.wecca.canoeanalysis.services.YamlMarshallingService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
@@ -22,7 +24,9 @@ public class SettingsController implements Initializable {
     }
 
     public void setPrimaryColor(ActionEvent actionEvent) throws IOException, URISyntaxException {
-        ColorManagerService.putColorPalette("primary", getButtonBackgroundAsColorHexString(((Button) actionEvent.getSource())));
+        String selectedButtonColorHex = getButtonBackgroundAsColorHexString(((Button) actionEvent.getSource()));
+        ColorManagerService.putColorPalette("primary", selectedButtonColorHex);
+        YamlMarshallingService.saveSettings(new Settings(selectedButtonColorHex));
     }
 
     public static String getButtonBackgroundAsColorHexString(Button button)

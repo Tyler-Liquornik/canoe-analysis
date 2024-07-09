@@ -1,8 +1,12 @@
-package com.wecca.canoeanalysis.models;
+package com.wecca.canoeanalysis.models.canoe;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.models.*;
+import com.wecca.canoeanalysis.models.load.DiscreteLoadDistribution;
+import com.wecca.canoeanalysis.models.load.LoadType;
+import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;

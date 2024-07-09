@@ -1,7 +1,8 @@
-package com.wecca.canoeanalysis.models;
+package com.wecca.canoeanalysis.models.load;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.models.Section;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -31,12 +32,12 @@ public class ContinuousLoadDistribution extends PiecewiseContinuousLoadDistribut
 
     @Override
     public double getForce() {
-        return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), distribution, section.x, section.rx);
+        return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), distribution, section.getX(), section.getRx());
     }
 
     @Override
     public double getX() {
-        return section.x;
+        return section.getX();
     }
 
     /**

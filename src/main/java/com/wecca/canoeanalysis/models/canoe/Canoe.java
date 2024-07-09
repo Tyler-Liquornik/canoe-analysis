@@ -1,7 +1,8 @@
-package com.wecca.canoeanalysis.models;
+package com.wecca.canoeanalysis.models.canoe;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.utils.SortingUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -198,7 +199,7 @@ public class Canoe
     public List<Load> getAllLoadsDiscretized() {
         List<Load> loads = new ArrayList<>(this.loads.stream()
                 .map(load -> load instanceof PiecewiseContinuousLoadDistribution piecewise ?
-                        DiscreteLoadDistribution.fromPiecewiseContinuous(piecewise.type, piecewise) : load)
+                        DiscreteLoadDistribution.fromPiecewiseContinuous(piecewise.getType(), piecewise) : load)
                 .toList());
 
         // Add the hull self-weight load separately

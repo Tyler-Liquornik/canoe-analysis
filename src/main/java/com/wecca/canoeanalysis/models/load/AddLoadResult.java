@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.models;
+package com.wecca.canoeanalysis.models.load;
 
 /**
  * Represents different results of adding a load to the canoe

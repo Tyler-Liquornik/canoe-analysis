@@ -1,9 +1,12 @@
-package com.wecca.canoeanalysis.models;
+package com.wecca.canoeanalysis.models.canoe;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.wecca.canoeanalysis.models.load.ContinuousLoadDistribution;
+import com.wecca.canoeanalysis.models.load.LoadType;
+import com.wecca.canoeanalysis.models.Section;
 import com.wecca.canoeanalysis.models.function.VertexFormParabola;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;

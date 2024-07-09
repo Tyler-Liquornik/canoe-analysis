@@ -1,6 +1,6 @@
 package com.wecca.canoeanalysis.utils;
 
-import com.wecca.canoeanalysis.models.PiecewiseContinuousLoadDistribution;
+import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.Section;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;

@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.models;
+package com.wecca.canoeanalysis.models.load;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;

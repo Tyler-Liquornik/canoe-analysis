@@ -6,7 +6,7 @@ import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.jfoenix.controls.JFXSnackbarLayout;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.services.CanoeMarshallingService;
+import com.wecca.canoeanalysis.services.YamlMarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
@@ -284,6 +284,6 @@ public class MainController implements Initializable {
         initializeSnackbar();
 
         // Pass references to services that require it
-        CanoeMarshallingService.setMainController(this);
+        YamlMarshallingService.setMainController(this);
     }
 }

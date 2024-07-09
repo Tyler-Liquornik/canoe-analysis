@@ -1,6 +1,9 @@
 package com.wecca.canoeanalysis.services;
 
 import com.wecca.canoeanalysis.models.*;
+import com.wecca.canoeanalysis.models.canoe.Canoe;
+import com.wecca.canoeanalysis.models.canoe.HullSection;
+import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import org.apache.commons.math3.analysis.UnivariateFunction;

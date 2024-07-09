@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis;
 
 import com.wecca.canoeanalysis.controllers.MainController;
+import com.wecca.canoeanalysis.services.YamlMarshallingService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import javafx.scene.layout.AnchorPane;
 import lombok.Getter;
@@ -50,8 +51,8 @@ public class CanoeAnalysisApplication extends Application {
         Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png");
         stage.getIcons().add(icon);
 
-        // TODO: should come from a properties file that locally persists color (and other future) preferences
-        ColorManagerService.putColorPalette("primary", "#F96C37");
+        // Load the color from the previous session or the default orange "#F96C37" on first load
+        ColorManagerService.putColorPalette("primary", YamlMarshallingService.loadSettings().getPrimaryColor());
     }
 
     public static void main(String[] args) {

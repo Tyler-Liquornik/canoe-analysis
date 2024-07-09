@@ -1,7 +1,10 @@
-package com.wecca.canoeanalysis.models;
+package com.wecca.canoeanalysis.models.load;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.models.Section;
+import com.wecca.canoeanalysis.models.canoe.Hull;
+import com.wecca.canoeanalysis.models.canoe.HullSection;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.commons.math3.analysis.UnivariateFunction;

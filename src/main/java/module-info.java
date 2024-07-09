@@ -30,4 +30,10 @@ module com.wecca.canoeanalysis {
     opens com.wecca.canoeanalysis.services.color to javafx.fxml;
     exports com.wecca.canoeanalysis.models.function;
     opens com.wecca.canoeanalysis.models.function to javafx.fxml;
+    exports com.wecca.canoeanalysis.models.load;
+    opens com.wecca.canoeanalysis.models.load to javafx.fxml;
+    exports com.wecca.canoeanalysis.models.canoe;
+    opens com.wecca.canoeanalysis.models.canoe to javafx.fxml;
+    exports com.wecca.canoeanalysis.models.data;
+    opens com.wecca.canoeanalysis.models.data to javafx.fxml;
 }
