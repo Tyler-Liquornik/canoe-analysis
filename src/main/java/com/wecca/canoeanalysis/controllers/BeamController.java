@@ -61,22 +61,22 @@ public class BeamController implements Initializable
     private double[] acceptedGraphicHeightRange;
 
     /**
-     * Toggles settings for empty load list
-     * Includes a placeholder list item, enabled/disabled status of buttons, and styling
+     * Toggles settings for empty tree view if it's considered empty (placeholder doesn't count)
      */
-    public void enableEmptyLoadTreeSettings(boolean enable) {
-        LoadTreeManagerService.enableEmptyTreeFiller(enable);
-        if (!enable) {
-            loadsTreeView.setStyle("-fx-font-weight: normal");
-            deleteLoadButton.setDisable(false);
-            clearLoadsButton.setDisable(false);
+    public void checkAndSetEmptyLoadTreeSettings() {
+        boolean isTreeViewEmpty = LoadTreeManagerService.isTreeViewEmpty();
+        LoadTreeItem root = LoadTreeManagerService.getRoot();
+        if (isTreeViewEmpty) {
+            root.getChildren().clear();
+            root.getChildrenLoadItems().clear();
+            root.addChild(new LoadTreeItem(-1, -1, "View Loads Here"));
         }
-        else {
-            // Apply settings
-            loadsTreeView.setStyle("-fx-font-weight: bold");
-            deleteLoadButton.setDisable(true);
-            clearLoadsButton.setDisable(true);
-        }
+        String fontWeight = isTreeViewEmpty ? "bold" : "normal";
+        loadsTreeView.setStyle("-fx-font-weight: " + fontWeight);
+        loadsTreeView.setRoot(root);
+        loadsTreeView.setShowRoot(false);
+        deleteLoadButton.setDisable(isTreeViewEmpty);
+        clearLoadsButton.setDisable(isTreeViewEmpty);
     }
 
     /**
@@ -160,8 +160,6 @@ public class BeamController implements Initializable
      */
     public void setLength() {
         if (InputParsingService.validateTextAsDouble(canoeLengthTextField.getText())) {
-            // Default list view message
-            enableEmptyLoadTreeSettings(true);
 
             // Convert to metric
             double length = InputParsingService.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
@@ -181,13 +179,14 @@ public class BeamController implements Initializable
                 canoeLengthTextField.setDisable(true);
                 canoeLengthComboBox.setDisable(true);
                 lengthLabel.setDisable(true);
-                loadsTreeView.setDisable(true);
                 deleteLoadButton.setDisable(true);
                 clearLoadsButton.setDisable(true);
 
                 // Set length button will now function as a reset length button
                 setCanoeLengthButton.setText("Reset Canoe");
                 setCanoeLengthButton.setOnAction(e -> resetLength());
+
+                checkAndSetEmptyLoadTreeSettings();
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
             else
@@ -205,8 +204,7 @@ public class BeamController implements Initializable
         mainController.closeSnackBar(mainController.getSnackbar());
 
         // Validate the entered numbers are doubles
-        if (InputParsingService.allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField)))
-        {
+        if (InputParsingService.allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField))) {
             double x = InputParsingService.getDistanceConverted(pointLocationComboBox, pointLocationTextField);
             double mag = InputParsingService.getLoadConverted(pointMagnitudeComboBox, pointMagnitudeTextField);
             String direction = pointDirectionComboBox.getSelectionModel().getSelectedItem();
@@ -221,16 +219,13 @@ public class BeamController implements Initializable
             else if (Math.abs(mag) < 0.01)
                 mainController.showSnackbar("Load magnitude must be at least 0.01kN");
 
-            else
-            {
-                // Removes the default list view message if this is the first load
-                enableEmptyLoadTreeSettings(false);
-
+            else {
                 // Add the load to canoe, and the load arrow on the GUI
                 PointLoad p = new PointLoad(mag, x, false);
                 AddLoadResult addResult = canoe.addLoad(p);
                 renderPointLoadGraphic(p, addResult);
                 LoadTreeManagerService.buildLoadTreeView(canoe);
+                checkAndSetEmptyLoadTreeSettings();
             }
 
         }
@@ -247,8 +242,7 @@ public class BeamController implements Initializable
 
         // Validate the entered numbers are doubles
         if (InputParsingService.allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
-                distributedIntervalTextFieldR)))
-        {
+                distributedIntervalTextFieldR))) {
             double x = InputParsingService.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldL);
             double xR = InputParsingService.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldR);
             double mag = InputParsingService.getLoadConverted(distributedMagnitudeComboBox, distributedMagnitudeTextField);
@@ -265,18 +259,15 @@ public class BeamController implements Initializable
             else if (Math.abs(mag) < 0.01)
                 mainController.showSnackbar("Load magnitude must be at least 0.01kN");
 
-            else
-                {
-                    // Removes the default list view message if this is the first load
-                    enableEmptyLoadTreeSettings(false);
-
-                    // Add the load to canoe, and update ui state
-                    UniformLoadDistribution d = new UniformLoadDistribution(mag, x, xR);
-                    mainController.closeSnackBar(mainController.getSnackbar());
-                    canoe.addLoad(d);
-                    renderLoadGraphics();
-                    LoadTreeManagerService.buildLoadTreeView(canoe);
-                }
+            else {
+                // Add the load to canoe, and update ui state
+                UniformLoadDistribution d = new UniformLoadDistribution(mag, x, xR);
+                mainController.closeSnackBar(mainController.getSnackbar());
+                canoe.addLoad(d);
+                renderLoadGraphics();
+                LoadTreeManagerService.buildLoadTreeView(canoe);
+                checkAndSetEmptyLoadTreeSettings();
+            }
         }
         else
             mainController.showSnackbar("One or more entered values are not valid numbers");
@@ -294,12 +285,10 @@ public class BeamController implements Initializable
         // Clear previous alert labels
         mainController.closeSnackBar(mainController.getSnackbar());
 
-        // Removes the default list view message if this is the first load
-        enableEmptyLoadTreeSettings(false);
-
         // Add the load to canoe, and update ui state
         renderLoadGraphics();
         LoadTreeManagerService.buildLoadTreeView(canoe);
+        checkAndSetEmptyLoadTreeSettings();
     }
 
     /**
@@ -438,10 +427,10 @@ public class BeamController implements Initializable
         solveSystemButton.setText("Undo Solve");
         solveSystemButton.setDisable(false);
         LoadTreeManagerService.buildLoadTreeView(canoe);
-        if (LoadTreeManagerService.getRoot().getChildren().isEmpty()) {
-            LoadTreeManagerService.enableEmptyTreeFiller(true);
-            loadsTreeView.setDisable(true);
-        }
+        checkAndSetEmptyLoadTreeSettings();
+        deleteLoadButton.setDisable(true);
+        clearLoadsButton.setDisable(true);
+        mainController.disableModuleToolBarButton(true, 0);
         updateViewOrder();
     }
 
@@ -455,7 +444,7 @@ public class BeamController implements Initializable
             AddLoadResult addResult = canoe.addLoad(supportLoad);
             renderPointLoadGraphic(supportLoad, addResult);
         }
-        enableEmptyLoadTreeSettings(false); // solve always produces loads as zero-valued point supports are included in all models
+        checkAndSetEmptyLoadTreeSettings();
     }
 
     /**
@@ -511,12 +500,9 @@ public class BeamController implements Initializable
         generateGraphsButton.setDisable(true);
         LoadTreeManagerService.buildLoadTreeView(canoe);
         disableLoadingControls(false);
-        if (LoadTreeManagerService.getRoot().getChildren().isEmpty()) {
-            LoadTreeManagerService.enableEmptyTreeFiller(true);
-            loadsTreeView.setDisable(true);
-            deleteLoadButton.setDisable(true);
-            clearLoadsButton.setDisable(true);
-        }
+        boolean isHullPresent = canoe.getHull().getWeight() != 0;
+        mainController.disableModuleToolBarButton(isHullPresent, 0);
+        checkAndSetEmptyLoadTreeSettings();
     }
 
     /**
@@ -542,7 +528,7 @@ public class BeamController implements Initializable
         if (canoe.getHull() != null) {
             boolean disableHullBuilder = !canoe.getHull().equals(
                     SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
-            mainController.disableModuleToolBarButton(disableHullBuilder, 2);
+            mainController.disableModuleToolBarButton(disableHullBuilder, 0);
         }
     }
 
@@ -577,7 +563,7 @@ public class BeamController implements Initializable
             if (selectedItem.getLoad() != null && selectedItem.getLoad().getType() != null &&
                     selectedItem.getLoad().getType() == LoadType.HULL) {
                 canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
-                mainController.disableModuleToolBarButton(false, 2);
+                mainController.disableModuleToolBarButton(false, 0);
             }
             else {
                 // If the hull is present in the treeView it will disrupt the order sync between canoe.loads and loadContainer.children, we need to adjust for this
@@ -594,7 +580,7 @@ public class BeamController implements Initializable
         LoadTreeManagerService.buildLoadTreeView(canoe);
 
         if (loadContainer.getChildren().isEmpty())
-            enableEmptyLoadTreeSettings(true);
+            checkAndSetEmptyLoadTreeSettings();
     }
 
     /**
@@ -629,7 +615,7 @@ public class BeamController implements Initializable
         canoe.getLoads().clear();
         canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
         LoadTreeManagerService.buildLoadTreeView(canoe);
-        enableEmptyLoadTreeSettings(true);
+        checkAndSetEmptyLoadTreeSettings();
     }
 
     /**
@@ -658,10 +644,10 @@ public class BeamController implements Initializable
             this.canoe = canoe;
 
             // Update UI to new canoe
-            enableEmptyLoadTreeSettings(canoe.getLoads().isEmpty());
             renderLoadGraphics();
             LoadTreeManagerService.buildLoadTreeView(this.canoe);
             axisLabelR.setText(String.format("%.2f m", this.canoe.getHull().getLength()));
+            checkAndSetEmptyLoadTreeSettings();
         }
     }
 
@@ -693,9 +679,9 @@ public class BeamController implements Initializable
      */
     public void addModuleToolBarButtons() {
         List<Button> beamModuleButtons = new ArrayList<>();
+        beamModuleButtons.add(mainController.getIconButton("WRENCH", e -> openHullBuilder()));
         beamModuleButtons.add(mainController.getIconButton("ARROW_CIRCLE_O_DOWN", e -> downloadCanoe()));
         beamModuleButtons.add(mainController.getIconButton("ARROW_CIRCLE_O_UP", e -> uploadCanoe()));
-        beamModuleButtons.add(mainController.getIconButton("WRENCH", e -> openHullBuilder()));
         mainController.resetToolBarButtons();
         mainController.addToolBarButtons(beamModuleButtons);
     }
@@ -720,7 +706,7 @@ public class BeamController implements Initializable
         // Load tree init
         LoadTreeManagerService.setBeamController(this);
         LoadTreeManagerService.setLoadsTreeView(loadsTreeView);
-        enableEmptyLoadTreeSettings(true);
+        checkAndSetEmptyLoadTreeSettings();
         JFXDepthManager.setDepth(loadsTreeView, 4);
 
         // Radio Buttons init

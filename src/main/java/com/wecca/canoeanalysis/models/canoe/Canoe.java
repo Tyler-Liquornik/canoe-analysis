@@ -172,7 +172,7 @@ public class Canoe
     @JsonIgnore
     public List<Load> getAllLoads() {
         List<Load> loads = new ArrayList<>(this.loads);
-        if (hull != null && hull.getSelfWeightDistribution() != null)
+        if (hull.getSelfWeightDistribution() != null)
             loads.add(hull.getSelfWeightDistribution());
         SortingUtils.sortLoads(loads);
         return loads;
@@ -203,7 +203,7 @@ public class Canoe
                 .toList());
 
         // Add the hull self-weight load separately
-        if (hull != null && hull.getSelfWeightDistribution() != null) {
+        if (hull.getSelfWeightDistribution() != null) {
             loads.add(DiscreteLoadDistribution.fromHull(hull));
         }
         SortingUtils.sortLoads(loads);

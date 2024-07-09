@@ -37,10 +37,10 @@ public class HullBuilderController implements Initializable {
         canoe.setHull(hull);
         beamController.setCanoe(canoe);
         mainController.showSnackbar("Successfully set hull to Shark Bait");
-        beamController.enableEmptyLoadTreeSettings(false);
+        beamController.checkAndSetEmptyLoadTreeSettings();
         LoadTreeManagerService.buildLoadTreeView(canoe);
         beamController.renderLoadGraphics();
-        mainController.disableModuleToolBarButton(true, 2);
+        mainController.disableModuleToolBarButton(true, 0);
         closeWindow(e);
 
         // Logging

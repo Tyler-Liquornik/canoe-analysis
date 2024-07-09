@@ -49,16 +49,13 @@ public class LoadTreeManagerService {
     }
 
     /**
-     * Clear the tree and add text as a filler
-     * @param enable weather to enable the text with an empty tree
+     * @return true if there are no tree items in the tree of there's only the empty tree filler (doesn't count)
      */
-    public static void enableEmptyTreeFiller(boolean enable) {
-        root.getChildren().clear();
-        root.getChildrenLoadItems().clear();
-        if (enable)
-            root.addChild(new LoadTreeItem(-1, -1, "View Loads Here"));
-        loadsTreeView.setRoot(root);
-        loadsTreeView.setShowRoot(false);
+    public static boolean isTreeViewEmpty() {
+        if (root.getChildren().isEmpty())
+            return true;
+        // Empty filler tree filler
+        return root.getChildren().size() == 1 && root.getChildren().getFirst() instanceof LoadTreeItem loadTreeItem && loadTreeItem.getLoadId() == -1;
     }
 
     /**

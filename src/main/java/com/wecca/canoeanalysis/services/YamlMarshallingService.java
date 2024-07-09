@@ -97,7 +97,7 @@ public class YamlMarshallingService {
                 adjustedCanoe.setHull(canoe.getHull());
                 boolean disableHullBuilder = !adjustedCanoe.getHull().equals(
                         SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
-                mainController.disableModuleToolBarButton(disableHullBuilder, 2);
+                mainController.disableModuleToolBarButton(disableHullBuilder, 0);
                 for (Load load : canoe.getLoads())
                     adjustedCanoe.addLoad(load);
                 beamController.setCanoe(adjustedCanoe);
