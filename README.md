@@ -1,18 +1,18 @@
 # PADDL
 
 ## About
-PADDL, Precision Analysis & Design for Dynamic Loading is a JavaFx desktop app built to simplify technical civil engineering design and analysis. An emphasis is put on effective design to lower the barrier of technical civil engineering knowledge required to make informed, analytical civil engineering decisions in less time.
+PADDL, Precision Analysis & Design for Dynamic Loading, is a JavaFx desktop app built to simplify technical civil engineering design and analysis. The primary goal of the project is to implement effective UI/UX design to lower the barrier of technical knowledge required to make informed, analytical civil engineering decisions in less time.
 
 <div style="display: flex; flex-direction: row;">
     <img src="images/UI.png" alt="UI" style="width: 49%;" />
     <img src="images/graph.png" alt="graph" style="width: 49%;" />
 </div>
 
-PADDL is built as a custom software solution for [WECCA](https://wecca.org/), the Western Engineering Concrete Canoe Association as the subject of our EFA (Enhanced Focus Area) in accordance with the growing use of related software tools in industry.
+PADDL is built as a custom software solution for [WECCA](https://wecca.org/), the Western Engineering Concrete Canoe Association, as a candidate for our 2025 EFA (Enhanced Focus Area). PADDL's modules are designed specifically as solutions to aid civil engineering processes specifically centered around WECCA's concrete canoe.
 
-Currently, the program has one module to which will be used to model the canoe as a beam (this is a standardized simplification) to solve for internal forces. This includes shear forces and bending moments.
+Currently, the program has one module to solve for the canoe's internal shear force and bending moment distributions. There are intentions for the project to grow in size over the next couple years, where it will become increasingly more useful for WECCA over time.
 
-### Summer goals:
+### Summer '24 goals:
 - Fully customizable hull geometry and material properties
 - Mathematical models to define curves of hull geometry with functional programming in Java
 - Two Finished Scenarios to solve for the canoe's equilibrium
@@ -27,8 +27,8 @@ Currently, the program has one module to which will be used to model the canoe a
 - Finish: Deploy an executable, downloadable soon at [https://wecca.org/](https://wecca.org/)
 
 ### Long Term Goals:
-- Grow to include club general members as casual contributors
-- Club Confluence page for documentation
+- Grow to include club general members as casual contributors in the '24-'25 school year
+- Project Confluence space for documentation
 - Develop the other 5 planned structural/concrete design modules
 - Implement more program wide settings for convenience
 - Planned light theme color options to further customize colors
@@ -72,17 +72,18 @@ Currently, the program has one module to which will be used to model the canoe a
 
    Add the jar files from the boxed link. The list should show JFoenix and Scenebuilder as shown. </br> <br/>
 
-## Feature Roadmap
+## Summer '24 Feature Roadmap
 
-- [X] Side Menu Drawer for future modules
+- [X] Side Menu Drawer for future modules infrastructure
     - [X] Template links to other modules
+    - [X] Settings utility window
     - [X] About Page
 - [X] Snackbar error popups
 - [X] Import/Export the canoe object as YAML
 - [X] Unification of color system between Java and CSS code
   - [X] Customizable colors in settings
   - [X] Persist color settings accross sessions in a properties file
-- [X] Solve the case of a floating canoe [Epic]
+- [ ] Solve the case of a floating canoe [Epic]
   - [X] Implement an improved model for breaking the canoe hull up into sections
     - [X] Update the YAML model and Marshalling process
     - [X] Create new graphics for ciomplex load distributions for the beam
