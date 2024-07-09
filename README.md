@@ -80,7 +80,7 @@ Currently, the program has one module to which will be used to model the canoe a
 - [X] Unification of color system between Java and CSS code
   - [X] Customizable colors in settings
   - [ ] Persist color settings accross sessions in a properties file
-- [ ] Solve the case of a floating canoe [Epic]
+- [X] Solve the case of a floating canoe [Epic]
   - [X] Implement an improved model for breaking the canoe hull up into sections
     - [X] Update the YAML model and Marshalling process
     - [X] Create new graphics for ciomplex load distributions for the beam
@@ -142,5 +142,3 @@ I've included these here in case burningwave has future issues, however it's pos
 --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=com.jfoenix  --add-exports javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix
 
 -->
-
-<!--Test commit author-->
