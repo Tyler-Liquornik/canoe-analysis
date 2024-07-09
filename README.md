@@ -12,6 +12,26 @@ PADDL is built as a custom software solution for [WECCA](https://wecca.org/), th
 
 Currently, the program has one module to which will be used to model the canoe as a beam (this is a standardized simplification) to solve for internal forces. This includes shear forces and bending moments.
 
+### Summer goals:
+- Fully customizable hull geometry and material properties
+- Mathematical models to define curves of hull geometry with functional programming in Java
+- Two Finished Scenarios to solve for the canoe's equilibrium
+    - Stands Case: balance the canoe on stands at x = 0 & x = L with vertical reaction forces
+    - Floating Case: numerically solve for a buoyancy load distribution at an equilibrium waterline
+- Flexibility to change colors to meet different yearly themes
+- Presence of different units in a way that makes working with mixed units easy
+- Convenience of the model displayed as icons and in a list
+- Mapping of the model to a file to be downloaded & uploaded for sharding between designers
+- Infrastructure to include other modules
+
+### Long Term Goals:
+- Grow to include club general members as casual contributors
+- Club Confluence page for documentation
+- Develop the other 5 planned structural/concrete design modules
+- Implement more program wide settings for convenience
+- Planned light theme color options to further customize colors
+- Research and discuss the idea of a more customized hull builder with more advanced material modelling
+
 ## Setting up the Development Environment
 
 1. <b>Clone the repo</b>
