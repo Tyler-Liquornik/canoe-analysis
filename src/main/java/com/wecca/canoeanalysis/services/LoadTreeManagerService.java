@@ -2,14 +2,20 @@ package com.wecca.canoeanalysis.services;
 
 import com.jfoenix.controls.JFXTreeView;
 import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
+import com.wecca.canoeanalysis.controllers.BeamController;
 import com.wecca.canoeanalysis.models.*;
 import javafx.scene.control.TreeItem;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.List;
 
 public class LoadTreeManagerService {
     private static JFXTreeView<String> loadsTreeView;
-
+    @Getter
     private static final LoadTreeItem root = new LoadTreeItem();
+    @Setter
+    private static BeamController beamController;
 
     private static  int numPLoads;
     private static int numDLoads;
@@ -30,7 +36,7 @@ public class LoadTreeManagerService {
         // Filter out all zero-valued loads except point supports
         List<Load> filteredLoads = loads.stream().filter(load -> {
             if (!(load instanceof PointLoad pointLoad && pointLoad.isSupport()))
-                return load.getForce() != 0;
+                return Math.abs(load.getForce()) != 0.0;
             else
                 return true;
         }).toList();
@@ -44,13 +50,12 @@ public class LoadTreeManagerService {
     /**
      * Clear the tree and add text as a filler
      * @param enable weather to enable the text with an empty tree
-     * @param text the text to display
      */
-    public static void enableEmptyTreeFiller(boolean enable, String text) {
+    public static void enableEmptyTreeFiller(boolean enable) {
         root.getChildren().clear();
         root.getChildrenLoadItems().clear();
         if (enable)
-            root.addChild(new LoadTreeItem(-1, -1, text));
+            root.addChild(new LoadTreeItem(-1, -1, "View Loads Here"));
         loadsTreeView.setRoot(root);
         loadsTreeView.setShowRoot(false);
     }
@@ -85,8 +90,8 @@ public class LoadTreeManagerService {
         return -1;
     }
 
-    public static int getNumberOfLoadsInTreeView() {
-        return root.getChildren().size();
+    public static int getNumberOfItemsInTreeView() {
+        return root.getChildrenLoadItems().size();
     }
 
     /**

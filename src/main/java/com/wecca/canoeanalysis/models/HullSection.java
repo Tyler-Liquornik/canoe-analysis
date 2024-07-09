@@ -45,7 +45,7 @@ import java.util.function.Function;
  * "Width" refers to the z direction (into / out of the screen) (defined by topProfileCurve)
  * "Thickness" refers to the normal direction of a surface to provide thickness to (+/- orientation is context dependent)
  */
-@Getter @Setter @EqualsAndHashCode
+@Getter @Setter @EqualsAndHashCode(callSuper = true)
 public class HullSection extends Section
 {
     @JsonProperty("sideProfileCurve")

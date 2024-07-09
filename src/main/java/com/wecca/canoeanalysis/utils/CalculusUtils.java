@@ -1,6 +1,5 @@
 package com.wecca.canoeanalysis.utils;
 
-import com.wecca.canoeanalysis.models.LoadType;
 import com.wecca.canoeanalysis.models.PiecewiseContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.Section;
 import org.apache.commons.math3.analysis.UnivariateFunction;
@@ -11,7 +10,6 @@ import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.univariate.*;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 

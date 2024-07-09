@@ -2,9 +2,9 @@ package com.wecca.canoeanalysis.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.utils.SortingUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.util.*;
 
@@ -49,7 +49,7 @@ public class Canoe
                     pLoad.setForce(0.00); // In case mag is -0 so that the negative doesn't display to the user
 
             // Search for other loads at the same position, and combine their magnitudes
-            for (PointLoad existingPLoad : getAllLoads(PointLoad.class)) {
+            for (PointLoad existingPLoad : getAllLoadsOfType(PointLoad.class)) {
                 if (existingPLoad.getX() == pLoad.getX() && !pLoad.isSupport()) {
                     double newForce = existingPLoad.getMaxSignedValue() + pLoad.getMaxSignedValue();
                     if (newForce == 0) {
@@ -64,7 +64,7 @@ public class Canoe
         }
 
         loads.add(load);
-        sortLoads(loads);
+        SortingUtils.sortLoads(loads);
         return AddLoadResult.ADDED;
     }
 
@@ -91,19 +91,6 @@ public class Canoe
         return false;
     }
 
-    public void sortLoads(List<Load> loads) {
-        // Define the order to sort by type
-        Map<Class<? extends Load>, Integer> classOrder = new HashMap<>();
-        classOrder.put(PointLoad.class, 0);
-        classOrder.put(UniformLoadDistribution.class, 1);
-        classOrder.put(DiscreteLoadDistribution.class, 2);
-        classOrder.put(PiecewiseContinuousLoadDistribution.class, 3);
-
-        // Sort by type, and then by position
-        loads.sort(Comparator.comparingInt(l -> classOrder.getOrDefault(l.getClass(), -1)));
-        loads.sort(Comparator.comparingDouble(Load::getX));
-    }
-
     @JsonIgnore
     public double getMaxLoadValue() {
         if (getAllLoads().isEmpty()) {
@@ -128,10 +115,10 @@ public class Canoe
 
         double externalWeight = 0;
         // External loads (sign included in magnitude)
-        for (PointLoad pLoad : getAllLoads(PointLoad.class)) {
+        for (PointLoad pLoad : getAllLoadsOfType(PointLoad.class)) {
             externalWeight += pLoad.getMaxSignedValue();
         }
-        for (UniformLoadDistribution dLoad : getAllLoads(UniformLoadDistribution.class)) {
+        for (UniformLoadDistribution dLoad : getAllLoadsOfType(UniformLoadDistribution.class)) {
             externalWeight += dLoad.getMagnitude() * (dLoad.getRx() - dLoad.getX());
         }
         return externalWeight;
@@ -186,7 +173,7 @@ public class Canoe
         List<Load> loads = new ArrayList<>(this.loads);
         if (hull != null && hull.getSelfWeightDistribution() != null)
             loads.add(hull.getSelfWeightDistribution());
-        sortLoads(loads);
+        SortingUtils.sortLoads(loads);
         return loads;
     }
 
@@ -196,7 +183,7 @@ public class Canoe
      * @return a list of all loads of specified subtype (i.e. PointLoad, UniformLoadDistribution, etc.)
      */
     @JsonIgnore
-    public <T extends Load> List<T> getAllLoads(Class<T> clazz) {
+    public <T extends Load> List<T> getAllLoadsOfType(Class<T> clazz) {
         return getAllLoads().stream()
                 .filter(clazz::isInstance)
                 .map(clazz::cast)
@@ -218,8 +205,16 @@ public class Canoe
         if (hull != null && hull.getSelfWeightDistribution() != null) {
             loads.add(DiscreteLoadDistribution.fromHull(hull));
         }
-        sortLoads(loads);
+        SortingUtils.sortLoads(loads);
         return loads;
+    }
+
+    /**
+     * @return the net force of all external loads and the hull
+     */
+    @JsonIgnore
+    public double getNetForce() {
+        return getAllLoads().stream().mapToDouble(Load::getForce).sum();
     }
 }
 

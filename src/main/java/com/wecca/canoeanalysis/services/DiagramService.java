@@ -228,7 +228,7 @@ public class DiagramService {
     private static Map<Double, PointLoad> getPointLoadMap(Canoe canoe)
     {
         Map<Double, PointLoad> map = new HashMap<>();
-        for (PointLoad load : canoe.getAllLoads(PointLoad.class))
+        for (PointLoad load : canoe.getAllLoadsOfType(PointLoad.class))
         {
             double x = (double) Math.round(load.getX() * 100) / 100;
             if (map.containsKey(x))
@@ -252,14 +252,14 @@ public class DiagramService {
     private static Multimap<Double, UniformLoadDistribution> getDistributedLoadStartMap(Canoe canoe)
     {
         Multimap<Double, UniformLoadDistribution> map = ArrayListMultimap.create();
-        for (UniformLoadDistribution load : canoe.getAllLoads(UniformLoadDistribution.class)) {
+        for (UniformLoadDistribution load : canoe.getAllLoadsOfType(UniformLoadDistribution.class)) {
             map.put((double) Math.round(load.getX() * 100) / 100, load);
         }
 
         List<UniformLoadDistribution> distributionDLoads = new ArrayList<>();
-        if (!canoe.getAllLoads(PiecewiseContinuousLoadDistribution.class).isEmpty()) {
+        if (!canoe.getAllLoadsOfType(PiecewiseContinuousLoadDistribution.class).isEmpty()) {
 
-            List<DiscreteLoadDistribution> discretizations = canoe.getAllLoads(PiecewiseContinuousLoadDistribution.class).stream()
+            List<DiscreteLoadDistribution> discretizations = canoe.getAllLoadsOfType(PiecewiseContinuousLoadDistribution.class).stream()
                     .map(piecewise -> DiscreteLoadDistribution.fromPiecewiseContinuous(LoadType.DISCRETE_SECTION, piecewise, (int) (piecewise.getSection().getLength() * 100)))
                     .toList();
 
@@ -282,12 +282,12 @@ public class DiagramService {
     private static Multimap<Double, UniformLoadDistribution> getDistributedLoadEndMap(Canoe canoe)
     {
         Multimap<Double, UniformLoadDistribution> map = ArrayListMultimap.create();
-        for (UniformLoadDistribution load : canoe.getAllLoads(UniformLoadDistribution.class)) {map.put((double) Math.round(load.getRx() * 100) / 100, load);}
+        for (UniformLoadDistribution load : canoe.getAllLoadsOfType(UniformLoadDistribution.class)) {map.put((double) Math.round(load.getRx() * 100) / 100, load);}
 
         List<UniformLoadDistribution> externalDistributionDLoads = new ArrayList<>();
-        if (!canoe.getAllLoads(PiecewiseContinuousLoadDistribution.class).isEmpty()) {
+        if (!canoe.getAllLoadsOfType(PiecewiseContinuousLoadDistribution.class).isEmpty()) {
 
-            List<DiscreteLoadDistribution> discretizations = canoe.getAllLoads(PiecewiseContinuousLoadDistribution.class).stream()
+            List<DiscreteLoadDistribution> discretizations = canoe.getAllLoadsOfType(PiecewiseContinuousLoadDistribution.class).stream()
                     .map(piecewise -> DiscreteLoadDistribution.fromPiecewiseContinuous(LoadType.DISCRETE_SECTION, piecewise, (int) (piecewise.getSection().getLength() * 100)))
                     .toList();
 

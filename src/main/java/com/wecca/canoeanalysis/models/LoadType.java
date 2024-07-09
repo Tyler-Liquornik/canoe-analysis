@@ -9,7 +9,6 @@ import lombok.Getter;
  * More specific than the actual type (class) of the load, gives more control for naming loads in the UI and YAML models
  * Descriptions are intended to be more simplified and give extra metadata/context that Load subclass names don't provide
  * Variables just assign a char to each load to use as a variable for the load should it be used in an equation
- * Note: enum values can't be accessed in @JsonSubTypes.Type so changes made here may also need to be made manually in Load's YAML model
  */
 @Getter @AllArgsConstructor
 public enum LoadType {

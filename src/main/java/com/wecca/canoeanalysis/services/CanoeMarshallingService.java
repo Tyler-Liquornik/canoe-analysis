@@ -6,6 +6,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.wecca.canoeanalysis.controllers.BeamController;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.*;
+import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Setter;
@@ -84,18 +85,18 @@ public class CanoeMarshallingService {
         // Show open file dialog
         File fileToUpload = fileChooser.showOpenDialog(stage);
 
-        if (fileToUpload != null)
-        {
-            try
-            {
+        if (fileToUpload != null) {
+            try {
                 Canoe canoe = yamlMapper.readValue(fileToUpload, Canoe.class);
 
                 // Rebuild the canoe trigger validations and data restructuring
                 Canoe adjustedCanoe = new Canoe();
                 adjustedCanoe.setHull(canoe.getHull());
+                boolean disableHullBuilder = !adjustedCanoe.getHull().equals(
+                        SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
+                mainController.disableModuleToolBarButton(disableHullBuilder, 2);
                 for (Load load : canoe.getLoads())
                     adjustedCanoe.addLoad(load);
-
                 beamController.setCanoe(adjustedCanoe);
                 mainController.showSnackbar("Successfully uploaded Canoe Model");
             } catch (IOException ex) {

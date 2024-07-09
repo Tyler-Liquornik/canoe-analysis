@@ -56,14 +56,13 @@ Currently, the program has one module to which will be used to model the canoe a
     - [X] Template links to other modules
     - [X] About Page
 - [X] Snackbar error popups
-- [ ] Get maximum SF/BM from graph as a tooltip
 - [X] Import/Export the canoe object as YAML
 - [X] Unification of color system between Java and CSS code
   - [X] Customizable colors in settings
   - [ ] Persist color settings accross sessions in a properties file
 - [ ] Solve the case of a floating canoe [Epic]
   - [X] Implement an improved model for breaking the canoe hull up into sections
-    - [ ] Update the YAML model and Marshalling process
+    - [X] Update the YAML model and Marshalling process
     - [X] Create new graphics for ciomplex load distributions for the beam
     - [X] Display new Canoe model in a collapsable TreeView
   - [X] Solve for a buoyancy load distribution based on the self-weight distribution of the hull

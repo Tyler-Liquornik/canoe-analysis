@@ -11,6 +11,7 @@ import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.utils.ControlUtils;
 import com.wecca.canoeanalysis.utils.GraphicsUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
+import com.wecca.canoeanalysis.utils.SortingUtils;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
@@ -63,7 +64,7 @@ public class BeamController implements Initializable
      * Includes a placeholder list item, enabled/disabled status of buttons, and styling
      */
     public void enableEmptyLoadTreeSettings(boolean enable) {
-        LoadTreeManagerService.enableEmptyTreeFiller(enable, "View loads here");
+        LoadTreeManagerService.enableEmptyTreeFiller(enable);
         if (!enable) {
             loadsTreeView.setStyle("-fx-font-weight: normal");
             deleteLoadButton.setDisable(false);
@@ -154,7 +155,6 @@ public class BeamController implements Initializable
     }
 
     /**
-     * Called by the "Set Length" button
      * Updates both the model and the UI, showing the length of the canoe
      */
     public void setLength() {
@@ -180,11 +180,12 @@ public class BeamController implements Initializable
                 canoeLengthTextField.setDisable(true);
                 canoeLengthComboBox.setDisable(true);
                 lengthLabel.setDisable(true);
+                loadsTreeView.setDisable(true);
                 deleteLoadButton.setDisable(true);
                 clearLoadsButton.setDisable(true);
 
                 // Set length button will now function as a reset length button
-                setCanoeLengthButton.setText("Reset Length");
+                setCanoeLengthButton.setText("Reset Canoe");
                 setCanoeLengthButton.setOnAction(e -> resetLength());
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
@@ -196,8 +197,7 @@ public class BeamController implements Initializable
     }
 
     /**
-     * Called by the "Add Point Load" button
-     * Deals with parsing and validation user input.
+     * Validate and add a distributed point based on filled fields
      */
     public void addPointLoad() {
         // Clear previous alert label
@@ -238,9 +238,7 @@ public class BeamController implements Initializable
     }
 
     /**
-     * Called by the "Add Uniformly Distributed Load" button
-     * Deals with parsing and validation user input.
-     * Main logic handled in addDistributedLoadToCanoe method
+     * Validate and add a distributed load based on filled fields
      */
     public void addDistributedLoad() {
         // Clear previous alert labels
@@ -283,8 +281,15 @@ public class BeamController implements Initializable
             mainController.showSnackbar("One or more entered values are not valid numbers");
     }
 
-    // TODO: Will eventually have validations on user input for the piecewise, unused parameter for now
+    /**
+     * Add and validate a piecewise load distribution
+     * Note: the user cannot manually add a custom load distribution (only hull and solved buoyancy)
+     * Thus there are no user input validations yet but the parameter will stay there for now
+     * @param piecewise the distribution to validate and add
+     */
     public void addPiecewise(PiecewiseContinuousLoadDistribution piecewise) {
+        canoe.addLoad(piecewise);
+
         // Clear previous alert labels
         mainController.closeSnackBar(mainController.getSnackbar());
 
@@ -327,8 +332,8 @@ public class BeamController implements Initializable
 
         // Clear graphics the load container and add the new list of load graphics including the support, all sorted
         loadContainer.getChildren().clear();
+        SortingUtils.sortGraphics(loadContainerChildren);
         loadContainer.getChildren().addAll(loadContainerChildren.stream()
-                .sorted(Comparator.comparingDouble(Graphic::getX))
                 .map(load -> (Node) load).toList());
     }
 
@@ -398,7 +403,7 @@ public class BeamController implements Initializable
             }
         }
 
-        rescaledGraphics.sort(Comparator.comparingDouble(Graphic::getX));
+        SortingUtils.sortGraphics(rescaledGraphics);
         loadContainer.getChildren().addAll((rescaledGraphics.stream().map(element -> (Node) element)).toList());
         updateViewOrder();
     }
@@ -414,9 +419,6 @@ public class BeamController implements Initializable
             return;
         }
 
-        // Removes the default list view message if this is the first load
-        enableEmptyLoadTreeSettings(false);
-
         // Controls enabling/disabling for UX
         generateGraphsButton.setDisable(false);
         disableLoadingControls(true);
@@ -431,12 +433,14 @@ public class BeamController implements Initializable
             solveSystemButton.setOnAction(e -> undoFloatingSolve());
         }
 
-        // Update UI to disable loading and enable undo solve functionality
+        // Update UI state
         solveSystemButton.setText("Undo Solve");
         solveSystemButton.setDisable(false);
-
-        // Update state
         LoadTreeManagerService.buildLoadTreeView(canoe);
+        if (LoadTreeManagerService.getRoot().getChildren().isEmpty()) {
+            LoadTreeManagerService.enableEmptyTreeFiller(true);
+            loadsTreeView.setDisable(true);
+        }
         updateViewOrder();
     }
 
@@ -450,6 +454,7 @@ public class BeamController implements Initializable
             AddLoadResult addResult = canoe.addLoad(supportLoad);
             renderPointLoadGraphic(supportLoad, addResult);
         }
+        enableEmptyLoadTreeSettings(false); // solve always produces loads as zero-valued point supports are included in all models
     }
 
     /**
@@ -466,16 +471,17 @@ public class BeamController implements Initializable
      */
     private void solveFloatingSystem() {
         PiecewiseContinuousLoadDistribution buoyancy = BeamSolverService.solveFloatingSystem(canoe);
-        canoe.addLoad(buoyancy);
-        addPiecewise(buoyancy);
+        if (!(buoyancy.getForce() == 0))
+            addPiecewise(buoyancy);
     }
 
     /**
      * Undo the effects of the floating solve
      */
     private void undoFloatingSolve() {
-        undoSolveUpdateUI();
         clearLoadsOfType(LoadType.BUOYANCY);
+        renderLoadGraphics(); // removing buoyancy likely changes scaling, need to recalculate scaling
+        undoSolveUpdateUI();
     }
 
     /**
@@ -483,7 +489,7 @@ public class BeamController implements Initializable
      * This entails a canoe fully underwater
      */
     private void solveSubmergedSystem() {
-        // TODO: Implement (consult Design & Analysis)
+        // TODO: Implement once engineering analysis methodologies developed
         mainController.showSnackbar("The team is still working on their methods for this! Try again later.");
     }
 
@@ -504,6 +510,12 @@ public class BeamController implements Initializable
         generateGraphsButton.setDisable(true);
         LoadTreeManagerService.buildLoadTreeView(canoe);
         disableLoadingControls(false);
+        if (LoadTreeManagerService.getRoot().getChildren().isEmpty()) {
+            LoadTreeManagerService.enableEmptyTreeFiller(true);
+            loadsTreeView.setDisable(true);
+            deleteLoadButton.setDisable(true);
+            clearLoadsButton.setDisable(true);
+        }
     }
 
     /**
@@ -568,10 +580,8 @@ public class BeamController implements Initializable
             }
             else {
                 // If the hull is present in the treeView it will disrupt the order sync between canoe.loads and loadContainer.children, we need to adjust for this
-                boolean hullHasWeight = canoe.getHull().getSelfWeightDistribution().getForce() != 0;
                 int hullWeightLoadId = LoadTreeManagerService.getHullLoadTreeItemLoadId();
-                boolean loadIsAfterHullInTreeView = selectedItem.getLoadId() > hullWeightLoadId;
-                if (hullHasWeight && loadIsAfterHullInTreeView) {
+                if (selectedItem.getLoadId() > hullWeightLoadId && hullWeightLoadId != -1) {
                     canoe.getLoads().remove(--selectedIndex);
                     selectedIndex++;
                 }
@@ -587,17 +597,26 @@ public class BeamController implements Initializable
     }
 
     /**
-     * Clear all load's of a specific load type
-     * This is achieved by simulating the user selecting and deleting the load
+     * Clear all loads of a specific load type.
+     * This is achieved by simulating the user selecting and deleting the load.
      * @param loadType the type to delete loads of
      */
-    public void clearLoadsOfType(LoadType loadType) {
-        for (int i = 0; i < LoadTreeManagerService.getNumberOfLoadsInTreeView(); i++) {
-            loadsTreeView.getSelectionModel().select(i);
-            LoadTreeItem selectedItem = LoadTreeManagerService.getSelectedLoadTreeItem();
-            if (selectedItem != null && selectedItem.getLoad() != null && selectedItem.getLoad().getType() != null &&
-                    selectedItem.getLoad().getType() == loadType)
+    private void clearLoadsOfType(LoadType loadType) {
+        List<LoadTreeItem> treeItems = LoadTreeManagerService.getRoot().getChildren().stream()
+                .map(item -> (LoadTreeItem) item)
+                .toList();
+
+        for (int i = 0; i < treeItems.size(); i++) {
+            LoadTreeItem item = treeItems.get(i);
+            if (item.getLoad() != null && item.getLoad().getType() == loadType) {
+                loadsTreeView.getSelectionModel().select(item);
                 deleteSelectedLoad();
+                // Update treeItems list after deletion and restart the loop
+                treeItems = LoadTreeManagerService.getRoot().getChildren().stream()
+                        .map(treeItem -> (LoadTreeItem) treeItem)
+                        .toList();
+                i = -1;
+            }
         }
     }
 
@@ -607,10 +626,8 @@ public class BeamController implements Initializable
     public void clearLoads() {
         loadContainer.getChildren().clear();
         canoe.getLoads().clear();
-        canoe.setHull(null);
+        canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
         LoadTreeManagerService.buildLoadTreeView(canoe);
-
-        // List is empty, toggle empty list settings
         enableEmptyLoadTreeSettings(true);
     }
 
@@ -622,7 +639,7 @@ public class BeamController implements Initializable
         CanoeMarshallingService.setBeamController(this);
 
         // Alert the user they will be overriding the current loads on the canoe by uploading a new one
-        if (!canoe.getLoads().isEmpty()) {
+        if (!canoe.getAllLoads().isEmpty()) {
             UploadAlertController.setBeamController(this);
             WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view.fxml", 350, 230);
         }
@@ -630,6 +647,10 @@ public class BeamController implements Initializable
             CanoeMarshallingService.importCanoeFromYAML(mainController.getPrimaryStage());
     }
 
+    /**
+     * Set the canoe and sync with graphics and tree view models
+     * @param canoe the canoe to set
+     */
     public void setCanoe(Canoe canoe) {
         if (canoe != null) {
             // Update the canoe model
@@ -696,6 +717,7 @@ public class BeamController implements Initializable
         generateGraphsButton.setDisable(true);
 
         // Load tree init
+        LoadTreeManagerService.setBeamController(this);
         LoadTreeManagerService.setLoadsTreeView(loadsTreeView);
         enableEmptyLoadTreeSettings(true);
         JFXDepthManager.setDepth(loadsTreeView, 4);

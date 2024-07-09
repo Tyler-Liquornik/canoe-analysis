@@ -30,8 +30,8 @@ public class BeamSolverService {
         // Transform the distributed loads into point loads
         if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null)
             pointLoads.addAll(distributedToPoint(canoe.getHull().getSelfWeightDistributionDiscretized().getLoads()));
-        pointLoads.addAll(distributedToPoint(canoe.getAllLoads(UniformLoadDistribution.class)));
-        pointLoads.addAll(canoe.getAllLoads(PointLoad.class));
+        pointLoads.addAll(distributedToPoint(canoe.getAllLoadsOfType(UniformLoadDistribution.class)));
+        pointLoads.addAll(canoe.getAllLoadsOfType(PointLoad.class));
 
         // Find the sum of moments from the start and the total magnitude of combined point loads
         double momentSum = 0;
@@ -77,6 +77,12 @@ public class BeamSolverService {
      * @return the buoyancy reaction load distribution
      */
     public static PiecewiseContinuousLoadDistribution solveFloatingSystem(Canoe canoe) {
+        // Case where net force is already zero returns a zero-distribution with sections matching the hull
+        if (canoe.getNetForce() == 0) {
+            PiecewiseContinuousLoadDistribution piecewise = PiecewiseContinuousLoadDistribution.fromHull(canoe.getHull());
+            piecewise.setType(LoadType.BUOYANCY);
+            return piecewise;
+        }
         double waterLine = getEquilibriumWaterLine(canoe);
         PiecewiseContinuousLoadDistribution buoyancy = getBuoyancyDistribution(waterLine, canoe);
         System.out.println("Total Buoyancy Force = " + buoyancy.getForce() + "kN");
