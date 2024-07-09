@@ -21,8 +21,10 @@ Currently, the program has one module to which will be used to model the canoe a
 - Flexibility to change colors to meet different yearly themes
 - Presence of different units in a way that makes working with mixed units easy
 - Convenience of the model displayed as icons and in a list
-- Mapping of the model to a file to be downloaded & uploaded for sharding between designers
+- Mapping of the model to a file to be downloaded & uploaded for sharing data between engineers
 - Infrastructure to include other modules
+
+- Finish: Deploy an executable, downloadable soon at [https://wecca.org/](https://wecca.org/)
 
 ### Long Term Goals:
 - Grow to include club general members as casual contributors
@@ -79,7 +81,7 @@ Currently, the program has one module to which will be used to model the canoe a
 - [X] Import/Export the canoe object as YAML
 - [X] Unification of color system between Java and CSS code
   - [X] Customizable colors in settings
-  - [ ] Persist color settings accross sessions in a properties file
+  - [X] Persist color settings accross sessions in a properties file
 - [X] Solve the case of a floating canoe [Epic]
   - [X] Implement an improved model for breaking the canoe hull up into sections
     - [X] Update the YAML model and Marshalling process
