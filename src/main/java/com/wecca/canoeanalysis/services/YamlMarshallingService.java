@@ -95,8 +95,7 @@ public class YamlMarshallingService {
                 // Rebuild the canoe trigger validations and data restructuring
                 Canoe adjustedCanoe = new Canoe();
                 adjustedCanoe.setHull(canoe.getHull());
-                boolean disableHullBuilder = !adjustedCanoe.getHull().equals(
-                        SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
+                boolean disableHullBuilder = LoadTreeManagerService.getHullLoadTreeItemLoadId() != -1;
                 mainController.disableModuleToolBarButton(disableHullBuilder, 0);
                 for (Load load : canoe.getLoads())
                     adjustedCanoe.addLoad(load);

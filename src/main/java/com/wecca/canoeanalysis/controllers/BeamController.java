@@ -348,7 +348,7 @@ public class BeamController implements Initializable
     }
 
     /**
-     * Rescales all point loads (arrows) and distributed loads (arrow boxes) based on the load with the highest mag.
+     * Rescales all point loads based on the load with the highest max abs value
      * Point and distributed load magnitudes are compared although their units differ (Force vs. Force / Length)
      */
     public void renderLoadGraphics() {
@@ -357,10 +357,8 @@ public class BeamController implements Initializable
 
         // Rescale all graphics relative to the max load
         List<Graphic> rescaledGraphics = new ArrayList<>();
-        for (int i = 0; i < canoe.getAllLoads().size(); i++)
+        for (Load load : canoe.getAllLoads())
         {
-            Load load = canoe.getAllLoads().get(i);
-
             // The ratio of the largest load (always rendered at max size) to this load
             double loadMagnitudeRatio = Math.abs(load.getMaxSignedValue() / canoe.getMaxLoadValue());
 
@@ -578,6 +576,7 @@ public class BeamController implements Initializable
         }
         loadContainer.getChildren().remove(selectedIndex);
         LoadTreeManagerService.buildLoadTreeView(canoe);
+        renderLoadGraphics();
 
         if (loadContainer.getChildren().isEmpty())
             checkAndSetEmptyLoadTreeSettings();
@@ -706,6 +705,7 @@ public class BeamController implements Initializable
         // Load tree init
         LoadTreeManagerService.setBeamController(this);
         LoadTreeManagerService.setLoadsTreeView(loadsTreeView);
+        LoadTreeManagerService.getRoot().getChildren().clear();
         checkAndSetEmptyLoadTreeSettings();
         JFXDepthManager.setDepth(loadsTreeView, 4);
 

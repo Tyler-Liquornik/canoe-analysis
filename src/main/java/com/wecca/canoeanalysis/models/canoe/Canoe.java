@@ -172,9 +172,44 @@ public class Canoe
     @JsonIgnore
     public List<Load> getAllLoads() {
         List<Load> loads = new ArrayList<>(this.loads);
-        if (hull.getSelfWeightDistribution() != null)
-            loads.add(hull.getSelfWeightDistribution());
-        SortingUtils.sortLoads(loads);
+
+        // Temporarily hold the hull's self-weight distribution, if it exists
+        Load hullLoad = hull.getSelfWeightDistribution();
+
+        // Look for where to insert the hull to maintain order without resorting the whole list (which is more expensive)
+        if (hullLoad != null) {
+            // Define the order to sort by type
+            Map<Class<? extends Load>, Integer> classOrder = SortingUtils.getLoadsClassOrderSortingMap();
+
+            // Find the correct position to insert the hull load
+            int insertIndex = 0;
+            for (int i = 0; i < loads.size(); i++) {
+                Load currentLoad = loads.get(i);
+
+                // pLoad: {x=0, classOrder=0}, pLoad{x=1, classOrder=0}
+                //hull: {x=[0,6], classOrder=1}
+
+                // If x-coordinates are equal, compare by class order
+                if (hullLoad.getX() == currentLoad.getX()) {
+                    int hullClassOrder = classOrder.getOrDefault(hullLoad.getClass(), -1);
+                    int currentClassOrder = classOrder.getOrDefault(currentLoad.getClass(), -1);
+                    if (hullClassOrder <= currentClassOrder) {
+                        break;
+                    }
+                }
+
+                // Compare by x-coordinate
+                if (hullLoad.getX() < currentLoad.getX()) {
+                    break;
+                }
+
+                // Update the insertion index
+                insertIndex = i;
+            }
+
+            // Insert the hull load at the determined position
+            loads.add(insertIndex, hullLoad);
+        }
         return loads;
     }
 

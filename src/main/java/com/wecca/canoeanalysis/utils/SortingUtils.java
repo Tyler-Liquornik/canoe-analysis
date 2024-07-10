@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.Map;
 
 public class SortingUtils {
+    /**
+     * Sort a list of loads according to class order, and then by x position
+     * @param loads the list of loads to sort
+     */
     public static void sortLoads(List<Load> loads) {
         // Define the order to sort by type
-        Map<Class<? extends Load>, Integer> classOrder = new HashMap<>();
-        classOrder.put(PointLoad.class, 0);
-        classOrder.put(UniformLoadDistribution.class, 1);
-        classOrder.put(DiscreteLoadDistribution.class, 2);
-        classOrder.put(PiecewiseContinuousLoadDistribution.class, 3);
+        Map<Class<? extends Load>, Integer> classOrder = getLoadsClassOrderSortingMap();
 
         // Sort by class order, isSupport pLoads go first
         loads.sort((l1, l2) -> {
@@ -41,6 +41,10 @@ public class SortingUtils {
         loads.sort(Comparator.comparingDouble(Load::getX));
     }
 
+    /**
+     * Sort graphics by class type
+     * @param graphics the list of graphics to sort
+     */
     public static void sortGraphics(List<Graphic> graphics) {
         // Define the order to sort by type
         Map<Class<? extends Graphic>, Integer> classOrder = new HashMap<>();
@@ -53,5 +57,18 @@ public class SortingUtils {
         // Sort by type, and then by position
         graphics.sort(Comparator.comparingInt(l -> classOrder.getOrDefault(l.getClass(), -1)));
         graphics.sort(Comparator.comparingDouble(Graphic::getX));
+    }
+
+    /**
+     * Describes a map for which load subtype classes should be sorted (ascending by map entry value for a given class)
+     * @return a map of Load Subclass : Priority (lower number = higher priority)
+     */
+    public static Map<Class<? extends Load>, Integer> getLoadsClassOrderSortingMap() {
+        Map<Class<? extends Load>, Integer> classOrder = new HashMap<>();
+        classOrder.put(PointLoad.class, 0);
+        classOrder.put(UniformLoadDistribution.class, 1);
+        classOrder.put(DiscreteLoadDistribution.class, 2);
+        classOrder.put(PiecewiseContinuousLoadDistribution.class, 3);
+        return classOrder;
     }
 }

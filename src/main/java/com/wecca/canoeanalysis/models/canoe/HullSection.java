@@ -63,8 +63,8 @@ public class HullSection extends Section
             @JsonSubTypes.Type(value = VertexFormParabola.class, name = "VertexFormParabola")
     })
     private UnivariateFunction topProfileCurve;
-    @JsonProperty("wallsThickness")
-    private double wallsThickness;
+    @JsonProperty("thickness")
+    private double thickness;
     @JsonIgnore
     private double concreteDensity; // [kg/m^3]
     @JsonProperty("isFilledBulkhead")
@@ -110,14 +110,14 @@ public class HullSection extends Section
                        @JsonProperty("topProfileCurve") UnivariateFunction topProfileCurve,
                        @JsonProperty("x") double x,
                        @JsonProperty("rx") double rx,
-                       @JsonProperty("wallsThickness") double wallsThickness,
+                       @JsonProperty("thickness") double thickness,
                        @JsonProperty("hasBulkhead") boolean hasBulkhead) {
         super(x, rx);
         validateSign(sideProfileCurve::value, false);
         validateSign(topProfileCurve::value, true);
         this.sideProfileCurve = sideProfileCurve;
         this.topProfileCurve = topProfileCurve;
-        this.wallsThickness = wallsThickness;
+        this.thickness = thickness;
         this.isFilledBulkhead = hasBulkhead;
     }
 
@@ -168,7 +168,7 @@ public class HullSection extends Section
             double height = Math.abs(sideProfileCurve.value(x));
             double width = 2 * Math.abs(topProfileCurve.value(x)); // assuming this profile is symmetrical in the current model
             int numTopAndBottomWalls = isFilledBulkhead ? 2 : 1; // Include a top wall (ceiling) to cover the bulkhead (in addition to floor which is always present)
-            return ((height - numTopAndBottomWalls * wallsThickness) * (width - (2 * wallsThickness))) * crossSectionalAreaAdjustmentFactorFunction.apply(height); // inner area doesnt include walls or floor / ceiling
+            return ((height - numTopAndBottomWalls * thickness) * (width - (2 * thickness))) * crossSectionalAreaAdjustmentFactorFunction.apply(height); // inner area doesnt include walls or floor / ceiling
         };
     }
 

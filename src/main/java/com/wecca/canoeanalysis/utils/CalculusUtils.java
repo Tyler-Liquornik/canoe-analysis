@@ -72,7 +72,7 @@ public class CalculusUtils
      */
     public static void validatePiecewiseAsUpOrDown(List<UnivariateFunction> pieces, List<Section> sections) {
         UnivariateSolver solver = new BrentSolver(1e-10, 1e-14);
-        int numSamples = 10000;
+        int numSamples = 1000;
 
         boolean allNonNegative = true;
         boolean allNonPositive = true;

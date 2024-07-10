@@ -34,7 +34,7 @@ public class Hull {
                 @JsonProperty("bulkheadDensity") double bulkheadDensity,
                 @JsonProperty("hullSections") List<HullSection> hullSections) {
         hullSections.sort(Comparator.comparingDouble(Section::getX));
-        validateContinuousHullShape(hullSections);
+        validateNoSectionGaps(hullSections);
         validateFloorThickness(hullSections);
         validateWallThickness(hullSections);
 
@@ -192,8 +192,16 @@ public class Hull {
         return s;
     }
 
+    /**
+     * Validates that the sections provided cover without discontinuities some sub-interval of R^+
+     * @param sections the sections to validate before forming a hull
+     */
     // TODO: ideally this should also check that the derivative of the section endpoints at each piecewise function is equal to guarantee smoothness
-    private void validateContinuousHullShape(List<HullSection> sections) {
+    private void validateNoSectionGaps(List<HullSection> sections) {
+
+        if (sections.getFirst().getX() != 0) {
+            throw new IllegalArgumentException("The hull should start at x = 0");
+        }
 
         for (int i = 0; i < sections.size() - 1; i++)
         {
@@ -209,9 +217,9 @@ public class Hull {
     }
 
     /**
-     * Validates that the hull shape function is non-positive on its domain [start, end]
-     * This convention allows waterline height h for a floating hull to be a distance below the top of the null at h = 0
-     * Uses calculus to avoid checking all points individually by checking only critical points and domain endpoints
+     * As a reasonable benchmark (instead of a more complicated integral), an assumption is taken on for the floors
+     * We use wall thickness as wall and floor thickness is the same
+     * The floor should be no thicker than 25% of the canoe's height (this is already pretty generous realistically)
      */
     private void validateFloorThickness(List<HullSection> sections) {
 
@@ -220,7 +228,7 @@ public class Hull {
         for (HullSection section : sections)
         {
             // This is chosen arbitrarily as a reasonable benchmark
-            if (section.getWallsThickness() > canoeHeight / 4)
+            if (section.getThickness() > canoeHeight / 4)
                 throw new IllegalArgumentException("Hull floor thickness must not exceed 1/4 of the canoe's max height");
         }
     }
@@ -232,7 +240,7 @@ public class Hull {
     private void validateWallThickness(List<HullSection> sections) {
         for (HullSection section : sections)
         {
-            if (section.getWallsThickness() > section.getMaxWidth() / 2)
+            if (section.getThickness() > section.getMaxWidth() / 2)
                 throw new IllegalArgumentException("Hull walls would be greater than the width of the canoe");
         }
     }

@@ -54,7 +54,6 @@ public class LoadTreeManagerService {
     public static boolean isTreeViewEmpty() {
         if (root.getChildren().isEmpty())
             return true;
-        // Empty filler tree filler
         return root.getChildren().size() == 1 && root.getChildren().getFirst() instanceof LoadTreeItem loadTreeItem && loadTreeItem.getLoadId() == -1;
     }
 
