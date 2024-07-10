@@ -170,7 +170,7 @@ public class BeamController implements Initializable
 
                 // Change the label on the scale
                 axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
-                axisLabelR.setLayoutX(565); // TODO: this will not be hard coded anymore once axis labels for new loads are implemented
+                axisLabelR.setLayoutX(565); // TODO: this will not be hard coded anymore once axis labels are implemented
 
                 // Clear potential alert and reset access to controls
                 mainController.closeSnackBar(mainController.getSnackbar());

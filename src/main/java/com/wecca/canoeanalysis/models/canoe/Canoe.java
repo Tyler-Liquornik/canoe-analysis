@@ -92,6 +92,9 @@ public class Canoe
         return false;
     }
 
+    /**
+     * @return the maximum signed value of all loads (not including hull self-weight)
+     */
     @JsonIgnore
     public double getMaxLoadValue() {
         if (getAllLoads().isEmpty()) {
@@ -109,61 +112,19 @@ public class Canoe
     }
 
     /**
-     * @return the weight of all point loads and uniform distributed loads which doesn't include the canoe's self-weight
+     * @return a TreeSet of all the internal loading, external, loading, and hull sections endpoints
      */
     @JsonIgnore
-    public double getExternalWeight() {
-
-        double externalWeight = 0;
-        // External loads (sign included in magnitude)
-        for (PointLoad pLoad : getAllLoadsOfType(PointLoad.class)) {
-            externalWeight += pLoad.getMaxSignedValue();
-        }
-        for (UniformLoadDistribution dLoad : getAllLoadsOfType(UniformLoadDistribution.class)) {
-            externalWeight += dLoad.getMagnitude() * (dLoad.getRx() - dLoad.getX());
-        }
-        return externalWeight;
-    }
-
-    /**
-     * @return the total weight of the canoe including self-weight and external loading
-     */
-    @JsonIgnore
-    public double getTotalWeight() {
-        return hull.getWeight() + getExternalWeight();
-    }
-
-
-    /**
-     * @return a TreeSet (sorted ascending, no duplicates) of endpoints for loads external to the canoe's self-weight
-     * Note: results are x-coordinates in metres
-     */
-    @JsonIgnore
-    public TreeSet<Double> getExternalSectionEndpoints() {
-
-        // Add all point load x coords and endpoints of distributed loads
-        TreeSet<Double> s = new TreeSet<>();
+    public TreeSet<Double> getSectionEndpoints() {
+        TreeSet<Double> endPoints = new TreeSet<>();
+        endPoints.addAll(hull.getHullSectionEndPoints());
         for (Load l : loads)
         {
-            s.add(l.getX());
-            if (l instanceof UniformLoadDistribution distributedLoad)
-                s.add(distributedLoad.getRx());
+            endPoints.add(l.getX());
+            if (l instanceof LoadDistribution dist)
+                endPoints.add(dist.getSection().getRx());
         }
-
-        return s;
-    }
-
-    /**
-     * @return a TreeSet of all the internal loading, external, loading, and canoe endpoints
-     */
-    @JsonIgnore
-    public TreeSet<Double> getAllEndpoints() {
-        TreeSet<Double> s = new TreeSet<>();
-        s.addAll(hull.getHullSectionEndPoints());
-        s.addAll(getExternalSectionEndpoints());
-        s.add(hull.getSection().getX());
-        s.add(hull.getSection().getRx());
-        return s;
+        return endPoints;
     }
 
     /**
@@ -189,7 +150,6 @@ public class Canoe
 
     /**
      * @return all loads with piecewise continuous loads discretized
-     * This is for the TreeView, which will show the user loads discretized to avg values
      */
     @JsonIgnore
     public List<Load> getAllLoadsDiscretized() {
@@ -204,4 +164,3 @@ public class Canoe
         return getAllLoads().stream().mapToDouble(Load::getForce).sum();
     }
 }
-

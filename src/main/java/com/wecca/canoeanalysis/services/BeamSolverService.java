@@ -2,6 +2,7 @@ package com.wecca.canoeanalysis.services;
 
 import com.wecca.canoeanalysis.models.*;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
+import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
@@ -80,12 +81,23 @@ public class BeamSolverService {
      * @return the buoyancy reaction load distribution
      */
     public static PiecewiseContinuousLoadDistribution solveFloatingSystem(Canoe canoe) {
-        // Case where net force is already zero returns a zero-distribution with sections matching the hull
+        // Case where the canoe is already in equilibrium returns a zero-valued distribution with sections matching the hull
         if (canoe.getNetForce() == 0) {
-            PiecewiseContinuousLoadDistribution piecewise = PiecewiseContinuousLoadDistribution.fromHull(canoe.getHull());
-            piecewise.setType(LoadType.BUOYANCY);
-            return piecewise;
+            Hull hull = canoe.getHull();
+            List<HullSection> hullSections = hull.getHullSections();
+            List<Section> sections = hullSections.stream().map(hullSection -> (Section) hullSection).toList();
+
+            // Create zero-valued functions for each section
+            List<UnivariateFunction> pieces = new ArrayList<>();
+            for (int i = 0; i < sections.size(); i++) {
+                pieces.add(x -> 0.0);
+            }
+
+            // Create the PiecewiseContinuousLoadDistribution with zero-valued functions
+            return new PiecewiseContinuousLoadDistribution(LoadType.BUOYANCY, pieces, sections);
         }
+
+        // Solve for the equilibrium waterline and get the buoyancy distribution at that waterline
         double waterLine = getEquilibriumWaterLine(canoe);
         PiecewiseContinuousLoadDistribution buoyancy = getBuoyancyDistribution(waterLine, canoe);
         System.out.println("Total Buoyancy Force = " + buoyancy.getForce() + "kN");
@@ -148,7 +160,7 @@ public class BeamSolverService {
      * @return the waterline height of floating equilibrium
      */
     public static double getEquilibriumWaterLine(Canoe canoe) {
-        double totalWeight = canoe.getTotalWeight();
+        double netForce = canoe.getNetForce();
         double minWaterLine = -canoe.getHull().getMaxHeight();
         double maxWaterLine = 0;
         double waterLine = (minWaterLine + maxWaterLine) / 2.0;
@@ -158,7 +170,7 @@ public class BeamSolverService {
         // Cut the step size in half each time, giving O(log(n)) time
         while (maxWaterLine - minWaterLine > 1e-6) {
             totalBuoyancy = getTotalBuoyancy(canoe, waterLine);
-            if (totalBuoyancy < Math.abs(totalWeight))
+            if (totalBuoyancy < Math.abs(netForce))
                 minWaterLine = waterLine;
             else
                 maxWaterLine = waterLine;

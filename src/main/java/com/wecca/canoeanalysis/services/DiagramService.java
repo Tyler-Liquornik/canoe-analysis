@@ -59,7 +59,7 @@ public class DiagramService {
      * @return the configured FixedTicksNumberAxis
      */
     private static FixedTicksNumberAxis setupXAxis(Canoe canoe) {
-        TreeSet<Double> criticalPoints = canoe.getAllEndpoints();
+        TreeSet<Double> criticalPoints = canoe.getSectionEndpoints();
         FixedTicksNumberAxis xAxis = new FixedTicksNumberAxis(new ArrayList<>(criticalPoints));
         xAxis.setAutoRanging(false);
         xAxis.setLabel("Distance [m]");
@@ -70,7 +70,7 @@ public class DiagramService {
 
     public static void addSeriesToChart(Canoe canoe, List<Point2D> points, String yUnits, AreaChart<Number, Number> chart) {
 
-        TreeSet<Double> criticalPoints = canoe.getAllEndpoints();
+        TreeSet<Double> criticalPoints = canoe.getSectionEndpoints();
 
         // Adding the sections of the pseudo piecewise function separately
         boolean set = false; // only need to set the name of the series once since its really one piecewise function
