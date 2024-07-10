@@ -4,8 +4,11 @@
 PADDL, Precision Analysis & Design for Dynamic Loading, is a JavaFx desktop app built to simplify technical civil engineering design and analysis. The primary goal of the project is to implement effective UI/UX design to lower the barrier of technical knowledge required to make informed, analytical civil engineering decisions in less time.
 
 <div style="display: flex; flex-direction: row;">
-    <img src="images/UI.png" alt="UI" style="width: 49%;" />
-    <img src="images/graph.png" alt="graph" style="width: 49%;" />
+    <img src="images/ui.png" alt="ui" style="width: 49%;" />
+    <img src="images/side-menu.png" alt="side menu" style="width: 49%;" />
+    <br>
+    <img src="images/sfd.png" alt = "sfd" style="width: 49%;" />
+    <img src="images/bmd.png" alt = "bmd" style="width: 49%;" />
 </div>
 
 PADDL is built as a custom software solution for [WECCA](https://wecca.org/), the Western Engineering Concrete Canoe Association, as a candidate for our 2025 EFA (Enhanced Focus Area). PADDL's modules are designed specifically as solutions to aid civil engineering processes specifically centered around WECCA's concrete canoe.
@@ -19,8 +22,8 @@ Currently, the program has one module to solve for the canoe's internal shear fo
     - Stands Case: balance the canoe on stands at x = 0 & x = L with vertical reaction forces
     - Floating Case: numerically solve for a buoyancy load distribution at an equilibrium waterline
 - Flexibility to change colors to meet different yearly themes
-- Presence of different units in a way that makes working with mixed units easy
-- Convenience of the model displayed as icons and in a list
+- Working with different units made easy
+- Canoe model displayed in graphics and tree view forms
 - Mapping of the model to a file to be downloaded & uploaded for sharing data between engineers
 - Infrastructure to include other modules
 
