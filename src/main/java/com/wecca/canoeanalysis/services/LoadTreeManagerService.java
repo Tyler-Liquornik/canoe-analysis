@@ -107,7 +107,7 @@ public class LoadTreeManagerService {
             case DiscreteLoadDistribution loadDist -> {
                 return createLoadDistTreeItem(loadId, loadDist);
             }
-        default -> throw new RuntimeException("Cannot process type " + load.getClass().getName());
+        default -> throw new RuntimeException("There is no createLoadTreeItem strategy for load type " + load.getClass().getName());
         }
     }
 

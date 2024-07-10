@@ -3,7 +3,7 @@ package com.wecca.canoeanalysis.models.canoe;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wecca.canoeanalysis.models.load.*;
-import com.wecca.canoeanalysis.utils.SortingUtils;
+import com.wecca.canoeanalysis.utils.LoadUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -65,7 +65,7 @@ public class Canoe
         }
 
         loads.add(load);
-        SortingUtils.sortLoads(loads);
+        LoadUtils.sortLoads(loads);
         return AddLoadResult.ADDED;
     }
 
@@ -171,46 +171,7 @@ public class Canoe
      */
     @JsonIgnore
     public List<Load> getAllLoads() {
-        List<Load> loads = new ArrayList<>(this.loads);
-
-        // Temporarily hold the hull's self-weight distribution, if it exists
-        Load hullLoad = hull.getSelfWeightDistribution();
-
-        // Look for where to insert the hull to maintain order without resorting the whole list (which is more expensive)
-        if (hullLoad != null) {
-            // Define the order to sort by type
-            Map<Class<? extends Load>, Integer> classOrder = SortingUtils.getLoadsClassOrderSortingMap();
-
-            // Find the correct position to insert the hull load
-            int insertIndex = 0;
-            for (int i = 0; i < loads.size(); i++) {
-                Load currentLoad = loads.get(i);
-
-                // pLoad: {x=0, classOrder=0}, pLoad{x=1, classOrder=0}
-                //hull: {x=[0,6], classOrder=1}
-
-                // If x-coordinates are equal, compare by class order
-                if (hullLoad.getX() == currentLoad.getX()) {
-                    int hullClassOrder = classOrder.getOrDefault(hullLoad.getClass(), -1);
-                    int currentClassOrder = classOrder.getOrDefault(currentLoad.getClass(), -1);
-                    if (hullClassOrder <= currentClassOrder) {
-                        break;
-                    }
-                }
-
-                // Compare by x-coordinate
-                if (hullLoad.getX() < currentLoad.getX()) {
-                    break;
-                }
-
-                // Update the insertion index
-                insertIndex = i;
-            }
-
-            // Insert the hull load at the determined position
-            loads.add(insertIndex, hullLoad);
-        }
-        return loads;
+        return LoadUtils.addHullPreserveLoadSorting(loads, hull);
     }
 
     /**
@@ -232,17 +193,7 @@ public class Canoe
      */
     @JsonIgnore
     public List<Load> getAllLoadsDiscretized() {
-        List<Load> loads = new ArrayList<>(this.loads.stream()
-                .map(load -> load instanceof PiecewiseContinuousLoadDistribution piecewise ?
-                        DiscreteLoadDistribution.fromPiecewiseContinuous(piecewise.getType(), piecewise) : load)
-                .toList());
-
-        // Add the hull self-weight load separately
-        if (hull.getSelfWeightDistribution() != null) {
-            loads.add(DiscreteLoadDistribution.fromHull(hull));
-        }
-        SortingUtils.sortLoads(loads);
-        return loads;
+        return LoadUtils.discretizeLoads(LoadUtils.addHullPreserveLoadSorting(loads, hull));
     }
 
     /**

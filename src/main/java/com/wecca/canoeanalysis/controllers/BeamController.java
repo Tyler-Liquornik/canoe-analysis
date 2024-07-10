@@ -12,7 +12,6 @@ import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.utils.ControlUtils;
 import com.wecca.canoeanalysis.utils.GraphicsUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
-import com.wecca.canoeanalysis.utils.SortingUtils;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
@@ -322,7 +321,7 @@ public class BeamController implements Initializable
 
         // Clear graphics the load container and add the new list of load graphics including the support, all sorted
         loadContainer.getChildren().clear();
-        SortingUtils.sortGraphics(loadContainerChildren);
+        GraphicsUtils.sortGraphics(loadContainerChildren);
         loadContainer.getChildren().addAll(loadContainerChildren.stream()
                 .map(load -> (Node) load).toList());
     }
@@ -391,7 +390,7 @@ public class BeamController implements Initializable
             }
         }
 
-        SortingUtils.sortGraphics(rescaledGraphics);
+        GraphicsUtils.sortGraphics(rescaledGraphics);
         loadContainer.getChildren().addAll((rescaledGraphics.stream().map(element -> (Node) element)).toList());
         updateViewOrder();
     }

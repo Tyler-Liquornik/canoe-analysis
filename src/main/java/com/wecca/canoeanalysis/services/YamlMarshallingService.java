@@ -100,7 +100,7 @@ public class YamlMarshallingService {
                 for (Load load : canoe.getLoads())
                     adjustedCanoe.addLoad(load);
                 beamController.setCanoe(adjustedCanoe);
-                mainController.showSnackbar("Successfully uploaded Canoe Model");
+                mainController.showSnackbar("Successfully uploaded " + fileToUpload.getName());
             } catch (IOException ex) {
                 System.out.println(ex.getMessage());
                 mainController.showSnackbar("Could not parse \"" + fileToUpload.getName() + "\".");
