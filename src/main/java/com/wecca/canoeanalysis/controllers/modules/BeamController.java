@@ -30,8 +30,7 @@ import java.util.*;
 /**
  * Primary controller for longitudinal analysis of a beam
  */
-public class BeamController implements Initializable
-{
+public class BeamController implements Initializable {
     @FXML
     private Label axisLabelR, lengthLabel, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,
             pointTitleLabel, supportTitleLabel, distributedDirectionLabel, distributedMagntiudeLabel,
@@ -422,6 +421,7 @@ public class BeamController implements Initializable
             // Prevent a "nonsense scenario" solve attempt
             if (canoe.getHull().getWeight() == 0) {
                 mainController.showSnackbar("Cannot solve a buoyancy distribution without a hull. Please build a hull first");
+                mainController.flashModuleToolBarButton(0, 4750);
                 return;
             }
             solveFloatingSystem();

@@ -18,15 +18,18 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import javafx.scene.paint.Color;
 import lombok.Getter;
 import lombok.Setter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.List;
 import java.util.function.Consumer;
 
 @Getter @Setter
@@ -54,7 +57,7 @@ public class MainController implements Initializable {
     private double drawerTargetX; // Target X position for the drawer
 
     // Each module will have a set of custom toolbar buttons on top of the minimize and close window buttons
-    private List<Button> moduleToolBarButtons = new ArrayList<>();
+    private static List<Button> moduleToolBarButtons = new ArrayList<>();
 
     /**
      * Mouse clicked event to set the current location of the window
@@ -231,6 +234,7 @@ public class MainController implements Initializable {
         for (Button button : moduleToolBarButtons) {
             buttonX = buttonX - buttonWidth;
 
+            button.getStyleClass().add("primary");
             button.setPrefHeight(buttonHeight);
             button.setPrefWidth(buttonWidth);
             button.setMaxHeight(buttonHeight);
@@ -251,7 +255,7 @@ public class MainController implements Initializable {
      * @param index to choose which button to disable
      */
     public void disableModuleToolBarButton(boolean b, int index) {
-        Button button = getModuleToolBarButtons().get(index);
+        Button button = moduleToolBarButtons.get(index);
         double opacity = b ? 0.4 : 1.0;
         button.setStyle("-fx-opacity: " + opacity);
         button.setDisable(b);
@@ -262,7 +266,7 @@ public class MainController implements Initializable {
      * @param b choose whether to enable or disable
      */
     public void disableAllModuleToolbarButton(boolean b) {
-        for (int i = 0; i < getModuleToolBarButtons().size(); i++) {
+        for (int i = 0; i < moduleToolBarButtons.size(); i++) {
             disableModuleToolBarButton(b, i);
         }
     }
@@ -275,6 +279,47 @@ public class MainController implements Initializable {
             moduleToolBarButtons.clear();
         }
     }
+
+    /**
+     * Flash the icon inside one of the module toolbar buttons with a DropShadow effect as a hint for the user to press there.
+     * @param index of the button to flash in the module toolbar
+     * @param duration the total duration in ms the DropShadow effect should take
+     */
+    public void flashModuleToolBarButton(int index, double duration) {
+        if (index < 0 || index >= moduleToolBarButtons.size())
+            throw new IllegalArgumentException("Invalid index for toolbar button");
+
+        // Setup drop shadow on button
+        Button button = moduleToolBarButtons.get(index);
+        FontAwesomeIcon icon = (FontAwesomeIcon) button.getGraphic();
+        DropShadow dropShadow = new DropShadow();
+        dropShadow.setColor(ColorPaletteService.getColor("above-surface"));
+        dropShadow.setRadius(0);
+        dropShadow.setSpread(0);
+        icon.setEffect(dropShadow);
+
+        // Animation section durations
+        double fadeInDuration = Math.min(duration * 0.25, 500);
+        double fadeOutDuration = Math.min(duration * 0.25, 500);
+
+        // Create a Timeline to animate the DropShadow effect
+        Timeline flashTimeline = new Timeline(
+                new KeyFrame(Duration.ZERO,
+                        new KeyValue(dropShadow.radiusProperty(), 0),
+                        new KeyValue(dropShadow.spreadProperty(), 0)),
+                new KeyFrame(Duration.millis(fadeInDuration),
+                        new KeyValue(dropShadow.radiusProperty(), 10),
+                        new KeyValue(dropShadow.spreadProperty(), 0.5)),
+                new KeyFrame(Duration.millis(fadeInDuration + duration),
+                        new KeyValue(dropShadow.radiusProperty(), 10),
+                        new KeyValue(dropShadow.spreadProperty(), 0.5)),
+                new KeyFrame(Duration.millis(fadeInDuration + duration + fadeOutDuration),
+                        new KeyValue(dropShadow.radiusProperty(), 0),
+                        new KeyValue(dropShadow.spreadProperty(), 0))
+        );
+        flashTimeline.play();
+    }
+
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {

@@ -32,7 +32,6 @@ public class ColorManagerService {
 
     /**
      * Adds an entry to the stylesheet mapping.
-     *
      * @param object the object (Parent or Scene) to which the stylesheet will be applied
      * @param stylesheetPath the path to the stylesheet
      */
@@ -40,7 +39,7 @@ public class ColorManagerService {
         if (object instanceof Scene || object instanceof Parent)
             stylesheetMap.put(object, stylesheetPath);
         else
-            throw new RuntimeException("addEntryToStyleSheetMapping method only takes objects of type 'Scene' or 'Parent'");
+            throw new IllegalArgumentException("addEntryToStyleSheetMapping method only takes objects of type 'Scene' or 'Parent'");
     }
 
     public static void registerInColorPalette(Graphic graphic) {
@@ -52,7 +51,7 @@ public class ColorManagerService {
      * Reloads the stylesheets for all registered objects.
      * Anytime a Parent or Scene object loads CSS it needs to add to the styleSheetMap to be used here.
      */
-    private static void reloadStyleSheetsColors() {
+    public static void reloadStyleSheetsColors() {
         for (Map.Entry<Object, String> entry : stylesheetMap.entrySet()) {
             Object object = entry.getKey();
             String stylesheetPath = entry.getValue();
