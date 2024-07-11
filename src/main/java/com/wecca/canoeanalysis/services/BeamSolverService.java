@@ -106,10 +106,7 @@ public class BeamSolverService {
 
         // Solve for the equilibrium waterline and get the buoyancy distribution at that waterline
         double waterLine = getEquilibriumWaterLine(canoe);
-        PiecewiseContinuousLoadDistribution buoyancy = getBuoyancyDistribution(waterLine, canoe);
-        System.out.println("Total Buoyancy Force = " + buoyancy.getForce() + "kN");
-        System.out.println("Total Hull Weight = " + canoe.getHull().getSelfWeightDistribution().getForce() + "kN");
-        return buoyancy;
+        return getBuoyancyDistribution(waterLine, canoe);
     }
 
     /**

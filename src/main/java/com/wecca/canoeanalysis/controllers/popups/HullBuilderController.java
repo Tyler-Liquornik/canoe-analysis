@@ -43,10 +43,6 @@ public class HullBuilderController implements Initializable {
         LoadTreeManagerService.buildLoadTreeView(canoe);
         mainController.disableModuleToolBarButton(true, 0);
         closeWindow(e);
-
-        // Logging
-        System.out.println("Hull mass = " + canoe.getHull().getMass() + "kg");
-        System.out.println("Hull volume = " + canoe.getHull().getConcreteVolume() + "m^3");
     }
 
     @Override

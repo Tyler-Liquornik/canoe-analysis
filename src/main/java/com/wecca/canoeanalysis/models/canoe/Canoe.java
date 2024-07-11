@@ -3,11 +3,13 @@ package com.wecca.canoeanalysis.models.canoe;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wecca.canoeanalysis.models.load.*;
+import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.LoadUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.util.*;
+import java.util.stream.IntStream;
 
 /**
  * The canoe model consists of a hull, defining the properties of the canoe itself including geometry and material properties
@@ -132,7 +134,7 @@ public class Canoe
      */
     @JsonIgnore
     public List<Load> getAllLoads() {
-        return LoadUtils.addHullPreserveLoadSorting(loads, hull);
+        return LoadUtils.addHullAsLoad(loads, hull);
     }
 
     /**
@@ -153,7 +155,7 @@ public class Canoe
      */
     @JsonIgnore
     public List<Load> getAllLoadsDiscretized() {
-        return LoadUtils.discretizeLoads(LoadUtils.addHullPreserveLoadSorting(loads, hull));
+        return LoadUtils.discretizeLoads(LoadUtils.addHullAsLoad(loads, hull));
     }
 
     /**
@@ -162,5 +164,49 @@ public class Canoe
     @JsonIgnore
     public double getNetForce() {
         return getAllLoads().stream().mapToDouble(Load::getForce).sum();
+    }
+
+    /**
+     * This is needed because right now the floating case cannot be solved with asymmetry
+     * This is because asymmetry introduces a tilt angle with vastly complicates everything in the current model
+     * In addition, for realistic sufficient load cases we typically have symmetry
+     * @return if the canoe, including the hull self-weight and external loads are symmetrical about the canoes lengthwise midpoints
+     */
+    @JsonIgnore
+    public boolean isSymmetricallyLoaded() {
+        // Check if the hull's self-weight distribution is symmetrical
+        double hullLength = hull.getLength();
+        double midpoint = hullLength / 2.0;
+        boolean isHullSymmetrical = CalculusUtils.isSymmetrical(hull.getSelfWeightDistribution());
+        if (!isHullSymmetrical)
+            return false;
+
+        // Split loads into left and right halves
+        List<Load> leftHalf = new ArrayList<>();
+        List<Load> rightHalf = new ArrayList<>();
+        for (Load load : loads) {
+            if ((load instanceof PointLoad pLoad && pLoad.getX() <= midpoint) || ((load instanceof UniformLoadDistribution dLoad && dLoad.getX() < midpoint)))
+                leftHalf.add(load);
+            if ((load instanceof PointLoad pLoad && pLoad.getX() >= midpoint) || ((load instanceof UniformLoadDistribution dLoad && dLoad.getRx() > midpoint)))
+                rightHalf.add(load);
+        }
+        if (leftHalf.size() != rightHalf.size())
+            return false;
+        List<Load> flippedRightHalf = LoadUtils.flipLoads(rightHalf, hullLength);
+
+        // Check that the right half reflected about the midpoint should be the same as the left half for symmetry
+        return IntStream.range(0, leftHalf.size()).allMatch(i -> {
+            Load lLoad = leftHalf.get(i);
+            Load rLoad = flippedRightHalf.get(i);
+
+            // Do not need to deal with piecewise distributions, the user cannot add them as external loads and this case is complicated
+            if (lLoad instanceof PointLoad lpLoad && rLoad instanceof PointLoad rpLoad)
+                return lpLoad.equals(rpLoad);
+            else if (lLoad instanceof UniformLoadDistribution leftDistLoad && rLoad instanceof UniformLoadDistribution rightDistLoad)
+                return leftDistLoad.equals(rightDistLoad);
+            else if (!((lLoad instanceof PointLoad) || (lLoad instanceof UniformLoadDistribution)))
+                throw new IllegalArgumentException("Cannot process loads of type: " + lLoad.getClass());
+            return false;
+        });
     }
 }

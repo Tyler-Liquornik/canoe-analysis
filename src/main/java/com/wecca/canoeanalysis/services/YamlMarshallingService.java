@@ -101,7 +101,6 @@ public class YamlMarshallingService {
                 beamController.setCanoe(adjustedCanoe);
                 mainController.showSnackbar("Successfully uploaded " + fileToUpload.getName());
             } catch (IOException ex) {
-                System.out.println(ex.getMessage());
                 mainController.showSnackbar("Could not parse \"" + fileToUpload.getName() + "\".");
             }
         }

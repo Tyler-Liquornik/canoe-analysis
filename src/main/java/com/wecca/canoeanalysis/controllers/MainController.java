@@ -23,7 +23,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import javafx.scene.paint.Color;
 import lombok.Getter;
 import lombok.Setter;
 import java.io.IOException;
@@ -298,11 +297,9 @@ public class MainController implements Initializable {
         dropShadow.setSpread(0);
         icon.setEffect(dropShadow);
 
-        // Animation section durations
+        // Create a Timeline to animate the DropShadow effect
         double fadeInDuration = Math.min(duration * 0.25, 500);
         double fadeOutDuration = Math.min(duration * 0.25, 500);
-
-        // Create a Timeline to animate the DropShadow effect
         Timeline flashTimeline = new Timeline(
                 new KeyFrame(Duration.ZERO,
                         new KeyValue(dropShadow.radiusProperty(), 0),

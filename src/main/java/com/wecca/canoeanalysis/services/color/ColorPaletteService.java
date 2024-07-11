@@ -19,7 +19,6 @@ public class ColorPaletteService {
     }
 
     public static void putColor(String name, String colorHex) {
-        System.out.println("Put " + name +": " + colorHex);
         COLORS.put(name, Color.web(colorHex));
     }
 

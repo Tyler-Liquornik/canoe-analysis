@@ -424,6 +424,10 @@ public class BeamController implements Initializable {
                 mainController.flashModuleToolBarButton(0, 4750);
                 return;
             }
+            if (!canoe.isSymmetricallyLoaded()) {
+                mainController.showSnackbar("Cannot solve buoyancy for an asymmetrically loaded canoe. It will tip over!");
+                return;
+            }
             solveFloatingSystem();
             solveSystemButton.setOnAction(e -> undoFloatingSolve());
         }

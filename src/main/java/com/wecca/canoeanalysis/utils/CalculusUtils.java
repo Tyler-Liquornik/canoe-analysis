@@ -25,7 +25,7 @@ public class CalculusUtils
      */
     public static UnivariateFunction differentiate(UnivariateFunction function)
     {
-        double h = 1e-5; // Small value for h implies the limit as h -> 0
+        double h = 1e-6; // Small value for h implies the limit as h -> 0
         return x -> (function.value(x + h) - function.value(x - h)) / (2 * h);
     }
 
@@ -41,6 +41,27 @@ public class CalculusUtils
                     x -> Math.sqrt(1 + Math.pow(differentiate(function).value(x), 2));
             return integrator.integrate(MaxEval.unlimited().getMaxEval(), profileArcLengthElementFunction, a, b);
         }
+    }
+
+    /**
+     * @param piecewise the function to check for symmetry on its section
+     * @return if the function is symmetrical or not
+     */
+    public static boolean isSymmetrical(PiecewiseContinuousLoadDistribution piecewise) {
+        UnivariateFunction f = piecewise.getPiecedFunction();
+        double startX = piecewise.getX();
+        double endX = piecewise.getPieces().lastKey().getRx();
+        double midpoint = (startX + endX) / 2.0;
+        double tolerance = 1e-6;
+        double stepSize = 1e-3;
+
+        for (double x = startX; x <= midpoint; x += stepSize) {
+            double symmetricX = 2 * midpoint - x;
+            if (Math.abs(f.value(x) - f.value(symmetricX)) > tolerance) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

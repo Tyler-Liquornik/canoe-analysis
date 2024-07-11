@@ -57,7 +57,7 @@ public class LoadUtils {
      * @param hull to add to the list
      * @return the list with the hull added
      */
-    public static List<Load> addHullPreserveLoadSorting(List<Load> loads, Hull hull) {
+    public static List<Load> addHullAsLoad(List<Load> loads, Hull hull) {
         // Simple cases
         if (loads == null)
             return null;
@@ -113,5 +113,30 @@ public class LoadUtils {
                 return load;
         }).toList();
         return loads;
+    }
+
+    /**
+     * Flips a list of loads across a hull's length
+     * Used in the process of checking for symmetrical loading
+     * @param rightHalf the list of loads on the right half of the canoe
+     * @param hullLength the length of the hull
+     * @return the flipped list of loads
+     */
+    public static List<Load> flipLoads(List<Load> rightHalf, double hullLength) {
+        List<Load> flippedRightHalf = new ArrayList<>();
+        for (int i = rightHalf.size() - 1; i >= 0; i--) {
+            Load load = rightHalf.get(i);
+            Load flippedLoad = switch (load) {
+                case PointLoad pLoad -> new PointLoad(pLoad.getForce(), hullLength - pLoad.getX(), pLoad.isSupport());
+                case UniformLoadDistribution dLoad -> {
+                    double flippedX = hullLength - dLoad.getX();
+                    double flippedRx = hullLength - dLoad.getSection().getRx();
+                    yield new UniformLoadDistribution(dLoad.getMagnitude(), flippedRx, flippedX);
+                }
+                default -> throw new IllegalArgumentException("Cannot process load of type: " + load.getClass());
+            };
+            flippedRightHalf.add(flippedLoad);
+        }
+        return flippedRightHalf;
     }
 }
