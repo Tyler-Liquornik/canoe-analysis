@@ -98,7 +98,7 @@ public class BeamSolverService {
         }
 
         // Case where the hull has no weight (only exists to provide length)
-        // This is nonsense because buoyancy cannot be distributed against only the set of critical points provided by pLoads and dLoads
+        // This is nonsense because buoyancy cannot be distributed against only the discrete set of critical points provided by pLoads and dLoads
         // This exception should not be thrown, a check should be performed before entering this function
         if (canoe.getHull().getWeight() == 0) {
             throw new RuntimeException("Cannot solve a buoyancy distribution with no hull");
@@ -148,7 +148,7 @@ public class BeamSolverService {
      * @param waterLine the level below y = 0 of the waterline guess
      * @return the total buoyant in kN at the given waterline guess
      */
-    private static double getTotalBuoyancy(Canoe canoe, double waterLine) {
+    public static double getTotalBuoyancy(Canoe canoe, double waterLine) {
         List<HullSection> sections = canoe.getHull().getHullSections();
         double totalBuoyantForce = 0;
         for (HullSection section : sections) {

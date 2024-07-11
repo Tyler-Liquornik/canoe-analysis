@@ -408,7 +408,7 @@ public class BeamController implements Initializable {
             return;
         }
 
-        // Solve the system
+
         if (submergedRadioButton.isSelected()) {
             solveSubmergedSystem();
             return; // TODO: after implemented solveSubmergedSystem()
@@ -418,14 +418,18 @@ public class BeamController implements Initializable {
             solveSystemButton.setOnAction(e -> undoStandsSolve());
         }
         else if (floatingRadioButton.isSelected()) {
-            // Prevent a "nonsense scenario" solve attempt
             if (canoe.getHull().getWeight() == 0) {
-                mainController.showSnackbar("Cannot solve a buoyancy distribution without a hull. Please build a hull first");
-                mainController.flashModuleToolBarButton(0, 4750);
+                mainController.showSnackbar("Cannot solve a buoyancy without a hull. Please build a hull first");
+                mainController.flashModuleToolBarButton(0, 4750); // as a hint for the user
+                return;
+            }
+            double maximumPossibleBuoyancyForce = BeamSolverService.getTotalBuoyancy(canoe, 0);
+            if (-canoe.getNetForce() > maximumPossibleBuoyancyForce) {
+                mainController.showSnackbar("Cannot solve buoyancy as there is too much load. The canoe will sink!");
                 return;
             }
             if (!canoe.isSymmetricallyLoaded()) {
-                mainController.showSnackbar("Cannot solve buoyancy for an asymmetrically loaded canoe. It will tip over!");
+                mainController.showSnackbar("Cannot solve buoyancy for an asymmetrically loaded canoe. The canoe will tip over!");
                 return;
             }
             solveFloatingSystem();
