@@ -36,4 +36,10 @@ module com.wecca.canoeanalysis {
     opens com.wecca.canoeanalysis.models.canoe to javafx.fxml;
     exports com.wecca.canoeanalysis.models.data;
     opens com.wecca.canoeanalysis.models.data to javafx.fxml;
+    exports com.wecca.canoeanalysis.controllers.modules;
+    opens com.wecca.canoeanalysis.controllers.modules to javafx.fxml;
+    exports com.wecca.canoeanalysis.controllers.popups;
+    opens com.wecca.canoeanalysis.controllers.popups to javafx.fxml;
+    exports com.wecca.canoeanalysis.controllers.util;
+    opens com.wecca.canoeanalysis.controllers.util to javafx.fxml;
 }

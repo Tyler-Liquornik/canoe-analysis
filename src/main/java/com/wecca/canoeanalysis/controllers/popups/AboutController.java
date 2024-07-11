@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.controllers;
+package com.wecca.canoeanalysis.controllers.popups;
 import com.jfoenix.effects.JFXDepthManager;
 import javafx.fxml.Initializable;
 import javafx.scene.layout.AnchorPane;

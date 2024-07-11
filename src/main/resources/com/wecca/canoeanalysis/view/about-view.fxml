@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.shape.Line?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="550.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.AboutController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="550.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.popups.AboutController">
    <children>
       <AnchorPane fx:id="imagePane" layoutX="35.0" layoutY="50.0" prefHeight="175.0" prefWidth="175.0" styleClass="surface" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="25.0">
          <children>

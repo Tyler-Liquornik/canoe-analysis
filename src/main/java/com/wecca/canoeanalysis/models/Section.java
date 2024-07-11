@@ -6,6 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Represents an interval [x, rx] where 0 <= x < rx
  * In essence, this is just a sub-interval of R^+

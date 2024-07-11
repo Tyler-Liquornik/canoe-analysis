@@ -1,5 +1,6 @@
-package com.wecca.canoeanalysis.controllers;
+package com.wecca.canoeanalysis.controllers.popups;
 
+import com.wecca.canoeanalysis.controllers.modules.BeamController;
 import com.wecca.canoeanalysis.services.YamlMarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import javafx.fxml.Initializable;

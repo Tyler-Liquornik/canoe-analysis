@@ -44,6 +44,31 @@ public class CalculusUtils
     }
 
     /**
+     * Factory method to join a list of points x_i such that 0 < x_(i-1) < x_i < ... < x_n into intervals (section objects)
+     * Each section has endpoints [x_(i-1), x_i], so there's n-1 sections formed and packaged into a list
+     * @param endpoints the points to turn into sections (endpoints in terms of the formed intervals)
+     * @return the list of sections
+     */
+    public static List<Section> sectionsFromEndpoints(List<Double> endpoints) {
+        if (endpoints.size() < 2)
+            throw new IllegalArgumentException("Cannot form a section without at least two points");
+
+        List<Section> sections = new ArrayList<>();
+
+        for (int i = 0; i < endpoints.size() - 1; i++) {
+            double curr = endpoints.get(i);
+            double next = endpoints.get(i + 1);
+
+            if (next - curr < 0.01)
+                throw new IllegalArgumentException("All sections must be of width at least 0.01m");
+
+            sections.add(new Section(curr, next));
+        }
+
+        return sections;
+    }
+
+    /**
      * Ensures a set of distributions will form a continuous curve when their intervals are joined
      * @param pieces the pieces to validate
      * @param sections the sections of the pieces

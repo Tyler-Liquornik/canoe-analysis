@@ -2,7 +2,7 @@ package com.wecca.canoeanalysis.services;
 
 import com.jfoenix.controls.JFXTreeView;
 import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
-import com.wecca.canoeanalysis.controllers.BeamController;
+import com.wecca.canoeanalysis.controllers.modules.BeamController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.load.*;
 import javafx.scene.control.TreeItem;

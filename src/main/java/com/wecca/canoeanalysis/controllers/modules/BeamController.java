@@ -1,10 +1,13 @@
-package com.wecca.canoeanalysis.controllers;
+package com.wecca.canoeanalysis.controllers.modules;
 
 import com.jfoenix.controls.JFXTreeView;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
 import com.wecca.canoeanalysis.components.graphics.*;
+import com.wecca.canoeanalysis.controllers.popups.HullBuilderController;
+import com.wecca.canoeanalysis.controllers.MainController;
+import com.wecca.canoeanalysis.controllers.popups.UploadAlertController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.services.DiagramService;
@@ -400,27 +403,35 @@ public class BeamController implements Initializable
      * Distributes call to appropriate method and re-renders loads.
      */
     public void solveSystem() {
-        // TODO: move to bottom like other cases when submerged logic is implemented
-        if (submergedRadioButton.isSelected()) {
-            solveSubmergedSystem();
+        // System solve with upward net force makes no sense
+        if (canoe.getNetForce() > 0) {
+            mainController.showSnackbar("Cannot solve the system with upward net force. Remove some loads and try again");
             return;
         }
 
-        // Controls enabling/disabling for UX
-        generateGraphsButton.setDisable(false);
-        disableLoadingControls(true);
-        loadsTreeView.setDisable(false);
-
+        // Solve the system
+        if (submergedRadioButton.isSelected()) {
+            solveSubmergedSystem();
+            return; // TODO: after implemented solveSubmergedSystem()
+        }
         if (standsRadioButton.isSelected()) {
             solveStandSystem();
             solveSystemButton.setOnAction(e -> undoStandsSolve());
         }
         else if (floatingRadioButton.isSelected()) {
+            // Prevent a "nonsense scenario" solve attempt
+            if (canoe.getHull().getWeight() == 0) {
+                mainController.showSnackbar("Cannot solve a buoyancy distribution without a hull. Please build a hull first");
+                return;
+            }
             solveFloatingSystem();
             solveSystemButton.setOnAction(e -> undoFloatingSolve());
         }
 
         // Update UI state
+        generateGraphsButton.setDisable(false);
+        disableLoadingControls(true);
+        loadsTreeView.setDisable(false);
         solveSystemButton.setText("Undo Solve");
         solveSystemButton.setDisable(false);
         LoadTreeManagerService.buildLoadTreeView(canoe);

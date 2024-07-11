@@ -1,5 +1,7 @@
-package com.wecca.canoeanalysis.controllers;
+package com.wecca.canoeanalysis.controllers.popups;
 
+import com.wecca.canoeanalysis.controllers.MainController;
+import com.wecca.canoeanalysis.controllers.modules.BeamController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.services.LoadTreeManagerService;

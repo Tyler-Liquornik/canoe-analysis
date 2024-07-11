@@ -1,13 +1,13 @@
-package com.wecca.canoeanalysis.controllers;
+package com.wecca.canoeanalysis.controllers.modules;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.controllers.MainController;
 import javafx.fxml.Initializable;
 import lombok.Setter;
-
 import java.net.URL;
 import java.util.ResourceBundle;
 
-public class PercentOpenAreaController implements Initializable {
+public class FailureEnvelopeController implements Initializable {
 
     @Setter
     private static MainController mainController;

@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.controllers;
+package com.wecca.canoeanalysis.controllers.popups;
 
 import com.wecca.canoeanalysis.models.data.Settings;
 import com.wecca.canoeanalysis.services.YamlMarshallingService;

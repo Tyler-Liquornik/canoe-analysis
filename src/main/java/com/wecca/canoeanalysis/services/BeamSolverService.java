@@ -97,6 +97,13 @@ public class BeamSolverService {
             return new PiecewiseContinuousLoadDistribution(LoadType.BUOYANCY, pieces, sections);
         }
 
+        // Case where the hull has no weight (only exists to provide length)
+        // This is nonsense because buoyancy cannot be distributed against only the set of critical points provided by pLoads and dLoads
+        // This exception should not be thrown, a check should be performed before entering this function
+        if (canoe.getHull().getWeight() == 0) {
+            throw new RuntimeException("Cannot solve a buoyancy distribution with no hull");
+        }
+
         // Solve for the equilibrium waterline and get the buoyancy distribution at that waterline
         double waterLine = getEquilibriumWaterLine(canoe);
         PiecewiseContinuousLoadDistribution buoyancy = getBuoyancyDistribution(waterLine, canoe);
@@ -106,10 +113,10 @@ public class BeamSolverService {
     }
 
     /**
-     * Guess a waterline and get the volume of the submerged portion of the section
+     * Guess a waterline to get a function that describes the submerged cross-sectional area as a function of length x
      * @param waterline the level below y = 0 of the waterline guess
-     * @param section the section to calculate the buoyant force on
-     * @return the submerged volume in m^3 at the given waterline guess
+     * @param section the section to calculate the function for
+     * @return the function A_submerged(x) in m^2
      */
     private static UnivariateFunction getSubmergedCrossSectionalAreaFunction(double waterline, HullSection section) {
         return x -> {
@@ -185,17 +192,58 @@ public class BeamSolverService {
      * @return the buoyancy distribution of the canoe at the given waterline in kN/m
      */
     private static PiecewiseContinuousLoadDistribution getBuoyancyDistribution(double waterline, Canoe canoe) {
-        List<HullSection> sections = canoe.getHull().getHullSections();
+        List<Section> sectionsToMapTo = CalculusUtils.sectionsFromEndpoints(canoe.getSectionEndpoints().stream().toList());
+        List<HullSection> mappedHullSections = reformHullSections(canoe.getHull(), sectionsToMapTo).getHullSections();
         List<UnivariateFunction> buoyancyPieces = new ArrayList<>();
         List<Section> buoyancySections = new ArrayList<>();
 
-        for (HullSection section : sections) {
+        for (HullSection section : mappedHullSections) {
             UnivariateFunction buoyancyPiece = x -> getSubmergedCrossSectionalAreaFunction(waterline, section).value(x) * PhysicalConstants.DENSITY_OF_WATER.getValue() * PhysicalConstants.GRAVITY.getValue() / 1000.0;
             buoyancyPieces.add(buoyancyPiece);
             buoyancySections.add(section);
         }
 
         return new PiecewiseContinuousLoadDistribution(LoadType.BUOYANCY, buoyancyPieces, buoyancySections);
+    }
+
+    /**
+     * Redefines the same hull in terms of different critical section points
+     * @param hull the hull to redefine
+     * @param sectionsToMapTo the sections which who's individual endpoint pairs all together for the new critical points set
+     * @return the reformed hull
+     */
+    private static Hull reformHullSections(Hull hull, List<Section> sectionsToMapTo) {
+        List<HullSection> newHullSections = new ArrayList<>();
+        List<HullSection> originalSections = hull.getHullSections();
+
+        for (Section newSection : sectionsToMapTo) {
+            double newStart = newSection.getX();
+            double newEnd = newSection.getRx();
+
+            List<HullSection> overlappingSections = originalSections.stream()
+                    .filter(hs -> hs.getRx() > newStart && hs.getX() < newEnd)
+                    .toList();
+
+            for (HullSection overlappingSection : overlappingSections) {
+                double overlapStart = Math.max(newStart, overlappingSection.getX());
+                double overlapEnd = Math.min(newEnd, overlappingSection.getRx());
+
+                if (overlapEnd > overlapStart) {
+                    // Create new HullSection based on overlapping portion
+                    HullSection newHullSection = new HullSection(
+                            overlappingSection.getSideProfileCurve(),
+                            overlappingSection.getTopProfileCurve(),
+                            overlapStart,
+                            overlapEnd,
+                            overlappingSection.getThickness(),
+                            overlappingSection.isFilledBulkhead()
+                    );
+                    newHullSections.add(newHullSection);
+                }
+            }
+        }
+
+        return new Hull(hull.getConcreteDensity(), hull.getBulkheadDensity(), newHullSections);
     }
 
     // TODO: Consult Design and Analysis team for details. Strategy for this has not yet been developed.

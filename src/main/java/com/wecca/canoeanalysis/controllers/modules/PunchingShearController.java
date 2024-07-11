@@ -1,6 +1,7 @@
-package com.wecca.canoeanalysis.controllers;
+package com.wecca.canoeanalysis.controllers.modules;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.controllers.MainController;
 import javafx.fxml.Initializable;
 import lombok.Setter;
 

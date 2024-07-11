@@ -1,4 +1,4 @@
-package com.wecca.canoeanalysis.controllers;
+package com.wecca.canoeanalysis.controllers.util;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.services.WindowManagerService;
