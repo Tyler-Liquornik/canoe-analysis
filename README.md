@@ -16,26 +16,24 @@ PADDL is built as a custom software solution for [WECCA](https://wecca.org/), th
 Currently, the program has one module to solve for the canoe's internal shear force and bending moment distributions. There are intentions for the project to grow in size over the next couple years, where it will become increasingly more useful for WECCA over time.
 
 ### Summer '24 goals:
-- Fully customizable hull geometry and material properties
-- Mathematical models to define curves of hull geometry with functional programming in Java
+- Fully customizable canoe hull geometry and material properties
+- Mathematical models with calculus and structural engineering methodologies of the canoe
 - Two Finished Scenarios to solve for the canoe's equilibrium
     - Stands Case: balance the canoe on stands at x = 0 & x = L with vertical reaction forces
     - Floating Case: numerically solve for a buoyancy load distribution at an equilibrium waterline
 - Flexibility to change colors to meet different yearly themes
 - Working with different units made easy
-- Canoe model displayed in graphics and tree view forms
-- Mapping of the model to a file to be downloaded & uploaded for sharing data between engineers
+- Canoe model clearly displayed visually
+- Mapping of the canoe model to a file to be downloaded & uploaded for sharing data between engineers
 - Infrastructure to include other modules
 
 - Finish: Deploy an executable, downloadable soon at [https://wecca.org/](https://wecca.org/)
 
 ### Long Term Goals:
 - Grow to include club general members as casual contributors in the '24-'25 school year
-- Project Confluence space for documentation
-- Develop the other 5 planned structural/concrete design modules
-- Implement more program wide settings for convenience
-- Planned light theme color options to further customize colors
-- Research and discuss the idea of a more customized hull builder with more advanced material modelling
+- Develop the other 5 planned structural/concrete design modules with other contributors
+- Implement more program wide settings and features for convenience across modules
+- More R&D into more advanced structural analysis methods to expand modelling capabilities
 
 ## Setting up the Development Environment
 
@@ -75,29 +73,28 @@ Currently, the program has one module to solve for the canoe's internal shear fo
 
    Add the jar files from the boxed link. The list should show JFoenix and Scenebuilder as shown. </br> <br/>
 
-## Summer '24 Feature Roadmap
+## Summer '24 Feature Development Roadmap
 
-- [X] Side Menu Drawer for future modules infrastructure
+- [X] Implement material deisgn look and feel
+- [X] Side Menu Drawer
     - [X] Template links to other modules
     - [X] Settings utility window
     - [X] About Page
-- [X] Snackbar error popups
-- [X] Import/Export the canoe object as YAML
+- [X] Animated error popups
+- [X] Import/Export the canoe object to a from/to a file
 - [X] Unification of color system between Java and CSS code
   - [X] Customizable colors in settings
   - [X] Persist color settings accross sessions in a properties file
-- [ ] Solve the case of a floating canoe [Epic]
+- [X] Solve the case of a floating canoe [Epic]
   - [X] Implement an improved model for breaking the canoe hull up into sections
-    - [X] Update the YAML model and Marshalling process
-    - [X] Create new graphics for ciomplex load distributions for the beam
-    - [X] Display new Canoe model in a collapsable TreeView
-  - [X] Solve for a buoyancy load distribution based on the self-weight distribution of the hull
-    - [ ] Solve for a buoyancy load distribution including the hull and external loads
+    - [X] Define a set of curves for hull geometry
+    - [X] Create new graphics for complex load distributions for the hull and buoyancy
+    - [X] Display the canoe model in a collapsable TreeView
   - [X] Iteratively solve for the waterline of a floating hull in equilibrium to get a buoyancy distribution
-  - [X] Define a set of curves for hull geometry (can start with just one hardcoded set for now, user not yet able to choose themselves)
+  - [X] Solve for a buoyancy load distribution based on the self-weight distribution of the hull
+  - [X] Solve for a buoyancy load distribution including the hull and external loads
+  - [X] Ensure the canoe does not tip or sink
      
-PADDL v0 to be released after finishing the roadmap
-    
 <!-- CONTRIBUTING -->
 ## Contributing
 Starting in September for the 2024-2025 school year, any WECCA members involved on the software team can contribute to PADDL!
@@ -112,11 +109,6 @@ Starting in September for the 2024-2025 school year, any WECCA members involved 
 5. Push your commit(s) (`git push origin branch-name`)
 6. Open a pull request, and be ready to describe the feature implemented or bugfix and justify/explain your work in the comments
 7. Wait for approval. You can send a message in the Slack channel to ask, or wait until meeting to discuss the pull request
-
-<!-- LICENSE -->
-## License
-
-Distributed under the MIT License. See `coming_soon.txt` for more information.
 
 <!-- CONTACT -->
 ## Contact
