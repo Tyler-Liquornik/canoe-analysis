@@ -677,10 +677,10 @@ public class BeamController implements Initializable {
      * Currently, this provides buttons to download and upload the Canoe object as JSON
      */
     public void addModuleToolBarButtons() {
-        LinkedHashMap<IconGlyphName, Consumer<ActionEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
-        iconGlyphToFunctionMap.put(IconGlyphName.WRENCH, e -> openHullBuilder());
-        iconGlyphToFunctionMap.put(IconGlyphName.DOWNLOAD, e -> downloadCanoe());
-        iconGlyphToFunctionMap.put(IconGlyphName.UPLOAD, e -> uploadCanoe());
+        LinkedHashMap<IconGlyphType, Consumer<ActionEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
+        iconGlyphToFunctionMap.put(IconGlyphType.WRENCH, e -> openHullBuilder());
+        iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadCanoe());
+        iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
     }

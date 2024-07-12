@@ -9,47 +9,37 @@ import javafx.scene.shape.Path;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Icon used for a point load
+ */
 @Getter @Setter
 public class Arrow extends Path implements Graphic {
 
-    // Fields
-    private static final double defaultArrowHeadSize = 10;
-    private static final double defaultThickness = 1;
-
+    private static final double arrowHeadSize = 10;
     private double startX;
     private double startY;
     private double endX;
     private double endY;
-
     private boolean isColored;
     private boolean isHighlighted;
 
-    private final double thickness;
-
-    public Arrow(double startX, double startY, double endX, double endY, double arrowHeadSize, double thickness) {
+    public Arrow(double startX, double startY, double endX, double endY) {
         super();
 
         this.startX = startX;
         this.startY = startY;
         this.endX = endX;
         this.endY = endY;
-        this.thickness = thickness;
         this.isHighlighted = false;
 
         strokeProperty().bind(fillProperty());
         setFill(ColorPaletteService.getColor("white"));
 
-        makeArrow(startX, startY, endX, endY, arrowHeadSize);
+        draw();
         JFXDepthManager.setDepth(this, 4);
     }
-
-    public Arrow(double startX, double startY, double endX, double endY) {
-        this(startX, startY, endX, endY, defaultArrowHeadSize, defaultThickness);
-    }
-
-    private void makeArrow(double startX, double startY, double endX, double endY, double arrowHeadSize) {
+    public void draw() {
         // Line
-        setStrokeWidth(thickness);
         getElements().add(new MoveTo(startX, startY));
         getElements().add(new LineTo(endX, endY));
 
@@ -59,14 +49,14 @@ public class Arrow extends Path implements Graphic {
         double cos = Math.cos(angle);
 
         // Adjust arrow head size for a less bloated appearance
-        arrowHeadSize *= 0.6;
+        double scaledArrowHeadSize = arrowHeadSize * 0.6;
 
         // Left point
-        double x1 = (-0.5 * cos + Math.sqrt(3) / 2 * sin) * arrowHeadSize + endX;
-        double y1 = (-0.5 * sin - Math.sqrt(3) / 2 * cos) * arrowHeadSize + endY;
+        double x1 = (-0.5 * cos + Math.sqrt(3) / 2 * sin) * scaledArrowHeadSize + endX;
+        double y1 = (-0.5 * sin - Math.sqrt(3) / 2 * cos) * scaledArrowHeadSize + endY;
         // Right Point
-        double x2 = (0.5 * cos + Math.sqrt(3) / 2 * sin) * arrowHeadSize + endX;
-        double y2 = (0.5 * sin - Math.sqrt(3) / 2 * cos) * arrowHeadSize + endY;
+        double x2 = (0.5 * cos + Math.sqrt(3) / 2 * sin) * scaledArrowHeadSize + endX;
+        double y2 = (0.5 * sin - Math.sqrt(3) / 2 * cos) * scaledArrowHeadSize + endY;
 
         // Close arrow head triangle
         getElements().add(new LineTo(x1, y1));

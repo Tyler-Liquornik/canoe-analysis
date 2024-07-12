@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.utils;
 
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
-import com.wecca.canoeanalysis.models.Section;
+import com.wecca.canoeanalysis.models.function.Section;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
@@ -179,10 +179,10 @@ public class CalculusUtils
     }
 
     /**
-     * Get the maximum or minimum value of a single piece based on the provided flag.
+     * Get the maximum or minimum value of a single piece based on the provided flag findMax.
      * @param function the univariate function to analyze
      * @param section the section over which to analyze the function
-     * @param findMax true to find the maximum value, false to find the minimum value
+     * @param findMax flag that marks true to find the maximum value or false to find the minimum value
      * @return the maximum or minimum value
      */
     public static double getMaxOrMinValue(UnivariateFunction function, Section section, boolean findMax) {

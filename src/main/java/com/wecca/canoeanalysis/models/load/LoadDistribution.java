@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.models.load;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.wecca.canoeanalysis.models.Section;
+import com.wecca.canoeanalysis.models.function.Section;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 

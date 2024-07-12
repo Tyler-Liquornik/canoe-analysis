@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
-import com.wecca.canoeanalysis.models.Section;
+import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
@@ -14,29 +14,28 @@ import javafx.scene.shape.Polygon;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.math3.analysis.UnivariateFunction;
-import org.apache.commons.math3.util.MathUtils;
 
 import java.util.List;
 
+/**
+ * Icon used for piecewise continuous load distributions
+ * A curve with shaded area between the curve and the y-axis
+ */
 @Getter @Setter
 public class Curve extends Group implements Graphic {
 
-    private static final double DEFAULT_THICKNESS = 1;
+    protected UnivariateFunction curve;
+    protected Section section;
+    protected double startX;
+    protected double endX;
+    protected double startY;
+    protected double endY;
 
-    // Have chosen not to directly use PiecewiseContinuous function for decoupling the mathematical model from the UI model
-    private UnivariateFunction curve;
-    private Section section;
-    private double startX;
-    private double endX;
-    private double startY;
-    private double endY;
-    private double thickness;
+    protected Path linePath;
+    protected Polygon area;
+    protected boolean isColored;
 
-    private Path linePath;
-    private Polygon area;
-    private boolean isColored;
-
-    public Curve(UnivariateFunction curve, Section section, double startX, double endX, double startY, double endY, double thickness) {
+    public Curve(UnivariateFunction curve, Section section, double startX, double endX, double startY, double endY) {
         super();
         this.curve = curve;
         this.section = section;
@@ -44,18 +43,13 @@ public class Curve extends Group implements Graphic {
         this.endX = endX;
         this.startY = startY;
         this.endY = endY;
-        this.thickness = thickness;
 
         CalculusUtils.validatePiecewiseAsUpOrDown(List.of(curve), List.of(section));
-        draw(curve, section, startX, endX, startY, endY);
+        draw();
         JFXDepthManager.setDepth(this, 4);
     }
 
-    public Curve(UnivariateFunction curve, Section section, double startX, double endX, double startY, double endY) {
-        this(curve, section, startX, endX, startY, endY, DEFAULT_THICKNESS);
-    }
-
-    private void draw(UnivariateFunction function, Section section, double startX, double endX, double startY, double endY) {
+    public void draw() {
         int numSamples = 1000;
         double step = (section.getRx() - section.getX()) / numSamples;
         double currentX = section.getX();
@@ -65,21 +59,19 @@ public class Curve extends Group implements Graphic {
         double minValue = Double.POSITIVE_INFINITY;
         double maxValue = Double.NEGATIVE_INFINITY;
         for (int i = 0; i <= numSamples; i++) {
-            double value = function.value(section.getX() + i * step);
+            double value = curve.value(section.getX() + i * step);
             if (value < minValue) minValue = value;
             if (value > maxValue) maxValue = value;
         }
 
         double valueRange = maxValue - minValue;
 
-        // Check if the function for an upward load and translate and flip the curve to the bottom of the beam
-        boolean isNonNegative = function.value((section.getX() + section.getRx()) / 2) >= 0;
-        UnivariateFunction effectiveFunction = isNonNegative ? x -> -function.value(x) + CalculusUtils.getMaxSignedValue(function, section) : function;
+        // Flip the area of the curve so that it always fills in its area towards  y = 0
+        UnivariateFunction effectiveFunction = isNonNegative() ? x -> -curve.value(x) + CalculusUtils.getMaxSignedValue(curve, section) : curve;
         double initialPathY = startY + ((effectiveFunction.value(currentX) - minValue) / valueRange) * rangeY;
         double initialPathX = startX + ((currentX - section.getX()) / (section.getRx() - section.getX())) * (endX - startX);
 
         linePath = new Path();
-        linePath.setStrokeWidth(thickness);
         linePath.getElements().add(new MoveTo(initialPathX, initialPathY));
 
         area = new Polygon();
@@ -118,5 +110,9 @@ public class Curve extends Group implements Graphic {
 
         linePath.setStroke(lineColor);
         area.setFill(areaColor);
+    }
+
+    protected boolean isNonNegative() {
+        return curve.value((section.getX() + section.getRx()) / 2) >= 0;
     }
 }

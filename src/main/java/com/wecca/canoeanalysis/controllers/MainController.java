@@ -6,7 +6,7 @@ import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.jfoenix.controls.JFXSnackbarLayout;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.components.graphics.IconGlyphName;
+import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.services.YamlMarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
@@ -213,16 +213,16 @@ public class MainController implements Initializable {
      * Set the toolbar buttons based on the glyphs (icon) and respective and onClick functions
      * @param iconGlyphToFunctionMap a map of <Button Icon : Button function>
      */
-    public void setIconToolBarButtons(LinkedHashMap<IconGlyphName, Consumer<ActionEvent>> iconGlyphToFunctionMap) {
+    public void setIconToolBarButtons(LinkedHashMap<IconGlyphType, Consumer<ActionEvent>> iconGlyphToFunctionMap) {
         List<Button> buttons = new ArrayList<>();
-        for (Map.Entry<IconGlyphName, Consumer<ActionEvent>> entry : iconGlyphToFunctionMap.entrySet()) {
+        for (Map.Entry<IconGlyphType, Consumer<ActionEvent>> entry : iconGlyphToFunctionMap.entrySet()) {
             Button button = getIconButton(entry.getKey(), entry.getValue());
             buttons.add(button);
         }
         setToolBarButtons(buttons);
     }
 
-    public Button getIconButton(IconGlyphName iconGlyphName, Consumer<ActionEvent> onClick) {
+    public Button getIconButton(IconGlyphType iconGlyphName, Consumer<ActionEvent> onClick) {
         Button button = new Button();
         button.getStyleClass().add("transparent-button");
         button.setOnAction(onClick::accept);

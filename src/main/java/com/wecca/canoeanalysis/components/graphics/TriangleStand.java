@@ -8,44 +8,30 @@ import javafx.scene.paint.Color;
 import lombok.Getter;
 import lombok.Setter;
 
-// Pinned support icons
+/**
+ * Icon used for a pinned support
+ */
 @Getter @Setter
-public class TriangleStand extends Group implements Graphic
-{
-    // Fields
-    private static final double defaultSideLength = 20.0;
+public class TriangleStand extends Group implements Graphic {
+
+    private static final double sideLength = 20.0;
     private double tipX;
     private double tipY;
-
     private Polygon triangle;
     private Line baseLine;
-
     private boolean isColored;
 
-    // Constructor
-    public TriangleStand(double tipX, double tipY, double sideLength)
-    {
+    public TriangleStand(double tipX, double tipY) {
         super();
-
         this.tipX = tipX;
         this.tipY = tipY;
-
-        makeTriangle(tipX, tipY, sideLength);
+        draw();
     }
 
-    // Simpler constructor with default side length
-    public TriangleStand(double tipX, double tipY)
-    {
-        this(tipX, tipY, defaultSideLength);
-    }
-
-    // Accessors
     @Override
     public double getX() {return getTipX();}
 
-    // Create the triangle
-    private void makeTriangle(double tipX, double tipY, double sideLength)
-    {
+    public void draw() {
         // Bottom left point and bottom right points on the triangle (they are on the same y coordinate)
         double x1 = -0.5 * sideLength + tipX;
         double x2 = 0.5 * sideLength + tipX;
@@ -79,7 +65,6 @@ public class TriangleStand extends Group implements Graphic
         ColorManagerService.registerInColorPalette(this);
     }
 
-    // Change the color of the support triangle
     @Override
     public void recolor(boolean setColored) {
         this.isColored = setColored;

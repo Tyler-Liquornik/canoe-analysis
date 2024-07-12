@@ -4,10 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * Stores easy access of the fontFXNames used for different buttons
+ * Stores easy access of the FontAwesomeFX glyph names for different icons used for module toolbar buttons
  */
 @Getter @AllArgsConstructor
-public enum IconGlyphName {
+public enum IconGlyphType {
     WRENCH("WRENCH"),
     DOWNLOAD("ARROW_CIRCLE_O_DOWN"),
     UPLOAD("ARROW_CIRCLE_O_UP");

@@ -1,13 +1,10 @@
-package com.wecca.canoeanalysis.models;
+package com.wecca.canoeanalysis.models.function;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Represents an interval [x, rx] where 0 <= x < rx
