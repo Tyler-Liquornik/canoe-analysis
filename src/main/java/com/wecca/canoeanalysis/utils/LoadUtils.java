@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.utils;
 
+import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.load.*;
 
@@ -44,10 +45,10 @@ public class LoadUtils {
      */
     public static Map<Class<? extends Load>, Integer> getLoadsClassOrderSortingMap() {
         Map<Class<? extends Load>, Integer> classOrder = new HashMap<>();
-        classOrder.put(PointLoad.class, 0);
-        classOrder.put(UniformLoadDistribution.class, 1);
-        classOrder.put(DiscreteLoadDistribution.class, 2);
-        classOrder.put(PiecewiseContinuousLoadDistribution.class, 3);
+        classOrder.put(PiecewiseContinuousLoadDistribution.class, 0);
+        classOrder.put(DiscreteLoadDistribution.class, 1);
+        classOrder.put(PointLoad.class, 2);
+        classOrder.put(UniformLoadDistribution.class, 3);
         return classOrder;
     }
 
@@ -122,7 +123,7 @@ public class LoadUtils {
      * @param hullLength the length of the hull
      * @return the flipped list of loads
      */
-    public static List<Load> flipLoads(List<Load> rightHalf, double hullLength) {
+    public static List<Load> flipLoadsFromRightHalf(List<Load> rightHalf, double hullLength) {
         List<Load> flippedRightHalf = new ArrayList<>();
         for (int i = rightHalf.size() - 1; i >= 0; i--) {
             Load load = rightHalf.get(i);
@@ -138,5 +139,19 @@ public class LoadUtils {
             flippedRightHalf.add(flippedLoad);
         }
         return flippedRightHalf;
+    }
+
+    /**
+     * @param canoe the canoe on which to check other loads for comparison
+     * @param load the load to compare in the ratio
+     * @return the absolute ratio of load the canoe's maximum load value (of any given individual load) to this load
+     */
+    public static double getLoadMagnitudeRatio(Canoe canoe, Load load) {
+        double loadMagnitudeRatio = Math.abs(load.getMaxSignedValue() / canoe.getMaxLoadValue());
+
+        // Clip load length if too small (i.e. ratio is too large)
+        if (loadMagnitudeRatio < Math.abs(GraphicsUtils.acceptedBeamLoadGraphicHeightRange[0] / GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1]))
+            loadMagnitudeRatio = Math.abs(GraphicsUtils.acceptedBeamLoadGraphicHeightRange[0] / GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1]);
+        return loadMagnitudeRatio;
     }
 }

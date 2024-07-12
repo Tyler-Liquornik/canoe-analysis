@@ -192,7 +192,7 @@ public class Canoe
         }
         if (leftHalf.size() != rightHalf.size())
             return false;
-        List<Load> flippedRightHalf = LoadUtils.flipLoads(rightHalf, hullLength);
+        List<Load> flippedRightHalf = LoadUtils.flipLoadsFromRightHalf(rightHalf, hullLength);
 
         // Check that the right half reflected about the midpoint should be the same as the left half for symmetry
         return IntStream.range(0, leftHalf.size()).allMatch(i -> {

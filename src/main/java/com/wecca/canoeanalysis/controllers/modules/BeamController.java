@@ -14,6 +14,7 @@ import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.utils.ControlUtils;
 import com.wecca.canoeanalysis.utils.GraphicsUtils;
+import com.wecca.canoeanalysis.utils.LoadUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -55,11 +56,8 @@ public class BeamController implements Initializable {
     @Getter @Setter
     private MainController mainController;
     @Getter
-    private Canoe canoe; // entity class that models the canoe as a beam
-    private Beam beam; // The graphic of the beam
-
-    // Size rules for load graphics (prevents them from rendering too big/small)
-    private double[] acceptedGraphicHeightRange;
+    private Canoe canoe;
+    private Beam beam;
 
     /**
      * Toggles settings for empty tree view if it's considered empty (placeholder doesn't count)
@@ -122,15 +120,15 @@ public class BeamController implements Initializable {
         {
 
             // Recolor the selected graphic
-            Graphic colorableGraphic = (Graphic) loadContainer.getChildren().get(i);
+            Graphic graphic = (Graphic) loadContainer.getChildren().get(i);
             if (i != selectedIndex)
-                colorableGraphic.recolor(false);
+                graphic.recolor(false);
             else
             {
-                colorableGraphic.recolor(true);
+                graphic.recolor(true);
 
                 // Bring the graphic to the front of the viewing order
-                Node node = (Node) colorableGraphic;
+                Node node = (Node) graphic;
                 node.setViewOrder(-1);
             }
         }
@@ -317,7 +315,7 @@ public class BeamController implements Initializable {
                 .map(node -> (Graphic) node).toList());
 
         // Create and add the support graphic
-        double tipY = acceptedGraphicHeightRange[1] + (int) beam.getThickness(); // +126
+        double tipY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + (int) beam.getThickness(); // +126
         TriangleStand support = new TriangleStand(beamContainerX, tipY);
         loadContainerChildren.add(support);
 
@@ -358,24 +356,18 @@ public class BeamController implements Initializable {
 
         // Rescale all graphics relative to the max load
         List<Graphic> rescaledGraphics = new ArrayList<>();
-        for (Load load : canoe.getAllLoads())
-        {
-            // The ratio of the largest load (always rendered at max size) to this load
-            double loadMagnitudeRatio = Math.abs(load.getMaxSignedValue() / canoe.getMaxLoadValue());
-
-            // Clip load length if too small (i.e. ratio is too large)
-            if (loadMagnitudeRatio < Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]))
-                loadMagnitudeRatio = Math.abs(acceptedGraphicHeightRange[0] / acceptedGraphicHeightRange[1]);
+        for (Load load : canoe.getAllLoads()) {
+            // The ratio of the largest load to this load (always 1 if the canoe has no other loads)
+            double loadMagnitudeRatio = LoadUtils.getLoadMagnitudeRatio(canoe, load);
 
             // Render at scaled size (deltaY calculates the downscaling factor)
-            double endY = load.getMaxSignedValue() < 0 ? acceptedGraphicHeightRange[1] : acceptedGraphicHeightRange[1] + (int) beam.getThickness();
-            double deltaY = (acceptedGraphicHeightRange[1] - acceptedGraphicHeightRange[0]) * loadMagnitudeRatio;
-            double startY = load.getMaxSignedValue() < 0 ? acceptedGraphicHeightRange[1] - deltaY : acceptedGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
+            double endY = load.getMaxSignedValue() < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + (int) beam.getThickness();
+            double deltaY = (GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - GraphicsUtils.acceptedBeamLoadGraphicHeightRange[0]) * loadMagnitudeRatio;
+            double startY = load.getMaxSignedValue() < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - deltaY : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + (int) beam.getThickness() + deltaY;
             double xScaled = GraphicsUtils.getScaledFromModelToGraphic(load.getX(), beam.getWidth(), canoe.getHull().getLength());
 
             // Render the correct graphic based on the subtype of the load
-            switch (load)
-            {
+            switch (load) {
                 case PointLoad ignoredPLoad -> rescaledGraphics.add(new Arrow(xScaled, startY, xScaled, endY));
                 case LoadDistribution dist -> {
                     double rxScaled = GraphicsUtils.getScaledFromModelToGraphic(dist.getSection().getRx(), beam.getWidth(), canoe.getHull().getLength());
@@ -420,7 +412,7 @@ public class BeamController implements Initializable {
         else if (floatingRadioButton.isSelected()) {
             if (canoe.getHull().getWeight() == 0) {
                 mainController.showSnackbar("Cannot solve a buoyancy without a hull. Please build a hull first");
-                mainController.flashModuleToolBarButton(0, 4750); // as a hint for the user
+                mainController.flashModuleToolBarButton(0, 8000); // as a hint for the user
                 return;
             }
             double maximumPossibleBuoyancyForce = BeamSolverService.getTotalBuoyancy(canoe, 0);
@@ -758,6 +750,6 @@ public class BeamController implements Initializable {
         // Graphics static field init
         double maxGraphicHeight = 84;
         double minimumGraphicHeight = 14;
-        acceptedGraphicHeightRange = new double[] {minimumGraphicHeight, maxGraphicHeight};
+        GraphicsUtils.acceptedBeamLoadGraphicHeightRange = new double[] {minimumGraphicHeight, maxGraphicHeight};
     }
 }

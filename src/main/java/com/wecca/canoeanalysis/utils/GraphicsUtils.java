@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Map;
 
 public class GraphicsUtils {
+    // Size rules for load graphics (prevents them from rendering too big/small)
+    public static double[] acceptedBeamLoadGraphicHeightRange;
+
     /**
      * Scales a value from the model for dimensioning to be displayed in a container in the UI
      * @param value the value to scale
@@ -26,10 +29,10 @@ public class GraphicsUtils {
     public static void sortGraphics(List<Graphic> graphics) {
         // Define the order to sort by type
         Map<Class<? extends Graphic>, Integer> classOrder = new HashMap<>();
-        classOrder.put(TriangleStand.class, 0);
-        classOrder.put(Arrow.class, 1);
-        classOrder.put(ArrowBox.class, 2);
-        classOrder.put(Curve.class, 3);
+        classOrder.put(Curve.class, 0);
+        classOrder.put(TriangleStand.class, 1);
+        classOrder.put(Arrow.class, 2);
+        classOrder.put(ArrowBox.class, 3);
         classOrder.put(Beam.class, 4);
 
         // Sort by type, and then by position
