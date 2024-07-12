@@ -38,10 +38,16 @@ public class Canoe
         this.hull = hull;
     }
 
+    /**
+     * Add a load to the canoe, combining pLoads and dLoads where their x/rx match up (wLoads added with no extra logic)
+     * @param load the load to add
+     * @return the result of adding the load (ADDED | REMOVED | COMBINED)
+     */
     public AddLoadResult addLoad(Load load) {
         if (!isLoadWithinCanoeLength(load))
             throw new IllegalArgumentException("Load must be contained inside the canoe's length");
 
+        // Combine pLoads and the same x value
         if (load instanceof PointLoad pLoad) {
             // Do not add the load if it is zero valued unless if is a support
             // Zero-valued supports are still added as markers for the model and ListView
@@ -51,16 +57,28 @@ public class Canoe
                 else
                     pLoad.setForce(0.00); // In case mag is -0 so that the negative doesn't display to the user
 
-            // Search for other loads at the same position, and combine their magnitudes
             for (PointLoad existingPLoad : getAllLoadsOfType(PointLoad.class)) {
                 if (existingPLoad.getX() == pLoad.getX() && !pLoad.isSupport()) {
-                    double newForce = existingPLoad.getMaxSignedValue() + pLoad.getMaxSignedValue();
+                    double newForce = existingPLoad.getForce() + pLoad.getForce();
                     if (newForce == 0) {
                         loads.remove(existingPLoad);
                         return AddLoadResult.REMOVED;
                     }
-                    ((PointLoad) (loads.get(loads.indexOf(existingPLoad)))).setForce(newForce);
                     existingPLoad.setForce(newForce);
+                    return AddLoadResult.COMBINED;
+                }
+            }
+        }
+        // Combine dLoads at the on the same interval [x, rx]
+        if (load instanceof UniformLoadDistribution dLoad) {
+            for (UniformLoadDistribution existingDLoad : getAllLoadsOfType(UniformLoadDistribution.class)) {
+                if (existingDLoad.getX() == dLoad.getX() && existingDLoad.getRx() == dLoad.getRx()) {
+                    double newMag = existingDLoad.getMagnitude() + dLoad.getMagnitude();
+                    if (newMag == 0) {
+                        loads.remove(existingDLoad);
+                        return AddLoadResult.REMOVED;
+                    }
+                    existingDLoad.setMagnitude(newMag);
                     return AddLoadResult.COMBINED;
                 }
             }

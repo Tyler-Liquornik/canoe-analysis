@@ -6,6 +6,7 @@ import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.jfoenix.controls.JFXSnackbarLayout;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.components.graphics.IconGlyphName;
 import com.wecca.canoeanalysis.services.YamlMarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
@@ -208,19 +209,32 @@ public class MainController implements Initializable {
         } catch (IOException ignored) {}
     }
 
-    public Button getIconButton(String iconName, Consumer<ActionEvent> onClick) {
+    /**
+     * Set the toolbar buttons based on the glyphs (icon) and respective and onClick functions
+     * @param iconGlyphToFunctionMap a map of <Button Icon : Button function>
+     */
+    public void setIconToolBarButtons(LinkedHashMap<IconGlyphName, Consumer<ActionEvent>> iconGlyphToFunctionMap) {
+        List<Button> buttons = new ArrayList<>();
+        for (Map.Entry<IconGlyphName, Consumer<ActionEvent>> entry : iconGlyphToFunctionMap.entrySet()) {
+            Button button = getIconButton(entry.getKey(), entry.getValue());
+            buttons.add(button);
+        }
+        setToolBarButtons(buttons);
+    }
+
+    public Button getIconButton(IconGlyphName iconGlyphName, Consumer<ActionEvent> onClick) {
         Button button = new Button();
         button.getStyleClass().add("transparent-button");
         button.setOnAction(onClick::accept);
         FontAwesomeIcon icon = new FontAwesomeIcon();
         icon.setFill(ColorPaletteService.getColor("white"));
-        icon.setGlyphName(iconName);
+        icon.setGlyphName(iconGlyphName.getGlyphName());
         icon.setSize("25");
         button.setGraphic(icon);
         return button;
     }
 
-    public void addToolBarButtons(List<Button> buttons) {
+    public void setToolBarButtons(List<Button> buttons) {
         double buttonHeight = 34.0; // 1px difference is on purpose so the hover fill doesn't stick out of the toolbar
         double buttonWidth = 35.0;
 

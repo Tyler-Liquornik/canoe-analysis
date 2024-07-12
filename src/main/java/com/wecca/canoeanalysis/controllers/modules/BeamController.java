@@ -5,28 +5,23 @@ import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
 import com.wecca.canoeanalysis.components.graphics.*;
-import com.wecca.canoeanalysis.controllers.popups.HullBuilderController;
+import com.wecca.canoeanalysis.controllers.popups.*;
 import com.wecca.canoeanalysis.controllers.MainController;
-import com.wecca.canoeanalysis.controllers.popups.UploadAlertController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.services.*;
-import com.wecca.canoeanalysis.utils.ControlUtils;
-import com.wecca.canoeanalysis.utils.GraphicsUtils;
-import com.wecca.canoeanalysis.utils.LoadUtils;
-import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
-import javafx.scene.Node;
+import com.wecca.canoeanalysis.utils.*;
+import javafx.event.ActionEvent;
+import javafx.scene.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
-import javafx.fxml.Initializable;
-import javafx.fxml.FXML;
-import lombok.Getter;
-import lombok.Setter;
-
+import javafx.fxml.*;
+import lombok.*;
 import java.io.File;
 import java.net.URL;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * Primary controller for longitudinal analysis of a beam
@@ -118,7 +113,6 @@ public class BeamController implements Initializable {
         // Color the selected load red and color the others black
         for (int i = 0; i < loadContainer.getChildren().size(); i++)
         {
-
             // Recolor the selected graphic
             Graphic graphic = (Graphic) loadContainer.getChildren().get(i);
             if (i != selectedIndex)
@@ -222,7 +216,8 @@ public class BeamController implements Initializable {
                 // Add the load to canoe, and the load arrow on the GUI
                 PointLoad p = new PointLoad(mag, x, false);
                 AddLoadResult addResult = canoe.addLoad(p);
-                renderPointLoadGraphic(p, addResult);
+                displayAddResults(p, addResult);
+                renderPointLoadGraphic(p);
                 LoadTreeManagerService.buildLoadTreeView(canoe);
                 checkAndSetEmptyLoadTreeSettings();
             }
@@ -259,10 +254,10 @@ public class BeamController implements Initializable {
                 mainController.showSnackbar("Load magnitude must be at least 0.01kN");
 
             else {
-                // Add the load to canoe, and update ui state
+                // Add the load to canoe, and update UI state
                 UniformLoadDistribution d = new UniformLoadDistribution(mag, x, xR);
-                mainController.closeSnackBar(mainController.getSnackbar());
-                canoe.addLoad(d);
+                AddLoadResult addResult = canoe.addLoad(d);
+                displayAddResults(d, addResult);
                 renderLoadGraphics();
                 LoadTreeManagerService.buildLoadTreeView(canoe);
                 checkAndSetEmptyLoadTreeSettings();
@@ -275,10 +270,10 @@ public class BeamController implements Initializable {
     /**
      * Add and validate a piecewise load distribution
      * Note: the user cannot manually add a custom load distribution (only hull and solved buoyancy)
-     * Thus there are no user input validations yet but the parameter will stay there for now
+     * Thus there are no user input validations at the moment
      * @param piecewise the distribution to validate and add
      */
-    public void addPiecewise(PiecewiseContinuousLoadDistribution piecewise) {
+    public void addPiecewiseLoadDistribution(PiecewiseContinuousLoadDistribution piecewise) {
         canoe.addLoad(piecewise);
 
         // Clear previous alert labels
@@ -294,7 +289,7 @@ public class BeamController implements Initializable {
      * Add a point load to the canoe object and JavaFX UI.
      * @param pLoad the point load to be added.
      */
-    private void renderPointLoadGraphic(PointLoad pLoad, AddLoadResult result) {
+    private void renderPointLoadGraphic(PointLoad pLoad) {
         // x coordinate in beamContainer for load
         double scaledX = GraphicsUtils.getScaledFromModelToGraphic(pLoad.getX(), beam.getWidth(), canoe.getHull().getLength()); // x position in the beamContainer
 
@@ -302,7 +297,7 @@ public class BeamController implements Initializable {
         if (pLoad.isSupport())
             renderSupportGraphic(scaledX);
         else
-            renderArrowGraphic(pLoad, result);
+            renderLoadGraphics();;
     }
 
     /**
@@ -324,26 +319,6 @@ public class BeamController implements Initializable {
         GraphicsUtils.sortGraphics(loadContainerChildren);
         loadContainer.getChildren().addAll(loadContainerChildren.stream()
                 .map(load -> (Node) load).toList());
-    }
-
-    /**
-     * Add a point load to the load container as a graphic of an arrow to represent the load
-     * @param pLoad the point load to add
-     * @param result the enum result of adding the load
-     */
-    private void renderArrowGraphic(PointLoad pLoad, AddLoadResult result) {
-        // Notify the user regarding point loads combining or cancelling
-        mainController.closeSnackBar(mainController.getSnackbar());
-        if (result == AddLoadResult.COMBINED)
-            mainController.showSnackbar("Point load magnitudes combined");
-        else if (result == AddLoadResult.REMOVED)
-            mainController.showSnackbar("Point load magnitudes cancelled");
-
-        // Prevent rendering issues with zero-valued loads
-        if (pLoad.getMaxSignedValue() == 0)
-            return;
-
-        renderLoadGraphics();
     }
 
     /**
@@ -387,6 +362,19 @@ public class BeamController implements Initializable {
         GraphicsUtils.sortGraphics(rescaledGraphics);
         loadContainer.getChildren().addAll((rescaledGraphics.stream().map(element -> (Node) element)).toList());
         updateViewOrder();
+    }
+
+    /**
+     * Display the less common results of adding the load (COMBINED | CANCELLED cases)
+     * @param load the added load
+     * @param result the result of adding the load
+     */
+    private void displayAddResults(Load load, AddLoadResult result) {
+        mainController.closeSnackBar(mainController.getSnackbar());
+        if (result == AddLoadResult.COMBINED)
+            mainController.showSnackbar(load.getType().getDescription() + " magnitudes combined");
+        else if (result == AddLoadResult.REMOVED)
+            mainController.showSnackbar(load.getType().getDescription() + " magnitudes cancelled");
     }
 
     /**
@@ -449,8 +437,8 @@ public class BeamController implements Initializable {
     private void solveStandSystem() {
         List<PointLoad> supportLoads = BeamSolverService.solveStandSystem(canoe);
         for (PointLoad supportLoad : supportLoads) {
-            AddLoadResult addResult = canoe.addLoad(supportLoad);
-            renderPointLoadGraphic(supportLoad, addResult);
+            canoe.addLoad(supportLoad);
+            renderPointLoadGraphic(supportLoad);
         }
         checkAndSetEmptyLoadTreeSettings();
     }
@@ -470,7 +458,7 @@ public class BeamController implements Initializable {
     private void solveFloatingSystem() {
         PiecewiseContinuousLoadDistribution buoyancy = BeamSolverService.solveFloatingSystem(canoe);
         if (!(buoyancy.getForce() == 0))
-            addPiecewise(buoyancy);
+            addPiecewiseLoadDistribution(buoyancy);
     }
 
     /**
@@ -518,8 +506,8 @@ public class BeamController implements Initializable {
      * @param b disables controls
      */
     private void disableLoadingControls(boolean b) {
-        List<Control> controls = new ArrayList<>(Arrays.asList
-        (
+        // Disable all the controls
+        List<Control> controls = new ArrayList<>(Arrays.asList(
             solveSystemButton, pointLoadButton, distributedLoadButton, floatingRadioButton, standsRadioButton,
             submergedRadioButton, distributedMagnitudeComboBox, distributedMagnitudeTextField, pointMagnitudeComboBox,
             pointMagnitudeTextField, pointLocationTextField, pointLocationComboBox, pointDirectionComboBox,
@@ -529,7 +517,9 @@ public class BeamController implements Initializable {
             distributedMagntiudeLabel, distributedIntervalLabel, distributedTitleLabel
         ));
 
-        for (Control control : controls) {control.setDisable(b);}
+        for (Control control : controls) {
+            control.setDisable(b);
+        }
         mainController.disableAllModuleToolbarButton(b);
 
         // Only enable the hull builder if a custom hull hasn't yet been set
@@ -687,12 +677,12 @@ public class BeamController implements Initializable {
      * Currently, this provides buttons to download and upload the Canoe object as JSON
      */
     public void addModuleToolBarButtons() {
-        List<Button> beamModuleButtons = new ArrayList<>();
-        beamModuleButtons.add(mainController.getIconButton("WRENCH", e -> openHullBuilder()));
-        beamModuleButtons.add(mainController.getIconButton("ARROW_CIRCLE_O_DOWN", e -> downloadCanoe()));
-        beamModuleButtons.add(mainController.getIconButton("ARROW_CIRCLE_O_UP", e -> uploadCanoe()));
+        LinkedHashMap<IconGlyphName, Consumer<ActionEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
+        iconGlyphToFunctionMap.put(IconGlyphName.WRENCH, e -> openHullBuilder());
+        iconGlyphToFunctionMap.put(IconGlyphName.DOWNLOAD, e -> downloadCanoe());
+        iconGlyphToFunctionMap.put(IconGlyphName.UPLOAD, e -> uploadCanoe());
         mainController.resetToolBarButtons();
-        mainController.addToolBarButtons(beamModuleButtons);
+        mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
     }
 
     /**
