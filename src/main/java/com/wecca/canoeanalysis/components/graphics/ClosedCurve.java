@@ -8,10 +8,10 @@ import javafx.scene.shape.Line;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 
 /**
- * Icon used for the canoe
+ * Icon used for the canoe hull
  * Same as curve but with an extra line that closes the area
  */
-public class ClosedCurve extends Curve {
+public class ClosedCurve extends Curve implements CurvedProfile {
 
     private Line closingLine;
 
@@ -40,14 +40,20 @@ public class ClosedCurve extends Curve {
         closingLine.setStroke(lineColor);
     }
 
+    public double getLength() {
+        return section.getLength();
+    }
+
     /**
      * The "height" of the function is really the distance to the y-axis (so height > 0 still for a non-positive curve)
      * @param x the x value to get the height at
      */
     public double getHeight(double x) {
-        double valueAtX = curve.value(x);
-        double maxValue = CalculusUtils.getMaxSignedValue(curve, section);
-        double minValue = CalculusUtils.getMaxOrMinValue(curve, section, false);
+        if (x < startX || x > startX + getLength())
+            throw new IllegalArgumentException("Cannot get height at x = " + x + ", out of bounds");
+        double valueAtX = function.value(x);
+        double maxValue = CalculusUtils.getMaxSignedValue(function, section);
+        double minValue = CalculusUtils.getMaxOrMinValue(function, section, false);
         double rangeY = endY - startY;
         double valueRange = maxValue - minValue;
         double scaledValue = (valueAtX - minValue) / valueRange * rangeY;

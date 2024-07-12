@@ -10,9 +10,11 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = VertexFormParabola.class, name = "VertexFormParabola")
+        @JsonSubTypes.Type(value = VertexFormParabola.class, name = "VertexFormParabola"),
+        @JsonSubTypes.Type(value = StepFunction.class, name = "StepFunction")
 })
-public interface TypedUnivariateFunction extends UnivariateFunction {
+public interface ParameterizedUnivariateFunction extends UnivariateFunction {
     @JsonProperty("type")
     UnivariateFunctionType getType();
+    void initialize(double... parameters);
 }

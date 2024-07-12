@@ -3,10 +3,10 @@ package com.wecca.canoeanalysis.models.function;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 
 import java.util.function.Function;
 
@@ -16,7 +16,7 @@ import java.util.function.Function;
  * The function modelled is a(x - h)^2 + k
  */
 @Getter @Setter @EqualsAndHashCode
-public class VertexFormParabola implements TypedUnivariateFunction {
+public class VertexFormParabola implements ParameterizedUnivariateFunction {
 
     @JsonIgnore @Getter
     private final UnivariateFunctionType type = UnivariateFunctionType.VERTEX_FORM_PARABOLA;
@@ -28,13 +28,17 @@ public class VertexFormParabola implements TypedUnivariateFunction {
     private double k;
 
     @JsonCreator
-    public VertexFormParabola(@JsonProperty("a") double a,
-                              @JsonProperty("h") double h,
-                              @JsonProperty("k") double k) {
-        super();
-        this.a = a;
-        this.h = h;
-        this.k = k;
+    public VertexFormParabola(@JsonProperty("a") double a, @JsonProperty("h") double h, @JsonProperty("k") double k) {
+        initialize(a, h, k);
+    }
+
+    @Override
+    public void initialize(double... params) {
+        if (params.length != 3)
+            throw new IllegalArgumentException("VertexFormParabola requires exactly 3 parameters: a, h, and k.");
+        this.a = params[0];
+        this.h = params[1];
+        this.k = params[2];
     }
 
     @JsonIgnore

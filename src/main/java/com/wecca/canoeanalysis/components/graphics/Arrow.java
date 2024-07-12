@@ -23,12 +23,12 @@ public class Arrow extends Path implements Graphic {
     private boolean isColored;
     private boolean isHighlighted;
 
-    public Arrow(double startX, double startY, double endX, double endY) {
+    public Arrow(double startX, double endX, double startY, double endY) {
         super();
 
         this.startX = startX;
-        this.startY = startY;
         this.endX = endX;
+        this.startY = startY;
         this.endY = endY;
         this.isHighlighted = false;
 

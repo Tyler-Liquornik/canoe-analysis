@@ -106,34 +106,28 @@ public class MainController implements Initializable {
         startDrawerTimer();
     }
 
-    public void startDrawerTimer()
-    {
+    public void startDrawerTimer() {
         hamburgerButton.setDisable(true);
         hamburger.setDisable(false);
 
         if (drawerTimer != null)
             drawerTimer.stop();
 
-        drawerTimer = new AnimationTimer()
-        {
+        drawerTimer = new AnimationTimer() {
             @Override
-            public void handle(long now)
-            {
+            public void handle(long now) {
                 double currentX = menuDrawer.getTranslateX();
-                if (currentX != drawerTargetX)
-                {
+                if (currentX != drawerTargetX) {
                     double newX = currentX + (drawerTargetX - currentX) * 0.075;
                     menuDrawer.setTranslateX(newX);
-                    if (Math.abs(newX - drawerTargetX) < 1)
-                    {
+                    if (Math.abs(newX - drawerTargetX) < 1) {
                         menuDrawer.setTranslateX(drawerTargetX);
                         stop();
                         isDrawerOpen = drawerTargetX == 0;
                         hamburgerButton.setDisable(false);
                     }
                 }
-                else
-                {
+                else {
                     stop();
                     hamburgerButton.setDisable(false);
                 }

@@ -32,7 +32,7 @@ public class GraphicsUtils {
         classOrder.put(Curve.class, 0);
         classOrder.put(TriangleStand.class, 1);
         classOrder.put(Arrow.class, 2);
-        classOrder.put(ArrowBox.class, 3);
+        classOrder.put(ArrowBoundCurve.class, 3);
         classOrder.put(Beam.class, 4);
 
         // Sort by type, and then by position

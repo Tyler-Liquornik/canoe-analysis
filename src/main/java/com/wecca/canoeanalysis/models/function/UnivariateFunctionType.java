@@ -6,12 +6,12 @@ import lombok.Getter;
 
 /**
  * Provides metadata on the type of univariate function, may not always need to coincide directly with the actual subclass
- * Will eventually grow with more functions, staying at just one for now
  */
 @Getter @AllArgsConstructor
 public enum UnivariateFunctionType {
 
-    VERTEX_FORM_PARABOLA("Vertex Form Parabola", "a(x - h)^2 + k");
+    VERTEX_FORM_PARABOLA("Vertex Form Parabola", "f(x) = a(x - h)^2 + k"),
+    STEP("Step Function", "f(x) = 0 if x <= c, a if x > c");
 
     @JsonIgnore
     private final String type;

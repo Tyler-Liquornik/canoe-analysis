@@ -24,27 +24,26 @@ import java.util.List;
 @Getter @Setter
 public class Curve extends Group implements Graphic {
 
-    protected UnivariateFunction curve;
+    protected UnivariateFunction function;
     protected Section section;
     protected double startX;
     protected double endX;
     protected double startY;
     protected double endY;
-
     protected Path linePath;
     protected Polygon area;
     protected boolean isColored;
 
-    public Curve(UnivariateFunction curve, Section section, double startX, double endX, double startY, double endY) {
+    public Curve(UnivariateFunction function, Section section, double startX, double endX, double startY, double endY) {
         super();
-        this.curve = curve;
+        this.function = function;
         this.section = section;
         this.startX = startX;
         this.endX = endX;
         this.startY = startY;
         this.endY = endY;
 
-        CalculusUtils.validatePiecewiseAsUpOrDown(List.of(curve), List.of(section));
+        CalculusUtils.validatePiecewiseAsUpOrDown(List.of(function), List.of(section));
         draw();
         JFXDepthManager.setDepth(this, 4);
     }
@@ -59,7 +58,7 @@ public class Curve extends Group implements Graphic {
         double minValue = Double.POSITIVE_INFINITY;
         double maxValue = Double.NEGATIVE_INFINITY;
         for (int i = 0; i <= numSamples; i++) {
-            double value = curve.value(section.getX() + i * step);
+            double value = function.value(section.getX() + i * step);
             if (value < minValue) minValue = value;
             if (value > maxValue) maxValue = value;
         }
@@ -67,8 +66,7 @@ public class Curve extends Group implements Graphic {
         double valueRange = maxValue - minValue;
 
         // Flip the area of the curve so that it always fills in its area towards  y = 0
-        UnivariateFunction effectiveFunction = isNonNegative() ? x -> -curve.value(x) + CalculusUtils.getMaxSignedValue(curve, section) : curve;
-        double initialPathY = startY + ((effectiveFunction.value(currentX) - minValue) / valueRange) * rangeY;
+        double initialPathY = startY + ((getEffectiveFunction().value(currentX) - minValue) / valueRange) * rangeY;
         double initialPathX = startX + ((currentX - section.getX()) / (section.getRx() - section.getX())) * (endX - startX);
 
         linePath = new Path();
@@ -79,7 +77,7 @@ public class Curve extends Group implements Graphic {
 
         for (int i = 1; i <= numSamples; i++) {
             currentX = section.getX() + i * step;
-            double scaledY = startY + ((effectiveFunction.value(currentX) - minValue) / valueRange) * rangeY;
+            double scaledY = startY + ((getEffectiveFunction().value(currentX) - minValue) / valueRange) * rangeY;
             double scaledX = startX + ((currentX - section.getX()) / (section.getRx() - section.getX())) * (endX - startX);
             linePath.getElements().add(new LineTo(scaledX, scaledY));
             area.getPoints().addAll(scaledX, scaledY);
@@ -113,6 +111,10 @@ public class Curve extends Group implements Graphic {
     }
 
     protected boolean isNonNegative() {
-        return curve.value((section.getX() + section.getRx()) / 2) >= 0;
+        return function.value((section.getX() + section.getRx()) / 2) >= 0;
+    }
+
+    protected UnivariateFunction getEffectiveFunction() {
+        return isNonNegative() ? x -> -function.value(x) + CalculusUtils.getMaxSignedValue(function, section) : function;
     }
 }
