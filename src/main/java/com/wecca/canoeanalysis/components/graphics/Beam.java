@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
@@ -16,7 +17,7 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
  * Icon used for an unset/simplified canoe hull
  */
 @Getter @Setter
-public class Beam extends Group implements Graphic, CurvedProfile {
+public class Beam extends Group implements CurvedProfile {
 
     private double startX;
     private double startY;
@@ -30,12 +31,12 @@ public class Beam extends Group implements Graphic, CurvedProfile {
     private boolean isColored;
     private static final double borderExtension = 5; // Amount by which the borders extend beyond the beam
 
-    public Beam(double startX, double startY, double height, double length) {
+    public Beam(double startX, double startY, double length, double height) {
         super();
         this.startX = startX;
         this.startY = startY;
-        this.length = height;
-        this.height = length;
+        this.length = length;
+        this.height = height;
         this.isColored = false;
 
         draw();
@@ -89,14 +90,24 @@ public class Beam extends Group implements Graphic, CurvedProfile {
     }
 
     @Override
-    public UnivariateFunction getFunction() {
+    public BoundedUnivariateFunction getFunction() {
         return x -> 0;
     }
 
     @Override
-    public double getHeight(double x) {
-        if (x < startX || x > startX + length)
-            throw new IllegalArgumentException("Cannot get height at x = " + x + ", out of bounds");
+    public double getHeight(double functionX) {
+        if (functionX < startX || functionX > startX + length)
+            throw new IllegalArgumentException("Cannot get height at x = " + functionX + ", out of bounds");
         return height;
+    }
+
+    @Override
+    public double getEndX() {
+        return startX + length;
+    }
+
+    @Override
+    public double getEndY() {
+        return  startY + height;
     }
 }

@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.utils;
 
+import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.function.Section;
 import org.apache.commons.math3.analysis.UnivariateFunction;
@@ -7,11 +8,8 @@ import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
 import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.univariate.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class CalculusUtils
 {
@@ -23,7 +21,7 @@ public class CalculusUtils
      * @param function the function to differentiate
      * @return the derivative function
      */
-    public static UnivariateFunction differentiate(UnivariateFunction function)
+    public static BoundedUnivariateFunction differentiate(BoundedUnivariateFunction function)
     {
         double h = 1e-6; // Small value for h implies the limit as h -> 0
         return x -> (function.value(x + h) - function.value(x - h)) / (2 * h);
@@ -32,12 +30,12 @@ public class CalculusUtils
     /**
      * @return the length of the curve function(x) on [a, b]
      */
-    public static double getArcLength(UnivariateFunction function, double a, double b) {
+    public static double getArcLength(BoundedUnivariateFunction function, double a, double b) {
         if (function == null)
             return 0;
         else
         {
-            UnivariateFunction profileArcLengthElementFunction =
+            BoundedUnivariateFunction profileArcLengthElementFunction =
                     x -> Math.sqrt(1 + Math.pow(differentiate(function).value(x), 2));
             return integrator.integrate(MaxEval.unlimited().getMaxEval(), profileArcLengthElementFunction, a, b);
         }
@@ -48,7 +46,7 @@ public class CalculusUtils
      * @return if the function is symmetrical or not
      */
     public static boolean isSymmetrical(PiecewiseContinuousLoadDistribution piecewise) {
-        UnivariateFunction f = piecewise.getPiecedFunction();
+        BoundedUnivariateFunction f = piecewise.getPiecedFunction();
         double startX = piecewise.getX();
         double endX = piecewise.getPieces().lastKey().getRx();
         double midpoint = (startX + endX) / 2.0;
@@ -94,7 +92,7 @@ public class CalculusUtils
      * @param pieces the pieces to validate
      * @param sections the sections of the pieces
      */
-    public static void validatePiecewiseContinuity(List<UnivariateFunction> pieces, List<Section> sections) {
+    public static void validatePiecewiseContinuity(List<BoundedUnivariateFunction> pieces, List<Section> sections) {
         if (sections.size() != pieces.size())
             throw new IllegalArgumentException("Unequal amount of sections and pieces");
 
@@ -116,7 +114,7 @@ public class CalculusUtils
      * @param pieces the pieces to validate
      * @param sections the sections of the pieces
      */
-    public static void validatePiecewiseAsUpOrDown(List<UnivariateFunction> pieces, List<Section> sections) {
+    public static void validatePiecewiseAsUpOrDown(List<BoundedUnivariateFunction> pieces, List<Section> sections) {
         UnivariateSolver solver = new BrentSolver(1e-10, 1e-14);
         int numSamples = 1000;
 
@@ -124,7 +122,7 @@ public class CalculusUtils
         boolean allNonPositive = true;
 
         for (int p = 0; p < pieces.size(); p++) {
-            UnivariateFunction piece = pieces.get(p);
+            BoundedUnivariateFunction piece = pieces.get(p);
             Section section = sections.get(p);
 
             // Find zeros within the section
@@ -161,7 +159,7 @@ public class CalculusUtils
      * Validates that the distribution is continuous over the section within a specified tolerance.
      * Note: tolerance and numSamples may need to be tweaked to avoid false invalidations
      */
-    public static void validateContinuity(UnivariateFunction function, Section section) {
+    public static void validateContinuity(BoundedUnivariateFunction function, Section section) {
         // Note: it's very possible this can cause false negatives and these numbers need to be tweaked in magnitude
         // It completely depends on how fast the function grows
         double tolerance = 1e-3;
@@ -176,54 +174,5 @@ public class CalculusUtils
                 throw new IllegalArgumentException("The distribution is not continuous within a reasonable tolerance");
             previousValue = currentValue;
         }
-    }
-
-    /**
-     * Get the maximum or minimum value of a single piece based on the provided flag findMax.
-     * @param function the univariate function to analyze
-     * @param section the section over which to analyze the function
-     * @param findMax flag that marks true to find the maximum value or false to find the minimum value
-     * @return the maximum or minimum value
-     */
-    public static double getMaxOrMinValue(UnivariateFunction function, Section section, boolean findMax) {
-        BrentOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);
-        GoalType goalType = findMax ? GoalType.MAXIMIZE : GoalType.MINIMIZE;
-        UnivariatePointValuePair result = optimizer.optimize(
-                MaxEval.unlimited(),
-                new UnivariateObjectiveFunction(function),
-                goalType,
-                new SearchInterval(section.getX(), section.getRx())
-        );
-        return function.value(result.getPoint());
-    }
-
-    /**
-     * Get the maximum signed value of a single piece (i.e. the highest positive high or lowest negative low value or 0)
-     * @param function the univariate function to analyze
-     * @param section the section over which to analyze the function
-     * @return the maximum signed value
-     */
-    public static double getMaxSignedValue(UnivariateFunction function, Section section) {
-        double maxValue = getMaxOrMinValue(function, section, true);
-        double minValue = getMaxOrMinValue(function, section, false);
-        return Math.abs(maxValue) >= Math.abs(minValue) ? maxValue : minValue;
-    }
-
-    /**
-     * Get the maximum signed value of the piecewise (i.e. the highest positive high or lowest negative low value or 0)
-     * @param piecewise the function to analyze
-     * @return the maximum signed value
-     */
-    public static double getMaxSignedValue(PiecewiseContinuousLoadDistribution piecewise) {
-        double maxAbsValue = 0;
-        double signedMaxValue = 0;
-        for (Map.Entry<Section, UnivariateFunction> piece : piecewise.getPieces().entrySet()) {
-            double valueAtMax = getMaxSignedValue(piece.getValue(), piece.getKey());
-            if (Math.abs(valueAtMax) > maxAbsValue) {
-                maxAbsValue = Math.abs(valueAtMax);
-                signedMaxValue = valueAtMax;
-            }
-        }
-        return signedMaxValue;
     }
 }

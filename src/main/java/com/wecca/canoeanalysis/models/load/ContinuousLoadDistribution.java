@@ -2,6 +2,7 @@ package com.wecca.canoeanalysis.models.load;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import lombok.EqualsAndHashCode;
@@ -14,7 +15,7 @@ import java.util.List;
 public class ContinuousLoadDistribution extends PiecewiseContinuousLoadDistribution {
 
     @JsonProperty("distribution")
-    private final UnivariateFunction distribution; // in kN/m by default
+    private final BoundedUnivariateFunction distribution; // in kN/m by default
     @JsonProperty("section")
     private final Section section;
 
@@ -23,7 +24,7 @@ public class ContinuousLoadDistribution extends PiecewiseContinuousLoadDistribut
      * @param section defines the distributions endpoints
      * Note: the constructor is private as it is used by factory methods
      */
-    public ContinuousLoadDistribution(LoadType type, UnivariateFunction distribution, Section section) {
+    public ContinuousLoadDistribution(LoadType type, BoundedUnivariateFunction distribution, Section section) {
         super(type, List.of(distribution), List.of(section));
         CalculusUtils.validateContinuity(distribution, section);
         this.distribution = distribution;

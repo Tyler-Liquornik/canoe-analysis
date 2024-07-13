@@ -3,13 +3,16 @@ package com.wecca.canoeanalysis.models.canoe;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.load.DiscreteLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
+import com.wecca.canoeanalysis.utils.CalculusUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.univariate.BrentOptimizer;
 import org.apache.commons.math3.optim.univariate.SearchInterval;
@@ -190,6 +193,22 @@ public class Hull {
         }
 
         return s;
+    }
+
+    /**
+     * @return a composite function representing the stitched-together side profile curves of all hull sections
+     * Note that this returned function has been shifted so that it's bottom is at y = 0 instead of its top at y = 0
+     */
+    @JsonIgnore
+    public BoundedUnivariateFunction getPiecedSideProfileCurve() {
+        BoundedUnivariateFunction f = x -> {
+            for (HullSection section : hullSections) {
+                if (section.getX() <= x && x <= section.getRx())
+                    return section.getSideProfileCurve().value(x);
+            }
+            throw new IllegalArgumentException("x is out of bounds of the hull sections");
+        };
+        return x -> f.value(x) - f.getMinValue(getSection());
     }
 
     /**

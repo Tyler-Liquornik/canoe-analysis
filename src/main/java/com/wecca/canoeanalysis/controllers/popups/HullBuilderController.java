@@ -1,14 +1,18 @@
 package com.wecca.canoeanalysis.controllers.popups;
 
+import com.wecca.canoeanalysis.components.graphics.ClosedCurve;
+import com.wecca.canoeanalysis.components.graphics.CurvedProfile;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.controllers.modules.BeamController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.canoe.Hull;
+import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.LoadTreeManagerService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
 import lombok.Setter;
@@ -42,7 +46,18 @@ public class HullBuilderController implements Initializable {
         beamController.checkAndSetEmptyLoadTreeSettings();
         LoadTreeManagerService.buildLoadTreeView(canoe);
         mainController.disableModuleToolBarButton(true, 0);
+        setCanoeGraphic(hull);
         closeWindow(e);
+    }
+
+    public void setCanoeGraphic(Hull hull) {
+        CurvedProfile canoeGraphic = beamController.getCanoeGraphic();
+        beamController.setCanoeGraphic(new ClosedCurve(
+                hull.getPiecedSideProfileCurve(), hull.getSection(),
+                canoeGraphic.getStartX(), canoeGraphic.getEndX(), canoeGraphic.getStartY(), canoeGraphic.getStartY() + 35));
+        beamController.getBeamContainer().getChildren().clear();
+        beamController.getBeamContainer().getChildren().add((Node) canoeGraphic);
+        beamController.renderCanoeGraphic();
     }
 
     @Override

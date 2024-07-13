@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis.services;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
+import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
@@ -88,7 +89,7 @@ public class BeamSolverService {
             List<Section> sections = hullSections.stream().map(hullSection -> (Section) hullSection).toList();
 
             // Create zero-valued functions for each section
-            List<UnivariateFunction> pieces = new ArrayList<>();
+            List<BoundedUnivariateFunction> pieces = new ArrayList<>();
             for (int i = 0; i < sections.size(); i++) {
                 pieces.add(x -> 0.0);
             }
@@ -115,7 +116,7 @@ public class BeamSolverService {
      * @param section the section to calculate the function for
      * @return the function A_submerged(x) in m^2
      */
-    private static UnivariateFunction getSubmergedCrossSectionalAreaFunction(double waterline, HullSection section) {
+    private static BoundedUnivariateFunction getSubmergedCrossSectionalAreaFunction(double waterline, HullSection section) {
         return x -> {
             double h = waterline - Math.min(section.getSideProfileCurve().value(x), waterline);
             return section.getCrossSectionalAreaFunction().value(x) * h * section.getCrossSectionalAreaAdjustmentFactorFunction().apply(h);
@@ -191,11 +192,11 @@ public class BeamSolverService {
     private static PiecewiseContinuousLoadDistribution getBuoyancyDistribution(double waterline, Canoe canoe) {
         List<Section> sectionsToMapTo = CalculusUtils.sectionsFromEndpoints(canoe.getSectionEndpoints().stream().toList());
         List<HullSection> mappedHullSections = reformHullSections(canoe.getHull(), sectionsToMapTo).getHullSections();
-        List<UnivariateFunction> buoyancyPieces = new ArrayList<>();
+        List<BoundedUnivariateFunction> buoyancyPieces = new ArrayList<>();
         List<Section> buoyancySections = new ArrayList<>();
 
         for (HullSection section : mappedHullSections) {
-            UnivariateFunction buoyancyPiece = x -> getSubmergedCrossSectionalAreaFunction(waterline, section).value(x) * PhysicalConstants.DENSITY_OF_WATER.getValue() * PhysicalConstants.GRAVITY.getValue() / 1000.0;
+            BoundedUnivariateFunction buoyancyPiece = x -> getSubmergedCrossSectionalAreaFunction(waterline, section).value(x) * PhysicalConstants.DENSITY_OF_WATER.getValue() * PhysicalConstants.GRAVITY.getValue() / 1000.0;
             buoyancyPieces.add(buoyancyPiece);
             buoyancySections.add(section);
         }

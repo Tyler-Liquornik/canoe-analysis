@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.load.ContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
 import com.wecca.canoeanalysis.models.function.Section;
@@ -56,13 +57,13 @@ public class HullSection extends Section
     @JsonSubTypes({
             @JsonSubTypes.Type(value = VertexFormParabola.class, name = "VertexFormParabola")
     })
-    private UnivariateFunction sideProfileCurve;
+    private BoundedUnivariateFunction sideProfileCurve;
     @JsonProperty("topProfileCurve")
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
     @JsonSubTypes({
             @JsonSubTypes.Type(value = VertexFormParabola.class, name = "VertexFormParabola")
     })
-    private UnivariateFunction topProfileCurve;
+    private BoundedUnivariateFunction topProfileCurve;
     @JsonProperty("thickness")
     private double thickness;
     @JsonIgnore
@@ -106,8 +107,8 @@ public class HullSection extends Section
      * @param sideProfileCurve the function that defines the shape of the hull in this section in the xy-plane bounded above by y = 0
      * @param topProfileCurve the function that defines half the shape of the hull in the xz-plane bounded below by y = 0 (reflects across the line x = 0 to give the other half)
      */
-    public HullSection(@JsonProperty("sideProfileCurve") UnivariateFunction sideProfileCurve,
-                       @JsonProperty("topProfileCurve") UnivariateFunction topProfileCurve,
+    public HullSection(@JsonProperty("sideProfileCurve") BoundedUnivariateFunction sideProfileCurve,
+                       @JsonProperty("topProfileCurve") BoundedUnivariateFunction topProfileCurve,
                        @JsonProperty("x") double x,
                        @JsonProperty("rx") double rx,
                        @JsonProperty("thickness") double thickness,
@@ -141,7 +142,7 @@ public class HullSection extends Section
      * @return the function A(x)
      */
     @JsonIgnore
-    public UnivariateFunction getCrossSectionalAreaFunction() {
+    public BoundedUnivariateFunction getCrossSectionalAreaFunction() {
         return x -> {
             double height = Math.abs(sideProfileCurve.value(x));
             double width = 2 * Math.abs(topProfileCurve.value(x)); // assuming this profile is symmetrical in the current model
@@ -163,7 +164,7 @@ public class HullSection extends Section
      * @return the function A_inner(x)
      */
     @JsonIgnore
-    public UnivariateFunction getInnerCrossSectionalAreaFunction() {
+    public BoundedUnivariateFunction getInnerCrossSectionalAreaFunction() {
         return x -> {
             double height = Math.abs(sideProfileCurve.value(x));
             double width = 2 * Math.abs(topProfileCurve.value(x)); // assuming this profile is symmetrical in the current model
@@ -186,7 +187,7 @@ public class HullSection extends Section
      * @return the function A_concrete(x)
      */
     @JsonIgnore
-    public UnivariateFunction getConcreteCrossSectionalAreaFunction() {
+    public BoundedUnivariateFunction getConcreteCrossSectionalAreaFunction() {
         return x -> getCrossSectionalAreaFunction().value(x) - getInnerCrossSectionalAreaFunction().value(x);
     }
 
@@ -204,7 +205,7 @@ public class HullSection extends Section
      * @return the function A_concrete(x)
      */
     @JsonIgnore
-    public UnivariateFunction getMassDistributionFunction() {
+    public BoundedUnivariateFunction getMassDistributionFunction() {
         return isFilledBulkhead ? x -> getConcreteCrossSectionalAreaFunction().value(x) * concreteDensity + getInnerCrossSectionalAreaFunction().value(x) * bulkheadDensity
                 : x -> getConcreteCrossSectionalAreaFunction().value(x) * concreteDensity;
     }
@@ -223,7 +224,7 @@ public class HullSection extends Section
      */
     @JsonIgnore
     public ContinuousLoadDistribution getWeightDistributionFunction() {
-        UnivariateFunction distribution = x -> -getMassDistributionFunction().value(x) * PhysicalConstants.GRAVITY.getValue() / 1000.0;
+        BoundedUnivariateFunction distribution = x -> -getMassDistributionFunction().value(x) * PhysicalConstants.GRAVITY.getValue() / 1000.0;
         return new ContinuousLoadDistribution(LoadType.DISCRETE_SECTION, distribution, new Section(x, rx));
     }
 
@@ -240,7 +241,7 @@ public class HullSection extends Section
      */
     @JsonIgnore
     public double getMaxWidth() {
-        UnivariateFunction topProfileFunction = topProfileCurve;
+        BoundedUnivariateFunction topProfileFunction = topProfileCurve;
         UnivariateOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);
         UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(topProfileFunction);
         SearchInterval searchInterval = new SearchInterval(x, rx);
@@ -254,10 +255,10 @@ public class HullSection extends Section
      */
     private void validateSign(Function<Double, Double> profileCurve, boolean positive)
     {
-        // Convert the hullShapeFunction to UnivariateFunction for compatibility with Apache Commons Math
+        // Convert the hullShapeFunction to BoundedUnivariateFunction for compatibility with Apache Commons Math
         // Need to negate the function as BrentOptimizer finds the min, and we want the max
-        UnivariateFunction profileCurveAsUnivariateFunction = profileCurve::apply;
-        UnivariateFunction negatedProfileCurve = x -> -profileCurveAsUnivariateFunction.value(x);
+        BoundedUnivariateFunction profileCurveAsUnivariateFunction = profileCurve::apply;
+        BoundedUnivariateFunction negatedProfileCurve = x -> -profileCurveAsUnivariateFunction.value(x);
 
         // Use BrentOptimizer to find the maximum value of the hull shape function on [start, end]
         UnivariateOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);

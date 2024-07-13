@@ -8,7 +8,8 @@ import com.wecca.canoeanalysis.components.graphics.*;
 import com.wecca.canoeanalysis.controllers.popups.*;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
-import com.wecca.canoeanalysis.models.function.StepFunction;
+import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
+import com.wecca.canoeanalysis.models.function.HeavisideStep;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.services.*;
@@ -48,13 +49,14 @@ public class BeamController implements Initializable {
             distributedDirectionComboBox, distributedMagnitudeComboBox, canoeLengthComboBox;
     @FXML
     private RadioButton standsRadioButton, floatingRadioButton, submergedRadioButton;
-    @FXML
+    @FXML @Getter
     private AnchorPane loadContainer, beamContainer;
 
     @Getter @Setter
     private MainController mainController;
     @Getter
     private Canoe canoe;
+    @Getter @Setter
     private CurvedProfile canoeGraphic;
 
     /**
@@ -260,7 +262,7 @@ public class BeamController implements Initializable {
                 UniformLoadDistribution d = new UniformLoadDistribution(mag, x, xR);
                 AddLoadResult addResult = canoe.addLoad(d);
                 displayAddResults(d, addResult);
-                renderLoadGraphics();
+                renderGraphics();
                 LoadTreeManagerService.buildLoadTreeView(canoe);
                 checkAndSetEmptyLoadTreeSettings();
             }
@@ -282,7 +284,7 @@ public class BeamController implements Initializable {
         mainController.closeSnackBar(mainController.getSnackbar());
 
         // Add the load to canoe, and update ui state
-        renderLoadGraphics();
+        renderGraphics();
         LoadTreeManagerService.buildLoadTreeView(canoe);
         checkAndSetEmptyLoadTreeSettings();
     }
@@ -299,7 +301,7 @@ public class BeamController implements Initializable {
         if (pLoad.isSupport())
             renderSupportGraphic(scaledX);
         else
-            renderLoadGraphics();;
+            renderGraphics();;
     }
 
     /**
@@ -327,36 +329,47 @@ public class BeamController implements Initializable {
      * Rescales all point loads based on the load with the highest max abs value
      * Point and distributed load magnitudes are compared although their units differ (Force vs. Force / Length)
      */
-    public void renderLoadGraphics() {
-        // Clear load container of graphics
+    public void renderGraphics() {
         loadContainer.getChildren().clear();
+        double canoeGraphicLength = canoeGraphic.getLength();
 
         // Rescale all graphics relative to the max load
         List<Graphic> rescaledGraphics = new ArrayList<>();
         for (Load load : canoe.getAllLoads()) {
             // The ratio of the largest load to this load (always 1 if the canoe has no other loads)
             double loadMagnitudeRatio = LoadUtils.getLoadMagnitudeRatio(canoe, load);
+            double loadMax = load.getMaxSignedValue();
+            double hullAbsMax = canoe.getHull().getPiecedSideProfileCurve().getMaxValue(canoe.getHull().getSection());
 
             // Render at scaled size (deltaY calculates the downscaling factor)
-            double startX = GraphicsUtils.getScaledFromModelToGraphic(load.getX(), canoeGraphic.getLength(), canoe.getHull().getLength());
-            double endY = load.getMaxSignedValue() < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + (int) canoeGraphic.getHeight(startX);
+            double startX = GraphicsUtils.getScaledFromModelToGraphic(load.getX(), canoeGraphicLength, canoe.getHull().getLength());
+            double endY = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(load.getX());
             double deltaY = (GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - GraphicsUtils.acceptedBeamLoadGraphicHeightRange[0]) * loadMagnitudeRatio;
-            double startY = load.getMaxSignedValue() < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - deltaY : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + (int) canoeGraphic.getHeight(startX) + deltaY;
+            double startY = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - deltaY : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(load.getX()) + deltaY;
 
             // Render the correct graphic based on the subtype of the load
             switch (load) {
                 case PointLoad ignoredPLoad -> rescaledGraphics.add(new Arrow(startX, startX, startY, endY));
                 case LoadDistribution dist -> {
-                    double endX = GraphicsUtils.getScaledFromModelToGraphic(dist.getSection().getRx(), canoeGraphic.getLength(), canoe.getHull().getLength());
+                    double endX = GraphicsUtils.getScaledFromModelToGraphic(dist.getSection().getRx(), canoeGraphicLength, canoe.getHull().getLength());
+                    double endRy = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(dist.getSection().getRx());
+                    double deltaRy = (GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - GraphicsUtils.acceptedBeamLoadGraphicHeightRange[0]) * loadMagnitudeRatio;
+                    double startRy = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - deltaRy : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(dist.getSection().getRx()) + deltaRy;
                     switch (dist) {
                         case UniformLoadDistribution ignoredDLoad -> {
-                            StepFunction heavisideStep = new StepFunction(load.getMaxSignedValue(), dist.getX());
-                            UnivariateFunction f = x -> canoeGraphic.getFunction().value(x) + heavisideStep.value(x);
-                            rescaledGraphics.add(new ArrowBoundCurve(f, dist.getSection(), startX, startY, endX, endY));
+                            BoundedUnivariateFunction adjFunc = x -> loadMax < 0 ? 0 : Math.abs(canoe.getHull().getPiecedSideProfileCurve().value(x)) - hullAbsMax;
+                            Arrow lArrow = new Arrow(startX, startX, startY, endY);
+                            Arrow rArrow = new Arrow(endX, endX, startRy, endRy);
+                            HeavisideStep step = new HeavisideStep(loadMax, dist.getX());
+                            BoundedUnivariateFunction f = x -> adjFunc.value(x) + step.value(x);
+                            rescaledGraphics.add(new ArrowBoundCurve(f, dist.getSection(), lArrow, rArrow));
                         }
                         case PiecewiseContinuousLoadDistribution piecewise -> {
-                            if (piecewise.getForce() != 0)
-                                rescaledGraphics.add(new Curve(piecewise.getPiecedFunction(), piecewise.getSection(), startX, endX, startY, endY));
+                            if (piecewise.getForce() != 0) {
+                                BoundedUnivariateFunction adjFunc = x -> loadMax > 0 ? canoeGraphic.getFunction().value(x) : 0;
+                                BoundedUnivariateFunction f = x -> adjFunc.value(x) + piecewise.getPiecedFunction().value(x);
+                                rescaledGraphics.add(new Curve(f, piecewise.getSection(), startX, endX, startY, endY));
+                            }
                         }
                         default -> throw new IllegalStateException("Invalid load type");
                     }
@@ -368,6 +381,11 @@ public class BeamController implements Initializable {
         GraphicsUtils.sortGraphics(rescaledGraphics);
         loadContainer.getChildren().addAll((rescaledGraphics.stream().map(element -> (Node) element)).toList());
         updateViewOrder();
+    }
+
+    public void renderCanoeGraphic() {
+        beamContainer.getChildren().clear();
+        beamContainer.getChildren().add((Node) canoeGraphic);
     }
 
     /**
@@ -472,7 +490,7 @@ public class BeamController implements Initializable {
      */
     private void undoFloatingSolve() {
         clearLoadsOfType(LoadType.BUOYANCY);
-        renderLoadGraphics(); // removing buoyancy likely changes scaling, need to recalculate scaling
+        renderGraphics(); // removing buoyancy likely changes scaling, need to recalculate scaling
         undoSolveUpdateUI();
     }
 
@@ -582,7 +600,7 @@ public class BeamController implements Initializable {
         }
         loadContainer.getChildren().remove(selectedIndex);
         LoadTreeManagerService.buildLoadTreeView(canoe);
-        renderLoadGraphics();
+        renderGraphics();
 
         if (loadContainer.getChildren().isEmpty())
             checkAndSetEmptyLoadTreeSettings();
@@ -621,6 +639,7 @@ public class BeamController implements Initializable {
         canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
         LoadTreeManagerService.buildLoadTreeView(canoe);
         checkAndSetEmptyLoadTreeSettings();
+        renderCanoeGraphic();
     }
 
     /**
@@ -649,7 +668,7 @@ public class BeamController implements Initializable {
             this.canoe = canoe;
 
             // Update UI to new canoe
-            renderLoadGraphics();
+            renderGraphics();
             LoadTreeManagerService.buildLoadTreeView(this.canoe);
             axisLabelR.setText(String.format("%.2f m", this.canoe.getHull().getLength()));
             checkAndSetEmptyLoadTreeSettings();
@@ -738,7 +757,7 @@ public class BeamController implements Initializable {
                 distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField};
         for (TextField tf : tfs) {tf.setText("0.00");}
 
-        // Beam init
+        // Canoe graphic init
         canoeGraphic = new Beam(0, 84, beamContainer.getPrefWidth(), 25);
         JFXDepthManager.setDepth((Node) canoeGraphic, 4);
         beamContainer.getChildren().add((Node) canoeGraphic);

@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
@@ -21,10 +22,10 @@ import java.util.List;
  * Icon used for piecewise continuous load distributions
  * A curve with shaded area between the curve and the y-axis
  */
-@Getter @Setter
-public class Curve extends Group implements Graphic {
+@Getter
+public class Curve extends Group implements CurvedProfile {
 
-    protected UnivariateFunction function;
+    protected BoundedUnivariateFunction function;
     protected Section section;
     protected double startX;
     protected double endX;
@@ -33,8 +34,9 @@ public class Curve extends Group implements Graphic {
     protected Path linePath;
     protected Polygon area;
     protected boolean isColored;
+    private final double maxSignedValue;
 
-    public Curve(UnivariateFunction function, Section section, double startX, double endX, double startY, double endY) {
+    public Curve(BoundedUnivariateFunction function, Section section, double startX, double endX, double startY, double endY) {
         super();
         this.function = function;
         this.section = section;
@@ -42,6 +44,7 @@ public class Curve extends Group implements Graphic {
         this.endX = endX;
         this.startY = startY;
         this.endY = endY;
+        this.maxSignedValue = function.getMaxSignedValue(section); // precalculated to save time fetching
 
         CalculusUtils.validatePiecewiseAsUpOrDown(List.of(function), List.of(section));
         draw();
@@ -54,19 +57,12 @@ public class Curve extends Group implements Graphic {
         double currentX = section.getX();
         double rangeY = endY - startY;
 
-        // Find the min and max values of the function in the range [section.getX(), section.getRx()] for scaling based on samples
-        double minValue = Double.POSITIVE_INFINITY;
-        double maxValue = Double.NEGATIVE_INFINITY;
-        for (int i = 0; i <= numSamples; i++) {
-            double value = function.value(section.getX() + i * step);
-            if (value < minValue) minValue = value;
-            if (value > maxValue) maxValue = value;
-        }
-
-        double valueRange = maxValue - minValue;
+        double minValue = function.getMinValue(section);
+        double valueRange = function.getMaxValue(section) - minValue;
 
         // Flip the area of the curve so that it always fills in its area towards  y = 0
-        double initialPathY = startY + ((getEffectiveFunction().value(currentX) - minValue) / valueRange) * rangeY;
+        BoundedUnivariateFunction effectiveFunction = getEffectiveFunction();
+        double initialPathY = startY + ((effectiveFunction.value(currentX) - minValue) / valueRange) * rangeY;
         double initialPathX = startX + ((currentX - section.getX()) / (section.getRx() - section.getX())) * (endX - startX);
 
         linePath = new Path();
@@ -77,7 +73,7 @@ public class Curve extends Group implements Graphic {
 
         for (int i = 1; i <= numSamples; i++) {
             currentX = section.getX() + i * step;
-            double scaledY = startY + ((getEffectiveFunction().value(currentX) - minValue) / valueRange) * rangeY;
+            double scaledY = startY + ((effectiveFunction.value(currentX) - minValue) / valueRange) * rangeY;
             double scaledX = startX + ((currentX - section.getX()) / (section.getRx() - section.getX())) * (endX - startX);
             linePath.getElements().add(new LineTo(scaledX, scaledY));
             area.getPoints().addAll(scaledX, scaledY);
@@ -114,7 +110,31 @@ public class Curve extends Group implements Graphic {
         return function.value((section.getX() + section.getRx()) / 2) >= 0;
     }
 
-    protected UnivariateFunction getEffectiveFunction() {
-        return isNonNegative() ? x -> -function.value(x) + CalculusUtils.getMaxSignedValue(function, section) : function;
+    protected BoundedUnivariateFunction getEffectiveFunction() {
+        return isNonNegative() ? x -> maxSignedValue -function.value(x) : function;
+    }
+
+    @Override
+    public double getLength() {
+        return endX - startX;
+    }
+
+    /**
+     * The "height" of the function is really the distance to the y-axis (so height > 0 still for a non-positive curve)
+     * @param functionX the x value to get the height at
+     * Note that the input x here is in the function domain, the output y is in the scaled graphic domain
+     */
+    @Override
+    public double getHeight(double functionX) {
+        double valueAtX = getEffectiveFunction().value(functionX);
+        double maxValue = function.getMaxPoint(section).getY();
+        double minValue = function.getMinPoint(section).getY();
+
+        // Scale the value based on the rendered height
+        double rangeY = endY - startY;
+        double valueRange = maxValue - minValue;
+        double scaledValue = (valueAtX - minValue) / valueRange * rangeY;
+
+        return Math.abs(scaledValue);
     }
 }

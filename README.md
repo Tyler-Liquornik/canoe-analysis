@@ -88,7 +88,8 @@ Currently, the program has one module to solve for the canoe's internal shear fo
 - [X] Solve the case of a floating canoe [Epic]
   - [X] Implement an improved model for breaking the canoe hull up into sections
     - [X] Define a set of curves for hull geometry
-    - [X] Create new graphics for complex load distributions for the hull and buoyancy
+    - [X] Create new graphics for complex load distributions
+    - [ ] Create new graphics for the hull geometry
     - [X] Display the canoe model in a collapsable TreeView
   - [X] Iteratively solve for the waterline of a floating hull in equilibrium to get a buoyancy distribution
   - [X] Solve for a buoyancy load distribution based on the self-weight distribution of the hull

@@ -2,6 +2,7 @@ package com.wecca.canoeanalysis.models.load;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
@@ -100,7 +101,7 @@ public class DiscreteLoadDistribution extends Load {
      * @return a DiscreteLoadDistribution object
      */
     public static DiscreteLoadDistribution fromPiecewiseContinuous(LoadType type, PiecewiseContinuousLoadDistribution piecewise, int numIntervals) {
-        UnivariateFunction piecedFunction = piecewise.getPiecedFunction();
+        BoundedUnivariateFunction piecedFunction = piecewise.getPiecedFunction();
         double start = piecewise.getSection().getX();
         double end = piecewise.getSection().getRx();
         double step = (end - start) / (double) numIntervals;

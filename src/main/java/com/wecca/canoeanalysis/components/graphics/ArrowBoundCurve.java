@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
@@ -18,29 +19,19 @@ import java.util.List;
  */
 @Getter @Setter
 public class ArrowBoundCurve extends Group implements Graphic {
-
-    private double lX;
-    private double rX;
-    private double startY;
-    private double endY;
     private Arrow lArrow;
     private Arrow rArrow;
     private Curve borderCurve;
     private boolean isColored;
     private Section section;
 
-    public ArrowBoundCurve(UnivariateFunction function, Section section, double startX, double startY, double endX, double endY) {
+    public ArrowBoundCurve(BoundedUnivariateFunction function, Section section, Arrow lArrow, Arrow rArrow) {
         super();
         this.section = section;
-        this.lX = startX;
-        this.rX = endX;
-        this.startY = startY;
-        this.endY = endY;
         this.isColored = false;
-
-        lArrow = new Arrow(lX, lX, startY, endY);
-        rArrow = new Arrow(rX, rX, startY, endY);
-        borderCurve = new Curve(function, section, lX, rX, startY, endY);
+        this.lArrow = lArrow;
+        this.rArrow = rArrow;
+        borderCurve = new Curve(function, section, lArrow.getX(), rArrow.getX(), lArrow.getStartY(), rArrow.getEndY());
         draw();
 
         JFXDepthManager.setDepth(this, 4);
@@ -53,7 +44,7 @@ public class ArrowBoundCurve extends Group implements Graphic {
 
     @Override
     public double getX() {
-        return lX;
+        return lArrow.getX();
     }
 
     @Override
