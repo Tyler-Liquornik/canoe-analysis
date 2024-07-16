@@ -86,7 +86,7 @@ public class HullSection extends Section
      * The 7th degree polynomial has R^2 = 0.9967 for the fully accurate function and was solved on Desmos
      */
     @JsonIgnore
-    private final Function<Double, Double> crossSectionalAreaAdjustmentFactorFunction = h -> {
+    private final BoundedUnivariateFunction crossSectionalAreaAdjustmentFactorFunction = h -> {
         double[] coefficients = new double[] {0, 17.771, -210.367, 1409.91, -5420.6, 11769.4, -13242.7, 5880.62};
         for (int i = 0; i < coefficients.length; i++) {
             coefficients[i] = coefficients[i] / Math.pow(SharkBaitHullLibrary.scalingFactor, i);
@@ -146,7 +146,7 @@ public class HullSection extends Section
         return x -> {
             double height = Math.abs(sideProfileCurve.value(x));
             double width = 2 * Math.abs(topProfileCurve.value(x)); // assuming this profile is symmetrical in the current model
-            return height * width * crossSectionalAreaAdjustmentFactorFunction.apply(height);
+            return height * width * crossSectionalAreaAdjustmentFactorFunction.value(height);
         };
     }
 
@@ -169,7 +169,7 @@ public class HullSection extends Section
             double height = Math.abs(sideProfileCurve.value(x));
             double width = 2 * Math.abs(topProfileCurve.value(x)); // assuming this profile is symmetrical in the current model
             int numTopAndBottomWalls = isFilledBulkhead ? 2 : 1; // Include a top wall (ceiling) to cover the bulkhead (in addition to floor which is always present)
-            return ((height - numTopAndBottomWalls * thickness) * (width - (2 * thickness))) * crossSectionalAreaAdjustmentFactorFunction.apply(height); // inner area doesnt include walls or floor / ceiling
+            return ((height - numTopAndBottomWalls * thickness) * (width - (2 * thickness))) * crossSectionalAreaAdjustmentFactorFunction.value(height); // inner area doesnt include walls or floor / ceiling
         };
     }
 

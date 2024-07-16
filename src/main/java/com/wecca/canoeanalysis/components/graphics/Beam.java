@@ -11,7 +11,6 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 
 /**
  * Icon used for an unset/simplified canoe hull
@@ -19,11 +18,7 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
 @Getter @Setter
 public class Beam extends Group implements CurvedProfile {
 
-    private double startX;
-    private double startY;
-    private double length;
-    private double height;
-    private Rectangle beam;
+    private Rectangle encasingRectangle;
     private Line topBorder;
     private Line bottomBorder;
     private Line leftBorder;
@@ -31,12 +26,9 @@ public class Beam extends Group implements CurvedProfile {
     private boolean isColored;
     private static final double borderExtension = 5; // Amount by which the borders extend beyond the beam
 
-    public Beam(double startX, double startY, double length, double height) {
+    public Beam(Rectangle rectangle) {
         super();
-        this.startX = startX;
-        this.startY = startY;
-        this.length = length;
-        this.height = height;
+        this.encasingRectangle = rectangle;
         this.isColored = false;
 
         draw();
@@ -46,28 +38,27 @@ public class Beam extends Group implements CurvedProfile {
 
     public void draw() {
         // Creating the beam rectangle
-        beam = new Rectangle(startX, startY, length, height);
-        beam.setFill(ColorPaletteService.getColor("above-surface"));
+        encasingRectangle.setFill(ColorPaletteService.getColor("above-surface"));
 
         // Creating the borders with extension
-        topBorder = new Line(startX - borderExtension, startY, startX + length + borderExtension, startY);
+        topBorder = new Line(encasingRectangle.getX() - borderExtension, encasingRectangle.getY(), encasingRectangle.getX() + encasingRectangle.getWidth() + borderExtension, encasingRectangle.getY());
         topBorder.setStroke(ColorPaletteService.getColor("white"));
-        bottomBorder = new Line(startX - borderExtension, startY + height, startX + length + borderExtension, startY + height);
+        bottomBorder = new Line(encasingRectangle.getX() - borderExtension, encasingRectangle.getY() + encasingRectangle.getHeight(), encasingRectangle.getX() + encasingRectangle.getWidth() + borderExtension, encasingRectangle.getY() + encasingRectangle.getHeight());
         bottomBorder.setStroke(ColorPaletteService.getColor("white"));
 
         // Creating the left and right borders
-        leftBorder = new Line(startX, startY, startX, startY + height);
+        leftBorder = new Line(encasingRectangle.getX(), encasingRectangle.getY(), encasingRectangle.getX(), encasingRectangle.getY() + encasingRectangle.getHeight());
         leftBorder.setStroke(ColorPaletteService.getColor("white"));
-        rightBorder = new Line(startX + length, startY, startX + length, startY + height);
+        rightBorder = new Line(encasingRectangle.getX() + encasingRectangle.getWidth(), encasingRectangle.getY(), encasingRectangle.getX() + encasingRectangle.getWidth(), encasingRectangle.getY() + encasingRectangle.getHeight());
         rightBorder.setStroke(ColorPaletteService.getColor("white"));
 
         // Adding elements to the group
-        getChildren().addAll(beam, topBorder, bottomBorder, leftBorder, rightBorder);
+        getChildren().addAll(encasingRectangle, topBorder, bottomBorder, leftBorder, rightBorder);
     }
 
     @Override
     public double getX() {
-        return startX;
+        return encasingRectangle.getX();
     }
 
     @Override
@@ -77,7 +68,7 @@ public class Beam extends Group implements CurvedProfile {
         Color outlineColor = setColored ? ColorPaletteService.getColor("primary") : ColorPaletteService.getColor("white");
         Color fillColor = setColored ? ColorPaletteService.getColor("primary-light") : ColorPaletteService.getColor("above-surface");
 
-        beam.setFill(fillColor);
+        encasingRectangle.setFill(fillColor);
         topBorder.setStroke(outlineColor);
         bottomBorder.setStroke(outlineColor);
         leftBorder.setStroke(outlineColor);
@@ -86,7 +77,7 @@ public class Beam extends Group implements CurvedProfile {
 
     @Override
     public Section getSection() {
-        return new Section(startX, startX + length);
+        return new Section(encasingRectangle.getX(), encasingRectangle.getX() + encasingRectangle.getWidth());
     }
 
     @Override
@@ -96,18 +87,16 @@ public class Beam extends Group implements CurvedProfile {
 
     @Override
     public double getHeight(double functionX) {
-        if (functionX < startX || functionX > startX + length)
-            throw new IllegalArgumentException("Cannot get height at x = " + functionX + ", out of bounds");
-        return height;
+        if (functionX < encasingRectangle.getX() || functionX > encasingRectangle.getX() + encasingRectangle.getWidth())
+            throw new IllegalArgumentException("Cannot get rectangle.getHeight() at x = " + functionX + ", out of bounds");
+        return encasingRectangle.getHeight();
     }
 
-    @Override
     public double getEndX() {
-        return startX + length;
+        return encasingRectangle.getX() + encasingRectangle.getWidth();
     }
 
-    @Override
     public double getEndY() {
-        return  startY + height;
+        return  encasingRectangle.getY() + encasingRectangle.getHeight();
     }
 }

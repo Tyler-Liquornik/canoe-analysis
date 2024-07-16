@@ -6,13 +6,10 @@ import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
-
-import java.util.List;
 
 /**
  * Icon used for a uniformly distributed load over a curved surface
@@ -25,13 +22,13 @@ public class ArrowBoundCurve extends Group implements Graphic {
     private boolean isColored;
     private Section section;
 
-    public ArrowBoundCurve(BoundedUnivariateFunction function, Section section, Arrow lArrow, Arrow rArrow) {
+    public ArrowBoundCurve(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle, Arrow lArrow, Arrow rArrow) {
         super();
         this.section = section;
         this.isColored = false;
         this.lArrow = lArrow;
         this.rArrow = rArrow;
-        borderCurve = new Curve(function, section, lArrow.getX(), rArrow.getX(), lArrow.getStartY(), rArrow.getEndY());
+        this.borderCurve = new Curve(function, section, encasingRectangle);
         draw();
 
         JFXDepthManager.setDepth(this, 4);

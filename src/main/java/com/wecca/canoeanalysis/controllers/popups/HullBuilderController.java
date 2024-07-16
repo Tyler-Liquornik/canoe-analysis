@@ -46,18 +46,8 @@ public class HullBuilderController implements Initializable {
         beamController.checkAndSetEmptyLoadTreeSettings();
         LoadTreeManagerService.buildLoadTreeView(canoe);
         mainController.disableModuleToolBarButton(true, 0);
-        setCanoeGraphic(hull);
+        beamController.setCanoeGraphicFromCanoe(canoe);
         closeWindow(e);
-    }
-
-    public void setCanoeGraphic(Hull hull) {
-        CurvedProfile canoeGraphic = beamController.getCanoeGraphic();
-        beamController.setCanoeGraphic(new ClosedCurve(
-                hull.getPiecedSideProfileCurve(), hull.getSection(),
-                canoeGraphic.getStartX(), canoeGraphic.getEndX(), canoeGraphic.getStartY(), canoeGraphic.getStartY() + 35));
-        beamController.getBeamContainer().getChildren().clear();
-        beamController.getBeamContainer().getChildren().add((Node) canoeGraphic);
-        beamController.renderCanoeGraphic();
     }
 
     @Override

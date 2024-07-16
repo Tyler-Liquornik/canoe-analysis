@@ -12,6 +12,7 @@ import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.Polygon;
+import javafx.scene.shape.Rectangle;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.math3.analysis.UnivariateFunction;
@@ -27,72 +28,67 @@ public class Curve extends Group implements CurvedProfile {
 
     protected BoundedUnivariateFunction function;
     protected Section section;
-    protected double startX;
-    protected double endX;
-    protected double startY;
-    protected double endY;
+    protected Rectangle encasingRectangle;
     protected Path linePath;
     protected Polygon area;
     protected boolean isColored;
     private final double maxSignedValue;
 
-    public Curve(BoundedUnivariateFunction function, Section section, double startX, double endX, double startY, double endY) {
+    public Curve(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
         super();
         this.function = function;
         this.section = section;
-        this.startX = startX;
-        this.endX = endX;
-        this.startY = startY;
-        this.endY = endY;
+        this.encasingRectangle = encasingRectangle;
         this.maxSignedValue = function.getMaxSignedValue(section); // precalculated to save time fetching
+        this.isColored = false;
 
         CalculusUtils.validatePiecewiseAsUpOrDown(List.of(function), List.of(section));
         draw();
         JFXDepthManager.setDepth(this, 4);
+        ColorManagerService.registerInColorPalette(this);
     }
 
     public void draw() {
+        // Partition the section
         int numSamples = 1000;
         double step = (section.getRx() - section.getX()) / numSamples;
         double currentX = section.getX();
-        double rangeY = endY - startY;
-
-        double minValue = function.getMinValue(section);
-        double valueRange = function.getMaxValue(section) - minValue;
 
         // Flip the area of the curve so that it always fills in its area towards  y = 0
+        double minValue = function.getMinValue(section);
+        double valueRange = function.getMaxValue(section) - minValue;
         BoundedUnivariateFunction effectiveFunction = getEffectiveFunction();
-        double initialPathY = startY + ((effectiveFunction.value(currentX) - minValue) / valueRange) * rangeY;
-        double initialPathX = startX + ((currentX - section.getX()) / (section.getRx() - section.getX())) * (endX - startX);
+        double initialPathY = encasingRectangle.getY() + ((effectiveFunction.value(currentX) - minValue) / valueRange) * encasingRectangle.getHeight();
+        double initialPathX = encasingRectangle.getX() + ((currentX - section.getX()) / (section.getLength())) * encasingRectangle.getWidth();
 
+        // Set up
         linePath = new Path();
         linePath.getElements().add(new MoveTo(initialPathX, initialPathY));
-
         area = new Polygon();
         area.getPoints().addAll(initialPathX, initialPathY);
 
+        // Build the curve and contained area
         for (int i = 1; i <= numSamples; i++) {
             currentX = section.getX() + i * step;
-            double scaledY = startY + ((effectiveFunction.value(currentX) - minValue) / valueRange) * rangeY;
-            double scaledX = startX + ((currentX - section.getX()) / (section.getRx() - section.getX())) * (endX - startX);
+            double scaledY = encasingRectangle.getY() + ((effectiveFunction.value(currentX) - minValue) / valueRange) * encasingRectangle.getHeight();
+            double scaledX = encasingRectangle.getX() + ((currentX - section.getX()) / (section.getRx() - section.getX())) * encasingRectangle.getWidth();
             linePath.getElements().add(new LineTo(scaledX, scaledY));
             area.getPoints().addAll(scaledX, scaledY);
         }
 
-        area.getPoints().addAll(endX, initialPathY);
-        area.getPoints().addAll(startX, initialPathY);
+        // Close off the area and style
+        area.getPoints().addAll(encasingRectangle.getX() + encasingRectangle.getWidth(), initialPathY);
+        area.getPoints().addAll(encasingRectangle.getX(), initialPathY);
         area.setFill(ColorPaletteService.getColor("above-surface"));
         linePath.setStroke(ColorPaletteService.getColor("white"));
 
+        // Group the elements
         getChildren().addAll(area, linePath);
-
-        this.isColored = false;
-        ColorManagerService.registerInColorPalette(this);
     }
 
     @Override
     public double getX() {
-        return startX;
+        return encasingRectangle.getX();
     }
 
     @Override
@@ -111,12 +107,7 @@ public class Curve extends Group implements CurvedProfile {
     }
 
     protected BoundedUnivariateFunction getEffectiveFunction() {
-        return isNonNegative() ? x -> maxSignedValue -function.value(x) : function;
-    }
-
-    @Override
-    public double getLength() {
-        return endX - startX;
+        return isNonNegative() ? x -> maxSignedValue - function.value(x) : function;
     }
 
     /**
@@ -131,10 +122,29 @@ public class Curve extends Group implements CurvedProfile {
         double minValue = function.getMinPoint(section).getY();
 
         // Scale the value based on the rendered height
-        double rangeY = endY - startY;
         double valueRange = maxValue - minValue;
-        double scaledValue = (valueAtX - minValue) / valueRange * rangeY;
+        double scaledValue = (valueAtX - minValue) / valueRange * encasingRectangle.getHeight();
 
         return Math.abs(scaledValue);
+    }
+
+    @Override
+    public Section getSection() {
+        return section;
+    }
+
+    @Override
+    public BoundedUnivariateFunction getFunction() {
+        return function;
+    }
+
+    @Override
+    public double getEndX() {
+        return encasingRectangle.getX() + encasingRectangle.getWidth();
+    }
+
+    @Override
+    public double getEndY() {
+        return encasingRectangle.getY() + encasingRectangle.getHeight();
     }
 }

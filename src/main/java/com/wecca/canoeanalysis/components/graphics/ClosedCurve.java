@@ -6,9 +6,9 @@ import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 
 /**
  * Icon used for the canoe hull
@@ -19,15 +19,15 @@ public class ClosedCurve extends Curve implements CurvedProfile {
 
     private Line closingLine;
 
-    public ClosedCurve(BoundedUnivariateFunction function, Section section, double startX, double endX, double startY, double endY) {
-        super(function, section, startX, endX, startY, endY);
+    public ClosedCurve(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
+        super(function, section, encasingRectangle);
         draw();
         ColorManagerService.registerInColorPalette(this);
     }
 
     public void draw() {
         super.draw();
-        closingLine = new Line(startX, startY, endX, startY);
+        closingLine = new Line(encasingRectangle.getX(), encasingRectangle.getY(), encasingRectangle.getX() + encasingRectangle.getWidth(), encasingRectangle.getY());
         closingLine.setStroke(ColorPaletteService.getColor("white"));
         closingLine.setStrokeWidth(1.5);
         linePath.setStrokeWidth(1.5);
@@ -42,4 +42,3 @@ public class ClosedCurve extends Curve implements CurvedProfile {
         closingLine.setStroke(lineColor);
     }
 }
-

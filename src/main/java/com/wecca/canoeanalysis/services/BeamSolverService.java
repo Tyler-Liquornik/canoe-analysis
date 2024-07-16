@@ -119,7 +119,7 @@ public class BeamSolverService {
     private static BoundedUnivariateFunction getSubmergedCrossSectionalAreaFunction(double waterline, HullSection section) {
         return x -> {
             double h = waterline - Math.min(section.getSideProfileCurve().value(x), waterline);
-            return section.getCrossSectionalAreaFunction().value(x) * h * section.getCrossSectionalAreaAdjustmentFactorFunction().apply(h);
+            return section.getCrossSectionalAreaFunction().value(x) * h * section.getCrossSectionalAreaAdjustmentFactorFunction().value(h);
         };
     }
 
