@@ -203,9 +203,11 @@ public class Canoe
         List<Load> leftHalf = new ArrayList<>();
         List<Load> rightHalf = new ArrayList<>();
         for (Load load : loads) {
-            if ((load instanceof PointLoad pLoad && pLoad.getX() <= midpoint) || ((load instanceof UniformLoadDistribution dLoad && dLoad.getX() < midpoint)))
+            if ((load instanceof PointLoad pLoad && pLoad.getX() <= midpoint) || (load instanceof UniformLoadDistribution dLoad && dLoad.getX() < midpoint))
                 leftHalf.add(load);
-            if ((load instanceof PointLoad pLoad && pLoad.getX() >= midpoint) || ((load instanceof UniformLoadDistribution dLoad && dLoad.getRx() > midpoint)))
+            if (load instanceof PointLoad pLoad && pLoad.getX() >= midpoint)
+                rightHalf.add(load);
+            if (load instanceof UniformLoadDistribution dLoad && dLoad.getRx() > midpoint)
                 rightHalf.add(load);
         }
         if (leftHalf.size() != rightHalf.size())

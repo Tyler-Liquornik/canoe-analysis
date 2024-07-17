@@ -353,10 +353,6 @@ public class BeamController implements Initializable {
             switch (load) {
                 case PointLoad ignoredPLoad -> rescaledGraphics.add(new Arrow(x, x, startY, endY));
                 case LoadDistribution dist -> {
-
-                    // The rect is the output space of the graphics, the function is in the input space
-                    // We need to define rect such that the input space can scale to the output scale
-                    // Considering using org.modelmapper model mapping to map between the differently structured model
                     BoundedUnivariateFunction hullCurve = X -> canoe.getHull().getPiecedSideProfileCurve().value(X) - hullAbsMax;
                     double rx = GraphicsUtils.getScaledFromModelToGraphic(dist.getSection().getRx(), canoeGraphicLength, canoe.getHull().getLength());
                     double deltaX = rx - x;
@@ -368,20 +364,19 @@ public class BeamController implements Initializable {
                     double rectY = loadMax < 0 ? startY : maxY;
                     double flip = loadMax < 0 ? 1 : -1;
                     Rectangle rect = new Rectangle(x, rectY, deltaX, rectHeight * flip);
-                    // Calculate the dynamic scaling factor
-                    double functionRange = hullCurve.getMaxValue(dist.getSection()) - hullCurve.getMinValue(dist.getSection());
-                    double stepScale = functionRange / deltaY;
                     switch (dist) {
                         case UniformLoadDistribution ignoredDLoad -> {
                             Arrow lArrow = new Arrow(x, x, startY, endY);
                             Arrow rArrow = new Arrow(rx, rx, startRy, endRy);
                             HeavisideStep step = new HeavisideStep(loadMax, dist.getX());
-                            BoundedUnivariateFunction f = loadMax < 0 ? step : X -> step.value(X) - hullCurve.value(X) / 3.5; // figure out not hardcoded, 2.7 for max scaled atm
+
+
+                            BoundedUnivariateFunction f = loadMax < 0 ? step : X -> step.value(X) - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), step.getA() / loadMagnitudeRatio, hullAbsMax) / 2; // figure out not hardcoded, 2.7 for max scaled atm
                             rescaledGraphics.add(new ArrowBoundCurve(f, dist.getSection(), rect, lArrow, rArrow));
                         }
                         case PiecewiseContinuousLoadDistribution piecewise -> {
                             if (piecewise.getForce() != 0) {
-                                BoundedUnivariateFunction f = X -> loadMax < 0 ? piecewise.getPiecedFunction().value(X) : piecewise.getPiecedFunction().value(X) - hullCurve.value(X) / 2.7;
+                                BoundedUnivariateFunction f = X -> loadMax < 0 ? piecewise.getPiecedFunction().value(X) : piecewise.getPiecedFunction().value(X) - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), piecewise.getX() / loadMagnitudeRatio, hullAbsMax) / 2;
                                 rescaledGraphics.add(new Curve(f, piecewise.getSection(), rect));
                             }
                         }
@@ -599,6 +594,7 @@ public class BeamController implements Initializable {
             if (selectedItem.getLoad() != null && selectedItem.getLoad().getType() != null &&
                     selectedItem.getLoad().getType() == LoadType.HULL) {
                 canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
+                resetCanoeGraphic();
                 mainController.disableModuleToolBarButton(false, 0);
             }
             else {
