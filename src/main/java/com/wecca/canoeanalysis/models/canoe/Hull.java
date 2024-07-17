@@ -8,11 +8,10 @@ import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.load.DiscreteLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
-import com.wecca.canoeanalysis.utils.CalculusUtils;
+import javafx.geometry.Point2D;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.univariate.BrentOptimizer;
 import org.apache.commons.math3.optim.univariate.SearchInterval;
@@ -99,8 +98,9 @@ public class Hull {
             );
 
             double sectionHeight = -result.getValue();
-            if (sectionHeight < canoeHeight)
+            if (sectionHeight < canoeHeight) {
                 canoeHeight = sectionHeight;
+            }
         }
         return -canoeHeight; // canoe height is distance down from 0, so it must be negated
     }

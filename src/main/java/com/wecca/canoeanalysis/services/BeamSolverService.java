@@ -8,7 +8,6 @@ import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.optim.MaxEval;
 
 import java.util.ArrayList;

@@ -20,6 +20,7 @@ public class ArrowBoundCurve extends Group implements Graphic {
     private Arrow rArrow;
     private Curve borderCurve;
     private boolean isColored;
+    private double stepHeight;
     private Section section;
 
     public ArrowBoundCurve(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle, Arrow lArrow, Arrow rArrow) {

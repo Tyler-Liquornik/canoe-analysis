@@ -55,9 +55,9 @@ public class Curve extends Group implements CurvedProfile {
         double currentX = section.getX();
 
         // Flip the area of the curve so that it always fills in its area towards  y = 0
-        double minValue = function.getMinValue(section);
-        double valueRange = function.getMaxValue(section) - minValue;
         BoundedUnivariateFunction effectiveFunction = getEffectiveFunction();
+        double minValue = effectiveFunction.getMinValue(section);
+        double valueRange = effectiveFunction.getMaxValue(section) - minValue;
         double initialPathY = encasingRectangle.getY() + ((effectiveFunction.value(currentX) - minValue) / valueRange) * encasingRectangle.getHeight();
         double initialPathX = encasingRectangle.getX() + ((currentX - section.getX()) / (section.getLength())) * encasingRectangle.getWidth();
 
