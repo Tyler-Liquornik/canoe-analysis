@@ -13,7 +13,7 @@ PADDL, Precision Analysis & Design for Dynamic Loading, is a JavaFx desktop app 
 
 PADDL is built as a custom software solution for [WECCA](https://wecca.org/), the Western Engineering Concrete Canoe Association, as a candidate for our 2025 EFA (Enhanced Focus Area). PADDL's modules are designed specifically as solutions to aid civil engineering processes specifically centered around WECCA's concrete canoe.
 
-Currently, the program has one module to solve for the canoe's internal shear force and bending moment distributions. There are intentions for the project to grow in size over the next couple years, where it will become increasingly more useful for WECCA over time.
+Currently, the program has one module to solve for the canoe's internal shear force and bending moment distributions. There are intentions for the project to grow in size over the next couple of years, where it will become increasingly more useful for WECCA over time.
 
 ### Summer '24 goals:
 - Fully customizable canoe hull geometry and material properties
@@ -61,7 +61,7 @@ Currently, the program has one module to solve for the canoe's internal shear fo
    On Mac, you can install SceneBuilder directly from <br/>
    [https://download2.gluonhq.com/scenebuilder/15.0.1/install/mac/SceneBuilder-15.0.1.dmg](https://download2.gluonhq.com/scenebuilder/15.0.1/install/mac/SceneBuilder-15.0.1.dmg) <br/> <br/>
     
-4. <b>Add JFoenix and FontAwesomeFX to scenebuilder</b><br/>
+4. <b>Add JFoenix and FontAwesomeFX to Scenebuilder</b><br/>
    Download [JFoenix](https://jar-download.com/artifacts/com.jfoenix/jfoenix/9.0.10/source-code) and [FontAwesomeFX](https://jar-download.com/artifacts/de.jensd/fontawesomefx/8.2/source-code) </br> <br/>
 
    Add the jar files to Scenebuilder's library:
@@ -75,7 +75,7 @@ Currently, the program has one module to solve for the canoe's internal shear fo
 
 ## Summer '24 Feature Development Roadmap
 
-- [X] Implement material deisgn look and feel
+- [X] Implement material design look and feel
 - [X] Side Menu Drawer
     - [X] Template links to other modules
     - [X] Settings utility window
@@ -84,12 +84,12 @@ Currently, the program has one module to solve for the canoe's internal shear fo
 - [X] Import/Export the canoe object to a from/to a file
 - [X] Unification of color system between Java and CSS code
   - [X] Customizable colors in settings
-  - [X] Persist color settings accross sessions in a properties file
+  - [X] Persist color settings across sessions in a properties file
 - [X] Solve the case of a floating canoe [Epic]
   - [X] Implement an improved model for breaking the canoe hull up into sections
     - [X] Define a set of curves for hull geometry
     - [X] Create new graphics for complex load distributions
-    - [ ] Create new graphics for the hull geometry
+    - [X] Create new graphics for the hull geometry
     - [X] Display the canoe model in a collapsable TreeView
   - [X] Iteratively solve for the waterline of a floating hull in equilibrium to get a buoyancy distribution
   - [X] Solve for a buoyancy load distribution based on the self-weight distribution of the hull
