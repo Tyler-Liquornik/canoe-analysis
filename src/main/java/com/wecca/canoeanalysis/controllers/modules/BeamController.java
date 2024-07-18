@@ -327,23 +327,22 @@ public class BeamController implements Initializable {
     }
 
     /**
-     * Rescales all point loads based on the load with the highest max abs value
-     * Point and distributed load magnitudes are compared although their units differ (Force vs. Force / Length)
+     * Render all graphics with relative scaling of loads
      */
     public void renderGraphics() {
         loadContainer.getChildren().clear();
         double canoeGraphicLength = canoeGraphic.getEncasingRectangle().getWidth();
+        double hullAbsMax = canoe.getHull().getPiecedSideProfileCurve().getMaxValue(canoe.getHull().getSection());
 
         // Rescale all graphics relative to the max load
         List<Graphic> rescaledGraphics = new ArrayList<>();
         for (Load load : canoe.getAllLoads()) {
-
-            // The ratio of the largest load to this load (always 1 if the canoe has no other loads)
+            // Scaling ratios
             double loadMagnitudeRatio = LoadUtils.getLoadMagnitudeRatio(canoe, load);
-            double loadMax = load.getMaxSignedValue();
-            double hullAbsMax = canoe.getHull().getPiecedSideProfileCurve().getMaxValue(canoe.getHull().getSection());
+            double loadMaxToCurvedProfileMaxRatio = GraphicsUtils.calculateLoadMaxToCurvedProfileMaxRatio(canoeGraphic);
 
-            // Render at scaled size (deltaY calculates the downscaling factor)
+            // Load graphic position coordinates (distribution graphic left end) and magnitude
+            double loadMax = load.getMaxSignedValue();
             double x = GraphicsUtils.getScaledFromModelToGraphic(load.getX(), canoeGraphicLength, canoe.getHull().getLength());
             double endY = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(load.getX());
             double deltaY = (GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - GraphicsUtils.acceptedBeamLoadGraphicHeightRange[0]) * loadMagnitudeRatio;
@@ -353,30 +352,40 @@ public class BeamController implements Initializable {
             switch (load) {
                 case PointLoad ignoredPLoad -> rescaledGraphics.add(new Arrow(x, x, startY, endY));
                 case LoadDistribution dist -> {
-                    BoundedUnivariateFunction hullCurve = X -> canoe.getHull().getPiecedSideProfileCurve().value(X) - hullAbsMax;
+                    // Distribution graphic right end coordinates
                     double rx = GraphicsUtils.getScaledFromModelToGraphic(dist.getSection().getRx(), canoeGraphicLength, canoe.getHull().getLength());
-                    double deltaX = rx - x;
                     double endRy = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(dist.getSection().getRx());
                     double startRy = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - deltaY : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(dist.getSection().getRx()) + deltaY;
-                    double maxX = hullCurve.getMaxSignedValuePoint(dist.getSection()).getX();
-                    double maxY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(maxX) + deltaY;
-                    double rectHeight = loadMax < 0 ? deltaY : maxY - Math.min(endY, endRy);
-                    double rectY = loadMax < 0 ? startY : maxY;
-                    double flip = loadMax < 0 ? 1 : -1;
-                    Rectangle rect = new Rectangle(x, rectY, deltaX, rectHeight * flip);
+
+                    // Hull curve graphic adjustment setup
+                    BoundedUnivariateFunction hullCurve = X -> canoe.getHull().getPiecedSideProfileCurve().value(X) - hullAbsMax;
+                    double hullCurveMaxX = hullCurve.getMaxSignedValuePoint(dist.getSection()).getX();
+                    double hullCurveMaxY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(hullCurveMaxX) + deltaY;
+                    double rectWidth = rx - x;
+                    double rectHeight = loadMax < 0 ? deltaY : Math.min(endY, endRy) - hullCurveMaxY;
+                    double rectY = loadMax < 0 ? startY : hullCurveMaxY;
+                    Rectangle rect = new Rectangle(x, rectY, rectWidth, rectHeight);
                     switch (dist) {
                         case UniformLoadDistribution ignoredDLoad -> {
                             Arrow lArrow = new Arrow(x, x, startY, endY);
                             Arrow rArrow = new Arrow(rx, rx, startRy, endRy);
                             HeavisideStep step = new HeavisideStep(loadMax, dist.getX());
-
-
-                            BoundedUnivariateFunction f = loadMax < 0 ? step : X -> step.value(X) - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), step.getA() / loadMagnitudeRatio, hullAbsMax) / 2; // figure out not hardcoded, 2.7 for max scaled atm
+                            BoundedUnivariateFunction f = X -> {
+                                double stepValue = step.value(X);
+                                return (loadMax < 0 || stepValue == 0 || hullAbsMax == 0)
+                                        ? stepValue // Adjust the distribution graphic by adding the hull curve
+                                        : stepValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), stepValue / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
+                            };
                             rescaledGraphics.add(new ArrowBoundCurve(f, dist.getSection(), rect, lArrow, rArrow));
                         }
                         case PiecewiseContinuousLoadDistribution piecewise -> {
                             if (piecewise.getForce() != 0) {
-                                BoundedUnivariateFunction f = X -> loadMax < 0 ? piecewise.getPiecedFunction().value(X) : piecewise.getPiecedFunction().value(X) - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), piecewise.getX() / loadMagnitudeRatio, hullAbsMax) / 2;
+                                BoundedUnivariateFunction f = X -> {
+                                    double piecewiseValue = piecewise.getPiecedFunction().value(X);
+                                    return (loadMax < 0 || piecewiseValue == 0 || hullAbsMax == 0)
+                                            ? piecewiseValue // Adjust the distribution graphic by adding the hull curve
+                                            : piecewiseValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), piecewiseValue / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
+                                };
                                 rescaledGraphics.add(new Curve(f, piecewise.getSection(), rect));
                             }
                         }
@@ -386,7 +395,6 @@ public class BeamController implements Initializable {
                 default -> throw new IllegalArgumentException("Invalid load type");
             }
         }
-
         GraphicsUtils.sortGraphics(rescaledGraphics);
         loadContainer.getChildren().addAll((rescaledGraphics.stream().map(element -> (Node) element)).toList());
         updateViewOrder();
@@ -671,7 +679,7 @@ public class BeamController implements Initializable {
                 hull.getPiecedSideProfileCurve(), hull.getSection(), rect));
         beamContainer.getChildren().clear();
         beamContainer.getChildren().add((Node) canoeGraphic);
-        renderCanoeGraphic();
+        renderGraphics();
     }
 
     /**

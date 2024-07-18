@@ -39,4 +39,13 @@ public class GraphicsUtils {
         graphics.sort(Comparator.comparingInt(l -> classOrder.getOrDefault(l.getClass(), -1)));
         graphics.sort(Comparator.comparingDouble(Graphic::getX));
     }
+
+    /**
+     * Calculates the ratio of the maximum possible load arrow to the max height of a CurvedProfile
+     * @param canoeGraphic the CurvedProfile object
+     * @return the loadMaxToHullMaxRatio
+     */
+    public static double calculateLoadMaxToCurvedProfileMaxRatio(CurvedProfile canoeGraphic) {
+        return (acceptedBeamLoadGraphicHeightRange[1] - acceptedBeamLoadGraphicHeightRange[0]) / canoeGraphic.getEncasingRectangle().getHeight();
+    }
 }

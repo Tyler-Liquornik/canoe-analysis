@@ -117,16 +117,14 @@ public class Canoe
      */
     @JsonIgnore
     public double getMaxLoadValue() {
-        if (getAllLoads().isEmpty()) {
+        List<Load> allLoads = getAllLoads();
+        if (allLoads.isEmpty())
             return -1;
-        }
-        
         double maxValue = 0;
-        for (Load load : getAllLoads()) {
+        for (Load load : allLoads) {
             double currValue = Math.abs(load.getMaxSignedValue());
-            if (currValue > maxValue) {
+            if (currValue > maxValue)
                 maxValue = currValue;
-            }
         }
         return maxValue;
     }

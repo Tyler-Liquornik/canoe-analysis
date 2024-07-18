@@ -62,7 +62,7 @@ public class LoadUtils {
         // Simple cases
         if (loads == null)
             return null;
-        if (hull == null)
+        if (hull == null || hull.getSelfWeightDistribution().getForce() == 0)
             return loads;
 
         Load hullLoad = hull.getSelfWeightDistribution();
