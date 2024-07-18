@@ -203,14 +203,14 @@ public class Canoe
         for (Load load : loads) {
             if ((load instanceof PointLoad pLoad && pLoad.getX() <= midpoint) || (load instanceof UniformLoadDistribution dLoad && dLoad.getX() < midpoint))
                 leftHalf.add(load);
-            if (load instanceof PointLoad pLoad && pLoad.getX() >= midpoint)
-                rightHalf.add(load);
-            if (load instanceof UniformLoadDistribution dLoad && dLoad.getRx() > midpoint)
+            if (load instanceof PointLoad pLoad && pLoad.getX() >= midpoint || load instanceof UniformLoadDistribution dLoad && dLoad.getRx() > midpoint)
                 rightHalf.add(load);
         }
+        LoadUtils.sortLoads(leftHalf);
         if (leftHalf.size() != rightHalf.size())
             return false;
         List<Load> flippedRightHalf = LoadUtils.flipLoadsFromRightHalf(rightHalf, hullLength);
+        LoadUtils.sortLoads(flippedRightHalf);
 
         // Check that the right half reflected about the midpoint should be the same as the left half for symmetry
         return IntStream.range(0, leftHalf.size()).allMatch(i -> {

@@ -46,7 +46,6 @@ public class HullBuilderController implements Initializable {
         beamController.checkAndSetEmptyLoadTreeSettings();
         LoadTreeManagerService.buildLoadTreeView(canoe);
         mainController.disableModuleToolBarButton(true, 0);
-        beamController.setCanoeGraphicFromCanoe(canoe);
         closeWindow(e);
     }
 

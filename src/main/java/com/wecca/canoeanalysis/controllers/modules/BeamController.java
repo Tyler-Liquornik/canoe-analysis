@@ -139,7 +139,7 @@ public class BeamController implements Initializable {
         if (Objects.equals(solveSystemButton.getText(), "Undo Solve")) // TODO: fix lazy implementation, should manage the state properly
             solveSystemButton.fire();
 
-        clearCanoeModel();
+        clearAllCanoeModels();
         axisLabelR.setText("X");
         axisLabelR.setLayoutX(581); // TODO: this will not be hard coded anymore once axis labels for new loads are implemented
         canoeLengthTextField.setDisable(false);
@@ -222,7 +222,10 @@ public class BeamController implements Initializable {
                 PointLoad p = new PointLoad(mag, x, false);
                 AddLoadResult addResult = canoe.addLoad(p);
                 displayAddResults(p, addResult);
-                renderPointLoadGraphic(p);
+                if (p.isSupport())
+                    renderSupportGraphic(p.getX());
+                else
+                    renderGraphics();;
                 LoadTreeManagerService.buildLoadTreeView(canoe);
                 checkAndSetEmptyLoadTreeSettings();
             }
@@ -291,32 +294,18 @@ public class BeamController implements Initializable {
     }
 
     /**
-     * Add a point load to the canoe object and JavaFX UI.
-     * @param pLoad the point load to be added.
-     */
-    private void renderPointLoadGraphic(PointLoad pLoad) {
-        // x coordinate in beamContainer for load
-        double scaledX = GraphicsUtils.getScaledFromModelToGraphic(pLoad.getX(), canoeGraphic.getEncasingRectangle().getWidth(), canoe.getHull().getLength()); // x position in the beamContainer
-
-        // Render the correct graphic
-        if (pLoad.isSupport())
-            renderSupportGraphic(scaledX);
-        else
-            renderGraphics();;
-    }
-
-    /**
      * Add a point load to the load container as a graphic of a triangle to represent a pinned support
-     * @param beamContainerX the x coordinate of the load within the load container
+     * @param pLoadX the x coordinate of the pLoad (in the mathematical model, not graphics model)
      */
-    private void renderSupportGraphic(double beamContainerX) {
+    private void renderSupportGraphic(double pLoadX) {
         // Create the list of current load graphics
         List<Graphic> loadContainerChildren = new ArrayList<>(loadContainer.getChildren().stream()
                 .map(node -> (Graphic) node).toList());
 
         // Create and add the support graphic
-        double tipY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + (int) canoeGraphic.getHeight(beamContainerX); // +126
-        TriangleStand support = new TriangleStand(beamContainerX, tipY);
+        double tipY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + (int) canoeGraphic.getHeight(pLoadX);
+        double scaledX = GraphicsUtils.getScaledFromModelToGraphic(pLoadX, canoeGraphic.getEncasingRectangle().getWidth(), canoe.getHull().getLength());
+        TriangleStand support = new TriangleStand(scaledX, tipY);
         loadContainerChildren.add(support);
 
         // Clear graphics the load container and add the new list of load graphics including the support, all sorted
@@ -400,11 +389,6 @@ public class BeamController implements Initializable {
         updateViewOrder();
     }
 
-    public void renderCanoeGraphic() {
-        beamContainer.getChildren().clear();
-        beamContainer.getChildren().add((Node) canoeGraphic);
-    }
-
     /**
      * Display the less common results of adding the load (COMBINED | CANCELLED cases)
      * @param load the added load
@@ -440,17 +424,17 @@ public class BeamController implements Initializable {
         }
         else if (floatingRadioButton.isSelected()) {
             if (canoe.getHull().getWeight() == 0) {
-                mainController.showSnackbar("Cannot solve a buoyancy without a hull. Please build a hull first");
+                mainController.showSnackbar("Cannot solve for buoyancy without a hull. Please build a hull first");
                 mainController.flashModuleToolBarButton(0, 8000); // as a hint for the user
                 return;
             }
             double maximumPossibleBuoyancyForce = BeamSolverService.getTotalBuoyancy(canoe, 0);
             if (-canoe.getNetForce() > maximumPossibleBuoyancyForce) {
-                mainController.showSnackbar("Cannot solve buoyancy as there is too much load. The canoe will sink!");
+                mainController.showSnackbar("Cannot solve for buoyancy as there is too much load. The canoe will sink!");
                 return;
             }
             if (!canoe.isSymmetricallyLoaded()) {
-                mainController.showSnackbar("Cannot solve buoyancy for an asymmetrically loaded canoe. The canoe will tip over!");
+                mainController.showSnackbar("Cannot solve for buoyancy for an asymmetrically loaded canoe. The canoe will tip over!");
                 return;
             }
             solveFloatingSystem();
@@ -479,7 +463,7 @@ public class BeamController implements Initializable {
         List<PointLoad> supportLoads = BeamSolverService.solveStandSystem(canoe);
         for (PointLoad supportLoad : supportLoads) {
             canoe.addLoad(supportLoad);
-            renderPointLoadGraphic(supportLoad);
+            renderSupportGraphic(supportLoad.getX());
         }
         checkAndSetEmptyLoadTreeSettings();
     }
@@ -649,7 +633,13 @@ public class BeamController implements Initializable {
     }
 
 
-    public void clearCanoeModel() {
+    /**
+     * Clears all 3 canoe models
+     * 1. The mathematical model: remove all loads, set the hull to the default hull
+     * 2. The graphical model: set the hull graphic to the default (beam graphic)
+     * 3. The tree view model: empty the list and set empty css settings
+     */
+    public void clearAllCanoeModels() {
         loadContainer.getChildren().clear();
         canoe.getLoads().clear();
         Hull hull = SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength());
@@ -659,27 +649,14 @@ public class BeamController implements Initializable {
         resetCanoeGraphic();
     }
 
+    /**
+     * Reset and rerender the canoe graphic back to the beam (default graphic on load)
+     */
     public void resetCanoeGraphic() {
         Rectangle rect = new Rectangle(0, 84, beamContainer.getPrefWidth(), 25);
         setCanoeGraphic(new Beam(rect));
         beamContainer.getChildren().clear();
         beamContainer.getChildren().add((Node) canoeGraphic);
-        renderCanoeGraphic();
-    }
-
-    /**
-     * Use the hull curvature of the canoe to set the canoe graphic
-     * @param canoe with teh hull curvature to create the graphic for
-     */
-    public void setCanoeGraphicFromCanoe(Canoe canoe) {
-        Hull hull = canoe.getHull();
-        Rectangle rect = canoeGraphic.getEncasingRectangle();
-        rect.setHeight(35);
-        setCanoeGraphic(new ClosedCurve(
-                hull.getPiecedSideProfileCurve(), hull.getSection(), rect));
-        beamContainer.getChildren().clear();
-        beamContainer.getChildren().add((Node) canoeGraphic);
-        renderGraphics();
     }
 
     /**
@@ -709,10 +686,26 @@ public class BeamController implements Initializable {
 
             // Update UI to new canoe
             renderGraphics();
+            setCanoeGraphicFromCanoe(canoe);
             LoadTreeManagerService.buildLoadTreeView(this.canoe);
             axisLabelR.setText(String.format("%.2f m", this.canoe.getHull().getLength()));
             checkAndSetEmptyLoadTreeSettings();
         }
+    }
+
+    /**
+     * Use the hull curvature of the canoe to set the canoe graphic
+     * @param canoe with teh hull curvature to create the graphic for
+     */
+    public void setCanoeGraphicFromCanoe(Canoe canoe) {
+        Hull hull = canoe.getHull();
+        Rectangle rect = canoeGraphic.getEncasingRectangle();
+        rect.setHeight(35);
+        setCanoeGraphic(new ClosedCurve(
+                hull.getPiecedSideProfileCurve(), hull.getSection(), rect));
+        beamContainer.getChildren().clear();
+        beamContainer.getChildren().add((Node) canoeGraphic);
+        renderGraphics();
     }
 
     /**

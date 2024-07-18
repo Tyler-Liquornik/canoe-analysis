@@ -85,7 +85,16 @@ public class DiscreteLoadDistribution extends Load {
                     Section section = piece.getKey();
                     double midpoint = (section.getX() + section.getRx()) / 2.0;
                     double mag = piece.getValue().value(midpoint);
-                    return new UniformLoadDistribution(LoadType.DISCRETE_SECTION, mag, section.getX(), section.getRx());
+
+                    LoadType sectionType;
+                    if (type == LoadType.HULL) {
+                        HullSection hullSection = (HullSection) section;
+                        sectionType = hullSection.isFilledBulkhead() ? LoadType.DISCRETE_HULL_SECTION_HAS_BULKHEAD : LoadType.DISCRETE_SECTION;
+                     }
+                    else
+                        sectionType = LoadType.DISCRETE_SECTION;
+
+                    return new UniformLoadDistribution(sectionType, mag, section.getX(), section.getRx());
                 })
                 .toList();
 

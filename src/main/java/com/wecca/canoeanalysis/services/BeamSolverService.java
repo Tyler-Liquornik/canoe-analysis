@@ -18,11 +18,6 @@ import java.util.List;
  * Utility class for solving system equations
  */
 public class BeamSolverService {
-
-    // Offset of the stands from either end of the canoe (assume equal offset on either side)
-    // Hard coded for now with stands right on the edges (0 offset), subject to change later
-    private final static int STAND_OFFSET = 0;
-
     /**
      * Solve the "stand" system to find point loads at ends of canoe, assuming loads already on canoe.
      * Note: the weight of the canoe must be added as one/more distributed load(s).
@@ -50,8 +45,8 @@ public class BeamSolverService {
         double forceStart = -1 * sumOfPointLoads - forceEnd;
 
         // Create and return resulting loads
-        PointLoad pLoadStart = new PointLoad(LoadType.POINT_LOAD_SUPPORT, forceStart, STAND_OFFSET, true);
-        PointLoad pLoadEnd = new PointLoad(LoadType.POINT_LOAD_SUPPORT, forceEnd, canoe.getHull().getLength() - STAND_OFFSET, true);
+        PointLoad pLoadStart = new PointLoad(LoadType.POINT_LOAD_SUPPORT, forceStart, 0, true);
+        PointLoad pLoadEnd = new PointLoad(LoadType.POINT_LOAD_SUPPORT, forceEnd, canoe.getHull().getLength(), true);
         pointLoads.clear();
         pointLoads.addAll(Arrays.asList(pLoadStart, pLoadEnd));
         return pointLoads;
