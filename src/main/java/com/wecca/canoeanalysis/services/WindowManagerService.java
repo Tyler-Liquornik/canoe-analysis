@@ -92,7 +92,7 @@ public class WindowManagerService {
      * @param scene the Scene on which a decorator be styled is present
      */
     private static void addStyleSheet(Scene scene, String path) {
-        scene.getStylesheets().add(CanoeAnalysisApplication.class.getResource(path).toExternalForm());
+        scene.getStylesheets().add(ResourceManagerService.getResourceFilePathString(path, false));
         ColorManagerService.registerForRecoloringFromStylesheet(scene, path);
     }
 

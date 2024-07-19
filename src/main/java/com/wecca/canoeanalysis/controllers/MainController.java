@@ -5,8 +5,8 @@ import com.jfoenix.controls.JFXSnackbar;
 import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.jfoenix.controls.JFXSnackbarLayout;
-import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
+import com.wecca.canoeanalysis.services.ResourceManagerService;
 import com.wecca.canoeanalysis.services.YamlMarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
@@ -151,7 +151,7 @@ public class MainController implements Initializable {
         JFXDepthManager.setDepth(snackbar, 5);
         snackbar.setPrefWidth(200);
         snackbar.setViewOrder(Integer.MIN_VALUE);
-        snackbar.getStylesheets().add(CanoeAnalysisApplication.class.getResource("css/style.css").toExternalForm());
+        snackbar.getStylesheets().add(ResourceManagerService.getResourceFilePathString("css/style.css", false));
         ColorManagerService.registerForRecoloringFromStylesheet(snackbar, "css/style.css");
     }
 

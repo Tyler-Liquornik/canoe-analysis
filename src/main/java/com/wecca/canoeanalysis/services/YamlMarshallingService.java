@@ -9,7 +9,6 @@ import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.data.Settings;
 import com.wecca.canoeanalysis.models.load.Load;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
-import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Setter;
@@ -24,7 +23,7 @@ public class YamlMarshallingService {
     @Setter
     private static BeamController beamController;
     private static final ObjectMapper yamlMapper;
-    private static final String SETTINGS_FILE_PATH = "settings.yaml";
+    private static final String SETTINGS_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/settings.yaml", true);
 
     static {
         yamlMapper = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
@@ -115,9 +114,8 @@ public class YamlMarshallingService {
 
     public static Settings loadSettings() throws IOException {
         File file = new File(SETTINGS_FILE_PATH);
-        if (file.exists()) {
+        if (file.exists())
             return yamlMapper.readValue(file, Settings.class);
-        }
         return new Settings("#F96C37"); // The default orange color
     }
 }

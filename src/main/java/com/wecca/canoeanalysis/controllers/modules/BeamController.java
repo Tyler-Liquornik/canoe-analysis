@@ -10,7 +10,7 @@ import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.HeavisideStep;
+import com.wecca.canoeanalysis.models.function.RectFunction;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.services.*;
@@ -157,10 +157,10 @@ public class BeamController implements Initializable {
      * Updates both the model and the UI, showing the length of the canoe
      */
     public void setLength() {
-        if (InputParsingService.validateTextAsDouble(canoeLengthTextField.getText())) {
+        if (InputParsingUtil.validateTextAsDouble(canoeLengthTextField.getText())) {
 
             // Convert to metric
-            double length = InputParsingService.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
+            double length = InputParsingUtil.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
 
             // Only allow lengths in the specified range
             if (length >= 0.01) {
@@ -202,9 +202,9 @@ public class BeamController implements Initializable {
         mainController.closeSnackBar(mainController.getSnackbar());
 
         // Validate the entered numbers are doubles
-        if (InputParsingService.allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField))) {
-            double x = InputParsingService.getDistanceConverted(pointLocationComboBox, pointLocationTextField);
-            double mag = InputParsingService.getLoadConverted(pointMagnitudeComboBox, pointMagnitudeTextField);
+        if (InputParsingUtil.allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField))) {
+            double x = InputParsingUtil.getDistanceConverted(pointLocationComboBox, pointLocationTextField);
+            double mag = InputParsingUtil.getLoadConverted(pointMagnitudeComboBox, pointMagnitudeTextField);
             String direction = pointDirectionComboBox.getSelectionModel().getSelectedItem();
 
             // Apply direction
@@ -243,11 +243,11 @@ public class BeamController implements Initializable {
         mainController.closeSnackBar(mainController.getSnackbar());
 
         // Validate the entered numbers are doubles
-        if (InputParsingService.allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
+        if (InputParsingUtil.allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
                 distributedIntervalTextFieldR))) {
-            double x = InputParsingService.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldL);
-            double xR = InputParsingService.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldR);
-            double mag = InputParsingService.getLoadConverted(distributedMagnitudeComboBox, distributedMagnitudeTextField);
+            double x = InputParsingUtil.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldL);
+            double xR = InputParsingUtil.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldR);
+            double mag = InputParsingUtil.getLoadConverted(distributedMagnitudeComboBox, distributedMagnitudeTextField);
             String direction = distributedDirectionComboBox.getSelectionModel().getSelectedItem();
 
             // Apply direction
@@ -358,7 +358,7 @@ public class BeamController implements Initializable {
                         case UniformLoadDistribution ignoredDLoad -> {
                             Arrow lArrow = new Arrow(x, x, startY, endY);
                             Arrow rArrow = new Arrow(rx, rx, startRy, endRy);
-                            HeavisideStep step = new HeavisideStep(loadMax, dist.getX());
+                            RectFunction step = new RectFunction(loadMax, dist.getX(), dist.getSection().getRx());
                             BoundedUnivariateFunction f = X -> {
                                 double stepValue = step.value(X);
                                 return (loadMax < 0 || stepValue == 0 || hullAbsMax == 0)

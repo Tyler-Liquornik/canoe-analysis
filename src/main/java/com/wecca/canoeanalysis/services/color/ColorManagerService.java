@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.services.color;
 
-import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.graphics.Graphic;
+import com.wecca.canoeanalysis.services.ResourceManagerService;
 import com.wecca.canoeanalysis.utils.ColorUtils;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -57,17 +57,17 @@ public class ColorManagerService {
             String stylesheetPath = entry.getValue();
             if (object instanceof Parent parent) {
                 parent.getStylesheets().clear();
-                parent.getStylesheets().add(CanoeAnalysisApplication.class.getResource(stylesheetPath).toExternalForm());
+                parent.getStylesheets().add(ResourceManagerService.getResourceFilePathString(stylesheetPath, false));
+
             } else if (object instanceof Scene scene) {
                 scene.getStylesheets().clear();
-                scene.getStylesheets().add(CanoeAnalysisApplication.class.getResource(stylesheetPath).toExternalForm());
+                scene.getStylesheets().add(ResourceManagerService.getResourceFilePathString(stylesheetPath, false));
             }
         }
     }
 
     private static void reloadGraphicsColors() {
-        for (Graphic graphic : graphics)
-        {
+        for (Graphic graphic : graphics) {
             if (graphic.isColored())
                 graphic.recolor(true);
         }
@@ -87,7 +87,7 @@ public class ColorManagerService {
         colorsMap.put(String.format("-fx-%s", baseName), baseColorHex);
 
         // Read the CSS file
-        Path path = Paths.get(CanoeAnalysisApplication.class.getResource("css/style.css").toURI());
+        Path path = ResourceManagerService.getResourcePathResolved("css/style.css");
         List<String> lines = Files.readAllLines(path);
 
         // Create a map to keep track of whether a property was replaced

@@ -36,4 +36,4 @@ build/
 
 ### Mac OS ###
 .DS_Store
-/settings.yaml
+/src/main/resources/com/wecca/canoeanalysis/settings/settings.yaml

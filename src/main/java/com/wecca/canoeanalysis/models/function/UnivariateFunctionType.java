@@ -11,7 +11,7 @@ import lombok.Getter;
 public enum UnivariateFunctionType {
 
     VERTEX_FORM_PARABOLA("Vertex Form Parabola", "f(x) = a(x - h)^2 + k"),
-    HEAVISIDE_STEP("Heavisde Step", "H(x) = 0 if x <= c, a if x > c");
+    RECT_FUNCTION("Rect Function", "H(x) = 0 : x not in (b, c), a : x in (b, c)");
 
     @JsonIgnore
     private final String type;

@@ -1,12 +1,12 @@
 package com.wecca.canoeanalysis;
 
 import com.wecca.canoeanalysis.controllers.MainController;
+import com.wecca.canoeanalysis.services.ResourceManagerService;
 import com.wecca.canoeanalysis.services.YamlMarshallingService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import javafx.scene.layout.AnchorPane;
 import lombok.Getter;
 import lombok.Setter;
-import org.burningwave.core.assembler.StaticComponentContainer;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -22,10 +22,8 @@ public class CanoeAnalysisApplication extends Application {
     @Getter @Setter
     private static MainController mainController;
 
-    // The entry point of the application
     @Override
     public void start(Stage stage) throws IOException, URISyntaxException {
-        StaticComponentContainer.Modules.exportAllToAll();
 
         // Stage setup
         FXMLLoader mainFxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/main-view.fxml"));
@@ -35,7 +33,7 @@ public class CanoeAnalysisApplication extends Application {
         stage.initStyle(StageStyle.UNDECORATED);
         stage.show();
 
-        // Main controller setup, load default module (beam module)
+        // com.wecca.canoeanalysis.Main controller setup, load default module (beam module)
         setMainController(mainFxmlLoader.getController());
         mainController.setPrimaryStage(stage);
         mainController.setPrimaryScene(scene);
@@ -44,7 +42,7 @@ public class CanoeAnalysisApplication extends Application {
         mainController.getModuleInjectionRoot().getChildren().setAll(moduleInjectionRoot);
 
         // Add the CSS file to the scene's stylesheets
-        scene.getStylesheets().add(getClass().getResource("css/style.css").toExternalForm());
+        scene.getStylesheets().add(ResourceManagerService.getResourceFilePathString("css/style.css", false));
         ColorManagerService.registerForRecoloringFromStylesheet(scene, "css/style.css");
 
         // Adding Logo Icon

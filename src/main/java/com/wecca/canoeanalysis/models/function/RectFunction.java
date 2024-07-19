@@ -7,38 +7,42 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.function.Function;
-
 /**
- * Heaviside step function with a magnitude 'a'
- * H(x) = 0 if x <= c, a if x > c
+ * Rectangular function with a magnitude 'a'
+ * H(x) = 0 if x is outside (b, c), a if x is within (b, c)
  */
 @Getter @Setter @EqualsAndHashCode
-public class HeavisideStep implements ParameterizedUnivariateFunction {
+public class RectFunction implements ParameterizedUnivariateFunction {
 
     @JsonIgnore @Getter
-    private final UnivariateFunctionType type = UnivariateFunctionType.HEAVISIDE_STEP;
+    private final UnivariateFunctionType type = UnivariateFunctionType.RECT_FUNCTION;
+
     @JsonProperty("a")
     private double a;
+
+    @JsonProperty("b")
+    private double b;
+
     @JsonProperty("c")
     private double c;
 
     @JsonCreator
-    public HeavisideStep(@JsonProperty("a") double a, @JsonProperty("c") double c) {
-        initialize(a, c);
+    public RectFunction(@JsonProperty("a") double a, @JsonProperty("b") double b, @JsonProperty("c") double c) {
+        initialize(a, b, c);
     }
 
     @Override
     public void initialize(double... params) {
-        if (params.length != 2)
-            throw new IllegalArgumentException("StepFunction requires exactly 2 parameters: a and c.");
+        if (params.length != 3)
+            throw new IllegalArgumentException("RectFunction requires exactly 3 parameters: a, b, and c.");
         this.a = params[0];
-        this.c = params[1];
+        this.b = params[1];
+        this.c = params[2];
     }
 
     @JsonIgnore
     public BoundedUnivariateFunction getFunction() {
-        return x -> x <= c ? 0 : a;
+        return x -> (x > b && x < c) ? a : 0;
     }
 
     @Override

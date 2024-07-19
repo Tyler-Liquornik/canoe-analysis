@@ -10,7 +10,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.shape.Line?>
 
-<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.BeamController">
+<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.BeamController">
    <children>
       <AnchorPane fx:id="upperAnchorPane" layoutY="25.0" maxHeight="200.0" maxWidth="850.0" minHeight="200.0" minWidth="850.0" prefHeight="200.0" prefWidth="850.0" styleClass="surface" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">
          <children>

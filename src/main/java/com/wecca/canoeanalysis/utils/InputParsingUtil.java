@@ -1,13 +1,12 @@
-package com.wecca.canoeanalysis.services;
+package com.wecca.canoeanalysis.utils;
 
-import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 
 import java.util.List;
 import java.util.Objects;
 
-public class InputParsingService {
+public class InputParsingUtil {
 
     /**
      * Convert the distance in the text field to m from the unit selected in the combo box

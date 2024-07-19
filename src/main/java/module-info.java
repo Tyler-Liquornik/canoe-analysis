@@ -4,13 +4,13 @@ module com.wecca.canoeanalysis {
     requires com.jfoenix;
     requires static lombok;
     requires com.fasterxml.jackson.databind;
-    requires org.burningwave.core;
     requires fontawesomefx;
     requires java.desktop;
     requires com.fasterxml.jackson.dataformat.yaml;
     requires com.google.common;
     requires commons.math3;
     requires org.checkerframework.checker.qual;
+    requires java.rmi;
 
     exports com.wecca.canoeanalysis;
     opens com.wecca.canoeanalysis to javafx.fxml;
@@ -40,4 +40,6 @@ module com.wecca.canoeanalysis {
     opens com.wecca.canoeanalysis.controllers.popups to javafx.fxml;
     exports com.wecca.canoeanalysis.controllers.util;
     opens com.wecca.canoeanalysis.controllers.util to javafx.fxml;
+    exports com.wecca.canoeanalysis.utils;
+    opens com.wecca.canoeanalysis.utils to javafx.fxml;
 }

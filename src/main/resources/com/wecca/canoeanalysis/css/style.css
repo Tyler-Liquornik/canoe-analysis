@@ -1,7 +1,9 @@
 @import url("font.css");
 
 * {
-    -fx-primary: #F96C37; /* Marker, generated at runtime */
+    -fx-primary: #BB86FC; /* Marker, for runtime generated colors */
+    -fx-primary-desaturated: #534A5E;
+    -fx-primary-light: #D6BCF7;
 
     -fx-background: #121212;
     -fx-surface: #202020;

@@ -3,8 +3,8 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.FailureEnvelopeController">
+<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.FailureEnvelopeController">
     <children>
-        <Label layoutX="182.0" layoutY="271.0" styleClass="module-placeholder-text" stylesheets="@../css/style.css" text="The Failure Envelope module has not yet been implemented" />
+        <Label layoutX="182.0" layoutY="271.0" styleClass="module-placeholder-text" text="The Failure Envelope module has not yet been implemented" />
     </children>
 </AnchorPane>
