@@ -7,10 +7,10 @@
 
 # Environment variables must be set properly for this script to work.
 # A generic example:
- export PROJECT_VERSION="1.0-SNAPSHOT"
- export APP_VERSION="1.0.0"
- export JAVA_HOME=$(/usr/libexec/java_home -v 21)
- export PATH=$JAVA_HOME/bin:$PATH
+# export PROJECT_VERSION="1.0-SNAPSHOT"
+# export APP_VERSION="1.0.0"
+# export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+# export PATH=$JAVA_HOME/bin:$PATH
 
 JAVA_VERSION=21
 MAIN_JAR="CanoeAnalysis-$PROJECT_VERSION.jar"

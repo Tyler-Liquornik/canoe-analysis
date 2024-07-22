@@ -118,7 +118,7 @@ The engineer working on the canoe can also download the canoe model as a YAML fi
 ## Contributing
 Starting in September for the 2024-2025 school year, any WECCA members involved on the software team can contribute to PADDL!
 
-Please ensure you connect with a Software Lead before starting any work for discussion. You can connect over our [Slack channel](https://join.slack.com/t/wecca2023-24/shared_invite/zt-21o0f5jn9-al9lZLzSOjTrxhflOeR3eQ) in the `#software` channel. </br>
+Please ensure you connect with a Software Lead before starting any work. You can connect over our [Slack channel](https://join.slack.com/t/wecca2023-24/shared_invite/zt-21o0f5jn9-al9lZLzSOjTrxhflOeR3eQ) in the `#software` channel. </br>
 We are open to discussing any bugfixes or features suggested, and encourage club members to participate in the development process.
 
 <!-- CONTACT -->
