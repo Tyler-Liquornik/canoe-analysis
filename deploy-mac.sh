@@ -118,3 +118,4 @@ echo "Creating DMG installer"
 --copyright "Copyright © 2024 WECCA" \
 --mac-package-identifier com.wecca.canoeanalysis \
 --mac-package-name "$APP_NAME"
+
