@@ -91,7 +91,7 @@ APP_NAME=PADDL
 --vendor "WECCA" \
 --copyright "Copyright © 2024 WECCA" \
 --mac-package-identifier com.wecca.canoeanalysis \
---mac-package-name PADDL
+--mac-package-name "$APP_NAME"
 
 APP_BUNDLE="target/installer/$APP_NAME.app"
 RESOURCES_DIR="$APP_BUNDLE/Contents/Resources"
@@ -110,11 +110,11 @@ echo "Creating DMG installer"
 "$JAVA_HOME"/bin/jpackage \
 --type $INSTALLER_TYPE \
 --dest target/installer \
---name PADDL \
+--name "$APP_NAME"  \
 --app-image "$APP_BUNDLE" \
 --icon src/main/resources/com/wecca/canoeanalysis/images/canoe.icns \
 --app-version "$APP_VERSION" \
 --vendor "WECCA" \
 --copyright "Copyright © 2024 WECCA" \
 --mac-package-identifier com.wecca.canoeanalysis \
---mac-package-name PADDL
+--mac-package-name "$APP_NAME"
