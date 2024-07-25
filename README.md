@@ -34,7 +34,7 @@ The engineer working on the canoe can also download the canoe model as a YAML fi
 - Canoe model clearly displayed visually
 - Mapping of the canoe model to a file to be downloaded & uploaded for sharing data between engineers
 - Infrastructure to include other modules
-- TODO: Deploy to Mac and PC (.exe / .app), downloadable at [https://wecca.org/](https://wecca.org/)
+- Deploy to Mac and PC (.exe / .app), downloadable at [https://wecca.org/](https://wecca.org/)
 
 ### Long Term Goals:
 - Grow to include club general members as casual contributors in the '24-'25 school year
@@ -81,7 +81,7 @@ The engineer working on the canoe can also download the canoe model as a YAML fi
    Add the jar files from the boxed link. The list should show JFoenix and Scenebuilder as shown. </br> <br/>
 
 5.  <b>Add VM options</b><br/>
-    You need to add VM options in order to run PADDL in IntelliJ. In the deployed app these are handled for you already. <br/>
+    You need to add VM options in order to run PADDL in IntelliJ. <br/>
     `--add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=com.jfoenix  --add-exports javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix`
 
     <div style="display: flex; flex-direction: column; width: 80%; align-items: center; justify-content: center; padding: 10px 0 10px 0">
@@ -111,8 +111,10 @@ The engineer working on the canoe can also download the canoe model as a YAML fi
   - [X] Solve for a buoyancy load distribution based on the self-weight distribution of the hull
   - [X] Solve for a buoyancy load distribution including the hull and external loads
   - [X] Ensure the canoe does not tip or sink
-
-- [ ] Deployment! 
+- [X] Deployment!
+  - [X] Update [https://wecca.org/](https://wecca.org/) homepage responsive CSS for mobile view
+  - [X] Bash script for macOS deployment by .dmg installer
+  - [X] Batchfile for PC deployment by .msi installer
      
 <!-- CONTRIBUTING -->
 ## Contributing
@@ -125,8 +127,6 @@ We are open to discussing any bugfixes or features suggested, and encourage club
 ## Contact
 
 Tyler Liquornik: tyler.liquornik@gmail.com
-
-Project Link: [https://github.com/Tyler-Liquornik/canoe-analysis](https://github.com/Tyler-Liquornik/canoe-analysis)
 
 <!-- MARKDOWN LINKS & IMAGES (might use later) -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
@@ -143,9 +143,3 @@ Project Link: [https://github.com/Tyler-Liquornik/canoe-analysis](https://github
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/othneildrew
 [product-screenshot]: images/screenshot.png -->
-
-<!-- 
-Required VM options to run PADDL
---add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=com.jfoenix  --add-exports javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix
-
--->
