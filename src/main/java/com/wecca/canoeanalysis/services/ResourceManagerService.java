@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.services;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -8,29 +9,36 @@ import java.nio.file.*;
 import java.util.Objects;
 
 /**
- * ColorManagerService, and potentially other future services require writing to resource files
- * When PADDL is deployed into a JAR file, this is not possible with resources from within the JAR
- * This service will detect if the program is being run from within a JAR
- * If that is the case, it will make use of an external the resource from within the .app or .exe
- * Copying of files into the external resource folder is handled by deploy-mac.sh or deploy-pc.sh
- * The file writing strategy is determined at runtime to be optimized for both a JAR and in an IDE
+ * ResourceManagerService is responsible for managing resource files.
+ * It detects whether the application is running from a JAR or in an IDE
+ * and sets the resource paths accordingly. It also differentiates between
+ * macOS and Windows resource locations.
  */
 public class ResourceManagerService {
     private static final Path resourcesDir;
 
     static {
         try {
-            resourcesDir = isRunningFromJar() ? getBundledAppResourcesPath() : getMavenBuiltResourcesPath();
+            if (isRunningFromJar()) {
+                if (isMac())
+                    resourcesDir = getBundledAppResourcesPathMac();
+                else if (isWindows())
+                    resourcesDir = getBundledAppResourcesPathWindows();
+                else
+                    throw new UnsupportedOperationException("Unsupported operating system");
+            }
+            else
+                resourcesDir = getMavenBuiltResourcesPath();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
 
     /**
-     * Determines the path of the resources folder when running from an JAR file.
+     * Determines the path of the resources folder when running from a JAR file on macOS.
      * @return the fully qualified path for PADDL.app/Contents/Resources
      */
-    private static Path getBundledAppResourcesPath() throws URISyntaxException {
+    private static Path getBundledAppResourcesPathMac() throws URISyntaxException {
         return Paths.get(new File(CanoeAnalysisApplication.class
                 .getProtectionDomain()
                 .getCodeSource()
@@ -39,6 +47,20 @@ public class ResourceManagerService {
                 .getParentFile()
                 .getParentFile()
                 .getParent(), "Contents", "Resources");
+    }
+
+    /**
+     * Determines the path of the resources folder when running from a JAR file on Windows.
+     * @return the fully qualified path for the resources directory
+     */
+    private static Path getBundledAppResourcesPathWindows() throws URISyntaxException {
+        return Paths.get(new File(CanoeAnalysisApplication.class
+                .getProtectionDomain()
+                .getCodeSource()
+                .getLocation()
+                .toURI())
+                .getParentFile()
+                .getParent(), "resources");
     }
 
     /**
@@ -91,5 +113,21 @@ public class ResourceManagerService {
         String classJar = Objects.requireNonNull(CanoeAnalysisApplication.class.getResource
                 (CanoeAnalysisApplication.class.getSimpleName() + ".class")).toString();
         return classJar.startsWith("jar:");
+    }
+
+    /**
+     * Checks if the operating system is macOS.
+     * @return true if the operating system is macOS, false otherwise
+     */
+    private static boolean isMac() {
+        return System.getProperty("os.name").toLowerCase().contains("mac");
+    }
+
+    /**
+     * Checks if the operating system is Windows.
+     * @return true if the operating system is Windows, false otherwise
+     */
+    private static boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().contains("win");
     }
 }
