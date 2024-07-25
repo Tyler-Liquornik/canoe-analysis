@@ -20,9 +20,9 @@ public class ResourceManagerService {
     static {
         try {
             if (isRunningFromJar()) {
-                if (isMac())
+                if (isRunningFromMac())
                     resourcesDir = getBundledAppResourcesPathMac();
-                else if (isWindows())
+                else if (isRunningFromWindows())
                     resourcesDir = getBundledAppResourcesPathWindows();
                 else
                     throw new UnsupportedOperationException("Unsupported operating system");
@@ -109,7 +109,7 @@ public class ResourceManagerService {
      * This can be either 'file:' or 'jar:' depending on the runtime environment
      * @return true if the application is running from a JAR file, false otherwise
      */
-    private static boolean isRunningFromJar() {
+    public static boolean isRunningFromJar() {
         String classJar = Objects.requireNonNull(CanoeAnalysisApplication.class.getResource
                 (CanoeAnalysisApplication.class.getSimpleName() + ".class")).toString();
         return classJar.startsWith("jar:");
@@ -119,7 +119,7 @@ public class ResourceManagerService {
      * Checks if the operating system is macOS.
      * @return true if the operating system is macOS, false otherwise
      */
-    private static boolean isMac() {
+    public static boolean isRunningFromMac() {
         return System.getProperty("os.name").toLowerCase().contains("mac");
     }
 
@@ -127,7 +127,7 @@ public class ResourceManagerService {
      * Checks if the operating system is Windows.
      * @return true if the operating system is Windows, false otherwise
      */
-    private static boolean isWindows() {
+    public static boolean isRunningFromWindows() {
         return System.getProperty("os.name").toLowerCase().contains("win");
     }
 }

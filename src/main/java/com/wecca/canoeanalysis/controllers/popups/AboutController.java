@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.controllers.popups;
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.services.ResourceManagerService;
 import javafx.fxml.Initializable;
 import javafx.scene.layout.AnchorPane;
 
@@ -14,10 +15,17 @@ public class AboutController implements Initializable {
 
     public AnchorPane imagePane;
 
-    public void openLink(String link){
+    public void openLink(String link) {
         try {
-            Desktop.getDesktop().browse(new URI(link));
-        } catch (IOException | URISyntaxException e) {
+            ProcessBuilder processBuilder;
+            if (ResourceManagerService.isRunningFromWindows())
+                processBuilder = new ProcessBuilder("cmd", "/c", "start", link);
+            else if (ResourceManagerService.isRunningFromMac())
+                processBuilder = new ProcessBuilder("open", link);
+            else
+                throw new UnsupportedOperationException("Unsupported operating system");
+            processBuilder.start().waitFor();
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
