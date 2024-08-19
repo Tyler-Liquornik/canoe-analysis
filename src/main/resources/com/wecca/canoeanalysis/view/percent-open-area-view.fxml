@@ -1,25 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.PercentOpenAreaController">
+<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="501.0" prefWidth="900.0" styleClass="background"  xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.PercentOpenAreaController">
     <children>
-        <StackPane layoutX="190.0" layoutY="57.0" prefHeight="283.0" prefWidth="397.0">
-            <children>
-                <ImageView fx:id="imageview" fitHeight="305.0" fitWidth="467.0" pickOnBounds="true" preserveRatio="true" />
-            </children>
-        </StackPane>
-        <Button fx:id="button" layoutX="379.0" layoutY="403.0" mnemonicParsing="false" onAction="#uploadButton" text="Upload Image" />
-        <Label layoutX="318.0" layoutY="519.0" text="Percent Open Area: " />
-        <Label layoutX="364.0" layoutY="479.0" prefHeight="17.0" prefWidth="60.0" text="Total Area:" />
-        <Label layoutX="362.0" layoutY="445.0" text="Open Area: " />
-        <Label fx:id="OpenArea" layoutX="436.0" layoutY="445.0" prefHeight="17.0" prefWidth="126.0" />
-        <Label fx:id="TotalArea" layoutX="436.0" layoutY="479.0" prefHeight="17.0" prefWidth="126.0" />
-        <Label fx:id="PercentOpenArea" layoutX="436.0" layoutY="519.0" prefHeight="17.0" prefWidth="126.0" />
-        <Button fx:id="button1" layoutX="707.0" layoutY="172.0" mnemonicParsing="false" onAction="#clearImage" text="Clear" />
+      <AnchorPane layoutX="40.0" layoutY="50.0" prefHeight="394.0" prefWidth="471.0" styleClass="surface">
+         <children>
+                <ImageView fx:id="imageview" fitHeight="247.0" fitWidth="431.0" layoutX="40.0" layoutY="39.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0" />
+            <FontAwesomeIcon fill="WHITE" glyphName="UPLOAD" layoutX="160.0" layoutY="207.0" size="15em" styleClass="action-object" text="" AnchorPane.bottomAnchor="100.0" AnchorPane.leftAnchor="150.0" AnchorPane.rightAnchor="150.0" AnchorPane.topAnchor="60.0">
+               <font>
+                  <Font size="1.0" />
+               </font>
+            </FontAwesomeIcon>
+            <JFXButton fx:id="button" buttonType="RAISED" layoutX="145.0" layoutY="315.0" onAction="#uploadButton" prefHeight="23.0" prefWidth="177.0" styleClass="action-object" text="Browse Image" AnchorPane.bottomAnchor="56.0" AnchorPane.leftAnchor="145.0" AnchorPane.rightAnchor="149.0" />
+            <Label layoutX="121.0" layoutY="247.0" styleClass="title" text="Drag and Drop to Upload Image" textAlignment="CENTER" AnchorPane.bottomAnchor="127.0" />
+            <Label layoutX="228.0" layoutY="280.0" text="OR" textAlignment="CENTER" />
+         </children>
+      </AnchorPane>
+      <AnchorPane layoutX="590.0" layoutY="54.0" prefHeight="394.0" prefWidth="259.0" styleClass="surface">
+         <children>
+              <Label layoutY="70.0" text="Open Area: ">
+               <padding>
+                  <Insets left="10.0" top="20.0" />
+               </padding>
+            </Label>
+              <Label layoutY="35.0" text="Total Area:">
+               <padding>
+                  <Insets left="10.0" top="20.0" />
+               </padding>
+            </Label>
+              <Label text="Percent Open Area: ">
+               <padding>
+                  <Insets left="10.0" top="20.0" />
+               </padding>
+            </Label>
+              <Button fx:id="button1" layoutX="104.0" layoutY="268.0" mnemonicParsing="false" onAction="#clearImage" styleClass="action-object" text="Clear" />
+            <JFXTextField fx:id="percentOpenAreaTextField" layoutX="130.0" prefHeight="25.0" prefWidth="75.0">
+               <padding>
+                  <Insets top="20.0" />
+               </padding>
+            </JFXTextField>
+            <JFXTextField fx:id="openAreaTextField" layoutX="130.0" layoutY="70.0" prefHeight="25.0" prefWidth="75.0">
+               <padding>
+                  <Insets top="20.0" />
+               </padding>
+            </JFXTextField>
+            <JFXTextField fx:id="totalAreaTextField" layoutX="130.0" layoutY="35.0" prefHeight="25.0" prefWidth="75.0">
+               <padding>
+                  <Insets top="20.0" />
+               </padding>
+            </JFXTextField>
+            <Label layoutX="210.0" layoutY="24.0" text="\%" />
+         </children>
+      </AnchorPane>
     </children>
 </AnchorPane>

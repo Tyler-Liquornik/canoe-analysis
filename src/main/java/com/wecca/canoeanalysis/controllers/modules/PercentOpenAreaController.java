@@ -1,11 +1,13 @@
 package com.wecca.canoeanalysis.controllers.modules;
 
+import com.jfoenix.controls.JFXTextField;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.controllers.MainController;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
 import javafx.stage.FileChooser;
@@ -27,11 +29,15 @@ public class PercentOpenAreaController implements Initializable {
 
     @Setter
     private static MainController mainController;
+    public JFXTextField percentOpenAreaTextField;
+    public JFXTextField openAreaTextField;
+    public JFXTextField totalAreaTextField;
 
     @FXML
     private ImageView imageview;
     @FXML
     private Label OpenArea, TotalArea, PercentOpenArea;
+
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -101,9 +107,9 @@ public class PercentOpenAreaController implements Initializable {
             double percentOpenArea = (openArea / totalArea) * 100;
 
             // Set the results
-            OpenArea.setText(String.valueOf(openArea));
-            TotalArea.setText(String.valueOf(totalArea));
-            PercentOpenArea.setText(String.format("%.2f%%", percentOpenArea));
+            openAreaTextField.setText(String.valueOf(openArea));
+            totalAreaTextField.setText(String.valueOf(totalArea));
+            percentOpenAreaTextField.setText(String.format("%.2f%%", percentOpenArea));
             System.out.printf("Percent Open Area: %.2f", percentOpenArea);
         }
     }
@@ -111,4 +117,4 @@ public class PercentOpenAreaController implements Initializable {
     public void clearImage() {
         imageview.setImage(null);
     }
-}
+} // Test commit
