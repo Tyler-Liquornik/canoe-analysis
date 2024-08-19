@@ -83,7 +83,13 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>net.imagej</groupId>
+            <artifactId>ij</artifactId>
+            <version>1.54b</version>
+        </dependency>
     </dependencies>
+
 
     <build>
         <plugins>
