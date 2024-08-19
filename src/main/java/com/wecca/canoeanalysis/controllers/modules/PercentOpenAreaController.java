@@ -111,4 +111,4 @@ public class PercentOpenAreaController implements Initializable {
     public void clearImage() {
         imageview.setImage(null);
     }
-}
+} // Test commit
