@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.services;
 
+import com.wecca.canoeanalysis.aop.TraceIgnore;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.canoe.Hull;
@@ -112,6 +113,7 @@ public class BeamSolverService {
      * @param section the section to calculate the function for
      * @return the function A_submerged(x) in m^2
      */
+    @TraceIgnore
     private static BoundedUnivariateFunction getSubmergedCrossSectionalAreaFunction(double waterline, HullSection section) {
         return x -> {
             double h = waterline - Math.min(section.getSideProfileCurve().value(x), waterline);

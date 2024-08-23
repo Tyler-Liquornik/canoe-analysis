@@ -11,10 +11,8 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-
 import java.util.*;
 
-@Traceable
 public class DiagramService {
 
     /**
@@ -395,8 +393,8 @@ public class DiagramService {
      * @param canoe the canoe object with loads.
      * @return the list of points to render for the SFD.
      */
-    public static List<Point2D> generateSfdPoints(Canoe canoe)
-    {
+    @Traceable
+    public static List<Point2D> generateSfdPoints(Canoe canoe) {
         // Get maps for each load type for efficient processing
         Map<Double, PointLoad> pointLoadMap = getPointLoadMap(canoe);
         Multimap<Double, UniformLoadDistribution> distributedLoadStartMap = getDistributedLoadStartMap(canoe);
@@ -456,8 +454,8 @@ public class DiagramService {
      * @param canoe the canoe object with loads.
      * @return the list of points to render for the BMD.
      */
-    public static List<Point2D> generateBmdPoints(Canoe canoe)
-    {
+    @Traceable
+    public static List<Point2D> generateBmdPoints(Canoe canoe) {
         // Gets the SFD points for the canoe
         List<Point2D> sfdPoints = generateSfdPoints(canoe);
         List<Point2D> bmdPoints = new ArrayList<>();
