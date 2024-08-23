@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.services;
 
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
@@ -17,6 +18,7 @@ import java.util.List;
 /**
  * Utility class for solving system equations
  */
+@Traceable
 public class BeamSolverService {
     /**
      * Solve the "stand" system to find point loads at ends of canoe, assuming loads already on canoe.

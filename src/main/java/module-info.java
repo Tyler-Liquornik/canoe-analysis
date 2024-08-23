@@ -11,6 +11,8 @@ module com.wecca.canoeanalysis {
     requires commons.math3;
     requires org.checkerframework.checker.qual;
     requires java.rmi;
+    requires org.slf4j;
+    requires org.aspectj.weaver;
 
     exports com.wecca.canoeanalysis;
     opens com.wecca.canoeanalysis to javafx.fxml;

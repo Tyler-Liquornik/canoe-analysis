@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.services;
 
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.DiagramInterval;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
@@ -13,6 +14,7 @@ import com.google.common.collect.Multimap;
 
 import java.util.*;
 
+@Traceable
 public class DiagramService {
 
     /**

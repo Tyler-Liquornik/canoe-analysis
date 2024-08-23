@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.services.ResourceManagerService;
 import com.wecca.canoeanalysis.services.YamlMarshallingService;
@@ -13,6 +14,7 @@ import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import lombok.extern.java.Log;
 
 import java.io.IOException;
 import java.net.URISyntaxException;

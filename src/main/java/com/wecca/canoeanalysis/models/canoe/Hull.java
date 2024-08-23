@@ -8,7 +8,6 @@ import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.load.DiscreteLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
-import javafx.geometry.Point2D;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
