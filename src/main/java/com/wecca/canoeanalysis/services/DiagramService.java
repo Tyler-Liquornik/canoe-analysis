@@ -4,15 +4,21 @@ import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.DiagramInterval;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.load.*;
+import com.wecca.canoeanalysis.utils.CalculusUtils;
 import javafx.geometry.Point2D;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-
 import java.util.*;
+import java.util.List;
 
+/**
+ * The DiagramService class provides utility methods for setting up and managing diagrams such as the Shear Force Diagram (SFD) and Bending Moment Diagram (BMD) for a given canoe.
+ * It is designed to handle point-wise defined piecewise functions with potential jump discontinuities
+ * Overall the service aids in the visualization of structural parameters like shear forces and bending moments for more effective analysis.
+ */
 public class DiagramService {
 
     /**
@@ -60,7 +66,9 @@ public class DiagramService {
      */
     private static FixedTicksNumberAxis setupXAxis(Canoe canoe) {
         TreeSet<Double> criticalPoints = canoe.getSectionEndpoints();
-        FixedTicksNumberAxis xAxis = new FixedTicksNumberAxis(new ArrayList<>(criticalPoints));
+        TreeSet<Double> roundedCriticalPoints = criticalPoints.stream()
+                .map(point -> CalculusUtils.roundXDecimalDigits(point, 3)).collect(TreeSet::new, TreeSet::add, TreeSet::addAll);
+        FixedTicksNumberAxis xAxis = new FixedTicksNumberAxis(new ArrayList<>(roundedCriticalPoints));
         xAxis.setAutoRanging(false);
         xAxis.setLabel("Distance [m]");
         xAxis.setLowerBound(0);
@@ -68,24 +76,32 @@ public class DiagramService {
         return xAxis;
     }
 
+    /**
+     * Adds a series of points to an AreaChart to represent a piecewise function
+     * for a given canoe object (used for SFD, BMD, and maybe more in the future).
+     * Sections are partitioned into sections based on the critical points of the canoe,
+     * and each section is added to the chart as a separate series, so we can manage them separately.
+     *
+     * @param canoe The Canoe object containing the section endpoints that define the critical points for partitioning the points.
+     * @param points A list of points representing the data points to be plotted.
+     * @param yUnits A string representing the units of the Y-axis (e.g., "meters", "kilograms").
+     * @param chart to which the partitioned point series will be added.
+     */
     public static void addSeriesToChart(Canoe canoe, List<Point2D> points, String yUnits, AreaChart<Number, Number> chart) {
 
         TreeSet<Double> criticalPoints = canoe.getSectionEndpoints();
 
         // Adding the sections of the pseudo piecewise function separately
         boolean set = false; // only need to set the name of the series once since its really one piecewise function
-        List<List<Point2D>> intervals = partitionPoints(canoe, points, criticalPoints);
-        for (List<Point2D> interval : intervals)
-        {
+        List<List<Point2D>> intervals = partitionPoints(points, criticalPoints);
+        for (List<Point2D> interval : intervals) {
             XYChart.Series<Number, Number> series = new XYChart.Series<>();
-            for (Point2D point : interval)
-            {
+            for (Point2D point : interval) {
                 XYChart.Data<Number, Number> data = new XYChart.Data<>(point.getX(), point.getY());
                 series.getData().add(data);
             }
 
-            if (!set)
-            {
+            if (!set) {
                 series.setName(yUnits);
                 set = true;
             }
@@ -144,16 +160,11 @@ public class DiagramService {
 //    }
 
     /**
-     * Consider the list of points is a "pseudo piecewise function"
-     * This method breaks it into a set of "pseudo functions"
-     * Pseudo because it's just a set of points rather with no clear partitions by their definition only
-     * @param canoe to work with
-     * @param points act together as a piecewise function
+     * @param points act together as a point-wise defined C0 function
      * @param partitions the locations where the form of the piecewise changes
      * @return a list containing each section of the piecewise pseudo functions with unique form
      */
-    private static List<List<Point2D>> partitionPoints(Canoe canoe, List<Point2D> points, TreeSet<Double> partitions)
-    {
+    private static List<List<Point2D>> partitionPoints(List<Point2D> points, TreeSet<Double> partitions) {
         // Initializing lists
         List<List<Point2D>> partitionedIntervals = new ArrayList<>();
         List<Double> partitionsList = new ArrayList<>(partitions);
@@ -162,10 +173,6 @@ public class DiagramService {
         // By "doubled up" I mean two points at the same x coordinate
         if (points.getFirst().getX() == 0 && points.get(1).getX() == 0)
             points.removeFirst();
-
-        // Same idea for last two points if they double up
-        if (points.getLast().getX() == canoe.getHull().getLength() && points.get(points.size() - 2).getX() == canoe.getHull().getLength())
-            points.removeLast();
 
         // Remove zero from the partition list (always first as the TreeSet is sorted ascending)
         if (partitionsList.getFirst() == 0)
@@ -176,24 +183,27 @@ public class DiagramService {
         List<Point2D> interval = new ArrayList<>();
 
         // Put all the points into intervals
-        for (int i = 0; i < points.size(); i++)
-        {
+        for (int i = 0; i < points.size(); i++) {
+
+            if (partitionIndex == partitionsList.size())
+                break;
+
             // Get the current point
             Point2D point = points.get(i);
+            Point2D nextPoint = i + 1 < points.size() ? points.get(i + 1) : null;
+            double partition = partitionsList.get(partitionIndex);
 
             // Keep adding points to the interval until the partition index reached
             // Empty interval means this is the first point to be included
-            if (point.getX() != partitionsList.get(partitionIndex) || interval.isEmpty())
+            if (!(point.getX() >= partition && nextPoint != null && nextPoint.getX() >= partition) || interval.isEmpty())
                 interval.add(point);
 
             // Add the interval to the list of partitioned intervals and prepare for the next interval
-            else
-            {
+            else {
                 interval.add(point); // this is the partition point, which acts as the right endpoint of the interval
 
                 // If not at the right boundary of the beam
-                if (i != points.size() - 1)
-                {
+                if (i != points.size() - 1) {
                     // If no jump discontinuity, create a duplicate point to act as the left endpoint of the next interval
                     if (point.getX() != points.get(i + 1).getX())
                         i--;
@@ -207,17 +217,6 @@ public class DiagramService {
         }
 
         return partitionedIntervals;
-    }
-
-    /**
-     * Round a double to x digits.
-     * @param num the number to round.
-     * @param numDigits the number of digits to round to.
-     * @return the rounded double.
-     */
-    public static double roundXDigits(double num, int numDigits) {
-        double factor = Math.pow(10, numDigits);
-        return Math.round(num * factor) / factor;
     }
 
     /**
@@ -377,7 +376,7 @@ public class DiagramService {
             y += (x - prevX) * slope;
             // Calculate the area of the section (integral) and set the BMD value at x to this area
             double sectionArea = calculateArea(prevX, x, Math.min(prevY, y), Math.max(prevY, y));
-            points.add(new Point2D(roundXDigits(x, 3), roundXDigits(startY + sectionArea, 4)));
+            points.add(new Point2D(CalculusUtils.roundXDecimalDigits(x, 6), CalculusUtils.roundXDecimalDigits(startY + sectionArea, 6)));
             startY += sectionArea;
         }
 
@@ -393,8 +392,7 @@ public class DiagramService {
      * @param canoe the canoe object with loads.
      * @return the list of points to render for the SFD.
      */
-    public static List<Point2D> generateSfdPoints(Canoe canoe)
-    {
+    public static List<Point2D> generateSfdPoints(Canoe canoe) {
         // Get maps for each load type for efficient processing
         Map<Double, PointLoad> pointLoadMap = getPointLoadMap(canoe);
         Multimap<Double, UniformLoadDistribution> distributedLoadStartMap = getDistributedLoadStartMap(canoe);
@@ -454,10 +452,16 @@ public class DiagramService {
      * @param canoe the canoe object with loads.
      * @return the list of points to render for the BMD.
      */
-    public static List<Point2D> generateBmdPoints(Canoe canoe)
-    {
-        // Gets the SFD points for the canoe
-        List<Point2D> sfdPoints = generateSfdPoints(canoe);
+    public static List<Point2D> generateBmdPoints(Canoe canoe) {
+        return generateBmdPoints(canoe, generateSfdPoints(canoe));
+    }
+
+    /**
+     * Generate a list of points to comprise the Bending Moment Diagram from precalculated SFD points
+     * @param canoe the canoe object with loads.
+     * @return the list of points to render for the BMD.
+     */
+    public static List<Point2D> generateBmdPoints(Canoe canoe, List<Point2D> sfdPoints) {
         List<Point2D> bmdPoints = new ArrayList<>();
         Point2D firstPoint = sfdPoints.getFirst();
 
@@ -467,7 +471,7 @@ public class DiagramService {
             Point2D curr = sfdPoints.get(i);
             // If the two consecutive points are on the same vertical line, create a diagonal line for the BMD
             if (curr.getY() == firstPoint.getY()) {
-                bmdPoints.add(new Point2D(roundXDigits(curr.getX(), 3), roundXDigits(currY + firstPoint.getY() * (curr.getX() - firstPoint.getX()), 4)));
+                bmdPoints.add(new Point2D(CalculusUtils.roundXDecimalDigits(curr.getX(), 3), CalculusUtils.roundXDecimalDigits(currY + firstPoint.getY() * (curr.getX() - firstPoint.getX()), 4)));
             }
             // If the two consecutive points are connected via a diagonal line, create a parabola for the BMD
             if (curr.getX() != firstPoint.getX() && curr.getY() != firstPoint.getY()) {

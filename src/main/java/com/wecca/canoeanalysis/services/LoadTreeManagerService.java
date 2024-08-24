@@ -11,6 +11,9 @@ import lombok.Setter;
 
 import java.util.List;
 
+/**
+ * Manager all functionality of a load tree for use in the beam module
+ */
 public class LoadTreeManagerService {
     private static JFXTreeView<String> loadsTreeView;
     @Getter

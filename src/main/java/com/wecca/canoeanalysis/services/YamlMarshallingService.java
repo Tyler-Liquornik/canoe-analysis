@@ -3,12 +3,13 @@ package com.wecca.canoeanalysis.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.controllers.modules.BeamController;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
+import com.wecca.canoeanalysis.models.data.DevConfig;
 import com.wecca.canoeanalysis.models.data.Settings;
 import com.wecca.canoeanalysis.models.load.Load;
-import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Setter;
@@ -16,6 +17,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
+/**
+ * Marshalling and unmarshalling of POJO models in YAML for state management
+ * This includes writing YAML to and from files
+ */
+@Traceable
 public class YamlMarshallingService {
 
     @Setter
@@ -23,11 +29,20 @@ public class YamlMarshallingService {
     @Setter
     private static BeamController beamController;
     private static final ObjectMapper yamlMapper;
-    private static final String SETTINGS_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/settings.yaml", true);
+    public static final String SETTINGS_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/settings.yaml", true);
+    public static final String DEV_CONFIG_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/dev-config.yaml", true);
+    public static final boolean TRACING;
 
+    // Initializations, and loading state
     static {
         yamlMapper = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
         yamlMapper.findAndRegisterModules();
+
+        try {
+            TRACING = YamlMarshallingService
+                    .loadYamlData(DevConfig.class, new DevConfig(false),
+                            YamlMarshallingService.DEV_CONFIG_FILE_PATH).isTracing();
+        } catch (IOException e) {throw new RuntimeException(e);}
     }
 
     /**
@@ -97,9 +112,6 @@ public class YamlMarshallingService {
                 adjustedCanoe.setHull(canoe.getHull());
                 for (Load load : canoe.getLoads())
                     adjustedCanoe.addLoad(load);
-                boolean disableHullBuilder = !adjustedCanoe.getHull().equals(
-                        SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
-                mainController.disableModuleToolBarButton(disableHullBuilder, 0);
                 beamController.setCanoe(adjustedCanoe);
                 mainController.showSnackbar("Successfully uploaded " + fileToUpload.getName());
             } catch (IOException ex) {
@@ -108,14 +120,28 @@ public class YamlMarshallingService {
         }
     }
 
+    /**
+     * Write the current state of settings to a file
+     * @param settings the POJO containing all settings information
+     */
     public static void saveSettings(Settings settings) throws IOException {
         yamlMapper.writeValue(new File(SETTINGS_FILE_PATH), settings);
     }
 
-    public static Settings loadSettings() throws IOException {
-        File file = new File(SETTINGS_FILE_PATH);
-        if (file.exists())
-            return yamlMapper.readValue(file, Settings.class);
-        return new Settings("#F96C37"); // The default orange color
+    /**
+     *
+     * @param dataClass the POJO representing the structure of the data to load
+     * @param defaultData the data to upload if the file does not exist
+     * @param path to the YAML file to demarshall
+     * @return the demarshalled YAML file as a POJO
+     */
+    public static <T> T loadYamlData(Class<T> dataClass, T defaultData, String path) throws IOException {
+       try {
+           File file = new File(path);
+           if (file.exists())
+               return yamlMapper.readValue(file, dataClass);
+       }
+       catch (Exception ignored) {}
+       return defaultData;
     }
 }

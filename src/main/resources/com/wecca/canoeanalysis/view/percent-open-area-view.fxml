@@ -1,10 +1,76 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXColorPicker?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon?>
+<?import java.lang.String?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background"  xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.PercentOpenAreaController">
+<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="500.0" prefWidth="900.0" styleClass="background" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.PercentOpenAreaController">
     <children>
-        <Label layoutX="171.0" layoutY="271.0" styleClass="module-placeholder-text" text="The Percent Open Area module has not yet been implemented" />
+      <AnchorPane layoutX="60.0" layoutY="60.0" maxHeight="380.0" minHeight="380.0" prefHeight="380.0" prefWidth="450.0" styleClass="surface">
+         <children>
+                <ImageView fx:id="imageview" fitHeight="300.0" fitWidth="300.0" layoutX="75.0" layoutY="21.0" pickOnBounds="true" preserveRatio="true" />
+            <Rectangle fx:id="cloudBackground" arcHeight="5.0" arcWidth="5.0" fill="WHITE" height="60.0" layoutX="190.0" layoutY="123.0" stroke="WHITE" strokeType="INSIDE" width="62.0" />
+            <FontAwesomeIcon fx:id="cloud" glyphName="CLOUD_UPLOAD" layoutX="160.0" layoutY="195.0" size="10em" styleClass="action-object" />
+            <Label fx:id="dragAndDropLabel" layoutX="120.0" layoutY="247.0" styleClass="title" text="Drag &amp; Drop to Upload Image" textAlignment="CENTER" AnchorPane.bottomAnchor="113.0">
+               <font>
+                  <Font name="Roboto" size="12.0" />
+               </font></Label>
+            <Label fx:id="orLabel" layoutX="215.0" layoutY="292.0" styleClass="subtitle" text="OR" textAlignment="CENTER">
+               <font>
+                  <Font name="Roboto Bold" size="14.0" />
+               </font></Label>
+            <JFXButton fx:id="uploadOrClearButton" buttonType="RAISED" layoutX="150.0" layoutY="334.0" onAction="#handleUploadOrClearButton" prefHeight="20.0" prefWidth="150.0" styleClass="action-object" text="Browse Image" AnchorPane.bottomAnchor="20.0">
+               <font>
+                  <Font name="Roboto" size="12.0" />
+               </font>
+            </JFXButton>
+         </children>
+      </AnchorPane>
+      <AnchorPane layoutX="590.0" layoutY="60.0" maxHeight="380.0" minHeight="380.0" prefHeight="380.0" prefWidth="260.0" styleClass="surface">
+         <children>
+            <Label fx:id="resultTextField" layoutX="140.0" layoutY="230.0" prefHeight="37.0" prefWidth="75.0" text="???" textAlignment="CENTER">
+               <padding>
+                  <Insets left="15.0" top="20.0" />
+               </padding>
+            </Label>
+            <JFXTextField fx:id="passingPOATextField" alignment="CENTER" layoutX="128.0" layoutY="93.0" prefHeight="25.0" prefWidth="75.0">
+               <padding>
+                  <Insets top="20.0" />
+               </padding>
+            </JFXTextField>
+            <Label layoutX="210.0" layoutY="111.0" text="\%" />
+            <Label layoutX="45.0" layoutY="110.0" text="Passing POA:" />
+            <Label layoutX="50.0" layoutY="180.0" text="Mesh Color: " />
+            <Label fx:id="passLabel" layoutX="119.0" layoutY="292.0" text="Pass" visible="false">
+               <font>
+                  <Font name="Roboto" size="12.0" />
+               </font>
+               <styleClass>
+                  <String fx:value="pass" />
+                  <String fx:value="subtitle" />
+               </styleClass>
+            </Label>
+            <Label fx:id="failLabel" layoutX="123.0" layoutY="292.0" text="Fail" visible="false">
+               <font>
+                  <Font name="Roboto" size="12.0" />
+               </font>
+               <styleClass>
+                  <String fx:value="fail" />
+                  <String fx:value="subtitle" />
+               </styleClass>
+            </Label>
+            <Label layoutX="81.0" layoutY="250.0" text="Result: " />
+            <JFXButton layoutX="59.0" layoutY="307.0" onAction="#handleAnalyzeImageButton" prefHeight="20.0" prefWidth="150.0" styleClass="action-object" text="Analyze Image" AnchorPane.bottomAnchor="20.0" />
+            <JFXColorPicker fx:id="colorPicker" layoutX="128.0" layoutY="177.0" prefWidth="75.0" />
+         </children>
+      </AnchorPane>
     </children>
 </AnchorPane>

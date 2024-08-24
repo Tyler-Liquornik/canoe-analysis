@@ -60,7 +60,7 @@ del temp.txt
 
 rem ------ MANUAL MODULES -----------------------------------------------------
 
-set manual_modules=,jdk.localedata,jdk.unsupported,java.xml,java.scripting,jdk.zipfs,java.rmi
+set manual_modules=,jdk.localedata,jdk.unsupported,java.xml,java.scripting,jdk.zipfs,java.rmi,java.naming,java.desktop
 echo manual modules: %manual_modules%
 
 rem ------ RUNTIME IMAGE ------------------------------------------------------
@@ -88,10 +88,15 @@ call "%JAVA_HOME%\bin\jpackage" ^
  --name %APP_NAME% ^
  --main-class com.wecca.canoeanalysis.Main ^
  --main-jar CanoeAnalysis-%PROJECT_VERSION%.jar ^
- --java-options -Xmx2048m ^
- --java-options --add-opens=java.base/java.lang.reflect=ALL-UNNAMED ^
- --java-options --add-opens=java.base/java.lang=ALL-UNNAMED ^
- --java-options --add-opens=java.base/java.lang.reflect=ALL-UNNAMED ^
+ --java-options "-Xmx2048m" ^
+ --java-options "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED" ^
+ --java-options "--add-opens=java.base/java.lang=ALL-UNNAMED" ^
+ --java-options "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED" ^
+ --java-options "--add-exports=javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix" ^
+ --java-options "--add-exports=javafx.graphics/com.sun.javafx.stage=com.jfoenix" ^
+ --java-options "--add-exports=javafx.base/com.sun.javafx.event=com.jfoenix" ^
+ --java-options "--add-exports=javafx.base/com.sun.javafx.binding=com.jfoenix" ^
+ --java-options "--add-exports javafx.controls/com.sun.javafx.scene.control=com.jfoenix" ^
  --runtime-image target\java-runtime ^
  --icon src/main/resources/com/wecca/canoeanalysis/images/canoe.ico ^
  --resource-dir target\installer\input\resources ^

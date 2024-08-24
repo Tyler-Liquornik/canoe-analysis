@@ -5,17 +5,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
+import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.load.ContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
 import com.wecca.canoeanalysis.models.function.Section;
-import com.wecca.canoeanalysis.models.function.VertexFormParabola;
+import com.wecca.canoeanalysis.models.function.VertexFormParabolaFunction;
+import com.wecca.canoeanalysis.services.LoggerService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.univariate.*;
@@ -55,13 +56,15 @@ public class HullSection extends Section
     @JsonProperty("sideProfileCurve")
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
     @JsonSubTypes({
-            @JsonSubTypes.Type(value = VertexFormParabola.class, name = "VertexFormParabola")
+            @JsonSubTypes.Type(value = VertexFormParabolaFunction.class, name = "VertexFormParabola"),
+            @JsonSubTypes.Type(value = CubicBezierFunction.class, name = "CubicBezierFunction")
     })
     private BoundedUnivariateFunction sideProfileCurve;
     @JsonProperty("topProfileCurve")
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
     @JsonSubTypes({
-            @JsonSubTypes.Type(value = VertexFormParabola.class, name = "VertexFormParabola")
+            @JsonSubTypes.Type(value = VertexFormParabolaFunction.class, name = "VertexFormParabola"),
+            @JsonSubTypes.Type(value = CubicBezierFunction.class, name = "CubicBezierFunction")
     })
     private BoundedUnivariateFunction topProfileCurve;
     @JsonProperty("thickness")
@@ -85,7 +88,7 @@ public class HullSection extends Section
      * Instead I have built a polynomial regression fit for it which is faster to evaluate
      * The 7th degree polynomial has R^2 = 0.9967 for the fully accurate function and was solved on Desmos
      */
-    @JsonIgnore
+    @JsonIgnore @EqualsAndHashCode.Exclude
     private final BoundedUnivariateFunction crossSectionalAreaAdjustmentFactorFunction = h -> {
         double[] coefficients = new double[] {0, 17.771, -210.367, 1409.91, -5420.6, 11769.4, -13242.7, 5880.62};
         for (int i = 0; i < coefficients.length; i++) {
@@ -131,14 +134,15 @@ public class HullSection extends Section
      */
     public HullSection(double length, double height, double width) {
         super(0, length);
-        this.sideProfileCurve = new VertexFormParabola(0, 0, -height);
-        this.topProfileCurve = new VertexFormParabola(0, 0, width / 2.0);
+        this.sideProfileCurve = new VertexFormParabolaFunction(0, 0, -height);
+        this.topProfileCurve = new VertexFormParabolaFunction(0, 0, width / 2.0);
     }
 
     /**
      * Defines a function A(x) which models the cross-sectional area of the canoe as a function of length x
      * A(x) for a given x is the area of the cross-sectional area element with thickness dx
-     * At the moment (until a frontProfileCurve is defined in the model) area elements are rectangles
+     * An adjustment factor is applied to take into account the geometry of the front profile
+     * The adjustment factor adjusts for the difference in area between the front profile and its encasing rectangle
      * @return the function A(x)
      */
     @JsonIgnore
@@ -218,6 +222,8 @@ public class HullSection extends Section
         return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getMassDistributionFunction(), x, rx);
     }
 
+
+
     /**
      * Defines a function w(x) which models the load of the hull section along its length (negative for download load)
      * @return the function w(x)
@@ -248,13 +254,28 @@ public class HullSection extends Section
         return 2 * optimizer.optimize(MaxEval.unlimited(), objectiveFunction, searchInterval).getValue();
     }
 
+    public double getHeight()
+    {
+        // Find the sections minimum
+        // Function is negated as BrentOptimizer looks for the maximum
+        UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(x -> -this.sideProfileCurve.value(x));
+        SearchInterval searchInterval = new SearchInterval(this.getX(), this.getRx());
+        UnivariatePointValuePair result = (new BrentOptimizer(1e-10, 1e-14)).optimize(
+                MaxEval.unlimited(),
+                objectiveFunction,
+                searchInterval
+        );
+
+        return result.getValue();
+
+    }
+
     /**
      * Validates that the hull shape function is non-positive on its domain [start, end]
      * This convention allows waterline height y = h (downward is +y)
      * Note that this means the topmost point of the hull on the y-axis is y = 0
      */
-    private void validateSign(Function<Double, Double> profileCurve, boolean positive)
-    {
+    private void validateSign(Function<Double, Double> profileCurve, boolean positive) {
         // Convert the hullShapeFunction to BoundedUnivariateFunction for compatibility with Apache Commons Math
         // Need to negate the function as BrentOptimizer finds the min, and we want the max
         BoundedUnivariateFunction profileCurveAsUnivariateFunction = profileCurve::apply;
@@ -276,5 +297,10 @@ public class HullSection extends Section
             throw new IllegalArgumentException("Hull shape function must be positive on its domain [start, end]");
         else if (!positive && maxValue > 0)
             throw new IllegalArgumentException("Hull shape function must be non-positive on its domain [start, end]");
+    }
+
+    @Override
+    public String toString() {
+        return "We In";
     }
 }

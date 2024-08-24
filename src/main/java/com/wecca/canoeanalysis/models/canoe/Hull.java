@@ -3,12 +3,13 @@ package com.wecca.canoeanalysis.models.canoe;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.load.DiscreteLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
-import javafx.geometry.Point2D;
+import com.wecca.canoeanalysis.utils.CalculusUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -110,7 +111,7 @@ public class Hull {
      * Note: two separate getMaxHeight methods are provided for a specific reason
      * one for internal validation purposes (hence, private) one for public use
      */
-    @JsonIgnore
+    @JsonIgnore @Traceable
     public double getMaxHeight() {
         return getMaxHeight(this.hullSections);
     }
@@ -119,7 +120,7 @@ public class Hull {
      * @return the canoe hull self-weight, in kN (returns with a negative sign representing the downward load)
      * Note: this includes bulkheads weight if specified with fillBulkhead
      */
-    @JsonIgnore
+    @JsonIgnore @Traceable
     public double getWeight() {
         return getHullSections().stream().mapToDouble(HullSection::getWeight).sum();
     }
@@ -200,15 +201,10 @@ public class Hull {
      * Note that this returned function has been shifted so that it's bottom is at y = 0 instead of its top at y = 0
      */
     @JsonIgnore
-    public BoundedUnivariateFunction getPiecedSideProfileCurve() {
-        BoundedUnivariateFunction f = x -> {
-            for (HullSection section : hullSections) {
-                if (section.getX() <= x && x <= section.getRx())
-                    return section.getSideProfileCurve().value(x);
-            }
-            throw new IllegalArgumentException("x is out of bounds of the hull sections");
-        };
-        return x -> f.value(x) - f.getMinValue(getSection());
+    public BoundedUnivariateFunction getPiecedSideProfileCurveShiftedAboveYAxis() {
+        List<BoundedUnivariateFunction> functions = hullSections.stream().map(HullSection::getSideProfileCurve).toList();
+        List<Section> sections = hullSections.stream().map(sec -> (Section) sec).toList();
+        return CalculusUtils.createCompositeFunctionShiftedPositive(functions, sections);
     }
 
     /**

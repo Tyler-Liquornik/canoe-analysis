@@ -128,10 +128,10 @@ public class LoadUtils {
         for (int i = rightHalf.size() - 1; i >= 0; i--) {
             Load load = rightHalf.get(i);
             Load flippedLoad = switch (load) {
-                case PointLoad pLoad -> new PointLoad(pLoad.getForce(), roundToNearest(hullLength - pLoad.getX()), pLoad.isSupport());
+                case PointLoad pLoad -> new PointLoad(pLoad.getForce(), CalculusUtils.roundXDecimalDigits(hullLength - pLoad.getX(), 6), pLoad.isSupport());
                 case UniformLoadDistribution dLoad -> {
-                    double flippedX = roundToNearest(hullLength - dLoad.getX());
-                    double flippedRx = roundToNearest(hullLength - dLoad.getSection().getRx());
+                    double flippedX = CalculusUtils.roundXDecimalDigits(hullLength - dLoad.getX(), 6);
+                    double flippedRx = CalculusUtils.roundXDecimalDigits(hullLength - dLoad.getSection().getRx(),6 );
                     yield new UniformLoadDistribution(dLoad.getMagnitude(), flippedRx, flippedX);
                 }
                 default -> throw new IllegalArgumentException("Cannot process load of type: " + load.getClass());
@@ -139,16 +139,6 @@ public class LoadUtils {
             flippedRightHalf.add(flippedLoad);
         }
         return flippedRightHalf;
-    }
-
-    /**
-     * Rounds a value to 6 decimal places
-     * @param value the value to round
-     * @return the rounded value
-     */
-    private static double roundToNearest(double value) {
-        double precision = 1e-6;
-        return Math.round(value / precision) * precision;
     }
 
     /**

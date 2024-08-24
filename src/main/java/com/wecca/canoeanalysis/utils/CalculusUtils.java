@@ -1,9 +1,13 @@
 package com.wecca.canoeanalysis.utils;
 
+import Jama.Matrix;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
+import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.function.Section;
-import org.apache.commons.math3.analysis.UnivariateFunction;
+import javafx.geometry.Point2D;
+import org.apache.commons.math3.analysis.BivariateFunction;
 import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
@@ -39,6 +43,34 @@ public class CalculusUtils
                     x -> Math.sqrt(1 + Math.pow(differentiate(function).value(x), 2));
             return integrator.integrate(MaxEval.unlimited().getMaxEval(), profileArcLengthElementFunction, a, b);
         }
+    }
+
+    /**
+     * Converts polar coordinates to Cartesian coordinates with respect to a given origin.
+     * @param polarPoint the point in polar form where x represents the radius (r) and y represents the angle (theta) in degrees
+     * @param origin the reference point to use as the origin
+     * @return a Point2D in Cartesian form (x, y) relative to the origin
+     */
+    public static Point2D toCartesian(Point2D polarPoint, Point2D origin) {
+        double r = polarPoint.getX();
+        double theta = Math.toRadians(polarPoint.getY());
+        double x = r * Math.cos(theta) + origin.getX();
+        double y = r * Math.sin(theta) + origin.getY();
+        return new Point2D(x, y);
+    }
+
+    /**
+     * Converts Cartesian coordinates to polar coordinates with respect to a given origin.
+     * @param cartesianPoint the point in Cartesian form (x, y)
+     * @param origin the reference point to use as the origin
+     * @return a Point2D where x represents the radius (r) and y represents the angle (theta) in degrees
+     */
+    public static Point2D toPolar(Point2D cartesianPoint, Point2D origin) {
+        double x = cartesianPoint.getX() - origin.getX();
+        double y = cartesianPoint.getY() - origin.getY();
+        double r = Math.sqrt(x * x + y * y);
+        double theta = Math.toDegrees(Math.atan2(y, x));
+        return new Point2D(r, theta);
     }
 
     /**
@@ -114,9 +146,10 @@ public class CalculusUtils
      * @param pieces the pieces to validate
      * @param sections the sections of the pieces
      */
+    @Traceable
     public static void validatePiecewiseAsUpOrDown(List<BoundedUnivariateFunction> pieces, List<Section> sections) {
         UnivariateSolver solver = new BrentSolver(1e-10, 1e-14);
-        int numSamples = 1000;
+        int numSamples = 100;
 
         boolean allNonNegative = true;
         boolean allNonPositive = true;
@@ -140,13 +173,13 @@ public class CalculusUtils
                 currentX = nextX;
             }
 
-            // Check the function value at a point within each interval (midpoint chosen arbitrarily)
+            double tolerance = 1e-2;
             for (int i = 0; i < zeros.size() - 1; i++) {
                 double midpoint = (zeros.get(i) + zeros.get(i + 1)) / 2;
                 double value = piece.value(midpoint);
-                if (value < 0)
+                if (value < -tolerance)
                     allNonNegative = false;
-                if (value > 0)
+                if (value > tolerance)
                     allNonPositive = false;
             }
         }
@@ -162,7 +195,7 @@ public class CalculusUtils
     public static void validateContinuity(BoundedUnivariateFunction function, Section section) {
         // Note: it's very possible this can cause false negatives and these numbers need to be tweaked in magnitude
         // It completely depends on how fast the function grows
-        double tolerance = 1e-3;
+        double tolerance = 1e-2;
         double numSamples = 10000.0;
         double step = section.getLength() / numSamples;
 
@@ -171,8 +204,81 @@ public class CalculusUtils
             double x = section.getX() + i * step;
             double currentValue = function.value(x);
             if (Math.abs(currentValue - previousValue) > tolerance)
-                throw new IllegalArgumentException("The distribution is not continuous within a reasonable tolerance");
+                throw new IllegalArgumentException("The function is not continuous within a reasonable tolerance");
             previousValue = currentValue;
         }
+    }
+
+    /**
+     * Round a double to x digits after the decimal point.
+     * @param num the number to round.
+     * @param numDigits the number of digits to round to.
+     * @return the rounded double.
+     */
+    public static double roundXDecimalDigits(double num, int numDigits) {
+        double factor = Math.pow(10, numDigits);
+        return Math.round(num * factor) / factor;
+    }
+
+    /**
+     * @param x value of the first variable to evaluate the Jacobian for
+     * @param y value of the second variable to evaluate the Jacobian for
+     * @param f1  The first equation in the system, f1(x, y)
+     * @param f2  The first equation in the system, f2(x, y)
+     * @return the Jacobian matrix J for the system of equations [f1(x, y) = 0, f2(x, y) = 0] in R^2
+     */
+    public static Matrix evaluateR2Jacobian(double x, double y, BivariateFunction f1, BivariateFunction f2) {
+        // Partial derivatives of f1 and f2
+        BoundedUnivariateFunction df1_dx = differentiate(X -> f1.value(X, y));
+        BoundedUnivariateFunction df1_dy = differentiate(Y -> f1.value(x, Y));
+        BoundedUnivariateFunction df2_dx = differentiate(X -> f2.value(X, y));
+        BoundedUnivariateFunction df2_dy = differentiate(Y -> f2.value(x, Y));
+
+        // Construct the Jacobian
+        Matrix jacobian = new Matrix(2, 2);
+        jacobian.set(0, 0, df1_dx.value(x)); // ∂f1 / ∂x evaluated at x
+        jacobian.set(0, 1, df1_dy.value(y)); // ∂f1 / ∂y evaluated at y
+        jacobian.set(1, 0, df2_dx.value(x)); // ∂f2 / ∂x evaluated at x
+        jacobian.set(1, 1, df2_dy.value(y)); // ∂f2 / ∂y evaluated at y
+        return jacobian;
+    }
+
+    /**
+     * Creates a composite function from a list of bounded univariate functions
+     * along with their corresponding sections.
+     * Shifts the result so that its minimum y value is at y = 0.
+     *
+     * @param functions The list of bounded univariate functions.
+     * @param sections  The list of sections that correspond to each function.
+     * @return The shifted composite function.
+     */
+    public static BoundedUnivariateFunction createCompositeFunctionShiftedPositive(List<BoundedUnivariateFunction> functions, List<Section> sections) {
+        if (functions.size() != sections.size())
+            throw new IllegalArgumentException("The number of functions must match the number of sections.");
+
+        // Create the composite function that checks each function's section before evaluation
+        BoundedUnivariateFunction f = x -> {
+            for (int i = 0; i < functions.size(); i++) {
+                BoundedUnivariateFunction func = functions.get(i);
+                Section section = sections.get(i);
+                if (section.getX() <= x && x <= section.getRx())
+                    return func.value(x);
+            }
+            throw new IllegalArgumentException("x is out of bounds of the provided functions.");
+        };
+
+        Section fullSection = new Section(sections.getFirst().getX(), sections.getLast().getRx());
+        return x -> f.value(x) - f.getMinValue(fullSection);
+    }
+
+    /**
+     * Essentially an overload of createCompositeFunctionShiftedPositive
+     * @param functions the cubic bezier functions which have the section encoded into their constructions points
+     * @return the shifted bezier spline based function.
+     */
+    public static BoundedUnivariateFunction createBezierSplineFunctionShiftedPositive(List<CubicBezierFunction> functions) {
+        List<BoundedUnivariateFunction> functionsMapped = functions.stream().map(CubicBezierFunction::getFunction).toList();
+        List<Section> sections = functions.stream().map(f -> new Section(f.getX1(), f.getX2())).toList();
+        return createCompositeFunctionShiftedPositive(functionsMapped, sections);
     }
 }

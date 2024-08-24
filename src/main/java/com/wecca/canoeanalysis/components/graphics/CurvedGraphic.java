@@ -14,8 +14,6 @@ import javafx.scene.shape.Path;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import lombok.Getter;
-import lombok.Setter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 
 import java.util.List;
 
@@ -24,7 +22,7 @@ import java.util.List;
  * A curve with shaded area between the curve and the y-axis
  */
 @Getter
-public class Curve extends Group implements CurvedProfile {
+public class CurvedGraphic extends Group implements FunctionGraphic {
 
     protected BoundedUnivariateFunction function;
     protected Section section;
@@ -34,7 +32,14 @@ public class Curve extends Group implements CurvedProfile {
     protected boolean isColored;
     private final double maxSignedValue;
 
-    public Curve(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
+    /**
+     * Deals with mapping between function space and graphic space
+     * @param function the function definition in function space
+     * @param section the interval of the function in function space
+     * @param encasingRectangle the smallest region in function space that encloses all points in the function
+     *                          is mapped to this rectangle in graphics space
+     */
+    public CurvedGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
         super();
         this.function = function;
         this.section = section;
@@ -50,7 +55,7 @@ public class Curve extends Group implements CurvedProfile {
 
     public void draw() {
         // Partition the section
-        int numSamples = 1000;
+        int numSamples = 250;
         double step = (section.getRx() - section.getX()) / numSamples;
         double currentX = section.getX();
 
@@ -89,6 +94,11 @@ public class Curve extends Group implements CurvedProfile {
     @Override
     public double getX() {
         return encasingRectangle.getX();
+    }
+
+    @Override
+    public double getY() {
+        return encasingRectangle.getY();
     }
 
     @Override
@@ -131,11 +141,6 @@ public class Curve extends Group implements CurvedProfile {
     @Override
     public Section getSection() {
         return section;
-    }
-
-    @Override
-    public BoundedUnivariateFunction getFunction() {
-        return function;
     }
 
     @Override
