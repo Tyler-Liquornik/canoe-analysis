@@ -24,7 +24,9 @@ public class TracingAspect {
     @Pointcut("(@within(com.wecca.canoeanalysis.aop.Traceable) " +
             "|| @annotation(com.wecca.canoeanalysis.aop.Traceable)) " +
             "&& execution(* com.wecca.canoeanalysis..*(..)) " +
-            "&& !@annotation(com.wecca.canoeanalysis.aop.TraceIgnore)")
+            "&& !@annotation(com.wecca.canoeanalysis.aop.TraceIgnore) " +
+            "&& !execution(* lambda*(..)) " +
+            "&& !execution(* $*(..))")
     public void pointcut() {
     }
 

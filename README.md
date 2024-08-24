@@ -89,6 +89,8 @@ The engineer working on the canoe can also download the canoe model as a YAML fi
       <img src="images/vm-options.png" alt="vm-options" />
     </div>
 
+6. Setting up Tracing with AspectJ
+
 ## Summer '24 Feature Development Roadmap
 
 - [X] Implement material design look and feel
