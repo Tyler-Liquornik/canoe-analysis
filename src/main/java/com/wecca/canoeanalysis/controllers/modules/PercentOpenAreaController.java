@@ -1,8 +1,10 @@
 package com.wecca.canoeanalysis.controllers.modules;
 
+import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextField;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.controllers.MainController;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -32,6 +34,11 @@ public class PercentOpenAreaController implements Initializable {
     public JFXTextField percentOpenAreaTextField;
     public JFXTextField openAreaTextField;
     public JFXTextField totalAreaTextField;
+    public FontAwesomeIcon uploadIcon;
+    public JFXButton upButton;
+    public Button clButton;
+    public Label dragAndDropLabel;
+    public Label orLabel;
 
     @FXML
     private ImageView imageview;
@@ -68,6 +75,14 @@ public class PercentOpenAreaController implements Initializable {
                 imageview.setImage(image);
                 // Close the popup window
                 popupStage.close();
+                uploadIcon.setOpacity(0);
+                upButton.setOpacity(0);
+                orLabel.setText("");
+                dragAndDropLabel.setText("");
+
+
+
+
             } catch (FileNotFoundException ex) {
                 ex.printStackTrace();
             }
@@ -116,5 +131,9 @@ public class PercentOpenAreaController implements Initializable {
 
     public void clearImage() {
         imageview.setImage(null);
+        uploadIcon.setOpacity(1);
+        upButton.setOpacity(1);
+        dragAndDropLabel.setText("Drag and Drop to Upload Image");
+        orLabel.setText("OR");
     }
 } // Test commit

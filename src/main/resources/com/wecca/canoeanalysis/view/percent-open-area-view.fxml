@@ -14,35 +14,35 @@
     <children>
       <AnchorPane layoutX="40.0" layoutY="50.0" prefHeight="394.0" prefWidth="471.0" styleClass="surface">
          <children>
-                <ImageView fx:id="imageview" fitHeight="247.0" fitWidth="431.0" layoutX="40.0" layoutY="39.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0" />
-            <FontAwesomeIcon fill="WHITE" glyphName="UPLOAD" layoutX="160.0" layoutY="207.0" size="15em" styleClass="action-object" text="" AnchorPane.bottomAnchor="100.0" AnchorPane.leftAnchor="150.0" AnchorPane.rightAnchor="150.0" AnchorPane.topAnchor="60.0">
+                <ImageView fx:id="imageview" fitHeight="381.0" fitWidth="459.0" layoutX="7.0" layoutY="7.0" pickOnBounds="true" preserveRatio="true" />
+            <FontAwesomeIcon fx:id="uploadIcon" fill="WHITE" glyphName="UPLOAD" layoutX="160.0" layoutY="207.0" size="15em" styleClass="action-object" text="" AnchorPane.bottomAnchor="100.0" AnchorPane.leftAnchor="150.0" AnchorPane.rightAnchor="150.0" AnchorPane.topAnchor="60.0">
                <font>
                   <Font size="1.0" />
                </font>
             </FontAwesomeIcon>
-            <JFXButton fx:id="button" buttonType="RAISED" layoutX="145.0" layoutY="315.0" onAction="#uploadButton" prefHeight="23.0" prefWidth="177.0" styleClass="action-object" text="Browse Image" AnchorPane.bottomAnchor="56.0" AnchorPane.leftAnchor="145.0" AnchorPane.rightAnchor="149.0" />
-            <Label layoutX="121.0" layoutY="247.0" styleClass="title" text="Drag and Drop to Upload Image" textAlignment="CENTER" AnchorPane.bottomAnchor="127.0" />
-            <Label layoutX="228.0" layoutY="280.0" text="OR" textAlignment="CENTER" />
+            <JFXButton fx:id="upButton" buttonType="RAISED" layoutX="145.0" layoutY="315.0" onAction="#uploadButton" prefHeight="23.0" prefWidth="177.0" styleClass="action-object" text="Browse Image" AnchorPane.bottomAnchor="56.0" AnchorPane.leftAnchor="145.0" AnchorPane.rightAnchor="149.0" />
+            <Label fx:id="dragAndDropLabel" layoutX="121.0" layoutY="247.0" styleClass="title" text="Drag and Drop to Upload Image" textAlignment="CENTER" AnchorPane.bottomAnchor="127.0" />
+            <Label fx:id="orLabel" layoutX="228.0" layoutY="280.0" text="OR" textAlignment="CENTER" />
          </children>
       </AnchorPane>
-      <AnchorPane layoutX="590.0" layoutY="54.0" prefHeight="394.0" prefWidth="259.0" styleClass="surface">
+      <AnchorPane layoutX="590.0" layoutY="54.0" prefHeight="394.0" prefWidth="265.0" styleClass="surface">
          <children>
               <Label layoutY="70.0" text="Open Area: ">
                <padding>
-                  <Insets left="10.0" top="20.0" />
+                  <Insets left="15.0" top="20.0" />
                </padding>
             </Label>
               <Label layoutY="35.0" text="Total Area:">
                <padding>
-                  <Insets left="10.0" top="20.0" />
+                  <Insets left="15.0" top="20.0" />
                </padding>
             </Label>
               <Label text="Percent Open Area: ">
                <padding>
-                  <Insets left="10.0" top="20.0" />
+                  <Insets left="15.0" top="20.0" />
                </padding>
             </Label>
-              <Button fx:id="button1" layoutX="104.0" layoutY="268.0" mnemonicParsing="false" onAction="#clearImage" styleClass="action-object" text="Clear" />
+              <Button fx:id="clButton" layoutX="108.0" layoutY="186.0" mnemonicParsing="false" onAction="#clearImage" styleClass="action-object" text="Clear" />
             <JFXTextField fx:id="percentOpenAreaTextField" layoutX="130.0" prefHeight="25.0" prefWidth="75.0">
                <padding>
                   <Insets top="20.0" />
@@ -59,6 +59,16 @@
                </padding>
             </JFXTextField>
             <Label layoutX="210.0" layoutY="24.0" text="\%" />
+            <Label layoutY="105.0" text="Result:">
+               <padding>
+                  <Insets left="15.0" top="20.0" />
+               </padding>
+            </Label>
+            <JFXTextField fx:id="resultTextField" layoutX="130.0" layoutY="105.0" prefHeight="25.0" prefWidth="75.0">
+               <padding>
+                  <Insets top="20.0" />
+               </padding>
+            </JFXTextField>
          </children>
       </AnchorPane>
     </children>
