@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis.models.canoe;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.load.DiscreteLoadDistribution;
@@ -109,7 +110,7 @@ public class Hull {
      * Note: two separate getMaxHeight methods are provided for a specific reason
      * one for internal validation purposes (hence, private) one for public use
      */
-    @JsonIgnore
+    @JsonIgnore @Traceable
     public double getMaxHeight() {
         return getMaxHeight(this.hullSections);
     }
@@ -118,7 +119,7 @@ public class Hull {
      * @return the canoe hull self-weight, in kN (returns with a negative sign representing the downward load)
      * Note: this includes bulkheads weight if specified with fillBulkhead
      */
-    @JsonIgnore
+    @JsonIgnore @Traceable
     public double getWeight() {
         return getHullSections().stream().mapToDouble(HullSection::getWeight).sum();
     }
@@ -153,7 +154,7 @@ public class Hull {
     /**
      * @return the total volume of the canoe by summing up the volumes of all sections.
      */
-    @JsonIgnore
+    @JsonIgnore @Traceable
     public double getTotalVolume() {
         if (getHullSections() == null || getHullSections().isEmpty())
             return 0;

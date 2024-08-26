@@ -89,40 +89,6 @@ The engineer working on the canoe can also download the canoe model as a YAML fi
       <img src="images/vm-options.png" alt="vm-options" />
     </div>
 
-6. <b>Setting up Tracing with AspectJ (Optional)</b>
-
-AspectJ is a special extension to java which implements the AOP (Aspect Oriented Programming) paradigm. <br/>
-AspectJ requires it's on compiler, ajc to be used in tandem with the standard java compiler, javac <br/>
-With AspectJ, a powerful, customizable tracing featured can be enabled for an enhanced debugging developer experience <br/>
-The plugin for AspectJ requires IntelliJ Ultimate. It is completey opt-in and PADDL will build, compile, deploy, and run fine without it. <br/>
-
-<div style="display: flex; flex-direction: column; width: 80%; align-items: center; justify-content: center; padding: 10px 0 10px 0">
-      <img src="images/tracing.png" alt="tracing" /> <br/>
-</div>
-<br/>
-<b>a) Install the AspectJ plugin </b>
-<div style="display: flex; flex-direction: column; width: 80%; align-items: center; justify-content: center; padding: 10px 0 10px 0">
-      <img src="images/aj-plugin.png" alt="aj-plugin" /> <br/>
-</div>
-<br/>
-<b>b) Select the ajc compiler</b>
-<div style="display: flex; flex-direction: column; width: 80%; align-items: center; justify-content: center; padding: 10px 0 10px 0">
-      <img src="images/ajc.png" alt="ajc" /> <br/>
-</div>
-<br/>
-<b>c) Enable post-compile weave mode</b>
-<div style="display: flex; flex-direction: column; width: 80%; align-items: center; justify-content: center; padding: 10px 0 10px 0">
-      <img src="images/weaving.png" alt="weaving" /> <br/>
-</div>
-<br/>
-<b>d) Customize tracing behaviour</b> <br/>
-run `maven clean install` to build once, then change the `tracing` property in `dev-config` to enable or disable tracing. <br/>
-Use `@Traceable` and `@TraceIgnore` for fine-grained customization on which methods are traced.
-<div style="display: flex; flex-direction: column; width: 80%; align-items: center; justify-content: center; padding: 10px 0 10px 0">
-      <img src="images/tracing-config.png" alt="tracing-config" /> <br/>
-</div>
-
-
 ## Summer '24 Feature Development Roadmap
 
 - [X] Implement material design look and feel

@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis.controllers.modules;
 import com.jfoenix.controls.JFXTreeView;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
 import com.wecca.canoeanalysis.components.graphics.*;
 import com.wecca.canoeanalysis.controllers.popups.*;
@@ -31,6 +32,7 @@ import java.util.function.Consumer;
 /**
  * Primary controller for longitudinal analysis of a beam
  */
+@Traceable
 public class BeamController implements Initializable {
     @FXML
     private Label axisLabelR, lengthLabel, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,

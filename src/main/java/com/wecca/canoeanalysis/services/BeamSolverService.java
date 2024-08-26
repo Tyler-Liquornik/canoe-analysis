@@ -148,12 +148,8 @@ public class BeamSolverService {
      * @return the total buoyant in kN at the given waterline guess
      */
     public static double getTotalBuoyancy(Canoe canoe, double waterLine) {
-        List<HullSection> sections = canoe.getHull().getHullSections();
-        double totalBuoyantForce = 0;
-        for (HullSection section : sections) {
-            totalBuoyantForce += getBuoyancyOnSection(waterLine, section);
-        }
-        return totalBuoyantForce;
+        return canoe.getHull().getHullSections().stream()
+                .mapToDouble(hullSection -> getBuoyancyOnSection(waterLine, hullSection)).sum();
     }
 
     /**
@@ -169,8 +165,7 @@ public class BeamSolverService {
         double waterLine = (minWaterLine + maxWaterLine) / 2.0;
         double totalBuoyancy;
 
-        // Iterate until equilibrium is reached within a reasonable tolerance
-        // Cut the step size in half each time, giving O(log(n)) time
+        // Binary search equilibrium is reached within a reasonable tolerance
         while (maxWaterLine - minWaterLine > 1e-6) {
             totalBuoyancy = getTotalBuoyancy(canoe, waterLine);
             if (totalBuoyancy < Math.abs(netForce))
@@ -226,14 +221,14 @@ public class BeamSolverService {
 
                 if (overlapEnd > overlapStart) {
                     // Create new HullSection based on overlapping portion
-                    HullSection newHullSection = new HullSection(
-                            overlappingSection.getSideProfileCurve(),
-                            overlappingSection.getTopProfileCurve(),
-                            overlapStart,
-                            overlapEnd,
-                            overlappingSection.getThickness(),
-                            overlappingSection.isFilledBulkhead()
-                    );
+                    HullSection newHullSection = HullSection.builder()
+                            .sideProfileCurve(overlappingSection.getSideProfileCurve())
+                            .topProfileCurve(overlappingSection.getTopProfileCurve())
+                            .x(overlapStart)
+                            .rx(overlapEnd)
+                            .thickness(overlappingSection.getThickness())
+                            .isFilledBulkhead(overlappingSection.isFilledBulkhead())
+                            .build();
                     newHullSections.add(newHullSection);
                 }
             }
