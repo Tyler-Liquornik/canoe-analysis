@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.load.ContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
@@ -13,12 +12,9 @@ import com.wecca.canoeanalysis.models.function.VertexFormParabola;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.experimental.SuperBuilder;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.univariate.*;
@@ -52,7 +48,7 @@ import java.util.function.Function;
  * "Width" refers to the z direction (into / out of the screen) (defined by topProfileCurve)
  * "Thickness" refers to the normal direction of a surface to provide thickness to (+/- orientation is context dependent)
  */
-@Getter @Setter @SuperBuilder @EqualsAndHashCode(callSuper = true)
+@Getter @Setter @EqualsAndHashCode(callSuper = true)
 public class HullSection extends Section
 {
     @JsonProperty("sideProfileCurve")
@@ -141,7 +137,8 @@ public class HullSection extends Section
     /**
      * Defines a function A(x) which models the cross-sectional area of the canoe as a function of length x
      * A(x) for a given x is the area of the cross-sectional area element with thickness dx
-     * At the moment (until a frontProfileCurve is defined in the model) area elements are rectangles
+     * An adjustment factor is applied to take into account the geometry of the front profile
+     * The adjustment factor adjusts for the difference in area between the front profile and its encasing rectangle
      * @return the function A(x)
      */
     @JsonIgnore

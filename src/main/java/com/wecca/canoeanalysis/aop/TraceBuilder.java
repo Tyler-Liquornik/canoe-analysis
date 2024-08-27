@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.reflect.MethodSignature;
 
 @Slf4j
 public class TraceBuilder {
@@ -23,16 +24,18 @@ public class TraceBuilder {
      */
     public Map<String, String> buildLogForAspect(JoinPoint joinPoint) {
         Map<String, String> inputMap = new HashMap<>();
-        String methodName = joinPoint.getSignature().getName();
-        inputMap.put("methodName", methodName);
+        MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
+        String methodName = methodSignature.getName();
+        String returnType = methodSignature.getReturnType().getSimpleName();
+
+        inputMap.put("methodName", String.format("%s %s", methodName, returnType));
         String className = joinPoint.getSignature().getDeclaringTypeName();
         String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
         inputMap.put("simpleClassName", simpleClassName);
         try {
             String inputs = mapper.writeValueAsString(joinPoint.getArgs());
             inputMap.put("inputs", inputs);
-        } catch (JsonProcessingException ignored) {
-        }
+        } catch (JsonProcessingException ignored) {}
         return inputMap;
     }
 
@@ -49,7 +52,7 @@ public class TraceBuilder {
         log.info(String.format("%sInvoking %s::%s %s",
                 logPrefix,
                 inputMap.get("simpleClassName"),
-                inputMap.get("methodName"),
+                inputMap.get("methodName").split(" ")[0],
                 inputs == null || inputs.equals("\"[[]]\"") || inputs.equals("\"[]\"") || inputs.equals("[]") || inputs.equals("[{}]")
                         ? ""
                         : "with inputs as " + inputs));
@@ -65,13 +68,22 @@ public class TraceBuilder {
 
         try {
             Map<String, String> inputMap = buildLogForAspect(joinPoint);
-            log.info(String.format("%sResponse from %s::%s is %s",
-                    logPrefix,
-                    inputMap.get("simpleClassName"),
-                    inputMap.get("methodName"),
-                    mapper.writeValueAsString(result)));
-        } catch (JsonProcessingException ignored) {
-        }
+            String returnType = ((MethodSignature) joinPoint.getSignature()).getReturnType().getSimpleName();
+
+            if (returnType.equals("void")) {
+                log.info(String.format("%sExiting %s::%s with no response",
+                        logPrefix,
+                        inputMap.get("simpleClassName"),
+                        inputMap.get("methodName").split(" ")[0]));
+            } else {
+                String resultString = result != null ? mapper.writeValueAsString(result) : "null";
+                log.info(String.format("%sExiting %s::%s with response %s",
+                        logPrefix,
+                        inputMap.get("simpleClassName"),
+                        inputMap.get("methodName").split(" ")[0],
+                        resultString));
+            }
+        } catch (JsonProcessingException ignored) {}
     }
 
     /**
@@ -83,7 +95,6 @@ public class TraceBuilder {
             StackTraceElement caller = stackTrace[i];
             String className = caller.getClassName();
 
-            // Skip synthetic, internal, or aspect-related methods
             if (!className.contains(TracingAspect.class.getSimpleName()) &&
                     !className.equals(this.getClass().getName()) &&
                     !className.equals(joinPoint.getSignature().getDeclaringTypeName())) {

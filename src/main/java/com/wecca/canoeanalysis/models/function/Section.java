@@ -3,16 +3,14 @@ package com.wecca.canoeanalysis.models.function;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.experimental.SuperBuilder;
 
 /**
  * Represents an interval [x, rx] where 0 <= x < rx
  * In essence, this is just a sub-interval of R^+
  */
-@Getter @SuperBuilder @EqualsAndHashCode
+@Getter @EqualsAndHashCode
 public class Section {
     @JsonProperty("x")
     protected double x;
