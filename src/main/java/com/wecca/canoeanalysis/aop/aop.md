@@ -2,8 +2,9 @@
 
 AspectJ is a special extension to java which implements the AOP (Aspect Oriented Programming) paradigm. <br/>
 AspectJ requires its own compiler, ajc to be used in tandem with the standard java compiler, javac <br/>
-With AspectJ, a powerful, customizable tracing featured built into PADDL can be enabled for an enhanced debugging developer experience <br/>
+With AspectJ, a powerful, customizable tracing feature built into PADDL can be enabled for an enhanced debugging developer experience <br/>
 The plugin for AspectJ requires IntelliJ Ultimate. It is complete opt-in and PADDL should build, compile, deploy, and run fine without it. <br/>
+For a closer look into the code, you can also check out the java code in com.wecca.canoeanalysis.aop <br/>
 
 <div style="display: flex; flex-direction: column; width: 80%; align-items: center; justify-content: center; padding: 10px 0 10px 0">
       <img src="../../../../../../../images/tracing.png" alt="tracing" /> <br/>

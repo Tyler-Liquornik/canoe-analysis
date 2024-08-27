@@ -12,9 +12,10 @@ import org.aspectj.lang.reflect.MethodSignature;
 @Slf4j
 public class TraceBuilder {
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper;
 
     public TraceBuilder() {
+        this.mapper = new ObjectMapper();
         mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
@@ -26,9 +27,7 @@ public class TraceBuilder {
         Map<String, String> inputMap = new HashMap<>();
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         String methodName = methodSignature.getName();
-        String returnType = methodSignature.getReturnType().getSimpleName();
-
-        inputMap.put("methodName", String.format("%s %s", methodName, returnType));
+        inputMap.put("methodName", methodName);
         String className = joinPoint.getSignature().getDeclaringTypeName();
         String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
         inputMap.put("simpleClassName", simpleClassName);
@@ -45,14 +44,11 @@ public class TraceBuilder {
      */
     public void beforeAdvice(JoinPoint joinPoint) {
         Map<String, String> inputMap = buildLogForAspect(joinPoint);
-
-        String logPrefix = getLogPrefix(joinPoint);
-
         String inputs = inputMap.get("inputs");
         log.info(String.format("%sInvoking %s::%s %s",
-                logPrefix,
+                getLogPrefix(joinPoint),
                 inputMap.get("simpleClassName"),
-                inputMap.get("methodName").split(" ")[0],
+                inputMap.get("methodName"),
                 inputs == null || inputs.equals("\"[[]]\"") || inputs.equals("\"[]\"") || inputs.equals("[]") || inputs.equals("[{}]")
                         ? ""
                         : "with inputs as " + inputs));
@@ -65,25 +61,31 @@ public class TraceBuilder {
      */
     public void afterAdvice(JoinPoint joinPoint, Object result) {
         String logPrefix = getLogPrefix(joinPoint);
+        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        String className = signature.getDeclaringType().getSimpleName();
+        String methodName = signature.getName();
+        String returnType = signature.getReturnType().getSimpleName();
 
+        String message = returnType.equals("void")
+                ? String.format("%sExiting %s::%s with no response", logPrefix, className, methodName)
+                : String.format("%sExiting %s::%s with response %s", logPrefix, className, methodName, serializeResult(result));
+
+        log.info(message);
+    }
+
+    /**
+     * Serialize an object in a JSON string
+     * @param o the object to serialize
+     * @return the JSON string
+     */
+    private String serializeResult(Object o) {
+        if (o == null)
+            return "null";
         try {
-            Map<String, String> inputMap = buildLogForAspect(joinPoint);
-            String returnType = ((MethodSignature) joinPoint.getSignature()).getReturnType().getSimpleName();
-
-            if (returnType.equals("void")) {
-                log.info(String.format("%sExiting %s::%s with no response",
-                        logPrefix,
-                        inputMap.get("simpleClassName"),
-                        inputMap.get("methodName").split(" ")[0]));
-            } else {
-                String resultString = result != null ? mapper.writeValueAsString(result) : "null";
-                log.info(String.format("%sExiting %s::%s with response %s",
-                        logPrefix,
-                        inputMap.get("simpleClassName"),
-                        inputMap.get("methodName").split(" ")[0],
-                        resultString));
-            }
-        } catch (JsonProcessingException ignored) {}
+            return mapper.writeValueAsString(o);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
     }
 
     /**

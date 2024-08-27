@@ -162,7 +162,7 @@ public class CalculusUtils
     public static void validateContinuity(BoundedUnivariateFunction function, Section section) {
         // Note: it's very possible this can cause false negatives and these numbers need to be tweaked in magnitude
         // It completely depends on how fast the function grows
-        double tolerance = 1e-3;
+        double tolerance = 1e-2;
         double numSamples = 10000.0;
         double step = section.getLength() / numSamples;
 

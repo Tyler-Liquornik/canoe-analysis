@@ -116,11 +116,13 @@ public class BeamSolverService {
     @TraceIgnore
     private static BoundedUnivariateFunction getSubmergedCrossSectionalAreaFunction(double waterline, HullSection section) {
         validateWaterLine(waterline);
+        double yMax = Math.abs(section.getSideProfileCurve().getMaxSignedValue(section));
+        double effectiveWaterline = Math.max(yMax + waterline, 0);
+        double adjustment = section.getCrossSectionalAreaAdjustmentFactorFunction().value(effectiveWaterline);
         return x -> {
-            double hMax = section.getSideProfileCurve().value(x);
-            double h = waterline - Math.min(hMax, waterline);
+            double y = section.getSideProfileCurve().value(x);
+            double h = waterline - Math.min(y, waterline);
             double w = 2 * section.getTopProfileCurve().value(x);
-            double adjustment = section.getCrossSectionalAreaAdjustmentFactorFunction().value(0.4 + waterline);
             return Math.abs(w * h * adjustment);
         };
     }

@@ -11,7 +11,9 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+
 import java.util.*;
+import java.util.List;
 
 public class DiagramService {
 
@@ -60,7 +62,9 @@ public class DiagramService {
      */
     private static FixedTicksNumberAxis setupXAxis(Canoe canoe) {
         TreeSet<Double> criticalPoints = canoe.getSectionEndpoints();
-        FixedTicksNumberAxis xAxis = new FixedTicksNumberAxis(new ArrayList<>(criticalPoints));
+        TreeSet<Double> roundedCriticalPoints = criticalPoints.stream()
+                .map(point -> roundXDecimalDigits(point, 3)).collect(TreeSet::new, TreeSet::add, TreeSet::addAll);
+        FixedTicksNumberAxis xAxis = new FixedTicksNumberAxis(new ArrayList<>(roundedCriticalPoints));
         xAxis.setAutoRanging(false);
         xAxis.setLabel("Distance [m]");
         xAxis.setLowerBound(0);
@@ -75,17 +79,14 @@ public class DiagramService {
         // Adding the sections of the pseudo piecewise function separately
         boolean set = false; // only need to set the name of the series once since its really one piecewise function
         List<List<Point2D>> intervals = partitionPoints(canoe, points, criticalPoints);
-        for (List<Point2D> interval : intervals)
-        {
+        for (List<Point2D> interval : intervals) {
             XYChart.Series<Number, Number> series = new XYChart.Series<>();
-            for (Point2D point : interval)
-            {
+            for (Point2D point : interval) {
                 XYChart.Data<Number, Number> data = new XYChart.Data<>(point.getX(), point.getY());
                 series.getData().add(data);
             }
 
-            if (!set)
-            {
+            if (!set) {
                 series.setName(yUnits);
                 set = true;
             }
@@ -152,8 +153,7 @@ public class DiagramService {
      * @param partitions the locations where the form of the piecewise changes
      * @return a list containing each section of the piecewise pseudo functions with unique form
      */
-    private static List<List<Point2D>> partitionPoints(Canoe canoe, List<Point2D> points, TreeSet<Double> partitions)
-    {
+    private static List<List<Point2D>> partitionPoints(Canoe canoe, List<Point2D> points, TreeSet<Double> partitions) {
         // Initializing lists
         List<List<Point2D>> partitionedIntervals = new ArrayList<>();
         List<Double> partitionsList = new ArrayList<>(partitions);
@@ -176,24 +176,27 @@ public class DiagramService {
         List<Point2D> interval = new ArrayList<>();
 
         // Put all the points into intervals
-        for (int i = 0; i < points.size(); i++)
-        {
+        for (int i = 0; i < points.size(); i++) {
+
+            if (partitionIndex == partitionsList.size())
+                break;
+
             // Get the current point
             Point2D point = points.get(i);
+            Point2D nextPoint = points.get(i + 1);
+            double partition = partitionsList.get(partitionIndex);
 
             // Keep adding points to the interval until the partition index reached
             // Empty interval means this is the first point to be included
-            if (point.getX() != partitionsList.get(partitionIndex) || interval.isEmpty())
+            if (!(point.getX() <= partition && nextPoint.getX() >= partition) || interval.isEmpty())
                 interval.add(point);
 
             // Add the interval to the list of partitioned intervals and prepare for the next interval
-            else
-            {
+            else {
                 interval.add(point); // this is the partition point, which acts as the right endpoint of the interval
 
                 // If not at the right boundary of the beam
-                if (i != points.size() - 1)
-                {
+                if (i != points.size() - 1) {
                     // If no jump discontinuity, create a duplicate point to act as the left endpoint of the next interval
                     if (point.getX() != points.get(i + 1).getX())
                         i--;
@@ -210,12 +213,12 @@ public class DiagramService {
     }
 
     /**
-     * Round a double to x digits.
+     * Round a double to x digits after the decimal point.
      * @param num the number to round.
      * @param numDigits the number of digits to round to.
      * @return the rounded double.
      */
-    public static double roundXDigits(double num, int numDigits) {
+    public static double roundXDecimalDigits(double num, int numDigits) {
         double factor = Math.pow(10, numDigits);
         return Math.round(num * factor) / factor;
     }
@@ -377,7 +380,7 @@ public class DiagramService {
             y += (x - prevX) * slope;
             // Calculate the area of the section (integral) and set the BMD value at x to this area
             double sectionArea = calculateArea(prevX, x, Math.min(prevY, y), Math.max(prevY, y));
-            points.add(new Point2D(roundXDigits(x, 3), roundXDigits(startY + sectionArea, 4)));
+            points.add(new Point2D(roundXDecimalDigits(x, 3), roundXDecimalDigits(startY + sectionArea, 4)));
             startY += sectionArea;
         }
 
@@ -467,7 +470,7 @@ public class DiagramService {
             Point2D curr = sfdPoints.get(i);
             // If the two consecutive points are on the same vertical line, create a diagonal line for the BMD
             if (curr.getY() == firstPoint.getY()) {
-                bmdPoints.add(new Point2D(roundXDigits(curr.getX(), 3), roundXDigits(currY + firstPoint.getY() * (curr.getX() - firstPoint.getX()), 4)));
+                bmdPoints.add(new Point2D(roundXDecimalDigits(curr.getX(), 3), roundXDecimalDigits(currY + firstPoint.getY() * (curr.getX() - firstPoint.getX()), 4)));
             }
             // If the two consecutive points are connected via a diagonal line, create a parabola for the BMD
             if (curr.getX() != firstPoint.getX() && curr.getY() != firstPoint.getY()) {
