@@ -104,7 +104,7 @@ public class PercentOpenAreaController implements Initializable {
 
             // Analyze particles to get the area of open spaces
             IJ.run(img, "Set Measurements...", "area redirect=None decimal=3");
-            IJ.run(img, "Analyze Particles...", "clear");
+            IJ.run(img, "Analyze Particles...", "exclude clear");
 
             // Get the ResultsTable that contains the measurements
             ResultsTable rt = Analyzer.getResultsTable();
@@ -135,5 +135,8 @@ public class PercentOpenAreaController implements Initializable {
         upButton.setOpacity(1);
         dragAndDropLabel.setText("Drag and Drop to Upload Image");
         orLabel.setText("OR");
+        openAreaTextField.setText("");
+        totalAreaTextField.setText("");
+        percentOpenAreaTextField.setText("");
     }
-} // Test commit
+}
