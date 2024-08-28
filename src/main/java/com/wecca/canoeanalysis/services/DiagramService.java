@@ -360,6 +360,7 @@ public class DiagramService {
      * @param startY the baseline y value for the parabola.
      * @return the list of generated points along the parabola.
      */
+    @Traceable
     private static List<Point2D> generateParabolicPoints(Point2D start, Point2D end, double startY)
     {
         List<Point2D> points = new ArrayList<>();
@@ -380,7 +381,7 @@ public class DiagramService {
             y += (x - prevX) * slope;
             // Calculate the area of the section (integral) and set the BMD value at x to this area
             double sectionArea = calculateArea(prevX, x, Math.min(prevY, y), Math.max(prevY, y));
-            points.add(new Point2D(roundXDecimalDigits(x, 3), roundXDecimalDigits(startY + sectionArea, 4)));
+            points.add(new Point2D(roundXDecimalDigits(x, 6), roundXDecimalDigits(startY + sectionArea, 6)));
             startY += sectionArea;
         }
 

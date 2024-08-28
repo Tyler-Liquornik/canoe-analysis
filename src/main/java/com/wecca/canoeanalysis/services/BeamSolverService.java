@@ -114,13 +114,12 @@ public class BeamSolverService {
      * @return the function A_submerged(x) in m^2
      */
     @TraceIgnore
+    //TODO: fix loading issue here
     private static BoundedUnivariateFunction getSubmergedCrossSectionalAreaFunction(double waterline, HullSection section) {
         validateWaterLine(waterline);
-        double yMax = Math.abs(section.getSideProfileCurve().getMaxSignedValue(section));
-        double effectiveWaterline = Math.max(yMax + waterline, 0);
-        double adjustment = section.getCrossSectionalAreaAdjustmentFactorFunction().value(effectiveWaterline);
         return x -> {
             double y = section.getSideProfileCurve().value(x);
+            double adjustment = section.getCrossSectionalAreaAdjustmentFactorFunction().value(Math.abs(y));
             double h = waterline - Math.min(y, waterline);
             double w = 2 * section.getTopProfileCurve().value(x);
             return Math.abs(w * h * adjustment);

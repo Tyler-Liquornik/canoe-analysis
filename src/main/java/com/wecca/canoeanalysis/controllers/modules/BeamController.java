@@ -165,7 +165,7 @@ public class BeamController implements Initializable {
             double length = InputParsingUtil.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
 
             // Only allow lengths in the specified range
-            if (length >= 0.01) {
+            if (length >= 2 && length <= 10) {
                 // Update model state to default simple rectangular prism geometry
                 canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(length));
 
@@ -190,7 +190,7 @@ public class BeamController implements Initializable {
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
             else
-                mainController.showSnackbar("Length must be at least 0.01m");
+                mainController.showSnackbar("Length must be at between 2m and 10m");
         }
         else
             mainController.showSnackbar("One or more entered values are not valid numbers");
