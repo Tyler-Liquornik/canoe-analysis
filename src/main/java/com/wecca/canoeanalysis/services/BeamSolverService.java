@@ -1,5 +1,7 @@
 package com.wecca.canoeanalysis.services;
 
+import com.wecca.canoeanalysis.aop.TraceIgnore;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
@@ -17,6 +19,7 @@ import java.util.List;
 /**
  * Utility class for solving system equations
  */
+@Traceable
 public class BeamSolverService {
     /**
      * Solve the "stand" system to find point loads at ends of canoe, assuming loads already on canoe.
@@ -110,10 +113,16 @@ public class BeamSolverService {
      * @param section the section to calculate the function for
      * @return the function A_submerged(x) in m^2
      */
+    @TraceIgnore
+    //TODO: fix loading issue here
     private static BoundedUnivariateFunction getSubmergedCrossSectionalAreaFunction(double waterline, HullSection section) {
+        validateWaterLine(waterline);
         return x -> {
-            double h = waterline - Math.min(section.getSideProfileCurve().value(x), waterline);
-            return section.getCrossSectionalAreaFunction().value(x) * h * section.getCrossSectionalAreaAdjustmentFactorFunction().value(h);
+            double y = section.getSideProfileCurve().value(x);
+            double adjustment = section.getCrossSectionalAreaAdjustmentFactorFunction().value(Math.abs(y));
+            double h = waterline - Math.min(y, waterline);
+            double w = 2 * section.getTopProfileCurve().value(x);
+            return Math.abs(w * h * adjustment);
         };
     }
 
@@ -124,6 +133,7 @@ public class BeamSolverService {
      * @return the submerged volume in m^3 at the given waterline guess
      */
     private static double getSubmergedVolume(double waterline, HullSection section) {
+        validateWaterLine(waterline);
         return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getSubmergedCrossSectionalAreaFunction(waterline, section), section.getX(), section.getRx());
     }
 
@@ -133,7 +143,9 @@ public class BeamSolverService {
      * @param section the section to calculate the buoyant force on
      * @return the buoyant force in kN
      */
+    @TraceIgnore
     private static double getBuoyancyOnSection(double waterline, HullSection section) {
+        validateWaterLine(waterline);
         return (PhysicalConstants.DENSITY_OF_WATER.getValue() * PhysicalConstants.GRAVITY.getValue() * getSubmergedVolume(waterline, section)) / 1000.0;
     }
 
@@ -144,12 +156,9 @@ public class BeamSolverService {
      * @return the total buoyant in kN at the given waterline guess
      */
     public static double getTotalBuoyancy(Canoe canoe, double waterLine) {
-        List<HullSection> sections = canoe.getHull().getHullSections();
-        double totalBuoyantForce = 0;
-        for (HullSection section : sections) {
-            totalBuoyantForce += getBuoyancyOnSection(waterLine, section);
-        }
-        return totalBuoyantForce;
+        validateWaterLine(waterLine);
+        return canoe.getHull().getHullSections().stream()
+                .mapToDouble(hullSection -> getBuoyancyOnSection(waterLine, hullSection)).sum();
     }
 
     /**
@@ -165,8 +174,7 @@ public class BeamSolverService {
         double waterLine = (minWaterLine + maxWaterLine) / 2.0;
         double totalBuoyancy;
 
-        // Iterate until equilibrium is reached within a reasonable tolerance
-        // Cut the step size in half each time, giving O(log(n)) time
+        // Binary search equilibrium is reached within a reasonable tolerance
         while (maxWaterLine - minWaterLine > 1e-6) {
             totalBuoyancy = getTotalBuoyancy(canoe, waterLine);
             if (totalBuoyancy < Math.abs(netForce))
@@ -175,6 +183,7 @@ public class BeamSolverService {
                 maxWaterLine = waterLine;
             waterLine = (minWaterLine + maxWaterLine) / 2.0;
         }
+        validateWaterLine(waterLine);
         return waterLine;
     }
 
@@ -236,6 +245,16 @@ public class BeamSolverService {
         }
 
         return new Hull(hull.getConcreteDensity(), hull.getBulkheadDensity(), newHullSections);
+    }
+
+    /**
+     * Ensure a waterline is not greater than zero (since waterline is measured as below y=0)
+     * @param waterLine to validate
+     */
+    @TraceIgnore
+    private static void validateWaterLine(double waterLine) {
+        if (waterLine > 0)
+            throw new IllegalArgumentException("Waterline must be greater than zero");
     }
 
     // TODO: Consult Design and Analysis team for details. Strategy for this has not yet been developed.

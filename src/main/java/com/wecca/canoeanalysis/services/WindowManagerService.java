@@ -2,6 +2,8 @@ package com.wecca.canoeanalysis.services;
 
 import com.jfoenix.controls.JFXDecorator;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.aop.TraceIgnore;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import javafx.fxml.FXMLLoader;

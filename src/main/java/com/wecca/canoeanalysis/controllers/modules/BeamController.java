@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis.controllers.modules;
 import com.jfoenix.controls.JFXTreeView;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
 import com.wecca.canoeanalysis.components.graphics.*;
 import com.wecca.canoeanalysis.controllers.popups.*;
@@ -31,6 +32,7 @@ import java.util.function.Consumer;
 /**
  * Primary controller for longitudinal analysis of a beam
  */
+@Traceable
 public class BeamController implements Initializable {
     @FXML
     private Label axisLabelR, lengthLabel, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,
@@ -163,7 +165,7 @@ public class BeamController implements Initializable {
             double length = InputParsingUtil.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
 
             // Only allow lengths in the specified range
-            if (length >= 0.01) {
+            if (length >= 2 && length <= 10) {
                 // Update model state to default simple rectangular prism geometry
                 canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(length));
 
@@ -188,7 +190,7 @@ public class BeamController implements Initializable {
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
             else
-                mainController.showSnackbar("Length must be at least 0.01m");
+                mainController.showSnackbar("Length must be at between 2m and 10m");
         }
         else
             mainController.showSnackbar("One or more entered values are not valid numbers");

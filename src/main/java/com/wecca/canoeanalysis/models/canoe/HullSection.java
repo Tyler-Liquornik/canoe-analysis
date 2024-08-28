@@ -15,7 +15,6 @@ import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.univariate.*;
@@ -138,7 +137,8 @@ public class HullSection extends Section
     /**
      * Defines a function A(x) which models the cross-sectional area of the canoe as a function of length x
      * A(x) for a given x is the area of the cross-sectional area element with thickness dx
-     * At the moment (until a frontProfileCurve is defined in the model) area elements are rectangles
+     * An adjustment factor is applied to take into account the geometry of the front profile
+     * The adjustment factor adjusts for the difference in area between the front profile and its encasing rectangle
      * @return the function A(x)
      */
     @JsonIgnore

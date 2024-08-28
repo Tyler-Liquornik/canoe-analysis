@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis;
 
 import com.wecca.canoeanalysis.controllers.MainController;
+import com.wecca.canoeanalysis.models.data.Settings;
 import com.wecca.canoeanalysis.services.ResourceManagerService;
 import com.wecca.canoeanalysis.services.YamlMarshallingService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
@@ -50,7 +51,9 @@ public class CanoeAnalysisApplication extends Application {
         stage.getIcons().add(icon);
 
         // Load the color from the previous session or the default orange "#F96C37" on first load
-        ColorManagerService.putColorPalette("primary", YamlMarshallingService.loadSettings().getPrimaryColor());
+        ColorManagerService.putColorPalette("primary", YamlMarshallingService
+                        .loadYamlData(Settings.class, new Settings("#F96C37"), YamlMarshallingService.SETTINGS_FILE_PATH)
+                        .getPrimaryColor());
     }
 
     public static void main(String[] args) {

@@ -64,8 +64,8 @@ import javafx.scene.paint.Color;
  */
 public class ColorTransformationService {
 
-    public static Color primary_light(Color color)
-    {
+    @SuppressWarnings("unused")
+    public static Color primary_light(Color color) {
         double lightenFactor = 0.4;
         double saturationFactor = 0.8;
 
@@ -75,8 +75,8 @@ public class ColorTransformationService {
         return ColorUtils.hslToRgb(hsl[0], hsl[1], hsl[2]);
     }
 
-    public static Color primary_desaturated(Color color)
-    {
+    @SuppressWarnings("unused")
+    public static Color primary_desaturated(Color color) {
         double lightenFactor = 0.33;
         double saturationFactor = 0.12;
 

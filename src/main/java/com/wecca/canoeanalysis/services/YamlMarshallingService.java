@@ -3,9 +3,11 @@ package com.wecca.canoeanalysis.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.controllers.modules.BeamController;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
+import com.wecca.canoeanalysis.models.data.DevConfig;
 import com.wecca.canoeanalysis.models.data.Settings;
 import com.wecca.canoeanalysis.models.load.Load;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
@@ -16,6 +18,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
+@Traceable
 public class YamlMarshallingService {
 
     @Setter
@@ -23,11 +26,19 @@ public class YamlMarshallingService {
     @Setter
     private static BeamController beamController;
     private static final ObjectMapper yamlMapper;
-    private static final String SETTINGS_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/settings.yaml", true);
+    public static final String SETTINGS_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/settings.yaml", true);
+    public static final String DEV_CONFIG_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/dev-config.yaml", true);
+    public static final boolean TRACING;
 
     static {
         yamlMapper = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
         yamlMapper.findAndRegisterModules();
+
+        try {
+            TRACING = YamlMarshallingService
+                    .loadYamlData(DevConfig.class, new DevConfig(false),
+                            YamlMarshallingService.DEV_CONFIG_FILE_PATH).isTracing();
+        } catch (IOException e) {throw new RuntimeException(e);}
     }
 
     /**
@@ -112,10 +123,10 @@ public class YamlMarshallingService {
         yamlMapper.writeValue(new File(SETTINGS_FILE_PATH), settings);
     }
 
-    public static Settings loadSettings() throws IOException {
-        File file = new File(SETTINGS_FILE_PATH);
+    public static <T> T loadYamlData(Class<T> dataClass, T defaultData, String path) throws IOException {
+        File file = new File(path);
         if (file.exists())
-            return yamlMapper.readValue(file, Settings.class);
-        return new Settings("#F96C37"); // The default orange color
+            return yamlMapper.readValue(file, dataClass);
+        return defaultData;
     }
 }
