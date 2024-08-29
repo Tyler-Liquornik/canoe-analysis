@@ -9,12 +9,16 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
+import javafx.scene.shape.Rectangle;
+
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Setter;
+import java.awt.Color;
+
+
 import ij.ImagePlus;
 import ij.IJ;
 import ij.plugin.filter.Analyzer;
@@ -25,6 +29,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 public class PercentOpenAreaController implements Initializable {
@@ -39,6 +45,7 @@ public class PercentOpenAreaController implements Initializable {
     public Button clButton;
     public Label dragAndDropLabel;
     public Label orLabel;
+    public Rectangle colorRectangle;
 
     @FXML
     private ImageView imageview;
@@ -121,6 +128,26 @@ public class PercentOpenAreaController implements Initializable {
             // Calculate the percent open area
             double percentOpenArea = (openArea / totalArea) * 100;
 
+            //Map which store an integer value representing a color, and the frequency in which it appears
+            Map<Integer, Integer> colorFrequencyMap = new HashMap<>();
+
+            //loop which will iterate over whole image and get the color of the pixel and store it in the color variable
+            for (int y = 0; y < ip.getHeight(); y++) {
+                for (int x = 0; x < ip.getWidth(); x++) {
+                int color = ip.getPixel(x, y);
+
+                // Increase the frequency count for this color
+                colorFrequencyMap.put(color, colorFrequencyMap.getOrDefault(color, 0) + 1);
+                }
+            }
+
+            //method which will get the most common color in the image
+            Color color = getMostCommonColor(colorFrequencyMap);
+
+            //following method will set the color to the most common color
+            setColor(color.getRed(),color.getGreen(),color.getBlue());
+
+
             // Set the results
             openAreaTextField.setText(String.valueOf(openArea));
             totalAreaTextField.setText(String.valueOf(totalArea));
@@ -129,11 +156,33 @@ public class PercentOpenAreaController implements Initializable {
         }
     }
 
+    public Color getMostCommonColor(Map<Integer, Integer> colorFrequencyMap) {
+        int mostProminentColor = 0;
+        int maxFrequency = 0;
+        //this loop will iterate through all the colors in the hashmap, and use their related frequencies to find the most common frequency
+        for (Map.Entry<Integer, Integer> entry : colorFrequencyMap.entrySet()) {
+            if (entry.getValue() > maxFrequency) {
+                mostProminentColor = entry.getKey();
+                maxFrequency = entry.getValue();
+            }
+        }
+        // this will convert the integer value into a Color object which can be displayed as an RGB value
+        return new Color(mostProminentColor);
+    }
+
     public void clearImage() {
         imageview.setImage(null);
         uploadIcon.setOpacity(1);
         upButton.setOpacity(1);
         dragAndDropLabel.setText("Drag and Drop to Upload Image");
         orLabel.setText("OR");
+    }
+
+    public void setColor(int red, int green, int blue) {
+        // Create a Color object from the RGB values
+        javafx.scene.paint.Color fxColor = javafx.scene.paint.Color.rgb(red, green, blue);
+
+        // Set the fill of the Rectangle to the created Color
+        colorRectangle.setFill(fxColor);
     }
 } // Test commit
