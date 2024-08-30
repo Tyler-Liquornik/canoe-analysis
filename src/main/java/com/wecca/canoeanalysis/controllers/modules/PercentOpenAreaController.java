@@ -81,8 +81,6 @@ public class PercentOpenAreaController implements Initializable {
                 dragAndDropLabel.setText("");
 
 
-
-
             } catch (FileNotFoundException ex) {
                 ex.printStackTrace();
             }
