@@ -9,7 +9,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
 import javafx.stage.FileChooser;
@@ -34,16 +33,25 @@ public class PercentOpenAreaController implements Initializable {
     public JFXTextField percentOpenAreaTextField;
     public JFXTextField openAreaTextField;
     public JFXTextField totalAreaTextField;
+    public JFXTextField PassingPOA;
     public FontAwesomeIcon uploadIcon;
     public JFXButton upButton;
     public Button clButton;
+    public Label resultTextField;
     public Label dragAndDropLabel;
     public Label orLabel;
+    public Label Pass;
+    public Label Fail;
 
     @FXML
     private ImageView imageview;
     @FXML
     private Label OpenArea, TotalArea, PercentOpenArea;
+    private File file = null;
+
+    private double openArea = 0.0;
+    private double totalArea;
+    private double percentOpenArea;
 
 
     @Override
@@ -65,7 +73,7 @@ public class PercentOpenAreaController implements Initializable {
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
         );
-        File file = fileChooser.showOpenDialog(popupStage);
+        file = fileChooser.showOpenDialog(popupStage);
         if (file != null) {
             try {
                 // Load the selected image file
@@ -80,50 +88,52 @@ public class PercentOpenAreaController implements Initializable {
                 orLabel.setText("");
                 dragAndDropLabel.setText("");
 
-
             } catch (FileNotFoundException ex) {
                 ex.printStackTrace();
             }
+        }
+    }
 
-            ImagePlus img = IJ.openImage(file.getAbsolutePath());
+    public void AnalyzeImageButton(){
 
-            // Convert to grayscale if needed
-            ImageProcessor ip = img.getProcessor();
-            if (ip.getBitDepth() != 8) {
-                IJ.run(img, "8-bit", "");
+        if (file != null){
+            double POA = AnalyzeImage(file);
+            if (PassingPOA != null){
+                try {
+                    double value = Double.parseDouble(PassingPOA.getText());
+                    if (0 < value && value < 100) {
+                        if (POA >= value) {
+                            Pass.setVisible(true);
+                            Fail.setVisible(false);
+                            openAreaTextField.setText(String.valueOf(openArea));
+                            totalAreaTextField.setText(String.valueOf(totalArea));
+                            resultTextField.setText(String.format("%.2f", percentOpenArea));
+                            openArea = 0;
+                            totalArea = 0;
+                        }
+                        else if (POA < value) {
+                            Pass.setVisible(false);
+                            Fail.setVisible(true);
+                            openAreaTextField.setText(String.valueOf(openArea));
+                            totalAreaTextField.setText(String.valueOf(totalArea));
+                            resultTextField.setText(String.format("%.2f", percentOpenArea));
+                            openArea = 0;
+                            totalArea = 0;
+                        }
+                    }
+                    else {
+                        mainController.showSnackbar("Enter a number between 0 and 100");
+                    }
+                } catch (NumberFormatException ex){
+                    mainController.showSnackbar("Enter a number");
+                }
             }
-
-            IJ.run(img, "Subtract Background...", "rolling=50");
-            IJ.run(img, "Gaussian Blur...", "sigma=2");
-
-            // Threshold the image to segment the mesh and open areas
-            IJ.setAutoThreshold(img, "Default");
-            IJ.run(img, "Convert to Mask", "");
-
-            // Analyze particles to get the area of open spaces
-            IJ.run(img, "Set Measurements...", "area redirect=None decimal=3");
-            IJ.run(img, "Analyze Particles...", "exclude clear");
-
-            // Get the ResultsTable that contains the measurements
-            ResultsTable rt = Analyzer.getResultsTable();
-
-            // Calculate the total area of the open spaces
-            double openArea = 0.0;
-            for (int i = 0; i < rt.getCounter(); i++) {
-                openArea += rt.getValue("Area", i);
+            else {
+                mainController.showSnackbar("Enter an estimated result percentage");
             }
-
-            // Get the total area of the image
-            double totalArea = img.getWidth() * img.getHeight();
-
-            // Calculate the percent open area
-            double percentOpenArea = (openArea / totalArea) * 100;
-
-            // Set the results
-            openAreaTextField.setText(String.valueOf(openArea));
-            totalAreaTextField.setText(String.valueOf(totalArea));
-            percentOpenAreaTextField.setText(String.format("%.2f%%", percentOpenArea));
-            System.out.printf("Percent Open Area: %.2f", percentOpenArea);
+        }
+        else {
+            mainController.showSnackbar("Please upload an image file");
         }
     }
 
@@ -135,6 +145,50 @@ public class PercentOpenAreaController implements Initializable {
         orLabel.setText("OR");
         openAreaTextField.setText("");
         totalAreaTextField.setText("");
-        percentOpenAreaTextField.setText("");
+        resultTextField.setText("");
+        PassingPOA.setText("");
+        Pass.setVisible(true);
+        Fail.setVisible(true);
+    }
+
+    private double AnalyzeImage(File file){
+
+        ImagePlus img = IJ.openImage(file.getAbsolutePath());
+
+        // Convert to grayscale if needed
+        ImageProcessor ip = img.getProcessor();
+        if (ip.getBitDepth() != 8) {
+            IJ.run(img, "8-bit", "");
+        }
+
+        IJ.run(img, "Subtract Background...", "rolling=50");
+        IJ.run(img, "Gaussian Blur...", "sigma=2");
+
+        // Threshold the image to segment the mesh and open areas
+        IJ.setAutoThreshold(img, "Default");
+        IJ.run(img, "Convert to Mask", "");
+
+        // Analyze particles to get the area of open spaces
+        IJ.run(img, "Set Measurements...", "area redirect=None decimal=3");
+        IJ.run(img, "Analyze Particles...", "exclude clear");
+
+        // Get the ResultsTable that contains the measurements
+        ResultsTable rt = Analyzer.getResultsTable();
+
+        // Calculate the total area of the open spaces
+        for (int i = 0; i < rt.getCounter(); i++) {
+            openArea += rt.getValue("Area", i);
+        }
+
+        // Get the total area of the image
+        totalArea = img.getWidth() * img.getHeight();
+
+        // Calculate the percent open area
+        percentOpenArea = (openArea / totalArea) * 100;
+
+        // Set the results
+        System.out.printf("Percent Open Area: %.2f", percentOpenArea);
+
+        return percentOpenArea;
     }
 }
