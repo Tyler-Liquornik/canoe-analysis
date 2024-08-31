@@ -28,58 +28,73 @@
       </AnchorPane>
       <AnchorPane layoutX="590.0" layoutY="54.0" prefHeight="394.0" prefWidth="265.0" styleClass="surface">
          <children>
-              <Label layoutY="70.0" text="Open Area: ">
+              <Label layoutX="-3.0" layoutY="81.0" text="Open Area: ">
                <padding>
                   <Insets left="15.0" top="20.0" />
                </padding>
             </Label>
-              <Label layoutY="35.0" text="Total Area:">
+              <Label layoutY="44.0" text="Total Area:">
                <padding>
                   <Insets left="15.0" top="20.0" />
                </padding>
             </Label>
-              <Label text="Percent Open Area: ">
-               <padding>
-                  <Insets left="15.0" top="20.0" />
-               </padding>
-            </Label>
-              <Button fx:id="clButton" layoutX="111.0" layoutY="222.0" mnemonicParsing="false" onAction="#clearImage" styleClass="action-object" text="Clear" />
-            <JFXTextField fx:id="percentOpenAreaTextField" layoutX="130.0" prefHeight="25.0" prefWidth="75.0">
-               <padding>
-                  <Insets top="20.0" />
-               </padding>
-            </JFXTextField>
             <JFXTextField fx:id="openAreaTextField" layoutX="130.0" layoutY="70.0" prefHeight="25.0" prefWidth="75.0">
                <padding>
                   <Insets top="20.0" />
                </padding>
             </JFXTextField>
-            <JFXTextField fx:id="totalAreaTextField" layoutX="130.0" layoutY="35.0" prefHeight="25.0" prefWidth="75.0">
+            <JFXTextField fx:id="totalAreaTextField" layoutX="130.0" layoutY="44.0" prefHeight="25.0" prefWidth="75.0">
                <padding>
                   <Insets top="20.0" />
                </padding>
             </JFXTextField>
-            <Label layoutX="210.0" layoutY="24.0" text="\%" />
-            <Label layoutY="105.0" text="Result:">
+              <Button fx:id="clButton" layoutX="111.0" layoutY="345.0" mnemonicParsing="false" onAction="#clearImage" styleClass="action-object" text="Clear" />
+            <Button layoutX="86.0" layoutY="307.0" mnemonicParsing="false" onAction="#AnalyzeImageButton" styleClass="action-object" text="Analyze Image" />
+            <Label layoutX="171.0" layoutY="208.0" text="\%" />
+            <Label layoutX="47.0" layoutY="190.0" text="Result:">
                <padding>
                   <Insets left="15.0" top="20.0" />
                </padding>
             </Label>
-            <JFXTextField fx:id="resultTextField" layoutX="130.0" layoutY="105.0" prefHeight="25.0" prefWidth="75.0">
+            <Label fx:id="resultTextField" layoutX="103.0" layoutY="190.0" prefHeight="37.0" prefWidth="61.0">
+               <padding>
+                  <Insets left="15.0" top="20.0" />
+               </padding>
+            </Label>
+            <Label fx:id="Pass" layoutX="82.0" layoutY="216.0" prefHeight="37.0" prefWidth="43.0" text="Pass" textFill="#15ff00">
+               <padding>
+                  <Insets left="15.0" top="20.0" />
+               </padding>
+               <font>
+                  <Font name="System Bold" size="12.0" />
+               </font>
+            </Label>
+            <Label fx:id="Fail" layoutX="133.0" layoutY="216.0" prefHeight="37.0" prefWidth="43.0" text="Fail" textFill="RED">
+               <padding>
+                  <Insets left="15.0" top="20.0" />
+               </padding>
+               <font>
+                  <Font name="System Bold" size="12.0" />
+               </font>
+            </Label>
+            <Label layoutY="14.0" text="Estimated Result:">
+               <padding>
+                  <Insets left="15.0" top="20.0" />
+               </padding>
+            </Label>
+            <JFXTextField fx:id="PassingPOA" layoutX="130.0" layoutY="14.0" prefHeight="25.0" prefWidth="75.0">
                <padding>
                   <Insets top="20.0" />
                </padding>
             </JFXTextField>
-            <Label layoutY="140.0" text="Color:">
+            <Label layoutX="13.0" layoutY="115.0" text="Color:">
                <padding>
                   <Insets left="15.0" top="20.0" />
                </padding>
             </Label>
-            <AnchorPane layoutX="127.0" layoutY="158.0" prefHeight="23.0" prefWidth="75.0">
-               <children>
-                  <Rectangle fx:id="colorRectangle" arcHeight="5.0" arcWidth="5.0" fill="WHITE" height="23.0" layoutX="1.0" stroke="BLACK" strokeType="INSIDE" width="74.0" />
-               </children>
-            </AnchorPane>
+            <AnchorPane layoutX="127.0" layoutY="158.0" prefHeight="23.0" prefWidth="75.0" />
+            <Label layoutX="212.0" layoutY="35.0" text="\%" />
+            <Rectangle fx:id="colorRectangle" arcHeight="5.0" arcWidth="5.0" fill="WHITE" height="23.0" layoutX="127.0" layoutY="133.0" stroke="BLACK" strokeType="INSIDE" width="74.0" />
          </children>
       </AnchorPane>
     </children>
