@@ -52,7 +52,7 @@ echo "detected modules: $detected_modules"
 
 # ------ MANUAL MODULES -----------------------------------------------------
 
-manual_modules=,jdk.localedata,jdk.unsupported,java.xml,java.scripting,jdk.zipfs,java.rmi
+manual_modules=,jdk.localedata,jdk.unsupported,java.xml,java.scripting,jdk.zipfs,java.rmi,java.naming
 echo "manual modules: $manual_modules"
 
 # ------ RUNTIME IMAGE ------------------------------------------------------

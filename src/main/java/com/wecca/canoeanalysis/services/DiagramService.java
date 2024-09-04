@@ -5,6 +5,7 @@ import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.DiagramInterval;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.load.*;
+import com.wecca.canoeanalysis.utils.CalculusUtils;
 import javafx.geometry.Point2D;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
@@ -63,7 +64,7 @@ public class DiagramService {
     private static FixedTicksNumberAxis setupXAxis(Canoe canoe) {
         TreeSet<Double> criticalPoints = canoe.getSectionEndpoints();
         TreeSet<Double> roundedCriticalPoints = criticalPoints.stream()
-                .map(point -> roundXDecimalDigits(point, 3)).collect(TreeSet::new, TreeSet::add, TreeSet::addAll);
+                .map(point -> CalculusUtils.roundXDecimalDigits(point, 3)).collect(TreeSet::new, TreeSet::add, TreeSet::addAll);
         FixedTicksNumberAxis xAxis = new FixedTicksNumberAxis(new ArrayList<>(roundedCriticalPoints));
         xAxis.setAutoRanging(false);
         xAxis.setLabel("Distance [m]");
@@ -210,17 +211,6 @@ public class DiagramService {
         }
 
         return partitionedIntervals;
-    }
-
-    /**
-     * Round a double to x digits after the decimal point.
-     * @param num the number to round.
-     * @param numDigits the number of digits to round to.
-     * @return the rounded double.
-     */
-    public static double roundXDecimalDigits(double num, int numDigits) {
-        double factor = Math.pow(10, numDigits);
-        return Math.round(num * factor) / factor;
     }
 
     /**
@@ -381,7 +371,7 @@ public class DiagramService {
             y += (x - prevX) * slope;
             // Calculate the area of the section (integral) and set the BMD value at x to this area
             double sectionArea = calculateArea(prevX, x, Math.min(prevY, y), Math.max(prevY, y));
-            points.add(new Point2D(roundXDecimalDigits(x, 6), roundXDecimalDigits(startY + sectionArea, 6)));
+            points.add(new Point2D(CalculusUtils.roundXDecimalDigits(x, 6), CalculusUtils.roundXDecimalDigits(startY + sectionArea, 6)));
             startY += sectionArea;
         }
 
@@ -471,7 +461,7 @@ public class DiagramService {
             Point2D curr = sfdPoints.get(i);
             // If the two consecutive points are on the same vertical line, create a diagonal line for the BMD
             if (curr.getY() == firstPoint.getY()) {
-                bmdPoints.add(new Point2D(roundXDecimalDigits(curr.getX(), 3), roundXDecimalDigits(currY + firstPoint.getY() * (curr.getX() - firstPoint.getX()), 4)));
+                bmdPoints.add(new Point2D(CalculusUtils.roundXDecimalDigits(curr.getX(), 3), CalculusUtils.roundXDecimalDigits(currY + firstPoint.getY() * (curr.getX() - firstPoint.getX()), 4)));
             }
             // If the two consecutive points are connected via a diagonal line, create a parabola for the BMD
             if (curr.getX() != firstPoint.getX() && curr.getY() != firstPoint.getY()) {

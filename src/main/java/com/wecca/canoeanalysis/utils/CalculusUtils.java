@@ -175,4 +175,15 @@ public class CalculusUtils
             previousValue = currentValue;
         }
     }
+
+    /**
+     * Round a double to x digits after the decimal point.
+     * @param num the number to round.
+     * @param numDigits the number of digits to round to.
+     * @return the rounded double.
+     */
+    public static double roundXDecimalDigits(double num, int numDigits) {
+        double factor = Math.pow(10, numDigits);
+        return Math.round(num * factor) / factor;
+    }
 }
