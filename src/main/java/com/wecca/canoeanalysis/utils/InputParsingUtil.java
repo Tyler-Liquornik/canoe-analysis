@@ -62,6 +62,16 @@ public class InputParsingUtil {
         }
     }
 
+    public static boolean validateTextAsPercent(String s) {
+        boolean isDouble = validateTextAsDouble(s);
+        if (!isDouble)
+            return false;
+        else {
+            double d = Double.parseDouble(s);
+            return (d > 0 && d < 100);
+        }
+    }
+
     /**
      * Check if a list of text fields all contain double values.
      * @param fields list of text fields to check.

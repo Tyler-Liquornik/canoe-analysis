@@ -1,13 +1,14 @@
 package com.wecca.canoeanalysis.controllers.modules;
 
 import com.jfoenix.controls.JFXButton;
+import com.jfoenix.controls.JFXColorPicker;
 import com.jfoenix.controls.JFXTextField;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.controllers.MainController;
+import com.wecca.canoeanalysis.utils.InputParsingUtil;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
@@ -35,205 +36,167 @@ public class PercentOpenAreaController implements Initializable {
 
     @Setter
     private static MainController mainController;
-    public JFXTextField openAreaTextField;
-    public JFXTextField totalAreaTextField;
-    public JFXTextField PassingPOA;
-    public FontAwesomeIcon uploadIcon;
-    public JFXButton upButton;
-    public Button clButton;
-    public Label resultTextField;
-    public Label dragAndDropLabel;
-    public Label orLabel;
-    public Rectangle colorRectangle;
-    public Label Pass;
-    public Label Fail;
-
+    @FXML
+    private JFXTextField passingPOATextField;
+    @FXML
+    private JFXButton uploadOrClearButton;
+    @FXML
+    private Label resultTextField, dragAndDropLabel, orLabel, passLabel, failLabel;
     @FXML
     private ImageView imageview;
     @FXML
-    private Label OpenArea, TotalArea, PercentOpenArea;
-    private File file = null;
+    private FontAwesomeIcon cloud;
+    @FXML
+    private Rectangle cloudBackground;
+    @FXML
+    private JFXColorPicker colorPicker;
 
-    private double openArea = 0.0;
-    private double totalArea;
-    private double percentOpenArea;
+    private File imageFile = null;
+    private Map<Integer, Integer> colorFrequencyMap = new HashMap<>();
 
-    @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
-        // Set the local instance of the main controller
-        setMainController(CanoeAnalysisApplication.getMainController());
-
-        mainController.resetToolBarButtons();
+    /**
+     * Either upload or clear the image depending on state
+     */
+    public void handleUploadOrClearButton() {
+        String uploadOrClearText = uploadOrClearButton.getText();
+        if (uploadOrClearText.equals("Delete Image"))
+            deleteImage();
+        else if (uploadOrClearText.equals("Browse Image"))
+            uploadImage();
     }
 
+    /**
+     * Delete an image on the screen and replace with the "browse image" state
+     */
+    public void deleteImage() {
+        cloud.setOpacity(1);
+        cloudBackground.setOpacity(1);
+        dragAndDropLabel.setText("Drag & Drop to Upload Image");
+        uploadOrClearButton.setText("Browse Image");
+        orLabel.setText("OR");
+        resultTextField.setText("");
+        passLabel.setVisible(false);
+        failLabel.setVisible(false);
+        imageFile = null;
+        imageview.setImage(null);
+        colorPicker.setValue(javafx.scene.paint.Color.web("#FFFFFF"));
+        resultTextField.setText("???");
+        colorPicker.setDisable(true);
+        colorPicker.setOpacity(1);
+    }
 
-    public void uploadButton() {
-
+    /**
+     * Upload an image to view on the screen
+     */
+    public void uploadImage() {
+        // Upload image file
         Stage popupStage = new Stage();
-
-        // Create a FileChooser to select image files
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Open Image File");
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
-        );
-        file = fileChooser.showOpenDialog(popupStage);
-        if (file != null) {
-            try {
-                // Load the selected image file
-                Image image = new Image(new FileInputStream(file));
+        fileChooser.setTitle("Upload Image");
+        fileChooser.getExtensionFilters().addAll(new FileChooser
+                .ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg"));
+        imageFile = fileChooser.showOpenDialog(popupStage);
+        try {
+            // Update state
+            Image image = new Image(new FileInputStream(imageFile));
+            imageview.setImage(image);
+            popupStage.close();
+            uploadOrClearButton.setText("Delete Image");
+            orLabel.setText("");
+            dragAndDropLabel.setText("");
+            cloud.setOpacity(0);
+            cloudBackground.setOpacity(0);
+            colorPicker.setDisable(false);
 
-                // Display the image in the main ImageView
-                imageview.setImage(image);
-                // Close the popup window
-                popupStage.close();
-                uploadIcon.setOpacity(0);
-                upButton.setOpacity(0);
-                orLabel.setText("");
-                dragAndDropLabel.setText("");
-
-            } catch (FileNotFoundException ex) {
-                ex.printStackTrace();
+            // Convert to grayscale if needed
+            ImagePlus imagePlus = IJ.openImage(imageFile.getAbsolutePath());
+            ImageProcessor imageProcessor = imagePlus.getProcessor();
+            if (imageProcessor.getBitDepth() != 8) {
+                IJ.run(imagePlus, "8-bit", "");
             }
-        }
-    }
 
-    public void AnalyzeImageButton(){
-
-        if (file != null){
-            if (PassingPOA != null){
-                try {
-                    double value = Double.parseDouble(PassingPOA.getText());
-                    if (0 < value && value < 100) {
-                        double POA = AnalyzeImage(file);
-
-                        openAreaTextField.setText(String.valueOf(openArea));
-                        totalAreaTextField.setText(String.valueOf(totalArea));
-                        resultTextField.setText(String.format("%.2f", percentOpenArea));
-                        openArea = 0;
-                        totalArea = 0;
-
-                        if (POA >= value) {
-                            Pass.setVisible(true);
-                            Fail.setVisible(false);
-                        }
-                        else if (POA < value) {
-                            Pass.setVisible(false);
-                            Fail.setVisible(true);
-                        }
-                    }
-                    else {
-                        mainController.showSnackbar("Enter a number between 0 and 100");
-                    }
-                } catch (NumberFormatException ex){
-                    mainController.showSnackbar("Enter a number");
+            // Loop to iterate over the image and track color frequency
+            for (int y = 0; y < imageProcessor.getHeight(); y++) {
+                for (int x = 0; x < imageProcessor.getWidth(); x++) {
+                    int color = imageProcessor.getPixel(x, y);
+                    // Increase the frequency count for this color
+                    colorFrequencyMap.put(color, colorFrequencyMap.getOrDefault(color, 0) + 1);
                 }
             }
-            else {
-                mainController.showSnackbar("Enter an estimated result percentage");
-            }
-        }
-        else {
-            mainController.showSnackbar("Please upload an image file");
-        }
+
+            // Set the color picker to the most prominent color
+            Color color = getMostProminentColor(colorFrequencyMap);
+            colorPicker.setValue(javafx.scene.paint.Color.rgb(color.getRed(), color.getGreen(), color.getBlue()));
+
+        } catch (FileNotFoundException ignored) {}
     }
 
-    public void clearImage() {
-        imageview.setImage(null);
-        uploadIcon.setOpacity(1);
-        upButton.setOpacity(1);
-        dragAndDropLabel.setText("Drag and Drop to Upload Image");
-        orLabel.setText("OR");
-        openAreaTextField.setText("");
-        totalAreaTextField.setText("");
-        resultTextField.setText("");
-        PassingPOA.setText("");
-        Pass.setVisible(true);
-        Fail.setVisible(true);
+    /**
+     * Handler for the analyze image button to validate inputs and execute analyze
+     */
+    public void handleAnalyzeImageButton() {
+        if (imageFile != null) {
+            boolean isPassingPoaValid = InputParsingUtil.validateTextAsPercent(passingPOATextField.getText());
+            if (isPassingPoaValid) {
+                double passingPoa = Double.parseDouble(passingPOATextField.getText()) / 100;
+                double poa = getPoaFromImage(imageFile);
+                resultTextField.setText(String.format("%.2f", poa));
+                boolean pass = poa >= passingPoa;
+                passLabel.setVisible(pass);
+                failLabel.setVisible(!pass);
+            } else
+                mainController.showSnackbar("Please enter a valid passing POA percentage");
+        } else
+            mainController.showSnackbar("Cannot analyze before uploading image");
     }
 
-    private double AnalyzeImage(File file){
-
+    /**
+     * Analyze an image file for percent open area
+     * @param file the image file to analyze
+     * @return the percent open area
+     */
+    private double getPoaFromImage(File file) {
+        // ImageJ setup
         ImagePlus img = IJ.openImage(file.getAbsolutePath());
-
-        // Convert to grayscale if needed
         ImageProcessor ip = img.getProcessor();
-        if (ip.getBitDepth() != 8) {
+        if (ip.getBitDepth() != 8)
             IJ.run(img, "8-bit", "");
-        }
-
         IJ.run(img, "Subtract Background...", "rolling=50");
         IJ.run(img, "Gaussian Blur...", "sigma=2");
-
-        // Threshold the image to segment the mesh and open areas
         IJ.setAutoThreshold(img, "Default");
         IJ.run(img, "Convert to Mask", "");
-
-        // Analyze particles to get the area of open spaces
         IJ.run(img, "Set Measurements...", "area redirect=None decimal=3");
         IJ.run(img, "Analyze Particles...", "exclude clear");
 
-        // Get the ResultsTable that contains the measurements
+        // Calculate the percent open area
         ResultsTable rt = Analyzer.getResultsTable();
-
-        // Calculate the total area of the open spaces
+        double openArea = 0;
         for (int i = 0; i < rt.getCounter(); i++) {
             openArea += rt.getValue("Area", i);
         }
-
-        // Get the total area of the image
-        totalArea = img.getWidth() * img.getHeight();
-
-        // Calculate the percent open area
-        percentOpenArea = (openArea / totalArea) * 100;
-
-        // Set the results
-        System.out.printf("Percent Open Area: %.2f", percentOpenArea);
-
-        //Map which store an integer value representing a color, and the frequency in which it appears
-        Map<Integer, Integer> colorFrequencyMap = new HashMap<>();
-
-        //loop which will iterate over whole image and get the color of the pixel and store it in the color variable
-        for (int y = 0; y < ip.getHeight(); y++) {
-            for (int x = 0; x < ip.getWidth(); x++) {
-                int color = ip.getPixel(x, y);
-
-                // Increase the frequency count for this color
-                colorFrequencyMap.put(color, colorFrequencyMap.getOrDefault(color, 0) + 1);
-                }
-            }
-
-        //method which will get the most common color in the image
-        Color color = getMostCommonColor(colorFrequencyMap);
-
-        //following method will set the color to the most common color
-        setColor(color.getRed(),color.getGreen(),color.getBlue());
-
-        // Set the results
-        System.out.printf("Percent Open Area: %.2f", percentOpenArea);
-
-        return percentOpenArea;
+        double totalArea = img.getWidth() * img.getHeight();
+        return (openArea / totalArea) * 100;
     }
 
-    public Color getMostCommonColor(Map<Integer, Integer> colorFrequencyMap) {
-        int mostProminentColor = 0;
-        int maxFrequency = 0;
-        //this loop will iterate through all the colors in the hashmap, and use their related frequencies to find the most common frequency
-        for (Map.Entry<Integer, Integer> entry : colorFrequencyMap.entrySet()) {
-            if (entry.getValue() > maxFrequency) {
-                mostProminentColor = entry.getKey();
-                maxFrequency = entry.getValue();
-            }
-        }
-        // this will convert the integer value into a Color object which can be displayed as an RGB value
-        return new Color(mostProminentColor);
+    /**
+     * Get the most prominent color in a map
+     * @param colorFrequencyMap the map to check
+     * @return the most prominent color
+     */
+    public Color getMostProminentColor(Map<Integer, Integer> colorFrequencyMap) {
+        return colorFrequencyMap.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(entry -> new Color(entry.getKey()))
+                .orElseThrow(() -> new RuntimeException("Cannot have empty color frequency map"));
     }
 
-    public void setColor(int red, int green, int blue) {
-        // Create a Color object from the RGB values
-        javafx.scene.paint.Color fxColor = javafx.scene.paint.Color.rgb(red, green, blue);
-
-        // Set the fill of the Rectangle to the created Color
-        colorRectangle.setFill(fxColor);
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        setMainController(CanoeAnalysisApplication.getMainController());
+        mainController.resetToolBarButtons();
+        passingPOATextField.setText("40.00");
+        colorPicker.setValue(javafx.scene.paint.Color.web("#FFFFFF"));
+        colorPicker.setDisable(true);
+        colorPicker.setOpacity(1);
     }
 }
