@@ -87,7 +87,8 @@ APP_NAME=PADDL
 --java-options --add-opens=java.base/java.lang.reflect=ALL-UNNAMED \
 --java-options --add-exports=javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix \
 --java-options --add-exports=javafx.graphics/com.sun.javafx.stage=com.jfoenix \
---java-options --add-exports=javafx.base/com.sun.javafx.event=com.jfoenix\
+--java-options --add-exports=javafx.base/com.sun.javafx.event=com.jfoenix \
+--java-options --add-exports=javafx.base/com.sun.javafx.binding=com.jfoenix \
 --runtime-image target/java-runtime \
 --icon src/main/resources/com/wecca/canoeanalysis/images/canoe.icns \
 --app-version "$APP_VERSION" \

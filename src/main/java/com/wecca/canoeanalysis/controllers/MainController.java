@@ -141,7 +141,7 @@ public class MainController implements Initializable {
         initializeSnackbar(); // Reinitialization is required to fix visual bugs
         JFXSnackbarLayout snackbarLayout = new JFXSnackbarLayout(message, "DISMISS", event -> closeSnackBar(snackbar));
         snackbarLayout.setPrefHeight(50);
-        JFXSnackbar.SnackbarEvent snackbarEvent = new JFXSnackbar.SnackbarEvent(snackbarLayout, Duration.seconds(5));
+        JFXSnackbar.SnackbarEvent snackbarEvent = new JFXSnackbar.SnackbarEvent(snackbarLayout, Duration.seconds(5), null);
         snackbar.fireEvent(snackbarEvent);
     }
 

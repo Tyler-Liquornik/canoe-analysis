@@ -62,13 +62,18 @@ public class InputParsingUtil {
         }
     }
 
+    /**
+     * Checks if a string is a valid percentage between 0 and 100
+     * @param s the string to check
+     * @return tru if the string can be parsed, false otherwise
+     */
     public static boolean validateTextAsPercent(String s) {
         boolean isDouble = validateTextAsDouble(s);
         if (!isDouble)
             return false;
         else {
             double d = Double.parseDouble(s);
-            return (d > 0 && d < 100);
+            return (d >= 0 && d <= 100);
         }
     }
 

@@ -9,6 +9,7 @@ import com.wecca.canoeanalysis.utils.InputParsingUtil;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
@@ -49,10 +50,10 @@ public class PercentOpenAreaController implements Initializable {
     @FXML
     private Rectangle cloudBackground;
     @FXML
-    private JFXColorPicker colorPicker;
+    private ColorPicker colorPicker;
 
     private File imageFile = null;
-    private Map<Integer, Integer> colorFrequencyMap = new HashMap<>();
+    private final Map<Integer, Integer> colorFrequencyMap = new HashMap<>();
 
     /**
      * Either upload or clear the image depending on state
@@ -83,6 +84,7 @@ public class PercentOpenAreaController implements Initializable {
         resultTextField.setText("???");
         colorPicker.setDisable(true);
         colorPicker.setOpacity(1);
+        colorFrequencyMap.clear();
     }
 
     /**
@@ -96,6 +98,11 @@ public class PercentOpenAreaController implements Initializable {
         fileChooser.getExtensionFilters().addAll(new FileChooser
                 .ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg"));
         imageFile = fileChooser.showOpenDialog(popupStage);
+
+        // Check if the user canceled the file chooser
+        if (imageFile == null)
+            return;
+
         try {
             // Update state
             Image image = new Image(new FileInputStream(imageFile));
@@ -125,10 +132,12 @@ public class PercentOpenAreaController implements Initializable {
             }
 
             // Set the color picker to the most prominent color
-            Color color = getMostProminentColor(colorFrequencyMap);
+            Color color = getSecondMostProminentColor(colorFrequencyMap);
             colorPicker.setValue(javafx.scene.paint.Color.rgb(color.getRed(), color.getGreen(), color.getBlue()));
 
-        } catch (FileNotFoundException ignored) {}
+        } catch (FileNotFoundException ignored) {
+            System.out.println("test");
+        }
     }
 
     /**
@@ -179,15 +188,33 @@ public class PercentOpenAreaController implements Initializable {
     }
 
     /**
-     * Get the most prominent color in a map
+     * Get the second most prominent color in a map
+     * It is assumed POA > 50% so the second most prominent color is most likely to be the mesh color
      * @param colorFrequencyMap the map to check
      * @return the most prominent color
      */
-    public Color getMostProminentColor(Map<Integer, Integer> colorFrequencyMap) {
-        return colorFrequencyMap.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(entry -> new Color(entry.getKey()))
-                .orElseThrow(() -> new RuntimeException("Cannot have empty color frequency map"));
+    public Color getSecondMostProminentColor(Map<Integer, Integer> colorFrequencyMap) {
+        int mostColor = -1, secondMostColor = -1;
+        int maxFreq = 0, secondMaxFreq = 0;
+
+        for (Map.Entry<Integer, Integer> entry : colorFrequencyMap.entrySet()) {
+            int color = entry.getKey(), freq = entry.getValue();
+
+            if (freq > maxFreq) {
+                secondMostColor = mostColor;
+                secondMaxFreq = maxFreq;
+                mostColor = color;
+                maxFreq = freq;
+            } else if (freq > secondMaxFreq) {
+                secondMostColor = color;
+                secondMaxFreq = freq;
+            }
+        }
+
+        if (secondMostColor == -1)
+            throw new RuntimeException("Cannot determine second most prominent color.");
+
+        return new Color(secondMostColor);
     }
 
     @Override
