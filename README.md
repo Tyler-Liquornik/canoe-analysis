@@ -86,10 +86,11 @@ The engineer working on the canoe can also download the canoe model as a YAML fi
     --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
     --add-opens=java.base/java.lang=ALL-UNNAMED
     --add-opens=java.base/java.lang.reflect=com.jfoenix  
-    --add-exports javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix
+    --add-exports=javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix
     --add-exports=javafx.graphics/com.sun.javafx.stage=com.jfoenix
     --add-exports=javafx.base/com.sun.javafx.event=com.jfoenix
     --add-exports=javafx.base/com.sun.javafx.binding=com.jfoenix
+    --add-exports=javafx.controls/com.sun.javafx.scene.control=com.jfoenix
     ```
 
     <div style="display: flex; flex-direction: column; width: 80%; align-items: center; justify-content: center; padding: 10px 0 10px 0">

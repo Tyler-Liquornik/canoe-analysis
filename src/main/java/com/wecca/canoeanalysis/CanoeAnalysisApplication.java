@@ -2,6 +2,7 @@ package com.wecca.canoeanalysis;
 
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.data.Settings;
+import com.wecca.canoeanalysis.services.LoggerService;
 import com.wecca.canoeanalysis.services.ResourceManagerService;
 import com.wecca.canoeanalysis.services.YamlMarshallingService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
@@ -14,7 +15,6 @@ import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 
@@ -25,6 +25,10 @@ public class CanoeAnalysisApplication extends Application {
 
     @Override
     public void start(Stage stage) throws IOException, URISyntaxException {
+
+        // Logging setup
+        LoggerService.redirectSystemStreamsToLogger();
+        LoggerService.createDebugFileParentFolder();
 
         // Stage setup
         FXMLLoader mainFxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/main-view.fxml"));
