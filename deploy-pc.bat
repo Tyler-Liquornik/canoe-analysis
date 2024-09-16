@@ -60,7 +60,7 @@ del temp.txt
 
 rem ------ MANUAL MODULES -----------------------------------------------------
 
-set manual_modules=,jdk.localedata,jdk.unsupported,java.xml,java.scripting,jdk.zipfs,java.rmi,java.naming
+set manual_modules=,jdk.localedata,jdk.unsupported,java.xml,java.scripting,jdk.zipfs,java.rmi,java.naming,java.desktop
 echo manual modules: %manual_modules%
 
 rem ------ RUNTIME IMAGE ------------------------------------------------------
