@@ -64,4 +64,18 @@ public class ColorUtils {
                 (int) (color.getGreen() * 255),
                 (int) (color.getBlue() * 255));
     }
+
+    /**
+     * Converts an integer representation of a color (ARGB/RGB) to a JavaFX Color object.
+     * @param colorInt the integer representing the color in RGB format
+     * @return the corresponding Color object
+     */
+    public static Color colorFromInteger(int colorInt) {
+        int red = (colorInt >> 16) & 0xFF;
+        int green = (colorInt >> 8) & 0xFF;
+        int blue = colorInt & 0xFF;
+
+        // Normalize to [0, 1] as JavaFX Color uses double values for RGB
+        return Color.rgb(red, green, blue);
+    }
 }

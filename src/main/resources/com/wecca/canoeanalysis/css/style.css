@@ -36,6 +36,11 @@
     -fx-font-size: 16px;
 }
 
+.subtitle {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
 .about-body {
     -fx-font-size: 12px;
 }
@@ -111,6 +116,7 @@
 .jfx-text-field > .input-line,
 .jfx-decorator > .jfx-decorator-buttons-container {
     -fx-background-color: -fx-primary;
+    -fx-fill: -fx-primary;
     -fx-stroke: -fx-primary;
 }
 
@@ -233,4 +239,12 @@ jfx-toggle-button,
 
 .jfx-toggle-button:selected .jfx-rippler {
     -jfx-rippler-fill: -fx-primary-light;
+}
+
+.pass {
+    -fx-text-fill: #A0B55F;
+}
+
+.fail {
+    -fx-text-fill: #F03030;
 }
