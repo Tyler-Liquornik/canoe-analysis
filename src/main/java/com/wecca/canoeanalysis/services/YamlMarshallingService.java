@@ -110,7 +110,7 @@ public class YamlMarshallingService {
                     adjustedCanoe.addLoad(load);
                 boolean disableHullBuilder = !adjustedCanoe.getHull().equals(
                         SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
-                mainController.disableModuleToolBarButton(disableHullBuilder, 0);
+                mainController.disableModuleToolBarButton(disableHullBuilder, 2);
                 beamController.setCanoe(adjustedCanoe);
                 mainController.showSnackbar("Successfully uploaded " + fileToUpload.getName());
             } catch (IOException ex) {

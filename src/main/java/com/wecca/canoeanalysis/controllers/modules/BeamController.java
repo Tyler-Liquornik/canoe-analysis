@@ -150,7 +150,7 @@ public class BeamController implements Initializable {
         deleteLoadButton.setDisable(true);
         clearLoadsButton.setDisable(true);
         disableLoadingControls(true);
-        mainController.disableModuleToolBarButton(true, 0);
+        mainController.disableModuleToolBarButton(true, 2);
         setCanoeLengthButton.setText("Set Length");
         setCanoeLengthButton.setOnAction(e -> setLength());
     }
@@ -427,7 +427,7 @@ public class BeamController implements Initializable {
         else if (floatingRadioButton.isSelected()) {
             if (canoe.getHull().getWeight() == 0) {
                 mainController.showSnackbar("Cannot solve for buoyancy without a hull. Please build a hull first");
-                mainController.flashModuleToolBarButton(0, 8000); // as a hint for the user
+                mainController.flashModuleToolBarButton(2, 8000); // as a hint for the user
                 return;
             }
             double maximumPossibleBuoyancyForce = BeamSolverService.getTotalBuoyancy(canoe, 0);
@@ -453,7 +453,7 @@ public class BeamController implements Initializable {
         checkAndSetEmptyLoadTreeSettings();
         deleteLoadButton.setDisable(true);
         clearLoadsButton.setDisable(true);
-        mainController.disableModuleToolBarButton(true, 0);
+        mainController.disableModuleToolBarButton(true, 2);
         updateViewOrder();
     }
 
@@ -524,7 +524,7 @@ public class BeamController implements Initializable {
         LoadTreeManagerService.buildLoadTreeView(canoe);
         disableLoadingControls(false);
         boolean isHullPresent = canoe.getHull().getWeight() != 0;
-        mainController.disableModuleToolBarButton(isHullPresent, 0);
+        mainController.disableModuleToolBarButton(isHullPresent, 2);
         checkAndSetEmptyLoadTreeSettings();
     }
 
@@ -547,13 +547,13 @@ public class BeamController implements Initializable {
         for (Control control : controls) {
             control.setDisable(b);
         }
-        mainController.disableAllModuleToolbarButton(b);
+        mainController.disableAllModuleToolbarButtons(b);
 
         // Only enable the hull builder if a custom hull hasn't yet been set
         if (canoe.getHull() != null) {
             boolean disableHullBuilder = !canoe.getHull().equals(
                     SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
-            mainController.disableModuleToolBarButton(disableHullBuilder, 0);
+            mainController.disableModuleToolBarButton(disableHullBuilder, 2);
         }
     }
 
@@ -589,7 +589,7 @@ public class BeamController implements Initializable {
                     selectedItem.getLoad().getType() == LoadType.HULL) {
                 canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
                 resetCanoeGraphic();
-                mainController.disableModuleToolBarButton(false, 0);
+                mainController.disableModuleToolBarButton(false, 2);
             }
             else {
                 // If the hull is present in the treeView it will disrupt the order sync between canoe.loads and loadContainer.children, we need to adjust for this
@@ -726,7 +726,7 @@ public class BeamController implements Initializable {
     /**
      * Open the hull builder submodule (just a utility window for now until fully developed)
      */
-    public void openHullBuilder() {
+    public void openHullBuilderPopup() {
         HullBuilderPopupController.setMainController(mainController);
         HullBuilderPopupController.setBeamController(this);
         WindowManagerService.openUtilityWindow("Hull Builder Beta", "view/hull-builder-popup-view.fxml", 350, 230);
@@ -736,11 +736,11 @@ public class BeamController implements Initializable {
      * Clears the toolbar of buttons from other modules and adds ones from this module
      * Currently, this provides buttons to download and upload the Canoe object as JSON
      */
-    public void addModuleToolBarButtons() {
+    public void initModuleToolBarButtons() {
         LinkedHashMap<IconGlyphType, Consumer<ActionEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
-        iconGlyphToFunctionMap.put(IconGlyphType.WRENCH, e -> openHullBuilder());
         iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
+        iconGlyphToFunctionMap.put(IconGlyphType.WRENCH, e -> openHullBuilderPopup());
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
     }
@@ -754,7 +754,7 @@ public class BeamController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         // Module init
         setMainController(CanoeAnalysisApplication.getMainController());
-        addModuleToolBarButtons();
+        initModuleToolBarButtons();
         canoe = new Canoe();
 
         // Load tree init

@@ -41,7 +41,7 @@ public class HullBuilderPopupController implements Initializable {
         mainController.showSnackbar("Successfully set hull to Shark Bait");
         beamController.checkAndSetEmptyLoadTreeSettings();
         LoadTreeManagerService.buildLoadTreeView(canoe);
-        mainController.disableModuleToolBarButton(true, 0);
+        mainController.disableModuleToolBarButton(true, 2);
         closeWindow(e);
     }
 

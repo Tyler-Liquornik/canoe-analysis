@@ -272,15 +272,14 @@ public class MainController implements Initializable {
      * Disable all module toolbar buttons (doesn't include the hamburger, minus, or X buttons)
      * @param b choose whether to enable or disable
      */
-    public void disableAllModuleToolbarButton(boolean b) {
+    public void disableAllModuleToolbarButtons(boolean b) {
         for (int i = 0; i < moduleToolBarButtons.size(); i++) {
             disableModuleToolBarButton(b, i);
         }
     }
 
     public void resetToolBarButtons() {
-        if (!moduleToolBarButtons.isEmpty())
-        {
+        if (!moduleToolBarButtons.isEmpty()) {
             // Extra index skips the hamburger which is always first
             toolBarPane.getChildren().remove(1, 1 + moduleToolBarButtons.size());
             moduleToolBarButtons.clear();

@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.controllers.util;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.fxml.FXML;
@@ -13,13 +14,14 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+@Traceable
 public class SideDrawerController implements Initializable {
 
     @FXML
     private FontAwesomeIcon hullBuilderIcon, beamIcon, punchingShearIcon, criticalSectionsIcon, failureEnvelopeIcon, poaIcon;
 
     public static Module selectedModule;
-    public FontAwesomeIcon selectedIcon;
+    private static FontAwesomeIcon selectedIcon;
 
     @Getter
     public enum Module {
@@ -74,7 +76,7 @@ public class SideDrawerController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        this.selectedModule = Module.HULL_BUILDER;
-        this.selectedIcon = hullBuilderIcon;
+        selectedModule = Module.HULL_BUILDER;
+        selectedIcon = hullBuilderIcon;
     }
 }
