@@ -727,9 +727,9 @@ public class BeamController implements Initializable {
      * Open the hull builder submodule (just a utility window for now until fully developed)
      */
     public void openHullBuilder() {
-        HullBuilderController.setMainController(mainController);
-        HullBuilderController.setBeamController(this);
-        WindowManagerService.openUtilityWindow("Hull Builder Beta", "view/hull-builder-view.fxml", 350, 230);
+        HullBuilderPopupController.setMainController(mainController);
+        HullBuilderPopupController.setBeamController(this);
+        WindowManagerService.openUtilityWindow("Hull Builder Beta", "view/hull-builder-popup-view.fxml", 350, 230);
     }
 
     /**
