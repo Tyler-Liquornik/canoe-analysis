@@ -8,6 +8,8 @@ import lombok.Getter;
  */
 @Getter @AllArgsConstructor
 public enum IconGlyphType {
+    PLUS("PLUS"),
+    MINUS("MINUS"),
     WRENCH("WRENCH"),
     SCISSORS("CUT"),
     CHAIN("CHAIN"),

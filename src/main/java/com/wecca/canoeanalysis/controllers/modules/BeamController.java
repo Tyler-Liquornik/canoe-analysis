@@ -688,7 +688,7 @@ public class BeamController implements Initializable {
 
             Hull defaultHull = SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength());
             boolean isBeam = canoe.getHull().equals(defaultHull);
-            mainController.disableModuleToolBarButton(!isBeam, 0);
+            mainController.disableModuleToolBarButton(!isBeam, 2);
 
             // Update UI to new canoe
             renderGraphics();
