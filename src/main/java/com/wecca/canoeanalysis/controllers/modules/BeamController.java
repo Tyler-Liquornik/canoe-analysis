@@ -686,9 +686,16 @@ public class BeamController implements Initializable {
             // Update the canoe model
             this.canoe = canoe;
 
+            Hull defaultHull = SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength());
+            boolean isBeam = canoe.getHull().equals(defaultHull);
+            mainController.disableModuleToolBarButton(!isBeam, 0);
+
             // Update UI to new canoe
             renderGraphics();
-            setCanoeGraphicFromCanoe(canoe);
+            if (isBeam)
+                resetCanoeGraphic();
+            else
+                setCanoeGraphicFromCanoe(canoe);
             LoadTreeManagerService.buildLoadTreeView(this.canoe);
             axisLabelR.setText(String.format("%.2f m", this.canoe.getHull().getLength()));
             checkAndSetEmptyLoadTreeSettings();
