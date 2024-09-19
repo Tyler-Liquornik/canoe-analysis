@@ -154,6 +154,7 @@ public class DiagramService {
      * @param partitions the locations where the form of the piecewise changes
      * @return a list containing each section of the piecewise pseudo functions with unique form
      */
+    @Traceable
     private static List<List<Point2D>> partitionPoints(Canoe canoe, List<Point2D> points, TreeSet<Double> partitions) {
         // Initializing lists
         List<List<Point2D>> partitionedIntervals = new ArrayList<>();
@@ -163,10 +164,6 @@ public class DiagramService {
         // By "doubled up" I mean two points at the same x coordinate
         if (points.getFirst().getX() == 0 && points.get(1).getX() == 0)
             points.removeFirst();
-
-        // Same idea for last two points if they double up
-        if (points.getLast().getX() == canoe.getHull().getLength() && points.get(points.size() - 2).getX() == canoe.getHull().getLength())
-            points.removeLast();
 
         // Remove zero from the partition list (always first as the TreeSet is sorted ascending)
         if (partitionsList.getFirst() == 0)
@@ -184,12 +181,12 @@ public class DiagramService {
 
             // Get the current point
             Point2D point = points.get(i);
-            Point2D nextPoint = points.get(i + 1);
+            Point2D nextPoint = i + 1 < points.size() ? points.get(i + 1) : null;
             double partition = partitionsList.get(partitionIndex);
 
             // Keep adding points to the interval until the partition index reached
             // Empty interval means this is the first point to be included
-            if (!(point.getX() <= partition && nextPoint.getX() >= partition) || interval.isEmpty())
+            if (!(point.getX() >= partition && nextPoint != null && nextPoint.getX() >= partition) || interval.isEmpty())
                 interval.add(point);
 
             // Add the interval to the list of partitioned intervals and prepare for the next interval

@@ -84,7 +84,7 @@ public class HullSection extends Section
      * Instead I have built a polynomial regression fit for it which is faster to evaluate
      * The 7th degree polynomial has R^2 = 0.9967 for the fully accurate function and was solved on Desmos
      */
-    @JsonIgnore
+    @JsonIgnore @EqualsAndHashCode.Exclude
     private final BoundedUnivariateFunction crossSectionalAreaAdjustmentFactorFunction = h -> {
         double[] coefficients = new double[] {0, 17.771, -210.367, 1409.91, -5420.6, 11769.4, -13242.7, 5880.62};
         for (int i = 0; i < coefficients.length; i++) {
