@@ -41,9 +41,11 @@ public class ControlUtils {
         comboBox.getSelectionModel().select(selectedIndex);
     }
 
-    public static Button getIconButton(IconGlyphType iconGlyphName, Consumer<ActionEvent> onClick, double iconSize) {
+    public static Button getIconButton(IconGlyphType iconGlyphName, Consumer<ActionEvent> onClick, double iconSize, boolean transparentOnHover) {
         Button button = new Button();
         button.getStyleClass().add("transparent-button");
+        if (transparentOnHover)
+            button.getStyleClass().add("transparent-button-no-hover");
         button.setOnAction(onClick::accept);
         FontAwesomeIcon icon = new FontAwesomeIcon();
         icon.setFill(ColorPaletteService.getColor("white"));

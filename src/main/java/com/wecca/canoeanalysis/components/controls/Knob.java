@@ -44,7 +44,8 @@ public class Knob extends Slider {
         // Skin makeup
         private Arc baseArc;
         private Arc valueArc;
-        private Circle circle;
+        private Circle knobBaseCircle;
+        private Circle knobHandleCircle;
         private Button plusButton;
         private Button minusButton;
         private Label valueLabel;
@@ -52,10 +53,15 @@ public class Knob extends Slider {
         // Sizing and layout constants
         private final double baseArcDegreesLength = 240;
         private final double baseArcStartDegrees = 210;
-        private final double radius = 50;
-        private final double arcRadius = radius * 1.2;
-        private final double iconSize = radius / 5.0;
-        private final double knobBorderWidth = radius / 20.0;
+        private final double knobBaseSizeRadius = 50;
+        private final double knobCenterLayoutOffset = 60;
+
+        // Derived sizing and layout constants
+        private final double knobHandleSizeRadius = knobBaseSizeRadius / 10.0;
+        private final double knobHandleArcRadius = knobBaseSizeRadius * 0.65;
+        private final double arcRadius = knobBaseSizeRadius * 1.2;
+        private final double iconSize = knobBaseSizeRadius / 5.0;
+        private final double knobBorderWidth = knobBaseSizeRadius / 20.0;
         private final double arcWidth = knobBorderWidth * 0.75;
 
         public KnobSkin() {
@@ -81,22 +87,27 @@ public class Knob extends Slider {
             valueArc.setLength(getValueArcLength());
             valueArc.setFill(Color.TRANSPARENT);
 
-            // Create the knob itself
-            circle = new Circle(radius, ColorPaletteService.getColor("above-surface"));
-            circle.setStroke(ColorPaletteService.getColor("white"));
-            circle.setStrokeWidth(knobBorderWidth);
+            // Knob base
+            knobBaseCircle = new Circle(knobBaseSizeRadius, ColorPaletteService.getColor("above-surface"));
+            knobBaseCircle.setStroke(ColorPaletteService.getColor("white"));
+            knobBaseCircle.setStrokeWidth(knobBorderWidth);
 
-            // Create Plus and Minus buttons using FontAwesome icons
-            plusButton = ControlUtils.getIconButton(IconGlyphType.PLUS, this::increaseValue, iconSize);
-            minusButton = ControlUtils.getIconButton(IconGlyphType.MINUS, this::decreaseValue, iconSize);
+            // Draggable Knob handle
+            knobHandleCircle = new Circle(knobHandleSizeRadius, ColorPaletteService.getColor("white"));
+            knobHandleCircle.setStrokeWidth(0);
+            knobHandleCircle.setOnMouseDragged(e -> setValueOnDrag(e.getX(), e.getY()));
 
-            // Value display (Label instead of Text)
+            // Plus and Minus buttons using FontAwesome icons
+            plusButton = ControlUtils.getIconButton(IconGlyphType.PLUS, this::increaseValue, iconSize, true);
+            minusButton = ControlUtils.getIconButton(IconGlyphType.MINUS, this::decreaseValue, iconSize, true);
+
+            // Value display label
             valueLabel = new Label(String.format("%s: %.2f", getName(), getValue()));
             valueLabel.setTextFill(ColorPaletteService.getColor("white"));
 
             // Layout the elements
             Pane container = new Pane();
-            container.getChildren().addAll(baseArc, valueArc, circle, plusButton, minusButton, valueLabel);
+            container.getChildren().addAll(baseArc, valueArc, knobBaseCircle, knobHandleCircle, plusButton, minusButton, valueLabel);
             getChildren().add(container);
             layoutComponents();
 
@@ -104,7 +115,23 @@ public class Knob extends Slider {
             valueProperty().addListener((obs, oldVal, newVal) -> {
                 valueLabel.setText(String.format("%s: %.2f", getName(), getValue()));
                 valueArc.setLength(getValueArcLength());
+                updateKnobHandle();
             });
+        }
+
+        /**
+         * Calculate the position of the knob handle based on the current value
+         */
+        private void updateKnobHandle() {
+            double angle = baseArcStartDegrees - getValueArcLength() - 60;
+            double radians = Math.toRadians(angle);
+            double handleX = knobCenterLayoutOffset + knobHandleArcRadius * Math.cos(radians);
+            double handleY = knobCenterLayoutOffset + knobHandleArcRadius * Math.sin(radians);
+            knobHandleCircle.setLayoutX(handleX);
+            knobHandleCircle.setLayoutY(handleY);
+
+            // Ensure knob handle stays on top when updated
+            knobHandleCircle.toFront();
         }
 
         /**
@@ -138,18 +165,38 @@ public class Knob extends Slider {
          * Layout knob components relative to layout of overall knob
          */
         private void layoutComponents() {
-            baseArc.setLayoutX(60);
-            baseArc.setLayoutY(60);
-            valueArc.setLayoutX(60);
-            valueArc.setLayoutY(60);
-            circle.setLayoutX(60);
-            circle.setLayoutY(60);
-            plusButton.setLayoutX(95);
-            plusButton.setLayoutY(95);
-            minusButton.setLayoutX(5);
-            minusButton.setLayoutY(95);
-            valueLabel.setLayoutX(43);
-            valueLabel.setLayoutY(115);
+            baseArc.setLayoutX(knobCenterLayoutOffset);
+            baseArc.setLayoutY(knobCenterLayoutOffset);
+            valueArc.setLayoutX(knobCenterLayoutOffset);
+            valueArc.setLayoutY(knobCenterLayoutOffset);
+            knobBaseCircle.setLayoutX(knobCenterLayoutOffset);
+            knobBaseCircle.setLayoutY(knobCenterLayoutOffset);
+            plusButton.setLayoutX(knobCenterLayoutOffset + 35);
+            plusButton.setLayoutY(knobCenterLayoutOffset + 35);
+            minusButton.setLayoutX(knobCenterLayoutOffset - 55);
+            minusButton.setLayoutY(knobCenterLayoutOffset + 35);
+            valueLabel.setLayoutX(knobCenterLayoutOffset - 17);
+            valueLabel.setLayoutY(knobCenterLayoutOffset + 55);
+
+            // Need to calculate knob handle position based on value of the knob
+            updateKnobHandle();
+        }
+
+        /**
+         * Handler for dragging the knob handle to set the value of the knob
+         * @param mouseX the x position of the mouse on click (start of dragging)
+         * @param mouseY the y position of the mouse on click (start of dragging)
+         */
+        private void setValueOnDrag(double mouseX, double mouseY) {
+            double deltaX = mouseX - knobCenterLayoutOffset;
+            double deltaY = mouseY - knobCenterLayoutOffset;
+            double angle = Math.toDegrees(Math.atan2(deltaY, deltaX));
+            double adjustedAngle = (angle - baseArcStartDegrees + 360) % 360;
+            if (adjustedAngle <= baseArcDegreesLength) {
+                double percentage = adjustedAngle / baseArcDegreesLength;
+                double newValue = getMin() + percentage * (getMax() - getMin());
+                setValue(newValue);
+            }
         }
     }
 }
