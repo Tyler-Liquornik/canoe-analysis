@@ -27,7 +27,6 @@ public class HullBuilderController implements Initializable {
 
     /**
      * Clears the toolbar of buttons from other modules and adds ones from this module
-     * Currently, this provides buttons to download and upload the Canoe object as JSON
      */
     public void initModuleToolBarButtons() {
         LinkedHashMap<IconGlyphType, Consumer<ActionEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
@@ -48,10 +47,10 @@ public class HullBuilderController implements Initializable {
         setMainController(CanoeAnalysisApplication.getMainController());
         initModuleToolBarButtons();
 
-        // Create the knob and configure it
-        Knob knob = new Knob("x", 0, 0, 10, 50, 50);
-
-        // Add the knob to the container
-        curveKnobsAnchorPane.getChildren().add(knob);
+        // Add knobs
+        Knob leftKnob = new Knob("a", 0, 0, 100, 45, 55);
+        Knob middleKnob = new Knob("h", 0, 0, 100, 215, 55);
+        Knob rightKnob = new Knob("k", 0, 0, 100, 385, 55);
+        curveKnobsAnchorPane.getChildren().addAll(leftKnob, middleKnob, rightKnob);
     }
 }
