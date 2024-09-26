@@ -15,21 +15,20 @@ import lombok.Setter;
  * Icon used for a uniformly distributed load over a curved surface
  */
 @Getter @Setter
-public class ArrowBoundCurve extends Group implements Graphic {
-    private Arrow lArrow;
-    private Arrow rArrow;
-    private Curve borderCurve;
+public class ArrowBoundCurveGraphic extends Group implements Graphic {
+    private ArrowGraphic lArrow;
+    private ArrowGraphic rArrow;
+    private CurvedHullGraphicBase borderCurve;
     private boolean isColored;
-    private double stepHeight;
     private Section section;
 
-    public ArrowBoundCurve(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle, Arrow lArrow, Arrow rArrow) {
+    public ArrowBoundCurveGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle, ArrowGraphic lArrow, ArrowGraphic rArrow) {
         super();
         this.section = section;
         this.isColored = false;
         this.lArrow = lArrow;
         this.rArrow = rArrow;
-        this.borderCurve = new Curve(function, section, encasingRectangle);
+        this.borderCurve = new CurvedHullGraphicBase(function, section, encasingRectangle);
         draw();
 
         JFXDepthManager.setDepth(this, 4);

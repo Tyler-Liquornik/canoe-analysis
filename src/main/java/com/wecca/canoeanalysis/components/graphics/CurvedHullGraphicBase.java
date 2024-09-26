@@ -14,8 +14,6 @@ import javafx.scene.shape.Path;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import lombok.Getter;
-import lombok.Setter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 
 import java.util.List;
 
@@ -24,7 +22,7 @@ import java.util.List;
  * A curve with shaded area between the curve and the y-axis
  */
 @Getter
-public class Curve extends Group implements CurvedProfile {
+public class CurvedHullGraphicBase extends Group implements HullGraphic {
 
     protected BoundedUnivariateFunction function;
     protected Section section;
@@ -34,7 +32,7 @@ public class Curve extends Group implements CurvedProfile {
     protected boolean isColored;
     private final double maxSignedValue;
 
-    public Curve(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
+    public CurvedHullGraphicBase(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
         super();
         this.function = function;
         this.section = section;

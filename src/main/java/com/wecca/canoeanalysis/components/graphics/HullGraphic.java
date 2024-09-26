@@ -7,7 +7,7 @@ import javafx.scene.shape.Rectangle;
 /**
  * Parent interface for Beam & ClosedCurve, used to display the canoe hull
  */
-public interface CurvedProfile extends Graphic {
+public interface HullGraphic extends Graphic {
     Section getSection();
     BoundedUnivariateFunction getFunction();
     double getEndX();

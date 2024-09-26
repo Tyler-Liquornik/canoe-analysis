@@ -6,7 +6,7 @@ import javafx.scene.control.TextField;
 import java.util.List;
 import java.util.Objects;
 
-public class InputParsingUtil {
+public class InputParsingUtils {
 
     /**
      * Convert the distance in the text field to m from the unit selected in the combo box

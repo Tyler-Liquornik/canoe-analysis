@@ -14,9 +14,10 @@ import lombok.Setter;
 
 /**
  * Icon used for an unset/simplified canoe hull
+ * Technically a "curve" that it just flat
  */
 @Getter @Setter
-public class Beam extends Group implements CurvedProfile {
+public class BeamHullGraphic extends Group implements HullGraphic {
 
     private Rectangle encasingRectangle;
     private Line topBorder;
@@ -26,7 +27,7 @@ public class Beam extends Group implements CurvedProfile {
     private boolean isColored;
     private static final double borderExtension = 5; // Amount by which the borders extend beyond the beam
 
-    public Beam(Rectangle rectangle) {
+    public BeamHullGraphic(Rectangle rectangle) {
         super();
         this.encasingRectangle = rectangle;
         this.isColored = false;

@@ -6,7 +6,7 @@ import com.jfoenix.controls.JFXTextField;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.utils.ColorUtils;
-import com.wecca.canoeanalysis.utils.InputParsingUtil;
+import com.wecca.canoeanalysis.utils.InputParsingUtils;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -123,7 +123,7 @@ public class PercentOpenAreaController implements Initializable {
 
     public void handleAnalyzeImageButton() {
         if (imageFile != null) {
-            boolean isPassingPoaValid = InputParsingUtil.validateTextAsPercent(passingPOATextField.getText());
+            boolean isPassingPoaValid = InputParsingUtils.validateTextAsPercent(passingPOATextField.getText());
             if (isPassingPoaValid) {
                 double passingPoa = Double.parseDouble(passingPOATextField.getText()) / 100;
                 double poa = getPoaFromImage(imageFile);

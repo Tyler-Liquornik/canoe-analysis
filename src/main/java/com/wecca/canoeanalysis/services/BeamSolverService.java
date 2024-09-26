@@ -174,7 +174,7 @@ public class BeamSolverService {
         double waterLine = (minWaterLine + maxWaterLine) / 2.0;
         double totalBuoyancy;
 
-        // Binary search equilibrium is reached within a reasonable tolerance
+        // Binary search until equilibrium is reached within a reasonable tolerance
         while (maxWaterLine - minWaterLine > 1e-6) {
             totalBuoyancy = getTotalBuoyancy(canoe, waterLine);
             if (totalBuoyancy < Math.abs(netForce))

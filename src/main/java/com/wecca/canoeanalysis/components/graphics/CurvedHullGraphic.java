@@ -15,11 +15,11 @@ import lombok.Setter;
  * Same as curve but with an extra line that closes the area
  */
 @Getter @Setter
-public class ClosedCurve extends Curve implements CurvedProfile {
+public class CurvedHullGraphic extends CurvedHullGraphicBase {
 
     private Line closingLine;
 
-    public ClosedCurve(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
+    public CurvedHullGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
         super(function, section, encasingRectangle);
         draw();
         ColorManagerService.registerInColorPalette(this);
