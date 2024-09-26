@@ -102,14 +102,19 @@ public class PercentOpenAreaController implements Initializable {
 
             ImagePlus imagePlus = IJ.openImage(imageFile.getAbsolutePath());
             ImageProcessor imageProcessor = imagePlus.getProcessor();
-            if (imageProcessor.getBitDepth() != 8) {
-                IJ.run(imagePlus, "8-bit", "");
+            if (imageProcessor.getBitDepth() != 24) {
+                IJ.run(imagePlus, "RBG Color", "");
             }
 
             for (int y = 0; y < imageProcessor.getHeight(); y++) {
                 for (int x = 0; x < imageProcessor.getWidth(); x++) {
-                    int color = imageProcessor.getPixel(x, y);
-                    colorFrequencyMap.put(color, colorFrequencyMap.getOrDefault(color, 0) + 1);
+                    int pixel = imageProcessor.getPixel(x, y);
+                    int red = (pixel >> 16) & 0xff;
+                    int green = (pixel >> 8) & 0xff;
+                    int blue = (pixel) & 0xff;
+
+                    System.out.println("Red: " + red + ", Green: " + green + ", Blue: " + blue);
+                    colorFrequencyMap.put(pixel, colorFrequencyMap.getOrDefault(pixel, 0) + 1);
                 }
             }
 
