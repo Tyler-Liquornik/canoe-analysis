@@ -109,11 +109,7 @@ public class PercentOpenAreaController implements Initializable {
             for (int y = 0; y < imageProcessor.getHeight(); y++) {
                 for (int x = 0; x < imageProcessor.getWidth(); x++) {
                     int pixel = imageProcessor.getPixel(x, y);
-                    int red = (pixel >> 16) & 0xff;
-                    int green = (pixel >> 8) & 0xff;
-                    int blue = (pixel) & 0xff;
 
-                    System.out.println("Red: " + red + ", Green: " + green + ", Blue: " + blue);
                     colorFrequencyMap.put(pixel, colorFrequencyMap.getOrDefault(pixel, 0) + 1);
                 }
             }
@@ -143,16 +139,44 @@ public class PercentOpenAreaController implements Initializable {
     }
 
     private double getPoaFromImage(File file) {
+        Color color = colorPicker.getValue();
+        int r = (int) (color.getRed() * 255);//get the RGB color of the ColorPicker
+        int g = (int) (color.getGreen() * 255);
+        int b = (int) (color.getBlue() * 255);
+        int count = 0;//counter for counting the pixels closest to the RGB color of the ColorPicker
+
         ImagePlus img = IJ.openImage(file.getAbsolutePath());
         ImageProcessor ip = img.getProcessor();
-        if (ip.getBitDepth() != 8)
-            IJ.run(img, "8-bit", "");
-        IJ.run(img, "Subtract Background...", "rolling=50");
-        IJ.run(img, "Gaussian Blur...", "sigma=2");
-        IJ.setAutoThreshold(img, "Default");
-        IJ.run(img, "Convert to Mask", "");
-        IJ.run(img, "Set Measurements...", "area redirect=None decimal=3");
-        IJ.run(img, "Analyze Particles...", "exclude clear");
+        IJ.run(img, "RBG Color", "");
+        //IJ.run(img, "Subtract Background...", "rolling=50");
+        //IJ.run(img, "Gaussian Blur...", "sigma=2");
+        // IJ.setAutoThreshold(img, "Default");
+        //IJ.run(img, "Convert to Mask", "");
+        //IJ.run(img, "Set Measurements...", "area redirect=None decimal=3");
+        //IJ.run(img, "Analyze Particles...", "exclude clear");
+
+        for (int y = 0; y < ip.getHeight(); y++) {
+            for (int x = 0; x < ip.getWidth(); x++) {
+                int pixel = ip.getPixel(x, y);
+                java.awt.Color color1 = new java.awt.Color(pixel);//get the RGB colors of each pixel in the image
+                int red = color1.getRed();
+                int green = color1.getGreen();
+                int blue = color1.getBlue();
+
+
+                //System.out.println("Red: " + red + ", Green: " + green + ", Blue: " + blue);
+                double distance = Math.sqrt(Math.pow( r - red, 2) + Math.pow(g - green, 2) + Math.pow(b - blue, 2));
+                //calculate the vector distance between the RGB colorPicker and the RGB pixels of the image
+                System.out.println(distance);
+                if (distance <= 80.0){//if the distance is within 80px range
+                    count++;//keep track of the pixels close to the value of the colorPicker
+                }
+
+            }
+        }
+
+        //System.out.println("RGB: (" + r + ", " + g + ", " + b + ")");
+        System.out.println(count);
 
         ResultsTable rt = Analyzer.getResultsTable();
         double openArea = 0;
@@ -160,7 +184,7 @@ public class PercentOpenAreaController implements Initializable {
             openArea += rt.getValue("Area", i);
         }
         double totalArea = img.getWidth() * img.getHeight();
-        return (openArea / totalArea) * 100;
+        return (count / totalArea) * 100;
     }
 
     public Color getSecondMostProminentColor(Map<Integer, Integer> colorFrequencyMap) {
