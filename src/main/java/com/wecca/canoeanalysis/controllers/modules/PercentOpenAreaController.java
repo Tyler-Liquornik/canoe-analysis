@@ -126,7 +126,7 @@ public class PercentOpenAreaController implements Initializable {
         if (imageFile != null) {
             boolean isPassingPoaValid = InputParsingUtil.validateTextAsPercent(passingPOATextField.getText());
             if (isPassingPoaValid) {
-                double passingPoa = Double.parseDouble(passingPOATextField.getText()) / 100;
+                double passingPoa = Double.parseDouble(passingPOATextField.getText());
                 double poa = getPoaFromImage(imageFile);
                 resultTextField.setText(String.format("%.2f", poa));
                 boolean pass = poa >= passingPoa;
@@ -167,7 +167,7 @@ public class PercentOpenAreaController implements Initializable {
                 //System.out.println("Red: " + red + ", Green: " + green + ", Blue: " + blue);
                 double distance = Math.sqrt(Math.pow( r - red, 2) + Math.pow(g - green, 2) + Math.pow(b - blue, 2));
                 //calculate the vector distance between the RGB colorPicker and the RGB pixels of the image
-                System.out.println(distance);
+                //System.out.println(distance);
                 if (distance <= 80.0){//if the distance is within 80px range
                     count++;//keep track of the pixels close to the value of the colorPicker
                 }
