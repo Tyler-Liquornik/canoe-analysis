@@ -74,7 +74,7 @@ public class DiagramService {
     }
 
     public static void addSeriesToChart(Canoe canoe, List<Point2D> points, String yUnits, AreaChart<Number, Number> chart) {
-
+//Devons First commit
         TreeSet<Double> criticalPoints = canoe.getSectionEndpoints();
 
         // Adding the sections of the pseudo piecewise function separately
