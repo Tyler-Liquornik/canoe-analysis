@@ -50,7 +50,7 @@ public class MainController implements Initializable {
     private Stage primaryStage;
     private double stageXOffset = 0;
     private double stageYOffset = 0;
-
+    //Clayton Testing
     // Drawer state management
     private boolean isDrawerOpen = false;
     private AnimationTimer drawerTimer;
