@@ -102,14 +102,15 @@ public class PercentOpenAreaController implements Initializable {
 
             ImagePlus imagePlus = IJ.openImage(imageFile.getAbsolutePath());
             ImageProcessor imageProcessor = imagePlus.getProcessor();
-            if (imageProcessor.getBitDepth() != 8) {
-                IJ.run(imagePlus, "8-bit", "");
+            if (imageProcessor.getBitDepth() != 24) {
+                IJ.run(imagePlus, "RBG Color", "");
             }
 
             for (int y = 0; y < imageProcessor.getHeight(); y++) {
                 for (int x = 0; x < imageProcessor.getWidth(); x++) {
-                    int color = imageProcessor.getPixel(x, y);
-                    colorFrequencyMap.put(color, colorFrequencyMap.getOrDefault(color, 0) + 1);
+                    int pixel = imageProcessor.getPixel(x, y);
+
+                    colorFrequencyMap.put(pixel, colorFrequencyMap.getOrDefault(pixel, 0) + 1);
                 }
             }
 
@@ -125,7 +126,7 @@ public class PercentOpenAreaController implements Initializable {
         if (imageFile != null) {
             boolean isPassingPoaValid = InputParsingUtil.validateTextAsPercent(passingPOATextField.getText());
             if (isPassingPoaValid) {
-                double passingPoa = Double.parseDouble(passingPOATextField.getText()) / 100;
+                double passingPoa = Double.parseDouble(passingPOATextField.getText());
                 double poa = getPoaFromImage(imageFile);
                 resultTextField.setText(String.format("%.2f", poa));
                 boolean pass = poa >= passingPoa;
@@ -138,16 +139,44 @@ public class PercentOpenAreaController implements Initializable {
     }
 
     private double getPoaFromImage(File file) {
+        Color color = colorPicker.getValue();
+        int r = (int) (color.getRed() * 255);//get the RGB color of the ColorPicker
+        int g = (int) (color.getGreen() * 255);
+        int b = (int) (color.getBlue() * 255);
+        int count = 0;//counter for counting the pixels closest to the RGB color of the ColorPicker
+
         ImagePlus img = IJ.openImage(file.getAbsolutePath());
         ImageProcessor ip = img.getProcessor();
-        if (ip.getBitDepth() != 8)
-            IJ.run(img, "8-bit", "");
-        IJ.run(img, "Subtract Background...", "rolling=50");
-        IJ.run(img, "Gaussian Blur...", "sigma=2");
-        IJ.setAutoThreshold(img, "Default");
-        IJ.run(img, "Convert to Mask", "");
-        IJ.run(img, "Set Measurements...", "area redirect=None decimal=3");
-        IJ.run(img, "Analyze Particles...", "exclude clear");
+        IJ.run(img, "RBG Color", "");
+        //IJ.run(img, "Subtract Background...", "rolling=50");
+        //IJ.run(img, "Gaussian Blur...", "sigma=2");
+        // IJ.setAutoThreshold(img, "Default");
+        //IJ.run(img, "Convert to Mask", "");
+        //IJ.run(img, "Set Measurements...", "area redirect=None decimal=3");
+        //IJ.run(img, "Analyze Particles...", "exclude clear");
+
+        for (int y = 0; y < ip.getHeight(); y++) {
+            for (int x = 0; x < ip.getWidth(); x++) {
+                int pixel = ip.getPixel(x, y);
+                java.awt.Color color1 = new java.awt.Color(pixel);//get the RGB colors of each pixel in the image
+                int red = color1.getRed();
+                int green = color1.getGreen();
+                int blue = color1.getBlue();
+
+
+                //System.out.println("Red: " + red + ", Green: " + green + ", Blue: " + blue);
+                double distance = Math.sqrt(Math.pow( r - red, 2) + Math.pow(g - green, 2) + Math.pow(b - blue, 2));
+                //calculate the vector distance between the RGB colorPicker and the RGB pixels of the image
+                //System.out.println(distance);
+                if (distance <= 80.0){//if the distance is within 80px range
+                    count++;//keep track of the pixels close to the value of the colorPicker
+                }
+
+            }
+        }
+
+        //System.out.println("RGB: (" + r + ", " + g + ", " + b + ")");
+        System.out.println(count);
 
         ResultsTable rt = Analyzer.getResultsTable();
         double openArea = 0;
@@ -155,7 +184,7 @@ public class PercentOpenAreaController implements Initializable {
             openArea += rt.getValue("Area", i);
         }
         double totalArea = img.getWidth() * img.getHeight();
-        return (openArea / totalArea) * 100;
+        return (count / totalArea) * 100;
     }
 
     public Color getSecondMostProminentColor(Map<Integer, Integer> colorFrequencyMap) {
