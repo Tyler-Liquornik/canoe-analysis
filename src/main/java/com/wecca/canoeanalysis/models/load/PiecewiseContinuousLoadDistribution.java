@@ -10,7 +10,6 @@ import com.wecca.canoeanalysis.utils.CalculusUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.optim.MaxEval;
 
 import java.util.*;

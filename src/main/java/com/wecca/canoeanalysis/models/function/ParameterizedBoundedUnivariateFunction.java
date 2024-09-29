@@ -1,5 +1,5 @@
 package com.wecca.canoeanalysis.models.function;
 
-public interface ParameterizedUnivariateFunction extends BoundedUnivariateFunction {
+public interface ParameterizedBoundedUnivariateFunction extends BoundedUnivariateFunction {
     void initialize(double... parameters);
 }

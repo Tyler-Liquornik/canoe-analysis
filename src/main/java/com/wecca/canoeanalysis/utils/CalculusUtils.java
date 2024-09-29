@@ -24,7 +24,7 @@ public class CalculusUtils
     public static BoundedUnivariateFunction differentiate(BoundedUnivariateFunction function)
     {
         double h = 1e-6; // Small value for h implies the limit as h -> 0
-        return x -> (function.value(x + h) - function.value(x - h)) / (2 * h);
+        return x -> (function.value(x + h) - function.value(x - h)) / h;
     }
 
     /**
@@ -140,13 +140,13 @@ public class CalculusUtils
                 currentX = nextX;
             }
 
-            // Check the function value at a point within each interval (midpoint chosen arbitrarily)
+            double tolerance = 1e-3;
             for (int i = 0; i < zeros.size() - 1; i++) {
                 double midpoint = (zeros.get(i) + zeros.get(i + 1)) / 2;
                 double value = piece.value(midpoint);
-                if (value < 0)
+                if (value < -tolerance)
                     allNonNegative = false;
-                if (value > 0)
+                if (value > tolerance)
                     allNonPositive = false;
             }
         }
@@ -171,7 +171,7 @@ public class CalculusUtils
             double x = section.getX() + i * step;
             double currentValue = function.value(x);
             if (Math.abs(currentValue - previousValue) > tolerance)
-                throw new IllegalArgumentException("The distribution is not continuous within a reasonable tolerance");
+                throw new IllegalArgumentException("The function is not continuous within a reasonable tolerance");
             previousValue = currentValue;
         }
     }

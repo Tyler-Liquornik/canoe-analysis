@@ -116,9 +116,7 @@ public class PercentOpenAreaController implements Initializable {
             Color prominentColor = getSecondMostProminentColor(colorFrequencyMap);
             colorPicker.setValue(prominentColor);
 
-        } catch (FileNotFoundException ignored) {
-            System.out.println("test");
-        }
+        } catch (FileNotFoundException ignored) {}
     }
 
     public void handleAnalyzeImageButton() {
