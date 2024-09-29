@@ -248,3 +248,12 @@ jfx-toggle-button,
 .fail {
     -fx-text-fill: #F03030;
 }
+.round-corners {
+    -fx-background-radius: 15;
+    -fx-border-radius: 15;
+}
+.rectangle {
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+    -fx-fill: -fx-background;
+}
