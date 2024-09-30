@@ -33,46 +33,50 @@ public class SharkBaitHullLibrary {
         // The code here will stay messy to keep it aligned with the Desmos model for now
         double top = 0.00;
         double knot0 = 0.00;
-        double knot1 = 0.50;
-        double knot2 = 2.88;
-        double knot3 = 5.50;
-        double knot4 = 6.00;
+        double knot1 = 0.50 * scalingFactor;
+        double knot2 = 2.88 * scalingFactor;
+        double knot3 = 5.50 * scalingFactor;
+        double knot4 = 6.00 * scalingFactor;
+
         double leftX1 = knot0;
         double leftY1 = top;
-        double leftControlX1 = 0.07; // Left (L) Free 1
-        double leftControlY1 = -0.21; // Left (L) Free 2
-        double leftControlX2 = 0.27; // Left (L) Free 3
-        double leftControlY2 = -0.28; // Left (L) Free 4
+        double leftControlX1 = 0.07 * scalingFactor;
+        double leftControlY1 = -0.21 * scalingFactor;
+        double leftControlX2 = 0.27 * scalingFactor;
+        double leftControlY2 = -0.28 * scalingFactor;
         double leftX2 = knot1;
-        double midLeftY1 = -0.32;  // mid Left (M) Free 1
+        double midLeftY1 = -0.32 * scalingFactor;
         double leftY2 = midLeftY1;
         double leftSlope2 = (leftY2 - leftControlY2) / (leftX2 - leftControlX2);
+
         double midLeftX1 = leftX2;
         double midLeftSlope1 = leftSlope2;
-        double midLeftControlX1 = 0.76; // mid Left (M) Free 2
+        double midLeftControlX1 = 0.76 * scalingFactor;
         double midLeftControlY1 = midLeftSlope1 * (midLeftControlX1 - midLeftX1) + midLeftY1;
-        double midLeftControlX2 = 2.62; // mid Left (M) Free 3
-        double midLeftControlY2 = -0.39; // mid Left (M) Free 4
+        double midLeftControlX2 = 2.62 * scalingFactor;
+        double midLeftControlY2 = -0.39 * scalingFactor;
         double midLeftX2 = knot2;
-        double midRightY1 = -0.39; // mid Right (N) Free 1
+        double midRightY1 = -0.39 * scalingFactor;
         double midLeftY2 = midRightY1;
         double midLeftSlope2 = (midLeftY2 - midLeftControlY2) / (midLeftX2 - midLeftControlX2);
+
         double midRightX1 = midLeftX2;
         double midRightSlope1 = midLeftSlope2;
-        double midRightControlX1 = 3.31; // mid Right (N) Free 2
+        double midRightControlX1 = 3.31 * scalingFactor;
         double midRightControlY1 = midRightSlope1 * (midRightControlX1 - midRightX1) + midRightY1;
-        double midRightControlX2 = 5.18; // mid Right (N) Free 3
-        double midRightControlY2 = -0.40; // mid Right (N) Free 4
+        double midRightControlX2 = 5.18 * scalingFactor;
+        double midRightControlY2 = -0.40 * scalingFactor;
         double midRightX2 = knot3;
-        double rightY1 = -0.34; // Right (R) Free 1
+        double rightY1 = -0.34 * scalingFactor;
         double midRightY2 = rightY1;
         double midRightSlope2 = (midRightY2 - midRightControlY2) / (midRightX2 - midRightControlX2);
+
         double rightX1 = midRightX2;
         double rightSlope1 = midRightSlope2;
-        double rightControlX1 = 5.77; // Right (R) Free 2
+        double rightControlX1 = 5.77 * scalingFactor;
         double rightControlY1 = rightSlope1 * (rightControlX1 - rightX1) + rightY1;
-        double rightControlX2 = 5.88; // Right (R) Free 3
-        double rightControlY2 = -0.19; // Right (R) Free 4
+        double rightControlX2 = 5.88 * scalingFactor;
+        double rightControlY2 = -0.19 * scalingFactor;
         double rightX2 = knot4;
         double rightY2 = top;
 
@@ -81,14 +85,14 @@ public class SharkBaitHullLibrary {
         CubicBezierFunction midRightCurve = new CubicBezierFunction(midRightX1, midRightY1, midRightControlX1, midRightControlY1, midRightControlX2, midRightControlY2, midRightX2, midRightY2);
         CubicBezierFunction rightCurve = new CubicBezierFunction(rightX1, rightY1, rightControlX1, rightControlY1, rightControlX2, rightControlY2, rightX2, rightY2);
 
-        // Still using parabola for top view for now (desmos model not made yet)
-        double a = - 7.0 / 180.0;
-        double h = 3.0;
-        double k = 0.35;
+        // Still using parabola for now until desmos model is created
+        double a = - 7.0 / (180.0 * scalingFactor);
+        double h = 3.0 * scalingFactor;
+        double k = 0.35 * scalingFactor;
         VertexFormParabolaFunction topCurve = new VertexFormParabolaFunction(a, h, k);
 
         List<HullSection> sections = new ArrayList<>();
-        double thickness = 0.013;
+        double thickness = 0.013 * scalingFactor;
         sections.add(new HullSection(leftCurve, topCurve, knot0, knot1, thickness, true));
         sections.add(new HullSection(midLeftCurve, topCurve, knot1, knot2, thickness, false));
         sections.add(new HullSection(midRightCurve, topCurve, knot2, knot3, thickness, false));
@@ -134,7 +138,7 @@ public class SharkBaitHullLibrary {
 
     /**
      * Returns a hull with the geometry of the rectangular prism that encases the scaled Shark Bait Hull
-     * This means that the hull has no mass of weight, and a self weight distribution of f(x) = 0
+     * This hull has no mass or weight, and a self weight distribution of f(x) = 0
      * @param length the length to scale to
      * @return the scaled hull
      */
