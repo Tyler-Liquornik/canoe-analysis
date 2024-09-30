@@ -2,7 +2,7 @@ package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.Section;
+import com.wecca.canoeanalysis.models.function.FunctionSection;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
@@ -25,14 +25,14 @@ import java.util.List;
 public class CurvedHullGraphicBase extends Group implements HullGraphic {
 
     protected BoundedUnivariateFunction function;
-    protected Section section;
+    protected FunctionSection section;
     protected Rectangle encasingRectangle;
     protected Path linePath;
     protected Polygon area;
     protected boolean isColored;
     private final double maxSignedValue;
 
-    public CurvedHullGraphicBase(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
+    public CurvedHullGraphicBase(BoundedUnivariateFunction function, FunctionSection section, Rectangle encasingRectangle) {
         super();
         this.function = function;
         this.section = section;
@@ -127,7 +127,7 @@ public class CurvedHullGraphicBase extends Group implements HullGraphic {
     }
 
     @Override
-    public Section getSection() {
+    public FunctionSection getSection() {
         return section;
     }
 

@@ -2,7 +2,7 @@ package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.Section;
+import com.wecca.canoeanalysis.models.function.FunctionSection;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.Group;
@@ -20,9 +20,9 @@ public class ArrowBoundCurveGraphic extends Group implements Graphic {
     private ArrowGraphic rArrow;
     private CurvedHullGraphicBase borderCurve;
     private boolean isColored;
-    private Section section;
+    private FunctionSection section;
 
-    public ArrowBoundCurveGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle, ArrowGraphic lArrow, ArrowGraphic rArrow) {
+    public ArrowBoundCurveGraphic(BoundedUnivariateFunction function, FunctionSection section, Rectangle encasingRectangle, ArrowGraphic lArrow, ArrowGraphic rArrow) {
         super();
         this.section = section;
         this.isColored = false;

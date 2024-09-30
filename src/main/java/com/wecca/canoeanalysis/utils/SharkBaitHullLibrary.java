@@ -3,7 +3,7 @@ package com.wecca.canoeanalysis.utils;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
-import com.wecca.canoeanalysis.models.function.VertexFormParabola;
+import com.wecca.canoeanalysis.models.function.VertexFormParabolaFunction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +24,11 @@ public class SharkBaitHullLibrary {
      * This serves as a placeholder for the user defining their own hull in the hull builder until that is developed
      * @return the hull
      */
-    public static Hull generateSharkBaitHullFromBezier() {
+    // https://www.desmos.com/calculator/waebkhsl43
+    public static Hull generateSharkBaitHullFromBezier(double length) {
+
+        // Scale compared to the actual length of Shark Bait
+        scalingFactor = length / SHARK_BAIT_LENGTH;
 
         // The code here will stay messy to keep it aligned with the Desmos model for now
         double top = 0.00;
@@ -40,31 +44,31 @@ public class SharkBaitHullLibrary {
         double leftControlX2 = 0.27; // Left (L) Free 3
         double leftControlY2 = -0.28; // Left (L) Free 4
         double leftX2 = knot1;
-        double baseLeftY1 = -0.32;  // Base Left (M) Free 1
-        double leftY2 = baseLeftY1;
+        double midLeftY1 = -0.32;  // mid Left (M) Free 1
+        double leftY2 = midLeftY1;
         double leftSlope2 = (leftY2 - leftControlY2) / (leftX2 - leftControlX2);
-        double baseLeftX1 = leftX2;
-        double baseLeftSlope1 = leftSlope2;
-        double baseLeftControlX1 = 0.76; // Base Left (M) Free 2
-        double baseLeftControlY1 = baseLeftSlope1 * (baseLeftControlX1 - baseLeftX1) + baseLeftY1;
-        double baseLeftControlX2 = 2.62; // Base Left (M) Free 3
-        double baseLeftControlY2 = -0.39; // Base Left (M) Free 4
-        double baseLeftX2 = knot2;
-        double baseRightY1 = -0.39; // Base Right (N) Free 1
-        double baseLeftY2 = baseRightY1;
-        double baseLeftSlope2 = (baseLeftY2 - baseLeftControlY2) / (baseLeftX2 - baseLeftControlX2);
-        double baseRightX1 = baseLeftX2;
-        double baseRightSlope1 = baseLeftSlope2;
-        double baseRightControlX1 = 3.31; // Base Right (N) Free 2
-        double baseRightControlY1 = baseRightSlope1 * (baseRightControlX1 - baseRightX1) + baseRightY1;
-        double baseRightControlX2 = 5.18; // Base Right (N) Free 3
-        double baseRightControlY2 = -0.40; // Base Right (N) Free 4
-        double baseRightX2 = knot3;
+        double midLeftX1 = leftX2;
+        double midLeftSlope1 = leftSlope2;
+        double midLeftControlX1 = 0.76; // mid Left (M) Free 2
+        double midLeftControlY1 = midLeftSlope1 * (midLeftControlX1 - midLeftX1) + midLeftY1;
+        double midLeftControlX2 = 2.62; // mid Left (M) Free 3
+        double midLeftControlY2 = -0.39; // mid Left (M) Free 4
+        double midLeftX2 = knot2;
+        double midRightY1 = -0.39; // mid Right (N) Free 1
+        double midLeftY2 = midRightY1;
+        double midLeftSlope2 = (midLeftY2 - midLeftControlY2) / (midLeftX2 - midLeftControlX2);
+        double midRightX1 = midLeftX2;
+        double midRightSlope1 = midLeftSlope2;
+        double midRightControlX1 = 3.31; // mid Right (N) Free 2
+        double midRightControlY1 = midRightSlope1 * (midRightControlX1 - midRightX1) + midRightY1;
+        double midRightControlX2 = 5.18; // mid Right (N) Free 3
+        double midRightControlY2 = -0.40; // mid Right (N) Free 4
+        double midRightX2 = knot3;
         double rightY1 = -0.34; // Right (R) Free 1
-        double baseRightY2 = rightY1;
-        double baseRightSlope2 = (baseRightY2 - baseRightControlY2) / (baseRightX2 - baseRightControlX2);
-        double rightX1 = baseRightX2;
-        double rightSlope1 = baseRightSlope2;
+        double midRightY2 = rightY1;
+        double midRightSlope2 = (midRightY2 - midRightControlY2) / (midRightX2 - midRightControlX2);
+        double rightX1 = midRightX2;
+        double rightSlope1 = midRightSlope2;
         double rightControlX1 = 5.77; // Right (R) Free 2
         double rightControlY1 = rightSlope1 * (rightControlX1 - rightX1) + rightY1;
         double rightControlX2 = 5.88; // Right (R) Free 3
@@ -73,21 +77,21 @@ public class SharkBaitHullLibrary {
         double rightY2 = top;
 
         CubicBezierFunction leftCurve = new CubicBezierFunction(leftX1, leftY1, leftControlX1, leftControlY1, leftControlX2, leftControlY2, leftX2, leftY2);
-        CubicBezierFunction baseLeftCurve = new CubicBezierFunction(baseLeftX1, baseLeftY1, baseLeftControlX1, baseLeftControlY1, baseLeftControlX2, baseLeftControlY2, baseLeftX2, baseLeftY2);
-        CubicBezierFunction baseRightCurve = new CubicBezierFunction(baseRightX1, baseRightY1, baseRightControlX1, baseRightControlY1, baseRightControlX2, baseRightControlY2, baseRightX2, baseRightY2);
+        CubicBezierFunction midLeftCurve = new CubicBezierFunction(midLeftX1, midLeftY1, midLeftControlX1, midLeftControlY1, midLeftControlX2, midLeftControlY2, midLeftX2, midLeftY2);
+        CubicBezierFunction midRightCurve = new CubicBezierFunction(midRightX1, midRightY1, midRightControlX1, midRightControlY1, midRightControlX2, midRightControlY2, midRightX2, midRightY2);
         CubicBezierFunction rightCurve = new CubicBezierFunction(rightX1, rightY1, rightControlX1, rightControlY1, rightControlX2, rightControlY2, rightX2, rightY2);
 
         // Still using parabola for top view for now (desmos model not made yet)
         double a = - 7.0 / 180.0;
         double h = 3.0;
         double k = 0.35;
-        VertexFormParabola topCurve = new VertexFormParabola(a, h, k);
+        VertexFormParabolaFunction topCurve = new VertexFormParabolaFunction(a, h, k);
 
         List<HullSection> sections = new ArrayList<>();
         double thickness = 0.013;
         sections.add(new HullSection(leftCurve, topCurve, knot0, knot1, thickness, true));
-        sections.add(new HullSection(baseLeftCurve, topCurve, knot1, knot2, thickness, false));
-        sections.add(new HullSection(baseRightCurve, topCurve, knot2, knot3, thickness, false));
+        sections.add(new HullSection(midLeftCurve, topCurve, knot1, knot2, thickness, false));
+        sections.add(new HullSection(midRightCurve, topCurve, knot2, knot3, thickness, false));
         sections.add(new HullSection(rightCurve, topCurve, knot3, knot4, thickness, true));
 
         return new Hull(1056, 28.82, sections);
@@ -108,21 +112,21 @@ public class SharkBaitHullLibrary {
         double a = 1.0 / (67.0 * scalingFactor);
         double h = 3.0 * scalingFactor;
         double k = -0.4 * scalingFactor;
-        VertexFormParabola hullBaseProfileCurve = new VertexFormParabola(a, h, k);
+        VertexFormParabolaFunction hullMidProfileCurve = new VertexFormParabolaFunction(a, h, k);
 
         double aEdges = 306716.0 / (250000.0 * scalingFactor);
-        VertexFormParabola hullLeftEdgeCurve = new VertexFormParabola(aEdges, 0.5 * scalingFactor, hullBaseProfileCurve.value(0.5 * scalingFactor));
-        VertexFormParabola hullRightEdgeCurve = new VertexFormParabola(aEdges, 5.5 * scalingFactor, hullBaseProfileCurve.value(5.5 * scalingFactor));
+        VertexFormParabolaFunction hullLeftEdgeCurve = new VertexFormParabolaFunction(aEdges, 0.5 * scalingFactor, hullMidProfileCurve.value(0.5 * scalingFactor));
+        VertexFormParabolaFunction hullRightEdgeCurve = new VertexFormParabolaFunction(aEdges, 5.5 * scalingFactor, hullMidProfileCurve.value(5.5 * scalingFactor));
 
         double a1 = - 7.0 / (180.0 * scalingFactor);
         double h1 = 3.0 * scalingFactor;
         double k1 = 0.35 * scalingFactor;
-        VertexFormParabola hullTopCurve = new VertexFormParabola(a1, h1, k1);
+        VertexFormParabolaFunction hullTopCurve = new VertexFormParabolaFunction(a1, h1, k1);
 
         List<HullSection> sections = new ArrayList<>();
         double thickness = 0.013;
         sections.add(new HullSection(hullLeftEdgeCurve, hullTopCurve, 0.0, 0.5 * scalingFactor, thickness * scalingFactor, true));
-        sections.add(new HullSection(hullBaseProfileCurve, hullTopCurve, 0.5 * scalingFactor, 5.5 * scalingFactor, thickness * scalingFactor, false));
+        sections.add(new HullSection(hullMidProfileCurve, hullTopCurve, 0.5 * scalingFactor, 5.5 * scalingFactor, thickness * scalingFactor, false));
         sections.add(new HullSection(hullRightEdgeCurve, hullTopCurve, 5.5 * scalingFactor, 6.0 * scalingFactor, thickness * scalingFactor, true));
 
         return new Hull(1056, 28.82, sections);

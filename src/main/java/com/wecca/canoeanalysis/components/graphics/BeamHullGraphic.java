@@ -2,7 +2,7 @@ package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.Section;
+import com.wecca.canoeanalysis.models.function.FunctionSection;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.Group;
@@ -77,8 +77,8 @@ public class BeamHullGraphic extends Group implements HullGraphic {
     }
 
     @Override
-    public Section getSection() {
-        return new Section(encasingRectangle.getX(), encasingRectangle.getX() + encasingRectangle.getWidth());
+    public FunctionSection getSection() {
+        return new FunctionSection(encasingRectangle.getX(), encasingRectangle.getX() + encasingRectangle.getWidth());
     }
 
     @Override

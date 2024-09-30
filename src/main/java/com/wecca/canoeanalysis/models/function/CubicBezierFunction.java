@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis.models.function;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,7 +14,7 @@ import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
 import org.apache.commons.math3.optim.MaxEval;
 
 /**
- * A Bézier curve that passes the vertical line test, therefore can be represented as a function.
+ * A Cubic Bézier curve that passes the vertical line test, therefore can be represented as a function.
  */
 @Getter @Setter @EqualsAndHashCode
 public class CubicBezierFunction implements ParameterizedBoundedUnivariateFunction {
@@ -40,9 +41,9 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
     @JsonIgnore
     private final UnivariateSolver solver = new BrentSolver(1e-6);
 
-    @JsonIgnore
+    @JsonIgnore @Getter(AccessLevel.NONE)
     private final double T_MIN = 0.0;
-    @JsonIgnore
+    @JsonIgnore @Getter(AccessLevel.NONE)
     private final double T_MAX = 1.0;
 
 
@@ -136,6 +137,6 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
         }
 
         if (!xIsIncreasingWithT && !xIsDecreasingWithT)
-            throw new IllegalArgumentException("The Bezier curve fails the vertical line test and cannot be represented as a function.");
+            throw new IllegalArgumentException("The Bézier curve fails the vertical line test and cannot be represented as a function.");
     }
 }

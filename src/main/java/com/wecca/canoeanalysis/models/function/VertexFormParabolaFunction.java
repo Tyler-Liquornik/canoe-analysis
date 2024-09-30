@@ -15,7 +15,7 @@ import java.util.function.Function;
  * The function modelled is a(x - h)^2 + k
  */
 @Getter @Setter @EqualsAndHashCode
-public class VertexFormParabola implements ParameterizedBoundedUnivariateFunction {
+public class VertexFormParabolaFunction implements ParameterizedBoundedUnivariateFunction {
 
     @JsonIgnore @Getter
     private final FunctionType type = FunctionType.VERTEX_FORM_PARABOLA;
@@ -27,7 +27,7 @@ public class VertexFormParabola implements ParameterizedBoundedUnivariateFunctio
     private double k;
 
     @JsonCreator
-    public VertexFormParabola(@JsonProperty("a") double a, @JsonProperty("h") double h, @JsonProperty("k") double k) {
+    public VertexFormParabolaFunction(@JsonProperty("a") double a, @JsonProperty("h") double h, @JsonProperty("k") double k) {
         initialize(a, h, k);
     }
 

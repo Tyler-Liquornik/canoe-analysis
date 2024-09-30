@@ -2,8 +2,7 @@ package com.wecca.canoeanalysis.utils;
 
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
-import com.wecca.canoeanalysis.models.function.Section;
-import org.apache.commons.math3.analysis.UnivariateFunction;
+import com.wecca.canoeanalysis.models.function.FunctionSection;
 import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
@@ -68,11 +67,11 @@ public class CalculusUtils
      * @param endpoints the points to turn into sections (endpoints in terms of the formed intervals)
      * @return the list of sections
      */
-    public static List<Section> sectionsFromEndpoints(List<Double> endpoints) {
+    public static List<FunctionSection> sectionsFromEndpoints(List<Double> endpoints) {
         if (endpoints.size() < 2)
             throw new IllegalArgumentException("Cannot form a section without at least two points");
 
-        List<Section> sections = new ArrayList<>();
+        List<FunctionSection> sections = new ArrayList<>();
 
         for (int i = 0; i < endpoints.size() - 1; i++) {
             double curr = endpoints.get(i);
@@ -81,7 +80,7 @@ public class CalculusUtils
             if (next - curr < 0.01)
                 throw new IllegalArgumentException("All sections must be of width at least 0.01m");
 
-            sections.add(new Section(curr, next));
+            sections.add(new FunctionSection(curr, next));
         }
 
         return sections;
@@ -92,13 +91,13 @@ public class CalculusUtils
      * @param pieces the pieces to validate
      * @param sections the sections of the pieces
      */
-    public static void validatePiecewiseContinuity(List<BoundedUnivariateFunction> pieces, List<Section> sections) {
+    public static void validatePiecewiseContinuity(List<BoundedUnivariateFunction> pieces, List<FunctionSection> sections) {
         if (sections.size() != pieces.size())
             throw new IllegalArgumentException("Unequal amount of sections and pieces");
 
         for (int i = 1; i < pieces.size(); i++) {
-            Section prevSec = sections.get(i - 1);
-            Section currSec = sections.get(i);
+            FunctionSection prevSec = sections.get(i - 1);
+            FunctionSection currSec = sections.get(i);
             if (prevSec.getRx() != currSec.getX())
                 throw new IllegalArgumentException("Sections do not form a continuous interval.");
         }
@@ -114,7 +113,7 @@ public class CalculusUtils
      * @param pieces the pieces to validate
      * @param sections the sections of the pieces
      */
-    public static void validatePiecewiseAsUpOrDown(List<BoundedUnivariateFunction> pieces, List<Section> sections) {
+    public static void validatePiecewiseAsUpOrDown(List<BoundedUnivariateFunction> pieces, List<FunctionSection> sections) {
         UnivariateSolver solver = new BrentSolver(1e-10, 1e-14);
         int numSamples = 1000;
 
@@ -123,7 +122,7 @@ public class CalculusUtils
 
         for (int p = 0; p < pieces.size(); p++) {
             BoundedUnivariateFunction piece = pieces.get(p);
-            Section section = sections.get(p);
+            FunctionSection section = sections.get(p);
 
             // Find zeros within the section
             double step = section.getLength() / (double) numSamples;
@@ -159,7 +158,7 @@ public class CalculusUtils
      * Validates that the distribution is continuous over the section within a specified tolerance.
      * Note: tolerance and numSamples may need to be tweaked to avoid false invalidations
      */
-    public static void validateContinuity(BoundedUnivariateFunction function, Section section) {
+    public static void validateContinuity(BoundedUnivariateFunction function, FunctionSection section) {
         // Note: it's very possible this can cause false negatives and these numbers need to be tweaked in magnitude
         // It completely depends on how fast the function grows
         double tolerance = 1e-2;

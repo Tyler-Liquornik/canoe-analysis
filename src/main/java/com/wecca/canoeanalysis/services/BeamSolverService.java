@@ -6,7 +6,7 @@ import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.Section;
+import com.wecca.canoeanalysis.models.function.FunctionSection;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
@@ -83,7 +83,7 @@ public class BeamSolverService {
         if (canoe.getNetForce() == 0) {
             Hull hull = canoe.getHull();
             List<HullSection> hullSections = hull.getHullSections();
-            List<Section> sections = hullSections.stream().map(hullSection -> (Section) hullSection).toList();
+            List<FunctionSection> sections = hullSections.stream().map(hullSection -> (FunctionSection) hullSection).toList();
 
             // Create zero-valued functions for each section
             List<BoundedUnivariateFunction> pieces = new ArrayList<>();
@@ -193,10 +193,10 @@ public class BeamSolverService {
      * @return the buoyancy distribution of the canoe at the given waterline in kN/m
      */
     private static PiecewiseContinuousLoadDistribution getBuoyancyDistribution(double waterline, Canoe canoe) {
-        List<Section> sectionsToMapTo = CalculusUtils.sectionsFromEndpoints(canoe.getSectionEndpoints().stream().toList());
+        List<FunctionSection> sectionsToMapTo = CalculusUtils.sectionsFromEndpoints(canoe.getSectionEndpoints().stream().toList());
         List<HullSection> mappedHullSections = reformHullSections(canoe.getHull(), sectionsToMapTo).getHullSections();
         List<BoundedUnivariateFunction> buoyancyPieces = new ArrayList<>();
-        List<Section> buoyancySections = new ArrayList<>();
+        List<FunctionSection> buoyancySections = new ArrayList<>();
 
         for (HullSection section : mappedHullSections) {
             BoundedUnivariateFunction buoyancyPiece = x -> getSubmergedCrossSectionalAreaFunction(waterline, section).value(x) * PhysicalConstants.DENSITY_OF_WATER.getValue() * PhysicalConstants.GRAVITY.getValue() / 1000.0;
@@ -213,11 +213,11 @@ public class BeamSolverService {
      * @param sectionsToMapTo the sections which who's individual endpoint pairs all together for the new critical points set
      * @return the reformed hull
      */
-    private static Hull reformHullSections(Hull hull, List<Section> sectionsToMapTo) {
+    private static Hull reformHullSections(Hull hull, List<FunctionSection> sectionsToMapTo) {
         List<HullSection> newHullSections = new ArrayList<>();
         List<HullSection> originalSections = hull.getHullSections();
 
-        for (Section newSection : sectionsToMapTo) {
+        for (FunctionSection newSection : sectionsToMapTo) {
             double newStart = newSection.getX();
             double newEnd = newSection.getRx();
 

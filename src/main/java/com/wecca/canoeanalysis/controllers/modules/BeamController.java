@@ -415,7 +415,6 @@ public class BeamController implements Initializable {
             return;
         }
 
-
         if (submergedRadioButton.isSelected()) {
             solveSubmergedSystem();
             return; // TODO: after implemented solveSubmergedSystem()
