@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.services;
 
 import ch.qos.logback.core.PropertyDefinerBase;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -43,6 +44,12 @@ public class LoggerService {
                     log.error(obj.toString());
                 }
             }
+
+            @Override
+            public PrintStream printf(@NonNull String format, Object... args) {
+                log.error(String.format(format, args));
+                return this;
+            }
         };
         System.setErr(errStream);
 
@@ -61,6 +68,12 @@ public class LoggerService {
             @Override
             public void println(Object obj) {
                 log.info(obj.toString());
+            }
+
+            @Override
+            public PrintStream printf(@NonNull String format, Object... args) {
+                log.info(String.format(format, args));
+                return this;
             }
         };
         System.setOut(outStream);
