@@ -54,20 +54,17 @@ public class GraphicsUtils {
     }
 
     /**
-     * Binds the given label's text to the projected length of the node as it rotates.
+     * Sets the given label's text to the projected length of the node as it rotates.
      * The projected length is calculated using Pythagoras' theorem based on the current rotation angle.
      *
-     * @param label The label to bind the projected length text to.
+     * @param label The label to set the projected length text to.
      * @param node The node representing the canoe graphic.
      * @param length The original length of the canoe (before rotation).
      */
-    public static void bindProjectedLengthToLabel(Label label, Node node, double length) {
-        StringBinding lengthBinding = Bindings.createStringBinding(() -> {
-            double rotationInDegrees = node.getRotate();
-            double rotationInRadians = Math.toRadians(rotationInDegrees);
-            double projectedLength = length * Math.cos(rotationInRadians);
-            return String.format("%.2f m", projectedLength);
-        }, node.rotateProperty());
-        label.textProperty().bind(lengthBinding);
+    public static void setProjectedLengthToLabel(Label label, Node node, double length) {
+        double rotationInDegrees = node.getRotate();
+        double rotationInRadians = Math.toRadians(rotationInDegrees);
+        double projectedLength = length * Math.cos(rotationInRadians);
+        label.setText(String.format("%.2f m", projectedLength));
     }
 }

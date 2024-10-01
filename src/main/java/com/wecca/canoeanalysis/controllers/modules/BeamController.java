@@ -16,6 +16,7 @@ import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.utils.*;
+import javafx.animation.AnimationTimer;
 import javafx.animation.RotateTransition;
 import javafx.event.ActionEvent;
 import javafx.scene.*;
@@ -188,10 +189,8 @@ public class BeamController implements Initializable {
                 setCanoeLengthButton.setText("Reset Canoe");
                 setCanoeLengthButton.setOnAction(e -> resetCanoe());
 
-                // Bind the hulls x-axis projected length to the label (for when it rotates)
-                GraphicsUtils.bindProjectedLengthToLabel(axisLabelR, canoeGraphic.getNode(), length);
-
                 checkAndSetEmptyLoadTreeSettings();
+                rotateCanoeGraphicCounterClockwise(10, 2);
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
             else
@@ -672,16 +671,38 @@ public class BeamController implements Initializable {
     public void rotateCanoeGraphicCounterClockwise(double degrees, double speed) {
         // Update the node's current rotation state
         double currentRotation = canoeGraphic.getNode().getRotate();
-        canoeGraphic.getNode().setRotate(currentRotation - degrees);
+        double targetRotation = currentRotation - degrees;
+        double length = canoe.getHull().getLength();
 
         // Animate the rotation transition
         RotateTransition rotateTransition = new RotateTransition();
         rotateTransition.setNode(canoeGraphic.getNode());
         rotateTransition.setDuration(Duration.seconds(speed));
         rotateTransition.setFromAngle(currentRotation);
-        rotateTransition.setToAngle(currentRotation - degrees);
+        rotateTransition.setToAngle(targetRotation);
         rotateTransition.setCycleCount(1);
         rotateTransition.setAutoReverse(false);
+
+        // Create an AnimationTimer to smoothly update the label as the rotation progresses
+        AnimationTimer timer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                // Update the label with the projected length as the rotation changes
+                GraphicsUtils.setProjectedLengthToLabel(axisLabelR, canoeGraphic.getNode(), length);
+            }
+        };
+
+        // Start the AnimationTimer right before playing the RotateTransition
+        timer.start();
+
+        // Stop the timer when the animation finishes
+        rotateTransition.setOnFinished(e -> {
+            timer.stop();
+            // Ensure final update of the projected length
+            GraphicsUtils.setProjectedLengthToLabel(axisLabelR, canoeGraphic.getNode(), length);
+        });
+
+        // Start the rotation animation
         rotateTransition.play();
     }
 
