@@ -3,14 +3,13 @@ package com.wecca.canoeanalysis.models.load;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.Section;
+import com.wecca.canoeanalysis.models.function.FunctionSection;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.optim.MaxEval;
 
 import java.util.*;
@@ -19,12 +18,12 @@ import java.util.*;
 public class PiecewiseContinuousLoadDistribution extends LoadDistribution {
 
     @JsonProperty("pieces")
-    private TreeMap<Section, BoundedUnivariateFunction> pieces;
+    private TreeMap<FunctionSection, BoundedUnivariateFunction> pieces;
 
-    public PiecewiseContinuousLoadDistribution(LoadType type, List<BoundedUnivariateFunction> pieces, List<Section> subSections) {
-        super(type, new Section(subSections.getFirst().getX(), subSections.getLast().getRx()));
+    public PiecewiseContinuousLoadDistribution(LoadType type, List<BoundedUnivariateFunction> pieces, List<FunctionSection> subSections) {
+        super(type, new FunctionSection(subSections.getFirst().getX(), subSections.getLast().getRx()));
         CalculusUtils.validatePiecewiseContinuity(pieces, subSections);
-        this.pieces = new TreeMap<>(Comparator.comparingDouble(Section::getX));
+        this.pieces = new TreeMap<>(Comparator.comparingDouble(FunctionSection::getX));
         for (int i = 0; i < pieces.size(); i++) {
             this.pieces.put(subSections.get(i), pieces.get(i));
         }
@@ -36,7 +35,7 @@ public class PiecewiseContinuousLoadDistribution extends LoadDistribution {
      */
     public static PiecewiseContinuousLoadDistribution fromHull(Hull hull) {
         List<HullSection> hullSections = hull.getHullSections();
-        List<Section> sections = hullSections.stream().map(hullSection -> (Section) hullSection).toList();
+        List<FunctionSection> sections = hullSections.stream().map(hullSection -> (FunctionSection) hullSection).toList();
 
         List<BoundedUnivariateFunction> pieces = new ArrayList<>();
         for (HullSection section : hullSections) {
@@ -84,8 +83,8 @@ public class PiecewiseContinuousLoadDistribution extends LoadDistribution {
     }
 
     @JsonIgnore
-    public Section getSection() {
-        return new Section(pieces.firstKey().getX(), pieces.lastKey().getRx());
+    public FunctionSection getSection() {
+        return new FunctionSection(pieces.firstKey().getX(), pieces.lastKey().getRx());
     }
 
 }

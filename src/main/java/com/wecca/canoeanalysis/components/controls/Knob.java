@@ -23,19 +23,13 @@ public class Knob extends Slider {
 
     private String name;
 
-    public Knob(String name,
-                double value,
-                double min,
-                double max,
-                double layoutX,
-                double layoutY) {
+    public Knob(String name, double value, double min, double max, double layoutX, double layoutY) {
         this.name = name;
         setLayoutX(layoutX);
         setLayoutY(layoutY);
         setMin(min);
         setMax(max);
-        setValue(value);
-        setSkin(new KnobSkin());
+        setSkin(new KnobSkin(value));
     }
 
     @Getter @Setter
@@ -51,8 +45,8 @@ public class Knob extends Slider {
         private Label valueLabel;
 
         // Sizing and layout constants
-        private final double baseArcDegreesLength = 240;
-        private final double baseArcStartDegrees = 210;
+        private final double baseArcDegreesAngleSpan = 240;
+        private final double valueArcStartDegrees = 210;
         private final double knobBaseSizeRadius = 50;
         private final double knobCenterLayoutOffset = 60;
 
@@ -64,7 +58,7 @@ public class Knob extends Slider {
         private final double knobBorderWidth = knobBaseSizeRadius / 20.0;
         private final double arcWidth = knobBorderWidth * 0.75;
 
-        public KnobSkin() {
+        public KnobSkin(double value) {
             super(Knob.this);
 
             // Base black knob arc
@@ -73,8 +67,8 @@ public class Knob extends Slider {
             baseArc.setRadiusY(arcRadius);
             baseArc.setStrokeWidth(arcWidth);
             baseArc.setStroke(Color.BLACK);
-            baseArc.setStartAngle(baseArcStartDegrees);
-            baseArc.setLength(-baseArcDegreesLength);
+            baseArc.setStartAngle(valueArcStartDegrees);
+            baseArc.setLength(-baseArcDegreesAngleSpan);
             baseArc.setFill(Color.TRANSPARENT);
 
             // White arc that scales with value
@@ -83,7 +77,7 @@ public class Knob extends Slider {
             valueArc.setRadiusY(arcRadius);
             valueArc.setStrokeWidth(arcWidth);
             valueArc.setStroke(ColorPaletteService.getColor("white"));
-            valueArc.setStartAngle(baseArcStartDegrees);
+            valueArc.setStartAngle(valueArcStartDegrees);
             valueArc.setLength(getValueArcLength());
             valueArc.setFill(Color.TRANSPARENT);
 
@@ -117,21 +111,24 @@ public class Knob extends Slider {
                 valueArc.setLength(getValueArcLength());
                 updateKnobHandle();
             });
+
+            // Set the initial knob value
+            setKnobValue(value);
+
+            // Bind the value label x position to value to ensure it's always centered
+            valueLabel.layoutXProperty().bind(valueLabel.widthProperty().divide(-2).add(knobCenterLayoutOffset));
         }
 
         /**
          * Calculate the position of the knob handle based on the current value
          */
         private void updateKnobHandle() {
-            double angle = baseArcStartDegrees - getValueArcLength() - 60;
+            double angle = valueArcStartDegrees - getValueArcLength() - 60;
             double radians = Math.toRadians(angle);
             double handleX = knobCenterLayoutOffset + knobHandleArcRadius * Math.cos(radians);
             double handleY = knobCenterLayoutOffset + knobHandleArcRadius * Math.sin(radians);
             knobHandleCircle.setLayoutX(handleX);
             knobHandleCircle.setLayoutY(handleY);
-
-            // Ensure knob handle stays on top when updated
-            knobHandleCircle.toFront();
         }
 
         /**
@@ -140,7 +137,7 @@ public class Knob extends Slider {
         private double getValueArcLength() {
             double range = getMax() - getMin();
             double percentage = (getValue() - getMin()) / range;
-            return -baseArcDegreesLength * percentage;
+            return -baseArcDegreesAngleSpan * percentage;
         }
 
         /**
@@ -188,15 +185,49 @@ public class Knob extends Slider {
          * @param mouseY the y position of the mouse on click (start of dragging)
          */
         private void setValueOnDrag(double mouseX, double mouseY) {
+            // Calculate the angle of change
             double deltaX = mouseX - knobCenterLayoutOffset;
             double deltaY = mouseY - knobCenterLayoutOffset;
             double angle = Math.toDegrees(Math.atan2(deltaY, deltaX));
-            double adjustedAngle = (angle - baseArcStartDegrees + 360) % 360;
-            if (adjustedAngle <= baseArcDegreesLength) {
-                double percentage = adjustedAngle / baseArcDegreesLength;
-                double newValue = getMin() + percentage * (getMax() - getMin());
-                setValue(newValue);
+            double adjustedAngle = (angle - valueArcStartDegrees + 360) % 360;
+
+            // Don't set past max angle span
+            if (adjustedAngle <= baseArcDegreesAngleSpan) {
+                double percentage = adjustedAngle / baseArcDegreesAngleSpan;
+                double range = getMax() - getMin();
+                double newValue = getMin() + percentage * range;
+
+                // Limit the value change to 1% of the range to avoid jumpy behaviour
+                double maxChange =  0.01 * range;
+                double currentValue = getValue();
+                double clampedValue = (newValue > currentValue)
+                        ? Math.min(newValue, currentValue + maxChange)
+                        : Math.max(newValue, currentValue - maxChange);
+
+                // Prevent setting past min or max
+                if (clampedValue < getMin())
+                    clampedValue = getMin();
+                if (clampedValue > getMax())
+                    clampedValue = getMax();
+
+                setKnobValue(clampedValue);
             }
+        }
+
+        public void setKnobValue(double value) {
+            Knob.super.setValue(value);
+            valueLabel.setText(String.format("%s: %.2f", getName(), value));
+        }
+
+
+        /**
+         * Calculate the current angle based on the current value of the knob.
+         * The angle is computed based on the percentage of the value within the min-max range.
+         * @return The current angle of the knob in degrees.
+         */
+        private double getCurrentAngle() {
+            double percentage = (getValue() - getMin()) / (getMax() - getMin());
+            return valueArcStartDegrees - (percentage * baseArcDegreesAngleSpan);
         }
     }
 }
