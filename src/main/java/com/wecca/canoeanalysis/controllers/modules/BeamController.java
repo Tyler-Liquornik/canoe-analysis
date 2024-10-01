@@ -16,12 +16,14 @@ import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.utils.*;
+import javafx.animation.RotateTransition;
 import javafx.event.ActionEvent;
 import javafx.scene.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.fxml.*;
 import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 import lombok.*;
 
 import java.io.File;
@@ -185,6 +187,9 @@ public class BeamController implements Initializable {
                 // Set length button will now function as a reset length button
                 setCanoeLengthButton.setText("Reset Canoe");
                 setCanoeLengthButton.setOnAction(e -> resetCanoe());
+
+                // Bind the hulls x-axis projected length to the label (for when it rotates)
+                GraphicsUtils.bindProjectedLengthToLabel(axisLabelR, canoeGraphic.getNode(), length);
 
                 checkAndSetEmptyLoadTreeSettings();
             }
@@ -658,6 +663,26 @@ public class BeamController implements Initializable {
         setCanoeGraphic(new BeamHullGraphic(rect));
         beamContainer.getChildren().clear();
         beamContainer.getChildren().add((Node) canoeGraphic);
+    }
+
+    /**
+     * Rotate the hull graphic (either a beam or curved hull) with an animation transition
+     * @param degrees the amount of degrees to rotate clockwise
+     */
+    public void rotateCanoeGraphicCounterClockwise(double degrees, double speed) {
+        // Update the node's current rotation state
+        double currentRotation = canoeGraphic.getNode().getRotate();
+        canoeGraphic.getNode().setRotate(currentRotation - degrees);
+
+        // Animate the rotation transition
+        RotateTransition rotateTransition = new RotateTransition();
+        rotateTransition.setNode(canoeGraphic.getNode());
+        rotateTransition.setDuration(Duration.seconds(speed));
+        rotateTransition.setFromAngle(currentRotation);
+        rotateTransition.setToAngle(currentRotation - degrees);
+        rotateTransition.setCycleCount(1);
+        rotateTransition.setAutoReverse(false);
+        rotateTransition.play();
     }
 
     /**
