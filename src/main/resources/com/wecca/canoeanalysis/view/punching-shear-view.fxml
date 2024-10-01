@@ -5,95 +5,100 @@
 <?import java.lang.String?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.shape.Rectangle?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background"
-            xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.wecca.canoeanalysis.controllers.modules.PunchingShearController">
-   <AnchorPane layoutX="25.0" layoutY="25.0" maxHeight="380.0" minHeight="161.0" prefHeight="300.0"
-               prefWidth="400.0" styleClass="surface">
+<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.PunchingShearController">
+   <AnchorPane layoutX="15.0" layoutY="14.0" maxHeight="380.0" minHeight="161.0" prefHeight="320.0" prefWidth="420.0" styleClass="surface">
       <Label layoutX="141.25" layoutY="14.0" text="Shear Diagram">
          <font>
-            <Font size="18.0"/>
+            <Font size="18.0" />
          </font>
       </Label>
-      <JFXTextField alignment="CENTER" layoutX="165.0" layoutY="244.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField alignment="CENTER" layoutX="207.0" layoutY="270.0" prefHeight="25.0" prefWidth="75.0">
          <padding>
-            <Insets top="20.0"/>
+            <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <Label layoutX="90.0" layoutY="265.0" text="Max shear = "/>
-      <Label layoutX="242.0" layoutY="265.0" text="MPa"/>
+      <Label layoutX="111.0" layoutY="291.0" text="Max shear (Vf)  = " />
+      <Label layoutX="284.0" layoutY="291.0" text=" N" />
+      <ImageView fitHeight="174.0" fitWidth="200.0" layoutX="103.0" layoutY="75.0" pickOnBounds="true" preserveRatio="true" />
+      <Label layoutX="108.0" layoutY="145.0" text="Shear Diagram is not implemented yet" textFill="RED" />
    </AnchorPane>
-   <AnchorPane layoutX="450.0" layoutY="25.0" maxHeight="380.0" minHeight="133.0" prefHeight="180.0"
-               prefWidth="425.0" styleClass="surface">
+   <AnchorPane layoutX="450.0" layoutY="15.0" maxHeight="380.0" minHeight="133.0" prefHeight="200.0" prefWidth="435.0" styleClass="surface">
       <Label layoutX="14.0" layoutY="14.0" text="1-way Shear">
          <font>
-            <Font size="18.0"/>
+            <Font size="18.0" />
          </font>
       </Label>
-      <JFXButton layoutX="10.0" layoutY="140.0" prefHeight="30.0" prefWidth="125.0" text="View Equations">
+      <JFXButton layoutX="14.0" layoutY="155.0" prefHeight="30.0" prefWidth="125.0" text="View Equations">
          <styleClass>
-            <String fx:value="action-object"/>
-            <String fx:value="round-corners"/>
+            <String fx:value="action-object" />
+            <String fx:value="round-corners" />
          </styleClass>
       </JFXButton>
-      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="DODGERBLUE" height="27.0" layoutX="245.0" layoutY="77.0"
-                 stroke="BLACK" strokeType="INSIDE" styleClass="rectangle" width="143.0"/>
-      <Label layoutX="255.0" layoutY="82.0" opacity="0.5" styleClass="pass" text="Safe"/>
-      <Label layoutX="343.0" layoutY="82.0" opacity="0.5" styleClass="fail" text="Unsafe"/>
-      <Label layoutX="298.0" layoutY="37.0" text="Vc &gt; Vf"/>
-      <Label layoutX="315.0" layoutY="56.0" prefHeight="15.0" prefWidth="7.0" text="&gt;"/>
-      <Label layoutX="330.0" layoutY="56.0" prefHeight="15.0" prefWidth="38.0"/>
-      <Label layoutX="261.0" layoutY="56.0" prefHeight="15.0" prefWidth="38.0"/>
-      <JFXButton layoutX="155.0" layoutY="144.0" prefHeight="17.0" prefWidth="46.0" styleClass="action-object"
-                 text="Clear"/>
+      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="DODGERBLUE" height="27.0" layoutX="258.0" layoutY="86.0" stroke="BLACK" strokeType="INSIDE" styleClass="rectangle" width="143.0" />
+      <Label fx:id="oneWaySafe" layoutX="268.0" layoutY="91.0" opacity="0.5" styleClass="pass" text="Safe" />
+      <Label fx:id="oneWayUnsafe" layoutX="356.0" layoutY="91.0" opacity="0.5" styleClass="fail" text="Unsafe" />
+      <Label layoutX="311.0" layoutY="65.0" text="Vc &gt; Vf" />
+      <JFXTextField fx:id="Shear" alignment="CENTER" layoutX="82.0" layoutY="71.0" prefHeight="25.0" prefWidth="75.0">
+         <padding>
+            <Insets top="20.0" />
+         </padding>
+      </JFXTextField>
+      <JFXTextField fx:id="MaxShear" alignment="CENTER" layoutX="82.0" layoutY="44.0" prefHeight="25.0" prefWidth="75.0">
+         <padding>
+            <Insets top="20.0" />
+         </padding>
+      </JFXTextField>
+      <Label layoutX="163.0" layoutY="68.0" text="N" />
+      <Label layoutX="163.0" layoutY="95.0" text="N" />
+      <Label layoutX="51.0" layoutY="68.0" text="Vf  = " />
+      <Label layoutX="51.0" layoutY="95.0" prefHeight="15.0" prefWidth="28.0" text="Vc = " />
+      <JFXButton layoutX="294.0" layoutY="155.0" onAction="#safetyTest" prefHeight="30.0" prefWidth="125.0" styleClass="action-object" text="Test" />
    </AnchorPane>
-   <AnchorPane layoutX="450.0" layoutY="230.0" maxHeight="380.0" minHeight="161.0" prefHeight="310.0" prefWidth="425.0"
-               styleClass="surface">
+   <AnchorPane layoutX="450.0" layoutY="230.0" maxHeight="380.0" minHeight="161.0" prefHeight="315.0" prefWidth="435.0" styleClass="surface">
       <Label layoutX="14.0" layoutY="14.0" text="2-way Shear">
          <font>
-            <Font size="18.0"/>
+            <Font size="18.0" />
          </font>
       </Label>
       <JFXButton layoutX="10.0" layoutY="270.0" prefHeight="30.0" prefWidth="125.0" text="View Equations">
          <styleClass>
-            <String fx:value="action-object"/>
-            <String fx:value="round-corners"/>
+            <String fx:value="action-object" />
+            <String fx:value="round-corners" />
          </styleClass>
       </JFXButton>
-      <JFXButton layoutX="155.0" layoutY="274.0" prefHeight="17.0" prefWidth="46.0" styleClass="action-object"
-                 text="Clear"/>
+      <JFXButton layoutX="360.0" layoutY="274.0" onAction="#Clear" prefHeight="23.0" prefWidth="55.0" styleClass="action-object" text="Reset" />
    </AnchorPane>
-   <AnchorPane layoutX="25.0" layoutY="350.0" maxHeight="380.0" minHeight="161.0" prefHeight="190.0" prefWidth="400.0"
-               styleClass="surface">
+   <AnchorPane layoutX="15.0" layoutY="350.0" maxHeight="380.0" minHeight="161.0" prefHeight="195.0" prefWidth="420.0" styleClass="surface">
       <Label layoutX="154.0" layoutY="16.0" text="Hull Builder">
          <font>
-            <Font size="18.0"/>
+            <Font size="18.0" />
          </font>
       </Label>
-      <Label layoutX="32.4" layoutY="65.0" prefHeight="17.0" prefWidth="128.0" text="Canoe Thickness (t) ="/>
-      <Label layoutX="62.5" layoutY="96.0" text="Hull Width (w) ="/>
-      <Label layoutX="5.0" layoutY="125.0" text="Compressive Strength (f) ="/>
-      <JFXTextField alignment="CENTER" layoutX="150.0" layoutY="104.0" prefHeight="25.0" prefWidth="75.0">
+      <Label layoutX="32.4" layoutY="65.0" prefHeight="17.0" prefWidth="128.0" text="Canoe Thickness (t) =" />
+      <Label layoutX="62.5" layoutY="96.0" text="Hull Width (w) =" />
+      <Label layoutX="5.0" layoutY="125.0" text="Compressive Strength (f) =" />
+      <JFXTextField fx:id="CompressiveStrength" alignment="CENTER" layoutX="150.0" layoutY="104.0" onKeyTyped="#CalculateVc" prefHeight="25.0" prefWidth="75.0">
          <padding>
-            <Insets top="20.0"/>
+            <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <JFXTextField alignment="CENTER" layoutX="150.0" layoutY="74.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="HullWidth" alignment="CENTER" layoutX="150.0" layoutY="74.0" onKeyTyped="#CalculateVc" prefHeight="25.0" prefWidth="75.0">
          <padding>
-            <Insets top="20.0"/>
+            <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <JFXTextField alignment="CENTER" layoutX="150.0" layoutY="44.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="CanoeThickness" alignment="CENTER" layoutX="150.0" layoutY="44.0" onKeyTyped="#CalculateVc" prefHeight="25.0" prefWidth="75.0">
          <padding>
-            <Insets top="20.0"/>
+            <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <Label layoutX="226.0" layoutY="125.0" text="MPa"/>
-      <Label layoutX="227.0" layoutY="96.0" text="mm"/>
-      <Label layoutX="227.0" layoutY="66.0" text="mm"/>
+      <Label layoutX="226.0" layoutY="125.0" text="MPa" />
+      <Label layoutX="227.0" layoutY="96.0" text="mm" />
+      <Label layoutX="227.0" layoutY="66.0" text="mm" />
    </AnchorPane>
 </AnchorPane>
