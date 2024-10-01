@@ -3,7 +3,7 @@ package com.wecca.canoeanalysis.models.load;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.wecca.canoeanalysis.models.function.FunctionSection;
+import com.wecca.canoeanalysis.models.function.Section;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,15 +17,15 @@ public class UniformLoadDistribution extends LoadDistribution {
     @JsonCreator
     public UniformLoadDistribution(@JsonProperty("type") LoadType type,
                                    @JsonProperty("magnitude") double magnitude,
-                                   @JsonProperty("section") FunctionSection section) {
+                                   @JsonProperty("section") Section section) {
         super(type, section);
         this.magnitude = magnitude;
     }
 
     public UniformLoadDistribution(LoadType type, double magnitude, double x, double rx) {
-        super(type, new FunctionSection(x, rx));
+        super(type, new Section(x, rx));
         this.magnitude = magnitude;
-        this.section = new FunctionSection(x, rx);
+        this.section = new Section(x, rx);
     }
 
     public UniformLoadDistribution(double magnitude, double x, double rx) {

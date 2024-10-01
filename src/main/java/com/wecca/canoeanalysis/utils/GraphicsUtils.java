@@ -1,8 +1,6 @@
 package com.wecca.canoeanalysis.utils;
 
 import com.wecca.canoeanalysis.components.graphics.*;
-import javafx.beans.binding.Bindings;
-import javafx.beans.binding.StringBinding;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 
@@ -33,7 +31,7 @@ public class GraphicsUtils {
     public static void sortGraphics(List<Graphic> graphics) {
         // Define the order to sort by type
         Map<Class<? extends Graphic>, Integer> classOrder = new HashMap<>();
-        classOrder.put(CurvedHullGraphicBase.class, 0);
+        classOrder.put(CurvedGraphic.class, 0);
         classOrder.put(TriangleStandGraphic.class, 1);
         classOrder.put(ArrowGraphic.class, 2);
         classOrder.put(ArrowBoundCurveGraphic.class, 3);
@@ -49,7 +47,7 @@ public class GraphicsUtils {
      * @param canoeGraphic the CurvedGraphic object
      * @return the loadMaxToHullMaxRatio
      */
-    public static double calculateLoadMaxToCurvedGraphicMaxRatio(HullGraphic canoeGraphic) {
+    public static double calculateLoadMaxToCurvedGraphicMaxRatio(FunctionGraphic canoeGraphic) {
         return (acceptedBeamLoadGraphicHeightRange[1] - acceptedBeamLoadGraphicHeightRange[0]) / canoeGraphic.getEncasingRectangle().getHeight();
     }
 

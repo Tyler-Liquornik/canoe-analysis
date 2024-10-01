@@ -3,7 +3,7 @@ package com.wecca.canoeanalysis.models.load;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.FunctionSection;
+import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
 import lombok.EqualsAndHashCode;
@@ -59,7 +59,7 @@ public class DiscreteLoadDistribution extends Load {
      */
     public static DiscreteLoadDistribution fromHull(Hull hull) {
         List<HullSection> hullSections = new ArrayList<>(hull.getHullSections());
-        hullSections.sort(Comparator.comparingDouble(FunctionSection::getX));
+        hullSections.sort(Comparator.comparingDouble(Section::getX));
 
         List<UniformLoadDistribution> loads = new ArrayList<>();
         for (HullSection section : hullSections) {
@@ -81,7 +81,7 @@ public class DiscreteLoadDistribution extends Load {
     public static DiscreteLoadDistribution fromPiecewiseContinuous(LoadType type, PiecewiseContinuousLoadDistribution piecewise) {
         List<UniformLoadDistribution> loads = piecewise.getPieces().entrySet().stream()
                 .map(piece -> {
-                    FunctionSection section = piece.getKey();
+                    Section section = piece.getKey();
                     double midpoint = (section.getX() + section.getRx()) / 2.0;
                     double mag = piece.getValue().value(midpoint);
 
@@ -130,7 +130,7 @@ public class DiscreteLoadDistribution extends Load {
      * @return the section [x, rx] that the load distribution is on
      */
     @JsonIgnore
-    public FunctionSection getSection() {
-        return new FunctionSection(loads.getFirst().getX(), loads.getLast().getRx());
+    public Section getSection() {
+        return new Section(loads.getFirst().getX(), loads.getLast().getRx());
     }
 }

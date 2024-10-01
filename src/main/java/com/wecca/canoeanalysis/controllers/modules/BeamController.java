@@ -63,7 +63,7 @@ public class BeamController implements Initializable {
     @Getter
     private Canoe canoe;
     @Getter @Setter
-    private HullGraphic canoeGraphic;
+    private FunctionGraphic canoeGraphic;
 
     /**
      * Toggles settings for empty tree view if it's considered empty (placeholder doesn't count)
@@ -96,7 +96,7 @@ public class BeamController implements Initializable {
         // Layering priority is TriangleStands => above Arrows => above ArrowBoundCurves => above Curves
         int viewOrder = Integer.MAX_VALUE;
         for (Node node : loadContainerChildren) {
-            if (node instanceof CurvedHullGraphicBase)
+            if (node instanceof CurvedGraphic)
                 node.setViewOrder(viewOrder--);
         }
         for (Node node : loadContainerChildren) {
@@ -190,7 +190,6 @@ public class BeamController implements Initializable {
                 setCanoeLengthButton.setOnAction(e -> resetCanoe());
 
                 checkAndSetEmptyLoadTreeSettings();
-                rotateCanoeGraphicCounterClockwise(10, 2);
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
             else
@@ -381,7 +380,7 @@ public class BeamController implements Initializable {
                                             ? piecewiseValue // Adjust the distribution graphic by adding the hull curve
                                             : piecewiseValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), piecewiseValue / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
                                 };
-                                rescaledGraphics.add(new CurvedHullGraphicBase(f, piecewise.getSection(), rect));
+                                rescaledGraphics.add(new CurvedGraphic(f, piecewise.getSection(), rect));
                             }
                         }
                         default -> throw new IllegalStateException("Invalid load type");
