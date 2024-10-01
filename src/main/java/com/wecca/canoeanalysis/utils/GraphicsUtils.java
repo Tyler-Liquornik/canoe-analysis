@@ -29,11 +29,11 @@ public class GraphicsUtils {
     public static void sortGraphics(List<Graphic> graphics) {
         // Define the order to sort by type
         Map<Class<? extends Graphic>, Integer> classOrder = new HashMap<>();
-        classOrder.put(Curve.class, 0);
-        classOrder.put(TriangleStand.class, 1);
-        classOrder.put(Arrow.class, 2);
-        classOrder.put(ArrowBoundCurve.class, 3);
-        classOrder.put(Beam.class, 4);
+        classOrder.put(CurvedHullGraphicBase.class, 0);
+        classOrder.put(TriangleStandGraphic.class, 1);
+        classOrder.put(ArrowGraphic.class, 2);
+        classOrder.put(ArrowBoundCurveGraphic.class, 3);
+        classOrder.put(BeamHullGraphic.class, 4);
 
         // Sort by type, and then by position
         graphics.sort(Comparator.comparingInt(l -> classOrder.getOrDefault(l.getClass(), -1)));
@@ -41,11 +41,11 @@ public class GraphicsUtils {
     }
 
     /**
-     * Calculates the ratio of the maximum possible load arrow to the max height of a CurvedProfile
-     * @param canoeGraphic the CurvedProfile object
+     * Calculates the ratio of the maximum possible load arrow to the max height of a CurvedGraphic
+     * @param canoeGraphic the CurvedGraphic object
      * @return the loadMaxToHullMaxRatio
      */
-    public static double calculateLoadMaxToCurvedProfileMaxRatio(CurvedProfile canoeGraphic) {
+    public static double calculateLoadMaxToCurvedGraphicMaxRatio(HullGraphic canoeGraphic) {
         return (acceptedBeamLoadGraphicHeightRange[1] - acceptedBeamLoadGraphicHeightRange[0]) / canoeGraphic.getEncasingRectangle().getHeight();
     }
 }

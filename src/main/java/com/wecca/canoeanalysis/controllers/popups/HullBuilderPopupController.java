@@ -1,18 +1,14 @@
 package com.wecca.canoeanalysis.controllers.popups;
 
-import com.wecca.canoeanalysis.components.graphics.ClosedCurve;
-import com.wecca.canoeanalysis.components.graphics.CurvedProfile;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.controllers.modules.BeamController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.canoe.Hull;
-import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.LoadTreeManagerService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
 import lombok.Setter;
@@ -25,7 +21,7 @@ import java.util.ResourceBundle;
  * It will just set the hull geometry to a scaled version of 2024's SharkBait based on the provided hull length
  * Later, this will be implemented to allow the user to specify curves for hull geometry and material properties
  */
-public class HullBuilderController implements Initializable {
+public class HullBuilderPopupController implements Initializable {
 
     @Setter
     private static MainController mainController;
@@ -39,13 +35,14 @@ public class HullBuilderController implements Initializable {
     }
 
     public void setHullScaledSharkBait(ActionEvent e) {
-        Hull hull = SharkBaitHullLibrary.generateSharkBaitHullScaled(canoe.getHull().getLength());
+        // Hull hull = SharkBaitHullLibrary.generateSharkBaitHullScaledFromParabolas(canoe.getHull().getLength());
+        Hull hull = SharkBaitHullLibrary.generateSharkBaitHullScaledFromBezier(canoe.getHull().getLength());
         canoe.setHull(hull);
         beamController.setCanoe(canoe);
         mainController.showSnackbar("Successfully set hull to Shark Bait");
         beamController.checkAndSetEmptyLoadTreeSettings();
         LoadTreeManagerService.buildLoadTreeView(canoe);
-        mainController.disableModuleToolBarButton(true, 0);
+        mainController.disableModuleToolBarButton(true, 2);
         closeWindow(e);
     }
 

@@ -60,7 +60,7 @@ public class BeamController implements Initializable {
     @Getter
     private Canoe canoe;
     @Getter @Setter
-    private CurvedProfile canoeGraphic;
+    private HullGraphic canoeGraphic;
 
     /**
      * Toggles settings for empty tree view if it's considered empty (placeholder doesn't count)
@@ -93,19 +93,19 @@ public class BeamController implements Initializable {
         // Layering priority is TriangleStands => above Arrows => above ArrowBoundCurves => above Curves
         int viewOrder = Integer.MAX_VALUE;
         for (Node node : loadContainerChildren) {
-            if (node instanceof Curve)
+            if (node instanceof CurvedHullGraphicBase)
                 node.setViewOrder(viewOrder--);
         }
         for (Node node : loadContainerChildren) {
-            if (node instanceof ArrowBoundCurve)
+            if (node instanceof ArrowBoundCurveGraphic)
                 node.setViewOrder(viewOrder--);
         }
         for (Node node : loadContainerChildren) {
-            if (node instanceof Arrow)
+            if (node instanceof ArrowGraphic)
                 node.setViewOrder(viewOrder--);
         }
         for (Node node : loadContainerChildren) {
-            if (node instanceof TriangleStand)
+            if (node instanceof TriangleStandGraphic)
                 node.setViewOrder(viewOrder--);
         }
     }
@@ -150,7 +150,7 @@ public class BeamController implements Initializable {
         deleteLoadButton.setDisable(true);
         clearLoadsButton.setDisable(true);
         disableLoadingControls(true);
-        mainController.disableModuleToolBarButton(true, 0);
+        mainController.disableModuleToolBarButton(true, 2);
         setCanoeLengthButton.setText("Set Length");
         setCanoeLengthButton.setOnAction(e -> setLength());
     }
@@ -159,10 +159,10 @@ public class BeamController implements Initializable {
      * Updates both the model and the UI, showing the length of the canoe
      */
     public void setLength() {
-        if (InputParsingUtil.validateTextAsDouble(canoeLengthTextField.getText())) {
+        if (InputParsingUtils.validateTextAsDouble(canoeLengthTextField.getText())) {
 
             // Convert to metric
-            double length = InputParsingUtil.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
+            double length = InputParsingUtils.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
 
             // Only allow lengths in the specified range
             if (length >= 2 && length <= 10) {
@@ -204,9 +204,9 @@ public class BeamController implements Initializable {
         mainController.closeSnackBar(mainController.getSnackbar());
 
         // Validate the entered numbers are doubles
-        if (InputParsingUtil.allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField))) {
-            double x = InputParsingUtil.getDistanceConverted(pointLocationComboBox, pointLocationTextField);
-            double mag = InputParsingUtil.getLoadConverted(pointMagnitudeComboBox, pointMagnitudeTextField);
+        if (InputParsingUtils.allTextFieldsAreDouble(Arrays.asList(pointLocationTextField, pointMagnitudeTextField))) {
+            double x = InputParsingUtils.getDistanceConverted(pointLocationComboBox, pointLocationTextField);
+            double mag = InputParsingUtils.getLoadConverted(pointMagnitudeComboBox, pointMagnitudeTextField);
             String direction = pointDirectionComboBox.getSelectionModel().getSelectedItem();
 
             // Apply direction
@@ -245,11 +245,11 @@ public class BeamController implements Initializable {
         mainController.closeSnackBar(mainController.getSnackbar());
 
         // Validate the entered numbers are doubles
-        if (InputParsingUtil.allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
+        if (InputParsingUtils.allTextFieldsAreDouble(Arrays.asList(distributedMagnitudeTextField, distributedIntervalTextFieldL,
                 distributedIntervalTextFieldR))) {
-            double x = InputParsingUtil.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldL);
-            double xR = InputParsingUtil.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldR);
-            double mag = InputParsingUtil.getLoadConverted(distributedMagnitudeComboBox, distributedMagnitudeTextField);
+            double x = InputParsingUtils.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldL);
+            double xR = InputParsingUtils.getDistanceConverted(distributedIntervalComboBox, distributedIntervalTextFieldR);
+            double mag = InputParsingUtils.getLoadConverted(distributedMagnitudeComboBox, distributedMagnitudeTextField);
             String direction = distributedDirectionComboBox.getSelectionModel().getSelectedItem();
 
             // Apply direction
@@ -307,7 +307,7 @@ public class BeamController implements Initializable {
         // Create and add the support graphic
         double tipY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + (int) canoeGraphic.getHeight(pLoadX);
         double scaledX = GraphicsUtils.getScaledFromModelToGraphic(pLoadX, canoeGraphic.getEncasingRectangle().getWidth(), canoe.getHull().getLength());
-        TriangleStand support = new TriangleStand(scaledX, tipY);
+        TriangleStandGraphic support = new TriangleStandGraphic(scaledX, tipY);
         loadContainerChildren.add(support);
 
         // Clear graphics the load container and add the new list of load graphics including the support, all sorted
@@ -330,7 +330,7 @@ public class BeamController implements Initializable {
         for (Load load : canoe.getAllLoads()) {
             // Scaling ratios
             double loadMagnitudeRatio = LoadUtils.getLoadMagnitudeRatio(canoe, load);
-            double loadMaxToCurvedProfileMaxRatio = GraphicsUtils.calculateLoadMaxToCurvedProfileMaxRatio(canoeGraphic);
+            double loadMaxToCurvedProfileMaxRatio = GraphicsUtils.calculateLoadMaxToCurvedGraphicMaxRatio(canoeGraphic);
 
             // Load graphic position coordinates (distribution graphic left end) and magnitude
             double loadMax = load.getMaxSignedValue();
@@ -341,7 +341,7 @@ public class BeamController implements Initializable {
 
             // Render the correct graphic based on the subtype of the load
             switch (load) {
-                case PointLoad ignoredPLoad -> rescaledGraphics.add(new Arrow(x, x, startY, endY));
+                case PointLoad ignoredPLoad -> rescaledGraphics.add(new ArrowGraphic(x, x, startY, endY));
                 case LoadDistribution dist -> {
                     // Distribution graphic right end coordinates
                     double rx = GraphicsUtils.getScaledFromModelToGraphic(dist.getSection().getRx(), canoeGraphicLength, canoe.getHull().getLength());
@@ -358,8 +358,8 @@ public class BeamController implements Initializable {
                     Rectangle rect = new Rectangle(x, rectY, rectWidth, rectHeight);
                     switch (dist) {
                         case UniformLoadDistribution ignoredDLoad -> {
-                            Arrow lArrow = new Arrow(x, x, startY, endY);
-                            Arrow rArrow = new Arrow(rx, rx, startRy, endRy);
+                            ArrowGraphic lArrow = new ArrowGraphic(x, x, startY, endY);
+                            ArrowGraphic rArrow = new ArrowGraphic(rx, rx, startRy, endRy);
                             RectFunction step = new RectFunction(loadMax, dist.getX(), dist.getSection().getRx());
                             BoundedUnivariateFunction f = X -> {
                                 double stepValue = step.value(X);
@@ -367,7 +367,7 @@ public class BeamController implements Initializable {
                                         ? stepValue // Adjust the distribution graphic by adding the hull curve
                                         : stepValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), stepValue / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
                             };
-                            rescaledGraphics.add(new ArrowBoundCurve(f, dist.getSection(), rect, lArrow, rArrow));
+                            rescaledGraphics.add(new ArrowBoundCurveGraphic(f, dist.getSection(), rect, lArrow, rArrow));
                         }
                         case PiecewiseContinuousLoadDistribution piecewise -> {
                             if (piecewise.getForce() != 0) {
@@ -377,7 +377,7 @@ public class BeamController implements Initializable {
                                             ? piecewiseValue // Adjust the distribution graphic by adding the hull curve
                                             : piecewiseValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), piecewiseValue / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
                                 };
-                                rescaledGraphics.add(new Curve(f, piecewise.getSection(), rect));
+                                rescaledGraphics.add(new CurvedHullGraphicBase(f, piecewise.getSection(), rect));
                             }
                         }
                         default -> throw new IllegalStateException("Invalid load type");
@@ -415,7 +415,6 @@ public class BeamController implements Initializable {
             return;
         }
 
-
         if (submergedRadioButton.isSelected()) {
             solveSubmergedSystem();
             return; // TODO: after implemented solveSubmergedSystem()
@@ -427,7 +426,7 @@ public class BeamController implements Initializable {
         else if (floatingRadioButton.isSelected()) {
             if (canoe.getHull().getWeight() == 0) {
                 mainController.showSnackbar("Cannot solve for buoyancy without a hull. Please build a hull first");
-                mainController.flashModuleToolBarButton(0, 8000); // as a hint for the user
+                mainController.flashModuleToolBarButton(2, 8000); // as a hint for the user
                 return;
             }
             double maximumPossibleBuoyancyForce = BeamSolverService.getTotalBuoyancy(canoe, 0);
@@ -453,7 +452,7 @@ public class BeamController implements Initializable {
         checkAndSetEmptyLoadTreeSettings();
         deleteLoadButton.setDisable(true);
         clearLoadsButton.setDisable(true);
-        mainController.disableModuleToolBarButton(true, 0);
+        mainController.disableModuleToolBarButton(true, 2);
         updateViewOrder();
     }
 
@@ -524,7 +523,7 @@ public class BeamController implements Initializable {
         LoadTreeManagerService.buildLoadTreeView(canoe);
         disableLoadingControls(false);
         boolean isHullPresent = canoe.getHull().getWeight() != 0;
-        mainController.disableModuleToolBarButton(isHullPresent, 0);
+        mainController.disableModuleToolBarButton(isHullPresent, 2);
         checkAndSetEmptyLoadTreeSettings();
     }
 
@@ -547,13 +546,13 @@ public class BeamController implements Initializable {
         for (Control control : controls) {
             control.setDisable(b);
         }
-        mainController.disableAllModuleToolbarButton(b);
+        mainController.disableAllModuleToolbarButtons(b);
 
         // Only enable the hull builder if a custom hull hasn't yet been set
         if (canoe.getHull() != null) {
             boolean disableHullBuilder = !canoe.getHull().equals(
                     SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
-            mainController.disableModuleToolBarButton(disableHullBuilder, 0);
+            mainController.disableModuleToolBarButton(disableHullBuilder, 2);
         }
     }
 
@@ -589,7 +588,7 @@ public class BeamController implements Initializable {
                     selectedItem.getLoad().getType() == LoadType.HULL) {
                 canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
                 resetCanoeGraphic();
-                mainController.disableModuleToolBarButton(false, 0);
+                mainController.disableModuleToolBarButton(false, 2);
             }
             else {
                 // If the hull is present in the treeView it will disrupt the order sync between canoe.loads and loadContainer.children, we need to adjust for this
@@ -656,7 +655,7 @@ public class BeamController implements Initializable {
      */
     public void resetCanoeGraphic() {
         Rectangle rect = new Rectangle(0, 84, beamContainer.getPrefWidth(), 25);
-        setCanoeGraphic(new Beam(rect));
+        setCanoeGraphic(new BeamHullGraphic(rect));
         beamContainer.getChildren().clear();
         beamContainer.getChildren().add((Node) canoeGraphic);
     }
@@ -688,7 +687,7 @@ public class BeamController implements Initializable {
 
             Hull defaultHull = SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength());
             boolean isBeam = canoe.getHull().equals(defaultHull);
-            mainController.disableModuleToolBarButton(!isBeam, 0);
+            mainController.disableModuleToolBarButton(!isBeam, 2);
 
             // Update UI to new canoe
             renderGraphics();
@@ -710,7 +709,7 @@ public class BeamController implements Initializable {
         Hull hull = canoe.getHull();
         Rectangle rect = canoeGraphic.getEncasingRectangle();
         rect.setHeight(35);
-        setCanoeGraphic(new ClosedCurve(
+        setCanoeGraphic(new CurvedHullGraphic(
                 hull.getPiecedSideProfileCurve(), hull.getSection(), rect));
         beamContainer.getChildren().clear();
         beamContainer.getChildren().add((Node) canoeGraphic);
@@ -733,21 +732,21 @@ public class BeamController implements Initializable {
     /**
      * Open the hull builder submodule (just a utility window for now until fully developed)
      */
-    public void openHullBuilder() {
-        HullBuilderController.setMainController(mainController);
-        HullBuilderController.setBeamController(this);
-        WindowManagerService.openUtilityWindow("Hull Builder Beta", "view/hull-builder-view.fxml", 350, 230);
+    public void openHullBuilderPopup() {
+        HullBuilderPopupController.setMainController(mainController);
+        HullBuilderPopupController.setBeamController(this);
+        WindowManagerService.openUtilityWindow("Hull Builder Beta", "view/hull-builder-popup-view.fxml", 350, 230);
     }
 
     /**
      * Clears the toolbar of buttons from other modules and adds ones from this module
      * Currently, this provides buttons to download and upload the Canoe object as JSON
      */
-    public void addModuleToolBarButtons() {
+    public void initModuleToolBarButtons() {
         LinkedHashMap<IconGlyphType, Consumer<ActionEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
-        iconGlyphToFunctionMap.put(IconGlyphType.WRENCH, e -> openHullBuilder());
         iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
+        iconGlyphToFunctionMap.put(IconGlyphType.WRENCH, e -> openHullBuilderPopup());
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
     }
@@ -761,7 +760,7 @@ public class BeamController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         // Module init
         setMainController(CanoeAnalysisApplication.getMainController());
-        addModuleToolBarButtons();
+        initModuleToolBarButtons();
         canoe = new Canoe();
 
         // Load tree init

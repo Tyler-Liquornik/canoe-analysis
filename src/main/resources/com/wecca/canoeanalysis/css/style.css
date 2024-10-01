@@ -161,6 +161,10 @@
     -fx-background-color: -fx-primary-light;
 }
 
+.transparent-button-no-hover:hover {
+    -fx-background-color: transparent;
+}
+
 .close-window-button:hover {
     -fx-background-color: -fx-danger;
 }

@@ -2,7 +2,7 @@ package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.Section;
+import com.wecca.canoeanalysis.models.function.FunctionSection;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.Group;
@@ -14,9 +14,10 @@ import lombok.Setter;
 
 /**
  * Icon used for an unset/simplified canoe hull
+ * Technically a "curve" that it just flat
  */
 @Getter @Setter
-public class Beam extends Group implements CurvedProfile {
+public class BeamHullGraphic extends Group implements HullGraphic {
 
     private Rectangle encasingRectangle;
     private Line topBorder;
@@ -26,7 +27,7 @@ public class Beam extends Group implements CurvedProfile {
     private boolean isColored;
     private static final double borderExtension = 5; // Amount by which the borders extend beyond the beam
 
-    public Beam(Rectangle rectangle) {
+    public BeamHullGraphic(Rectangle rectangle) {
         super();
         this.encasingRectangle = rectangle;
         this.isColored = false;
@@ -76,8 +77,8 @@ public class Beam extends Group implements CurvedProfile {
     }
 
     @Override
-    public Section getSection() {
-        return new Section(encasingRectangle.getX(), encasingRectangle.getX() + encasingRectangle.getWidth());
+    public FunctionSection getSection() {
+        return new FunctionSection(encasingRectangle.getX(), encasingRectangle.getX() + encasingRectangle.getWidth());
     }
 
     @Override

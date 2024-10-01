@@ -12,7 +12,7 @@ import lombok.Setter;
  * Icon used for a pinned support
  */
 @Getter @Setter
-public class TriangleStand extends Group implements Graphic {
+public class TriangleStandGraphic extends Group implements Graphic {
 
     private static final double sideLength = 20.0;
     private double tipX;
@@ -21,7 +21,7 @@ public class TriangleStand extends Group implements Graphic {
     private Line baseLine;
     private boolean isColored;
 
-    public TriangleStand(double tipX, double tipY) {
+    public TriangleStandGraphic(double tipX, double tipY) {
         super();
         this.tipX = tipX;
         this.tipY = tipY;

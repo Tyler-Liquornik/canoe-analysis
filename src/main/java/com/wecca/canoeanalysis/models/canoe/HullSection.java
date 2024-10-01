@@ -5,10 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
+import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.load.ContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
-import com.wecca.canoeanalysis.models.function.Section;
-import com.wecca.canoeanalysis.models.function.VertexFormParabola;
+import com.wecca.canoeanalysis.models.function.FunctionSection;
+import com.wecca.canoeanalysis.models.function.VertexFormParabolaFunction;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
@@ -49,18 +50,20 @@ import java.util.function.Function;
  * "Thickness" refers to the normal direction of a surface to provide thickness to (+/- orientation is context dependent)
  */
 @Getter @Setter @EqualsAndHashCode(callSuper = true)
-public class HullSection extends Section
+public class HullSection extends FunctionSection
 {
     @JsonProperty("sideProfileCurve")
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
     @JsonSubTypes({
-            @JsonSubTypes.Type(value = VertexFormParabola.class, name = "VertexFormParabola")
+            @JsonSubTypes.Type(value = VertexFormParabolaFunction.class, name = "VertexFormParabola"),
+            @JsonSubTypes.Type(value = CubicBezierFunction.class, name = "CubicBezierFunction")
     })
     private BoundedUnivariateFunction sideProfileCurve;
     @JsonProperty("topProfileCurve")
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
     @JsonSubTypes({
-            @JsonSubTypes.Type(value = VertexFormParabola.class, name = "VertexFormParabola")
+            @JsonSubTypes.Type(value = VertexFormParabolaFunction.class, name = "VertexFormParabola"),
+            @JsonSubTypes.Type(value = CubicBezierFunction.class, name = "CubicBezierFunction")
     })
     private BoundedUnivariateFunction topProfileCurve;
     @JsonProperty("thickness")
@@ -130,8 +133,8 @@ public class HullSection extends Section
      */
     public HullSection(double length, double height, double width) {
         super(0, length);
-        this.sideProfileCurve = new VertexFormParabola(0, 0, -height);
-        this.topProfileCurve = new VertexFormParabola(0, 0, width / 2.0);
+        this.sideProfileCurve = new VertexFormParabolaFunction(0, 0, -height);
+        this.topProfileCurve = new VertexFormParabolaFunction(0, 0, width / 2.0);
     }
 
     /**
@@ -225,7 +228,7 @@ public class HullSection extends Section
     @JsonIgnore
     public ContinuousLoadDistribution getWeightDistributionFunction() {
         BoundedUnivariateFunction distribution = x -> -getMassDistributionFunction().value(x) * PhysicalConstants.GRAVITY.getValue() / 1000.0;
-        return new ContinuousLoadDistribution(LoadType.DISCRETE_SECTION, distribution, new Section(x, rx));
+        return new ContinuousLoadDistribution(LoadType.DISCRETE_SECTION, distribution, new FunctionSection(x, rx));
     }
 
     /**

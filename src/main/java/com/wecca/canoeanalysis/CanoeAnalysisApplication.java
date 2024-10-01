@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis;
 
 import com.wecca.canoeanalysis.controllers.MainController;
+import com.wecca.canoeanalysis.controllers.util.SideDrawerController;
 import com.wecca.canoeanalysis.models.data.Settings;
 import com.wecca.canoeanalysis.services.LoggerService;
 import com.wecca.canoeanalysis.services.ResourceManagerService;
@@ -42,7 +43,7 @@ public class CanoeAnalysisApplication extends Application {
         setMainController(mainFxmlLoader.getController());
         mainController.setPrimaryStage(stage);
         mainController.setPrimaryScene(scene);
-        FXMLLoader beamFxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/beam-view.fxml"));
+        FXMLLoader beamFxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/" + SideDrawerController.selectedModule.getViewName() + ".fxml"));
         AnchorPane moduleInjectionRoot = beamFxmlLoader.load();
         mainController.getModuleInjectionRoot().getChildren().setAll(moduleInjectionRoot);
 

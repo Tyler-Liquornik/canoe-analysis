@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.Section;
+import com.wecca.canoeanalysis.models.function.FunctionSection;
 import com.wecca.canoeanalysis.models.load.DiscreteLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
@@ -35,7 +35,7 @@ public class Hull {
     public Hull(@JsonProperty("concreteDensity") double concreteDensity,
                 @JsonProperty("bulkheadDensity") double bulkheadDensity,
                 @JsonProperty("hullSections") List<HullSection> hullSections) {
-        hullSections.sort(Comparator.comparingDouble(Section::getX));
+        hullSections.sort(Comparator.comparingDouble(FunctionSection::getX));
         validateNoSectionGaps(hullSections);
         validateFloorThickness(hullSections);
         validateWallThickness(hullSections);
@@ -73,8 +73,8 @@ public class Hull {
      * @return the hull lengthwise endpoints [0, L] as a section
      */
     @JsonIgnore
-    public Section getSection() {
-        return new Section(0.0, getLength());
+    public FunctionSection getSection() {
+        return new FunctionSection(0.0, getLength());
     }
 
     /**
