@@ -1,6 +1,10 @@
 package com.wecca.canoeanalysis.utils;
 
 import com.wecca.canoeanalysis.components.graphics.*;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.StringBinding;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -47,5 +51,23 @@ public class GraphicsUtils {
      */
     public static double calculateLoadMaxToCurvedGraphicMaxRatio(HullGraphic canoeGraphic) {
         return (acceptedBeamLoadGraphicHeightRange[1] - acceptedBeamLoadGraphicHeightRange[0]) / canoeGraphic.getEncasingRectangle().getHeight();
+    }
+
+    /**
+     * Binds the given label's text to the projected length of the node as it rotates.
+     * The projected length is calculated using Pythagoras' theorem based on the current rotation angle.
+     *
+     * @param label The label to bind the projected length text to.
+     * @param node The node representing the canoe graphic.
+     * @param length The original length of the canoe (before rotation).
+     */
+    public static void bindProjectedLengthToLabel(Label label, Node node, double length) {
+        StringBinding lengthBinding = Bindings.createStringBinding(() -> {
+            double rotationInDegrees = node.getRotate();
+            double rotationInRadians = Math.toRadians(rotationInDegrees);
+            double projectedLength = length * Math.cos(rotationInRadians);
+            return String.format("%.2f m", projectedLength);
+        }, node.rotateProperty());
+        label.textProperty().bind(lengthBinding);
     }
 }
