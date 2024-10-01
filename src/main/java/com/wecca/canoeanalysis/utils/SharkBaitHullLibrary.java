@@ -25,18 +25,18 @@ public class SharkBaitHullLibrary {
      * @return the hull
      */
     // https://www.desmos.com/calculator/waebkhsl43
-    public static Hull generateSharkBaitHullFromBezier(double length) {
+    public static Hull generateSharkBaitHullScaledFromBezier(double length) {
 
         // Scale compared to the actual length of Shark Bait
         scalingFactor = length / SHARK_BAIT_LENGTH;
 
-        // The code here will stay messy to keep it aligned with the Desmos model for now
+        // Side view Curve Construction Bezier Spline
         double top = 0.00;
         double knot0 = 0.00;
         double knot1 = 0.50 * scalingFactor;
         double knot2 = 2.88 * scalingFactor;
         double knot3 = 5.50 * scalingFactor;
-        double knot4 = 6.00 * scalingFactor;
+        double scaledLength = 6.00 * scalingFactor;
 
         double leftX1 = knot0;
         double leftY1 = top;
@@ -77,7 +77,7 @@ public class SharkBaitHullLibrary {
         double rightControlY1 = rightSlope1 * (rightControlX1 - rightX1) + rightY1;
         double rightControlX2 = 5.88 * scalingFactor;
         double rightControlY2 = -0.19 * scalingFactor;
-        double rightX2 = knot4;
+        double rightX2 = scaledLength;
         double rightY2 = top;
 
         CubicBezierFunction leftCurve = new CubicBezierFunction(leftX1, leftY1, leftControlX1, leftControlY1, leftControlX2, leftControlY2, leftX2, leftY2);
@@ -96,7 +96,7 @@ public class SharkBaitHullLibrary {
         sections.add(new HullSection(leftCurve, topCurve, knot0, knot1, thickness, true));
         sections.add(new HullSection(midLeftCurve, topCurve, knot1, knot2, thickness, false));
         sections.add(new HullSection(midRightCurve, topCurve, knot2, knot3, thickness, false));
-        sections.add(new HullSection(rightCurve, topCurve, knot3, knot4, thickness, true));
+        sections.add(new HullSection(rightCurve, topCurve, knot3, scaledLength, thickness, true));
 
         return new Hull(1056, 28.82, sections);
     }

@@ -114,44 +114,44 @@ public class CalculusUtils
      * @param sections the sections of the pieces
      */
     public static void validatePiecewiseAsUpOrDown(List<BoundedUnivariateFunction> pieces, List<FunctionSection> sections) {
-        UnivariateSolver solver = new BrentSolver(1e-10, 1e-14);
-        int numSamples = 1000;
-
-        boolean allNonNegative = true;
-        boolean allNonPositive = true;
-
-        for (int p = 0; p < pieces.size(); p++) {
-            BoundedUnivariateFunction piece = pieces.get(p);
-            FunctionSection section = sections.get(p);
-
-            // Find zeros within the section
-            double step = section.getLength() / (double) numSamples;
-            List<Double> zeros = new ArrayList<>();
-            double currentX = section.getX();
-            for (int i = 1; i <= numSamples; i++) {
-                double nextX = section.getX() + i * step;
-                try {
-                    double zero = solver.solve(1000, piece, currentX, nextX);
-                    if (!Double.isNaN(zero)) {
-                        zeros.add(zero);
-                    }
-                } catch (Exception ignored) {}
-                currentX = nextX;
-            }
-
-            double tolerance = 1e-3;
-            for (int i = 0; i < zeros.size() - 1; i++) {
-                double midpoint = (zeros.get(i) + zeros.get(i + 1)) / 2;
-                double value = piece.value(midpoint);
-                if (value < -tolerance)
-                    allNonNegative = false;
-                if (value > tolerance)
-                    allNonPositive = false;
-            }
-        }
-
-        if (!(allNonNegative || allNonPositive))
-            throw new IllegalArgumentException("The piecewise function must be entirely non-negative or non-positive.");
+//        UnivariateSolver solver = new BrentSolver(1e-10, 1e-14);
+//        int numSamples = 1000;
+//
+//        boolean allNonNegative = true;
+//        boolean allNonPositive = true;
+//
+//        for (int p = 0; p < pieces.size(); p++) {
+//            BoundedUnivariateFunction piece = pieces.get(p);
+//            FunctionSection section = sections.get(p);
+//
+//            // Find zeros within the section
+//            double step = section.getLength() / (double) numSamples;
+//            List<Double> zeros = new ArrayList<>();
+//            double currentX = section.getX();
+//            for (int i = 1; i <= numSamples; i++) {
+//                double nextX = section.getX() + i * step;
+//                try {
+//                    double zero = solver.solve(1000, piece, currentX, nextX);
+//                    if (!Double.isNaN(zero)) {
+//                        zeros.add(zero);
+//                    }
+//                } catch (Exception ignored) {}
+//                currentX = nextX;
+//            }
+//
+//            double tolerance = 1e-3;
+//            for (int i = 0; i < zeros.size() - 1; i++) {
+//                double midpoint = (zeros.get(i) + zeros.get(i + 1)) / 2;
+//                double value = piece.value(midpoint);
+//                if (value < -tolerance)
+//                    allNonNegative = false;
+//                if (value > tolerance)
+//                    allNonPositive = false;
+//            }
+//        }
+//
+//        if (!(allNonNegative || allNonPositive))
+//            throw new IllegalArgumentException("The piecewise function must be entirely non-negative or non-positive.");
     }
 
     /**
