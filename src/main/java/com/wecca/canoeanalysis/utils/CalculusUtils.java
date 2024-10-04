@@ -1,9 +1,10 @@
 package com.wecca.canoeanalysis.utils;
 
-import com.wecca.canoeanalysis.aop.Traceable;
+import Jama.Matrix;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.function.Section;
+import org.apache.commons.math3.analysis.BivariateFunction;
 import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
@@ -24,7 +25,7 @@ public class CalculusUtils
     public static BoundedUnivariateFunction differentiate(BoundedUnivariateFunction function)
     {
         double h = 1e-6; // Small value for h implies the limit as h -> 0
-        return x -> (function.value(x + h) - function.value(x - h)) / h;
+        return x -> (function.value(x + h) - function.value(x - h)) / (2 * h);
     }
 
     /**
@@ -185,5 +186,28 @@ public class CalculusUtils
     public static double roundXDecimalDigits(double num, int numDigits) {
         double factor = Math.pow(10, numDigits);
         return Math.round(num * factor) / factor;
+    }
+
+    /**
+     * @param x value of the first variable to evaluate the Jacobian for
+     * @param y value of the second variable to evaluate the Jacobian for
+     * @param f1  The first equation in the system, f1(x, y)
+     * @param f2  The first equation in the system, f2(x, y)
+     * @return the Jacobian matrix J for the system of equations [f1(x, y) = 0, f2(x, y) = 0] in R^2
+     */
+    public static Matrix evaluateR2Jacobian(double x, double y, BivariateFunction f1, BivariateFunction f2) {
+        // Partial derivatives of f1 and f2
+        BoundedUnivariateFunction df1_dx = differentiate(X -> f1.value(X, y));
+        BoundedUnivariateFunction df1_dy = differentiate(Y -> f1.value(x, Y));
+        BoundedUnivariateFunction df2_dx = differentiate(X -> f2.value(X, y));
+        BoundedUnivariateFunction df2_dy = differentiate(Y -> f2.value(x, Y));
+
+        // Construct the Jacobian
+        Matrix jacobian = new Matrix(2, 2);
+        jacobian.set(0, 0, df1_dx.value(x)); // ∂f1 / ∂x evaluated at x
+        jacobian.set(0, 1, df1_dy.value(y)); // ∂f1 / ∂y evaluated at y
+        jacobian.set(1, 0, df2_dx.value(x)); // ∂f2 / ∂x evaluated at x
+        jacobian.set(1, 1, df2_dy.value(y)); // ∂f2 / ∂y evaluated at y
+        return jacobian;
     }
 }

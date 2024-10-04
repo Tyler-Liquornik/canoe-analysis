@@ -34,7 +34,7 @@ public class GraphicsUtils {
         classOrder.put(CurvedGraphic.class, 0);
         classOrder.put(TriangleStandGraphic.class, 1);
         classOrder.put(ArrowGraphic.class, 2);
-        classOrder.put(ArrowBoundCurveGraphic.class, 3);
+        classOrder.put(ArrowBoundCurvedGraphic.class, 3);
         classOrder.put(BeamHullGraphic.class, 4);
 
         // Sort by type, and then by position

@@ -15,14 +15,14 @@ import lombok.Setter;
  * Icon used for a uniformly distributed load over a curved surface
  */
 @Getter @Setter
-public class ArrowBoundCurveGraphic extends Group implements Graphic {
+public class ArrowBoundCurvedGraphic extends Group implements Graphic {
     private ArrowGraphic lArrow;
     private ArrowGraphic rArrow;
     private CurvedGraphic borderCurve;
     private boolean isColored;
     private Section section;
 
-    public ArrowBoundCurveGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle, ArrowGraphic lArrow, ArrowGraphic rArrow) {
+    public ArrowBoundCurvedGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle, ArrowGraphic lArrow, ArrowGraphic rArrow) {
         super();
         this.section = section;
         this.isColored = false;

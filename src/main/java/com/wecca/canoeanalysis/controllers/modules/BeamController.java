@@ -100,7 +100,7 @@ public class BeamController implements Initializable {
                 node.setViewOrder(viewOrder--);
         }
         for (Node node : loadContainerChildren) {
-            if (node instanceof ArrowBoundCurveGraphic)
+            if (node instanceof ArrowBoundCurvedGraphic)
                 node.setViewOrder(viewOrder--);
         }
         for (Node node : loadContainerChildren) {
@@ -370,7 +370,7 @@ public class BeamController implements Initializable {
                                         ? stepValue // Adjust the distribution graphic by adding the hull curve
                                         : stepValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), stepValue / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
                             };
-                            rescaledGraphics.add(new ArrowBoundCurveGraphic(f, dist.getSection(), rect, lArrow, rArrow));
+                            rescaledGraphics.add(new ArrowBoundCurvedGraphic(f, dist.getSection(), rect, lArrow, rArrow));
                         }
                         case PiecewiseContinuousLoadDistribution piecewise -> {
                             if (piecewise.getForce() != 0) {
