@@ -211,7 +211,7 @@ public class MainController implements Initializable {
     public void setIconToolBarButtons(LinkedHashMap<IconGlyphType, Consumer<ActionEvent>> iconGlyphToFunctionMap) {
         List<Button> buttons = new ArrayList<>();
         for (Map.Entry<IconGlyphType, Consumer<ActionEvent>> entry : iconGlyphToFunctionMap.entrySet()) {
-            Button button = ControlUtils.getIconButton(entry.getKey(), entry.getValue(), 25, false);
+            Button button = ControlUtils.getIconButton(entry.getKey(),ActionEvent.ACTION ,entry.getValue(), 25, false);
             buttons.add(button);
         }
         setToolBarButtons(buttons);
