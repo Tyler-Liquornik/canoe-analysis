@@ -428,23 +428,10 @@ public class BeamController implements Initializable {
             solveSystemButton.setOnAction(e -> undoStandsSolve());
         }
         else if (floatingRadioButton.isSelected()) {
-            if (canoe.getHull().getWeight() == 0) {
-                mainController.showSnackbar("Cannot solve for buoyancy without a hull. Please build a hull first");
-                mainController.flashModuleToolBarButton(2, 8000); // as a hint for the user
+            if (solveFloatingSystem()) // Solve can fail
+                solveSystemButton.setOnAction(e -> undoFloatingSolve());
+            else
                 return;
-            }
-            double rotationX = canoe.getHull().getLength() / 2;
-            double maximumPossibleBuoyancyForce = BeamSolverService.getTotalBuoyancyForce(canoe, 0, rotationX, 0);
-            if (-canoe.getNetForce() > maximumPossibleBuoyancyForce) {
-                mainController.showSnackbar("Cannot solve for buoyancy as there is too much load. The canoe will sink!");
-                return;
-            }
-//            if (!canoe.isSymmetricallyLoaded()) {
-//                mainController.showSnackbar("Cannot solve for buoyancy for an asymmetrically loaded canoe. The canoe will tip over!");
-//                return;
-//            }
-            solveFloatingSystem();
-            solveSystemButton.setOnAction(e -> undoFloatingSolve());
         }
 
         // Update UI state
@@ -485,12 +472,51 @@ public class BeamController implements Initializable {
     /**
      * Solve and display the result of the "floating" system load case.
      * This entails a buoyancy distribution that keeps the canoe afloat
+     * @return true if the solution was successful, false if the canoe will tip
      */
-    private void solveFloatingSystem() {
+    private boolean solveFloatingSystem() {
+        // Check if the hull has been set from the default beam
+        if (canoe.getHull().getWeight() == 0) {
+            mainController.showSnackbar("Cannot solve for buoyancy without a hull. Please build a hull first");
+            mainController.flashModuleToolBarButton(2, 8000); // as a hint for the user
+            return false;
+        }
+
+        // Check if there's too much force and the canoe will sink - we know this before solving
+        double rotationX = canoe.getHull().getLength() / 2;
+        double maximumPossibleBuoyancyForce = BeamSolverService.getTotalBuoyancyForce(canoe, 0, rotationX, 0);
+        if (-canoe.getNetForce() > maximumPossibleBuoyancyForce) {
+            mainController.showSnackbar("Cannot solve for buoyancy as there is too much load. The canoe will sink!");
+            return false;
+        }
+
+        // Solve the system
         FloatingSolution solution = BeamSolverService.solveFloatingSystem(canoe);
+
+        // Solver algorithm doesn't converge
+        if (solution == null) {
+            mainController.showSnackbar("Error, buoyancy solver could not converge to a solution");
+            return false;
+        }
+
+        double thetaRadians = Math.toRadians(solution.getSolvedTheta());
+        double hTilt = (canoe.getHull().getLength() / 2) * Math.tan(thetaRadians);
+
+        System.out.println("hSol: " + solution.getSolvedH() + ", thetaSol: " + solution.getSolvedTheta() + ", hTiltSol: " + hTilt);
+
+        // Check if the tilt causes the canoe to sink
+        if (Math.abs(hTilt) >= Math.abs(solution.getSolvedH())) {
+            mainController.showSnackbar("Canoe will tip over, too much load on one side");
+            return false;
+        }
+
+        // Proceed with floating system solve if no tipping or sinking is detected
         PiecewiseContinuousLoadDistribution buoyancy = solution.getSolvedBuoyancy();
-        if (!(buoyancy.getForce() == 0))
+        if (!(buoyancy.getForce() == 0)) {
             addPiecewiseLoadDistribution(buoyancy);
+        }
+
+        return true;
     }
 
     /**

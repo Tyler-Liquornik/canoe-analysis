@@ -154,7 +154,7 @@ public class Hull {
     /**
      * @return the total volume of the canoe by summing up the volumes of all sections.
      */
-    @JsonIgnore @Traceable
+    @JsonIgnore
     public double getTotalVolume() {
         if (getHullSections() == null || getHullSections().isEmpty())
             return 0;

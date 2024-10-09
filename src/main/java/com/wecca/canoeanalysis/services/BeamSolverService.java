@@ -22,7 +22,6 @@ import java.util.List;
 /**
  * Utility class for solving system equations
  */
-@Traceable
 public class BeamSolverService {
     /**
      * Solve the "stand" system to find point loads at ends of canoe, assuming loads already on canoe.
@@ -102,15 +101,19 @@ public class BeamSolverService {
         // Case where the hull has no weight (only exists to provide length)
         // This is nonsense because buoyancy cannot be distributed against only the discrete set of critical points provided by pLoads and dLoads
         // This exception should not be thrown, a check should be performed before entering this function
-        if (canoe.getHull().getWeight() == 0) {
+        if (canoe.getHull().getWeight() == 0)
             throw new RuntimeException("Cannot solve a buoyancy distribution with no hull");
-        }
 
         // Solve for the equilibrium waterline and get the buoyancy force distribution at that waterline
         double[] waterLine = getEquilibriumWaterLine(canoe);
-        double h = waterLine[0];
-        double theta = waterLine[1];
-        return new FloatingSolution(getBuoyancyForceDistribution(h, theta, canoe), h, theta);
+
+        if (waterLine == null)
+            return null;
+        else {
+            double h = waterLine[0];
+            double theta = waterLine[1];
+            return new FloatingSolution(getBuoyancyForceDistribution(h, theta, canoe), h, theta);
+        }
     }
 
     /**
@@ -126,7 +129,7 @@ public class BeamSolverService {
         validateWaterLine(h);
         double thetaRadians = Math.toRadians(theta);
         return x -> {
-            double tiltedWaterline = h + (x - rotationX / 2) * Math.tan(thetaRadians);
+            double tiltedWaterline = h + (x - rotationX) * Math.tan(thetaRadians);
             double y = section.getSideProfileCurve().value(x);
             double adjustment = section.getCrossSectionalAreaAdjustmentFactorFunction().value(Math.abs(y));
             double hSubmerged = tiltedWaterline - Math.min(y, tiltedWaterline);
@@ -186,6 +189,7 @@ public class BeamSolverService {
      * @param rotationX the x coordinate of the point of rotation, on the same scale as the interval of the HullSection itself
      * @return the total buoyant in kN at the given waterline guess
      */
+    @Traceable
     public static double getTotalBuoyancyForce(Canoe canoe, double waterLine, double rotationX, double theta) {
         validateWaterLine(waterLine);
         return canoe.getHull().getHullSections().stream()
@@ -206,40 +210,42 @@ public class BeamSolverService {
                 .mapToDouble(hullSection -> getBuoyancyMomentOnSection(waterLine, theta, rotationX, hullSection)).sum();
     }
 
-//    /**
-//     * Iteratively solve for the equilibrium of the floating canoe
-//     * This works by matching the total canoe internal/external weight with the buoyancy
-//     * @param canoe the canoe with defined internal/external loads to get the waterline height for
-//     * @return the equilibrium waterline as [h, theta]
-//     */
-//    public static double[] getEquilibriumWaterLine(Canoe canoe) {
-//        double netForce = canoe.getNetForce();
-//        double minWaterLine = -canoe.getHull().getMaxHeight();
-//        double maxWaterLine = 0;
-//        double h = (minWaterLine + maxWaterLine) / 2.0;
-//        double totalBuoyancy; double totalMoment;
-//
-//        // Binary search until equilibrium is reached within a reasonable tolerance
-//        while (maxWaterLine - minWaterLine > 1e-6) {
-//            totalBuoyancy = getTotalBuoyancy(canoe, h, rotationX, theta);
-//            totalMoment = getTotalMoment(canoe, h, rotationX, theta);
-//            if (totalBuoyancy < Math.abs(netForce))
-//                minWaterLine = h;
-//            else
-//                maxWaterLine = h;
-//            h = (minWaterLine + maxWaterLine) / 2.0;
-//        }
-//        validateWaterLine(h);
-//        return new double[]{h, theta};
-//    }
+    /**
+     * @deprecated by getEquilibriumWaterLine which is more general than this
+     * Iteratively solve for the force equilibrium of the floating canoe
+     * This works by matching the total canoe internal/external weight with the buoyancy
+     * Doesn't consider moment and only works for symmetrical load cases where no moments are involved
+     * @param canoe the canoe with defined internal/external loads to get the waterline height for
+     * @return the equilibrium waterline as [h, theta]
+     */
+    public static double[] getEquilibriumWaterLineSymmetrical(Canoe canoe) {
+        double netForce = canoe.getNetForce();
+        double minWaterLine = -canoe.getHull().getMaxHeight();
+        double maxWaterLine = 0;
+        double h = (minWaterLine + maxWaterLine) / 2.0;
+        double totalBuoyancy; double totalMoment;
+
+        // Binary search until equilibrium is reached within a reasonable tolerance
+        while (maxWaterLine - minWaterLine > 1e-6) {
+            double rotationX = canoe.getHull().getLength() / 2;
+            totalBuoyancy = getTotalBuoyancyForce(canoe, h, rotationX, 0);
+            if (totalBuoyancy < Math.abs(netForce))
+                minWaterLine = h;
+            else
+                maxWaterLine = h;
+            h = (minWaterLine + maxWaterLine) / 2.0;
+        }
+        validateWaterLine(h);
+        return new double[]{h, 0};
+    }
 
 
     // TODO: finish new solver algorithm
     // Need the inherent moment of the canoe to balance with the buoyancy force
-    // Should be naming buoyancy variables not 'buoyancy' but 'buoyancyForce' or 'buoyancyMoment' for clarity across the board
+    // validateWaterLine is failing, meaning our guesses are wrong from the algorithm?
 
     /**
-     * Iteratively solve for the equilibrium of the floating canoe
+     * Iteratively solve for the equilibrium of the floating canoe using 2D Newton-Raphson
      * This works by matching the total canoe internal/external weight/moment with the reactionary buoyancy force/moment
      * @param canoe the canoe with defined internal/external loads to get the waterline height for
      * @return the equilibrium waterline as [h, theta]
@@ -255,43 +261,53 @@ public class BeamSolverService {
         double h = (minWaterLine + maxWaterLine) / 2.0;
         double theta = 0.0;
         double tolerance = 1e-6;
+        double regularization = 1e-6;
 
         // [F(h, theta) M(h, theta)] = [0, 0] (move everything in the force and moment equations to one side)
         BivariateFunction forceBalance = (hGuess, thetaGuess) -> getTotalBuoyancyForce(canoe, hGuess, rotationX, thetaGuess) + netForce;
         BivariateFunction momentBalance = (hGuess, thetaGuess) -> getTotalBuoyancyMoment(canoe, hGuess, thetaGuess) + netMoment;
 
-        // Iterate using Newton-Raphson method to solve for both h and theta
+        // Iterate using 2D Newton-Raphson algorithm to solve for both h and theta
         int maxIterations = 1000;
         for (int iter = 0; iter < maxIterations; iter++) {
+            System.out.println("hGuess: " + h + ", thetaGuess: " + theta);
+
             double totalBuoyancyForce = forceBalance.value(h, theta);
             double totalMoment = momentBalance.value(h, theta);
 
             // Check if the solution is within tolerance for both force and moment balance
             if (Math.abs(totalBuoyancyForce) < tolerance && Math.abs(totalMoment) < tolerance)
-                break;
+                return new double[]{h, theta};;
 
-            // Compute the Jacobian matrix using CalculusUtils
+            // Compute the Jacobian matrix using CalculusUtils, add regularization term to avoid singular matrix
+            // Regularization is 1e-6 * I_2
             Matrix jacobian = CalculusUtils.evaluateR2Jacobian(h, theta, forceBalance, momentBalance);
-            Matrix inverseJacobian = jacobian.inverse();
+            Matrix inverseJacobian;
+            try {
+                inverseJacobian = jacobian.inverse();
+            } catch (Exception ignoredSingularMatrixException) {
+                Matrix regularizedJacobian = jacobian.plus(Matrix.identity(2, 2).times(regularization));
+                inverseJacobian = regularizedJacobian.inverse();
+            }
 
-            // Create a matrix of the force and moment differences (i.e., F and M values)
+            // Create a matrix of the force and moment balances equal 0 (all terms on one side)
             Matrix F = new Matrix(2, 1);
-            F.set(0, 0, totalBuoyancyForce);  // Force difference
-            F.set(1, 0, totalMoment);    // Moment difference
+            F.set(0, 0, totalBuoyancyForce);
+            F.set(1, 0, totalMoment);
 
-            // Calculate the update for h and theta for the next guess: delta = -J_inverse * F
+            // Update the guesses for h and theta with delta = -J_inverse * F
+            // Delta is the column matrix [h, theta]
             Matrix delta = inverseJacobian.times(F).times(-1);
-
-            // Update the guesses for h and theta
             h += delta.get(0, 0);
             theta += delta.get(1, 0);
 
-            // Ensure the waterline is still valid
-            validateWaterLine(h);
+            // Check if h guess is diverging out of bounds
+            if (h < minWaterLine || h > maxWaterLine)
+                return null;
         }
 
-        // After convergence, return the equilibrium values of h and theta
-        return new double[]{h, theta};
+        // No convergence
+        return null;
     }
 
     /**
@@ -306,7 +322,7 @@ public class BeamSolverService {
         List<BoundedUnivariateFunction> buoyancyPieces = new ArrayList<>();
         List<Section> buoyancySections = new ArrayList<>();
 
-        double rotationX = canoe.getHull().getLength() / 2; // rotation pivot assumed at L/2 for now
+        double rotationX = canoe.getHull().getLength() / 2;
         for (HullSection section : mappedHullSections) {
             BoundedUnivariateFunction buoyancyPiece = x -> getSubmergedCrossSectionalAreaFunction(waterline, theta, rotationX, section).value(x) * PhysicalConstants.DENSITY_OF_WATER.getValue() * PhysicalConstants.GRAVITY.getValue() / 1000.0;
             buoyancyPieces.add(buoyancyPiece);
