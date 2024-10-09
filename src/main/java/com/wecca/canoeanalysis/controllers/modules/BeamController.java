@@ -9,6 +9,7 @@ import com.wecca.canoeanalysis.components.graphics.*;
 import com.wecca.canoeanalysis.controllers.popups.*;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
+import com.wecca.canoeanalysis.models.canoe.FloatingSolution;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.RectFunction;
@@ -432,15 +433,16 @@ public class BeamController implements Initializable {
                 mainController.flashModuleToolBarButton(2, 8000); // as a hint for the user
                 return;
             }
-            double maximumPossibleBuoyancyForce = BeamSolverService.getTotalBuoyancy(canoe, 0);
+            double rotationX = canoe.getHull().getLength() / 2;
+            double maximumPossibleBuoyancyForce = BeamSolverService.getTotalBuoyancyForce(canoe, 0, rotationX, 0);
             if (-canoe.getNetForce() > maximumPossibleBuoyancyForce) {
                 mainController.showSnackbar("Cannot solve for buoyancy as there is too much load. The canoe will sink!");
                 return;
             }
-            if (!canoe.isSymmetricallyLoaded()) {
-                mainController.showSnackbar("Cannot solve for buoyancy for an asymmetrically loaded canoe. The canoe will tip over!");
-                return;
-            }
+//            if (!canoe.isSymmetricallyLoaded()) {
+//                mainController.showSnackbar("Cannot solve for buoyancy for an asymmetrically loaded canoe. The canoe will tip over!");
+//                return;
+//            }
             solveFloatingSystem();
             solveSystemButton.setOnAction(e -> undoFloatingSolve());
         }
@@ -485,7 +487,8 @@ public class BeamController implements Initializable {
      * This entails a buoyancy distribution that keeps the canoe afloat
      */
     private void solveFloatingSystem() {
-        PiecewiseContinuousLoadDistribution buoyancy = BeamSolverService.solveFloatingSystem(canoe);
+        FloatingSolution solution = BeamSolverService.solveFloatingSystem(canoe);
+        PiecewiseContinuousLoadDistribution buoyancy = solution.getSolvedBuoyancy();
         if (!(buoyancy.getForce() == 0))
             addPiecewiseLoadDistribution(buoyancy);
     }
