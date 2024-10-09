@@ -17,7 +17,7 @@ public class CalculusUtils
     public static SimpsonIntegrator integrator = new SimpsonIntegrator();
 
     /**
-     * Returns the numerical derivative of a given function.
+     * Returns the numerical derivative of a given function
      * @param function the function to differentiate
      * @return the derivative function
      */
