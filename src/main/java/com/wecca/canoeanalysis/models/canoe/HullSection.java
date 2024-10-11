@@ -258,6 +258,8 @@ public class HullSection extends Section
      * Note that this means the topmost point of the hull on the y-axis is y = 0
      */
     private void validateSign(Function<Double, Double> profileCurve, boolean positive) {
+        LoggerService.logPoints(profileCurve, new Section(x, rx));
+
         // Convert the hullShapeFunction to BoundedUnivariateFunction for compatibility with Apache Commons Math
         // Need to negate the function as BrentOptimizer finds the min, and we want the max
         BoundedUnivariateFunction profileCurveAsUnivariateFunction = profileCurve::apply;
