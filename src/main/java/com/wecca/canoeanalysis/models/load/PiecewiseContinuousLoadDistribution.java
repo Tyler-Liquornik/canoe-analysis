@@ -2,6 +2,7 @@ package com.wecca.canoeanalysis.models.load;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.canoe.Hull;
@@ -92,7 +93,7 @@ public class PiecewiseContinuousLoadDistribution extends LoadDistribution {
      * @param rotationX the x co-ordinate of the point of rotation
      * @return the moment, the integral of Force * (x - rotationX) over the distribution.
      */
-    @Override @JsonIgnore
+    @Override @Traceable
     public double getMoment(double rotationX) {
         return pieces.entrySet().stream().mapToDouble(piece ->
                 CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(),

@@ -154,7 +154,6 @@ public class DiagramService {
      * @param partitions the locations where the form of the piecewise changes
      * @return a list containing each section of the piecewise pseudo functions with unique form
      */
-    @Traceable
     private static List<List<Point2D>> partitionPoints(Canoe canoe, List<Point2D> points, TreeSet<Double> partitions) {
         // Initializing lists
         List<List<Point2D>> partitionedIntervals = new ArrayList<>();
@@ -435,6 +434,8 @@ public class DiagramService {
         intervals.sort(Comparator.comparingDouble(DiagramInterval::getX));
         Map<String, Point2D> diagramPoints = getDiagramPointMap(intervals, canoe.getHull().getLength());
         ArrayList<Point2D> sfdPoints = new ArrayList<>(diagramPoints.values());
+
+        LoggerService.logPoints(sfdPoints);
 
         // Return the generated points
         return new ArrayList<>(sfdPoints);

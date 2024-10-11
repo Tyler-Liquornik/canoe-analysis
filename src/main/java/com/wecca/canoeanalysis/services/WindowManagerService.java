@@ -36,8 +36,7 @@ public class WindowManagerService {
      * @param points the points to render on the diagram.
      * @param yUnits the units of the y-axis on the diagram.
      */
-    public static void openDiagramWindow(String title, Canoe canoe, List<Point2D> points, String yUnits)
-    {
+    public static void openDiagramWindow(String title, Canoe canoe, List<Point2D> points, String yUnits) {
         // Initializing the stage and main pane
         Stage popupStage = new Stage();
         popupStage.setTitle(title);

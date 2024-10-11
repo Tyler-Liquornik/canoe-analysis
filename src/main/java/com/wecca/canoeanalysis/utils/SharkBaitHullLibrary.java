@@ -103,36 +103,37 @@ public class SharkBaitHullLibrary {
 
     /**
      * @deprecated by generateSharkBaitHullScaledFromBezier
-     * Note: THIS IS THE OLD MODEL
+     * Note: THIS IS A DIFFERENT VERSION OF THE OLD MODEL
      * Generate the hull for 2024's Shark Bait canoe scaled to the specified length
      * This serves as a placeholder for the user defining their own hull in the hull builder until that is developed
-     *
-     * This was created while testing the new algorithm which solves both the force AND moment balance equations simultaneously
-     * The new algorithm is not working for the C0 smooth parabolic hull, and I theorize that the smoothness of the hull is at fault
-     * Thus this is created for testing purposes
-     * Truthfully, the original C0 hull should have been improved but never was, but it was used for so long.
-     * So, I kept it (the old method) and deprecated it since a lot of old tests use it, and now we also have this hull
-     *
-     * TODO: doesnt scale properly because eqns were solved with functions evaluated at like 0.5 when it should have been 0.5k or 0.5t or whatever
      *
      * @param length the length to scale to
      * @return the scaled hull
      */
     public static Hull generateSharkBaitHullScaledFromParabolasC1Smooth(double length) {
+
+        // The two systems solved for parameters:
+        // \frac{1}{67t}\left(\frac{1}{2}t-3t\right)^2-0.4t=a\left(\frac{1}{2}t-ht\right)^2-kt,\:\frac{2}{67t}\left(\frac{1}{2}t-3t\right)=2a\left(\frac{1}{2}t-ht\right),\:ah^2t^2-kt=0
+        // \frac{1}{67t}\left(\frac{11}{2}t-3t\right)^2-0.4t=a\left(\frac{11}{2}t-ht\right)^2-kt,\:\frac{2}{67t}\left(\frac{11}{2}t-3t\right)=2a\left(\frac{11}{2}t-ht\right),\:a\left(6t-ht\right)^2-kt=0
+
         // Scale compared to the actual length of Shark Bait
         scalingFactor = length / SHARK_BAIT_LENGTH;
 
         // Define hull shape
-        double h = (3.0 + 35.6 * scalingFactor) / (1.0 + 71.2 * scalingFactor * scalingFactor);
-        double a = (1.0 / (67.0 * scalingFactor)) * ((0.5 - 3.0 * scalingFactor)/(0.5 - h * scalingFactor));
-        double k = (1.0 / 67.0) * ((0.5 * h * h - 3 * scalingFactor * h * h)/(0.5 - h * scalingFactor));
-        VertexFormParabolaFunction hullLeftEdgeCurve = new VertexFormParabolaFunction(a, h * scalingFactor, k * scalingFactor);
-        VertexFormParabolaFunction hullRightEdgeCurve = new VertexFormParabolaFunction(a, 6 - h * scalingFactor, k * scalingFactor);
+        double aL = (361.0 / (335.0 * scalingFactor));
+        double hL = 193.0 / 361.0;
+        double kL = 37249.0 / 120935.0;
+        VertexFormParabolaFunction hullLeftEdgeCurve = new VertexFormParabolaFunction(aL, hL * scalingFactor, -kL * scalingFactor);
 
-        double a0 = 1.0 / (67.0 * scalingFactor);
-        double h0 = 3.0 * scalingFactor;
-        double k0 = -0.4 * scalingFactor;
-        VertexFormParabolaFunction hullMidProfileCurve = new VertexFormParabolaFunction(a0, h0, k0);
+        double aR = aL;
+        double hR = 1973.0 / 361.0;
+        double kR = kL;
+        VertexFormParabolaFunction hullRightEdgeCurve = new VertexFormParabolaFunction(aR, hR * scalingFactor, -kR * scalingFactor);
+
+        double aM = 1.0 / (67.0 * scalingFactor);
+        double hM = 3.0 * scalingFactor;
+        double kM = -0.4 * scalingFactor;
+        VertexFormParabolaFunction hullMidProfileCurve = new VertexFormParabolaFunction(aM, hM, kM);
 
         double a1 = - 7.0 / (180.0 * scalingFactor);
         double h1 = 3.0 * scalingFactor;
@@ -156,7 +157,7 @@ public class SharkBaitHullLibrary {
      * @param length the length to scale to
      * @return the scaled hull
      */
-    public static Hull generateSharkBaitHullScaledFromParabolas(double length) {
+    public static Hull generateSharkBaitHullScaledFromParabolasC0Smooth(double length) {
         // Scale compared to the actual length of Shark Bait
         scalingFactor = length / SHARK_BAIT_LENGTH;
 

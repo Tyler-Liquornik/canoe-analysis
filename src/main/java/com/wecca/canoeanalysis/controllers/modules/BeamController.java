@@ -36,7 +36,6 @@ import java.util.function.Consumer;
 /**
  * Primary controller for longitudinal analysis of a beam
  */
-@Traceable
 public class BeamController implements Initializable {
     @FXML
     private Label axisLabelR, lengthLabel, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,

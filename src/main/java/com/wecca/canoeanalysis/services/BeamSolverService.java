@@ -253,6 +253,7 @@ public class BeamSolverService {
     public static double[] getEquilibriumWaterLine(Canoe canoe) {
         double netForce = canoe.getNetForce();
         double netMoment = canoe.getNetMoment();
+        System.out.println("Canoe net force: " + netForce + ", Canoe net moment: " + netMoment);
         double minWaterLine = -canoe.getHull().getMaxHeight();
         double maxWaterLine = 0;
         double rotationX = canoe.getHull().getLength() / 2;
@@ -304,8 +305,10 @@ public class BeamSolverService {
             theta += delta.get(1, 0);
 
             // Check if h guess is diverging out of bounds
-            if (h < minWaterLine || h > maxWaterLine)
+            if (h < minWaterLine || h > maxWaterLine) {
+                System.out.println("Diverging h: " + h);
                 return null;
+            }
         }
 
         // No convergence
