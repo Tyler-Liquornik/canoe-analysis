@@ -2,6 +2,7 @@ import re
 import matplotlib.pyplot as plt
 
 # Paste your log data as a multiline string below
+# This is sample data for what it should look like format-wise from LoggerService::logPoints
 log_data = """
 02:10:44.691 [INFO] x: 0.0, y: 0.6160168685657584
 02:10:44.691 [INFO] x: 0.005, y: 0.6102826148344151
@@ -111,7 +112,7 @@ x_values = []
 y_values = []
 
 # Regular expression pattern to extract x and y values
-pattern = r'x:\s*([-+]?\d*\.?\d+(?:e[-+]?\d+)?),\s*y:\s*([-+]?\d*\.?\d+(?:e[-+]?\d+)?)'
+pattern = r'x:\s*([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?),\s*y:\s*([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)'
 
 # Split the log data into lines
 lines = log_data.strip().split('\n')
