@@ -67,6 +67,10 @@ public class WindowManagerService {
 
     /**
      * @param title the title of the window
+     * @param fxmlPath the path to the FXML file in from the resources folder (i.e. view/dummy-view.fxml)
+     * @param windowWidth the width of the utility window to open
+     * @param windowHeight the height of the utility window to open
+     * Note: the window width and height should match the dimensions of the root container (typically an anchor pane) in the FXML
      */
     public static void openUtilityWindow(String title, String fxmlPath, int windowWidth, int windowHeight) {
         try {
@@ -98,8 +102,16 @@ public class WindowManagerService {
         ColorManagerService.registerForRecoloringFromStylesheet(scene, path);
     }
 
+    /**
+     * Close a stage
+     * @param stage to close
+     */
     public static void closeWindow(Stage stage) {stage.close();}
 
+    /**
+     * Minimize a window to the toolbar
+     * @param stage to
+     */
     public static void minimizeWindow(Stage stage) {stage.setIconified(true);}
 
     public static void setStageOffsets(MouseEvent event) {

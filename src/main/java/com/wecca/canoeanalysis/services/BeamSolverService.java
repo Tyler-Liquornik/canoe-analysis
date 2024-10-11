@@ -270,16 +270,18 @@ public class BeamSolverService {
         // Iterate using 2D Newton-Raphson algorithm to solve for both h and theta
         int maxIterations = 1000;
         for (int iter = 0; iter < maxIterations; iter++) {
-            System.out.println("hGuess: " + h + ", thetaGuess: " + theta);
 
-            double totalBuoyancyForce = forceBalance.value(h, theta);
-            double totalMoment = momentBalance.value(h, theta);
+            double systemNetForce = forceBalance.value(h, theta);
+            double systemNetMoment = momentBalance.value(h, theta);
+
+            System.out.println("hGuess: " + h + ", thetaGuess: " + theta +
+                    ", systemNetForce: " + systemNetForce + ", systemNetMoment: " + systemNetMoment);
 
             // Check if the solution is within tolerance for both force and moment balance
-            if (Math.abs(totalBuoyancyForce) < tolerance && Math.abs(totalMoment) < tolerance)
+            if (Math.abs(systemNetForce) < tolerance && Math.abs(systemNetMoment) < tolerance)
                 return new double[]{h, theta};;
 
-            // Compute the Jacobian matrix using CalculusUtils, add regularization term to avoid singular matrix
+            // Compute the Jacobian matrix, adding a regularization term to avoid singularity
             // Regularization is 1e-6 * I_2
             Matrix jacobian = CalculusUtils.evaluateR2Jacobian(h, theta, forceBalance, momentBalance);
             Matrix inverseJacobian;
@@ -292,8 +294,8 @@ public class BeamSolverService {
 
             // Create a matrix of the force and moment balances equal 0 (all terms on one side)
             Matrix F = new Matrix(2, 1);
-            F.set(0, 0, totalBuoyancyForce);
-            F.set(1, 0, totalMoment);
+            F.set(0, 0, systemNetForce);
+            F.set(1, 0, systemNetMoment);
 
             // Update the guesses for h and theta with delta = -J_inverse * F
             // Delta is the column matrix [h, theta]

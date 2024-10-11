@@ -102,6 +102,54 @@ public class SharkBaitHullLibrary {
     }
 
     /**
+     * @deprecated by generateSharkBaitHullScaledFromBezier
+     * Note: THIS IS THE OLD MODEL
+     * Generate the hull for 2024's Shark Bait canoe scaled to the specified length
+     * This serves as a placeholder for the user defining their own hull in the hull builder until that is developed
+     *
+     * This was created while testing the new algorithm which solves both the force AND moment balance equations simultaneously
+     * The new algorithm is not working for the C0 smooth parabolic hull, and I theorize that the smoothness of the hull is at fault
+     * Thus this is created for testing purposes
+     * Truthfully, the original C0 hull should have been improved but never was, but it was used for so long.
+     * So, I kept it (the old method) and deprecated it since a lot of old tests use it, and now we also have this hull
+     *
+     * TODO: doesnt scale properly because eqns were solved with functions evaluated at like 0.5 when it should have been 0.5k or 0.5t or whatever
+     *
+     * @param length the length to scale to
+     * @return the scaled hull
+     */
+    public static Hull generateSharkBaitHullScaledFromParabolasC1Smooth(double length) {
+        // Scale compared to the actual length of Shark Bait
+        scalingFactor = length / SHARK_BAIT_LENGTH;
+
+        // Define hull shape
+        double h = (3.0 + 35.6 * scalingFactor) / (1.0 + 71.2 * scalingFactor * scalingFactor);
+        double a = (1.0 / (67.0 * scalingFactor)) * ((0.5 - 3.0 * scalingFactor)/(0.5 - h * scalingFactor));
+        double k = (1.0 / 67.0) * ((0.5 * h * h - 3 * scalingFactor * h * h)/(0.5 - h * scalingFactor));
+        VertexFormParabolaFunction hullLeftEdgeCurve = new VertexFormParabolaFunction(a, h * scalingFactor, k * scalingFactor);
+        VertexFormParabolaFunction hullRightEdgeCurve = new VertexFormParabolaFunction(a, 6 - h * scalingFactor, k * scalingFactor);
+
+        double a0 = 1.0 / (67.0 * scalingFactor);
+        double h0 = 3.0 * scalingFactor;
+        double k0 = -0.4 * scalingFactor;
+        VertexFormParabolaFunction hullMidProfileCurve = new VertexFormParabolaFunction(a0, h0, k0);
+
+        double a1 = - 7.0 / (180.0 * scalingFactor);
+        double h1 = 3.0 * scalingFactor;
+        double k1 = 0.35 * scalingFactor;
+        VertexFormParabolaFunction hullTopCurve = new VertexFormParabolaFunction(a1, h1, k1);
+
+        List<HullSection> sections = new ArrayList<>();
+        double thickness = 0.013;
+        sections.add(new HullSection(hullLeftEdgeCurve, hullTopCurve, 0.0, 0.5 * scalingFactor, thickness * scalingFactor, true));
+        sections.add(new HullSection(hullMidProfileCurve, hullTopCurve, 0.5 * scalingFactor, 5.5 * scalingFactor, thickness * scalingFactor, false));
+        sections.add(new HullSection(hullRightEdgeCurve, hullTopCurve, 5.5 * scalingFactor, 6.0 * scalingFactor, thickness * scalingFactor, true));
+
+        return new Hull(1056, 28.82, sections);
+    }
+
+    /**
+     * @deprecated by generateSharkBaitHullScaledFromBezier, generateSharkBaitHullScaledFromParabolasC1Smooth
      * Note: THIS IS THE OLD MODEL
      * Generate the hull for 2024's Shark Bait canoe scaled to the specified length
      * This serves as a placeholder for the user defining their own hull in the hull builder until that is developed
