@@ -346,7 +346,6 @@ public class DiagramService {
      * @param startY the baseline y value for the parabola.
      * @return the list of generated points along the parabola.
      */
-    @Traceable
     private static List<Point2D> generateParabolicPoints(Point2D start, Point2D end, double startY)
     {
         List<Point2D> points = new ArrayList<>();
@@ -383,7 +382,6 @@ public class DiagramService {
      * @param canoe the canoe object with loads.
      * @return the list of points to render for the SFD.
      */
-    @Traceable
     public static List<Point2D> generateSfdPoints(Canoe canoe) {
         // Get maps for each load type for efficient processing
         Map<Double, PointLoad> pointLoadMap = getPointLoadMap(canoe);
@@ -446,10 +444,16 @@ public class DiagramService {
      * @param canoe the canoe object with loads.
      * @return the list of points to render for the BMD.
      */
-    @Traceable
     public static List<Point2D> generateBmdPoints(Canoe canoe) {
-        // Gets the SFD points for the canoe
-        List<Point2D> sfdPoints = generateSfdPoints(canoe);
+        return generateBmdPoints(canoe, generateSfdPoints(canoe));
+    }
+
+    /**
+     * Generate a list of points to comprise the Bending Moment Diagram from precalculated SFD points
+     * @param canoe the canoe object with loads.
+     * @return the list of points to render for the BMD.
+     */
+    public static List<Point2D> generateBmdPoints(Canoe canoe, List<Point2D> sfdPoints) {
         List<Point2D> bmdPoints = new ArrayList<>();
         Point2D firstPoint = sfdPoints.getFirst();
 

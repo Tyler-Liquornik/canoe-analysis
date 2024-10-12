@@ -20,6 +20,7 @@ import com.wecca.canoeanalysis.utils.*;
 import javafx.animation.AnimationTimer;
 import javafx.animation.RotateTransition;
 import javafx.event.ActionEvent;
+import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
@@ -511,9 +512,15 @@ public class BeamController implements Initializable {
 
         // Proceed with floating system solve if no tipping or sinking is detected
         PiecewiseContinuousLoadDistribution buoyancy = solution.getSolvedBuoyancy();
-        if (!(buoyancy.getForce() == 0)) {
-            addPiecewiseLoadDistribution(buoyancy);
-        }
+        if (buoyancy.getForce() != 0) addPiecewiseLoadDistribution(buoyancy);
+
+        // temp logging
+        List<Load> loads = canoe.getAllLoads();
+        loads.add(buoyancy);
+        loads.forEach(load -> System.out.println("Type: " + load.getType()
+                + ", Force:" + load.getForce()
+                + ", Moment:" + load.getMoment(canoe.getHull().getLength() / 2)
+                + ", x: " + load.getX()));
 
         return true;
     }
@@ -591,8 +598,10 @@ public class BeamController implements Initializable {
      * Generates an SFD and BMD based on the canoe's load state.
      */
     public void generateDiagram() {
-        WindowManagerService.openDiagramWindow("Shear Force Diagram", canoe, DiagramService.generateSfdPoints(canoe), "Force [kN]");
-        WindowManagerService.openDiagramWindow("Bending Moment Diagram", canoe, DiagramService.generateBmdPoints(canoe), "Moment [kN·m]");
+        List<Point2D> sfdPoints = DiagramService.generateSfdPoints(canoe);
+        List<Point2D> bmdPoints = DiagramService.generateBmdPoints(canoe, sfdPoints);
+        WindowManagerService.openDiagramWindow("Shear Force Diagram", canoe, sfdPoints, "Force [kN]");
+        WindowManagerService.openDiagramWindow("Bending Moment Diagram", canoe, bmdPoints, "Moment [kN·m]");
     }
 
     /**

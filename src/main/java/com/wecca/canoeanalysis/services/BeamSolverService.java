@@ -216,8 +216,9 @@ public class BeamSolverService {
      * This works by matching the total canoe internal/external weight with the buoyancy
      * Doesn't consider moment and only works for symmetrical load cases where no moments are involved
      * @param canoe the canoe with defined internal/external loads to get the waterline height for
-     * @return the equilibrium waterline as [h, theta]
+     * @return the equilibrium waterline as [h, theta], theta is always 0 in the symmetrical case with no moment
      */
+    @Deprecated
     public static double[] getEquilibriumWaterLineSymmetrical(Canoe canoe) {
         double netForce = canoe.getNetForce();
         double minWaterLine = -canoe.getHull().getMaxHeight();
@@ -384,7 +385,7 @@ public class BeamSolverService {
     @TraceIgnore
     private static void validateWaterLine(double waterLine) {
         if (waterLine > 0)
-            throw new IllegalArgumentException("Waterline must be greater than zero");
+            throw new IllegalArgumentException("Waterline must NOT be greater than zero");
     }
 
     // TODO: Consult Design and Analysis team for details. Strategy for this has not yet been developed.
