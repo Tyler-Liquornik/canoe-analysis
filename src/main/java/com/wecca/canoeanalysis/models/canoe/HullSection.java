@@ -8,8 +8,9 @@ import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.load.ContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
-import com.wecca.canoeanalysis.models.function.FunctionSection;
+import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.function.VertexFormParabolaFunction;
+import com.wecca.canoeanalysis.services.LoggerService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
@@ -50,7 +51,7 @@ import java.util.function.Function;
  * "Thickness" refers to the normal direction of a surface to provide thickness to (+/- orientation is context dependent)
  */
 @Getter @Setter @EqualsAndHashCode(callSuper = true)
-public class HullSection extends FunctionSection
+public class HullSection extends Section
 {
     @JsonProperty("sideProfileCurve")
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -228,7 +229,7 @@ public class HullSection extends FunctionSection
     @JsonIgnore
     public ContinuousLoadDistribution getWeightDistributionFunction() {
         BoundedUnivariateFunction distribution = x -> -getMassDistributionFunction().value(x) * PhysicalConstants.GRAVITY.getValue() / 1000.0;
-        return new ContinuousLoadDistribution(LoadType.DISCRETE_SECTION, distribution, new FunctionSection(x, rx));
+        return new ContinuousLoadDistribution(LoadType.DISCRETE_SECTION, distribution, new Section(x, rx));
     }
 
     /**
@@ -256,8 +257,9 @@ public class HullSection extends FunctionSection
      * This convention allows waterline height y = h (downward is +y)
      * Note that this means the topmost point of the hull on the y-axis is y = 0
      */
-    private void validateSign(Function<Double, Double> profileCurve, boolean positive)
-    {
+    private void validateSign(Function<Double, Double> profileCurve, boolean positive) {
+        LoggerService.logPoints(profileCurve, new Section(x, rx), 100);
+
         // Convert the hullShapeFunction to BoundedUnivariateFunction for compatibility with Apache Commons Math
         // Need to negate the function as BrentOptimizer finds the min, and we want the max
         BoundedUnivariateFunction profileCurveAsUnivariateFunction = profileCurve::apply;

@@ -105,12 +105,38 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
      * @return The value of the parameter 't' (in the range [0, 1]) where the x-coordinate of the Bézier curve matches the input 'x'.
      */
     private double getT(double x) {
+
+        // Ensure x is within the range of the curve
+        if (x < getX() || x > getRx())
+            throw new IllegalArgumentException("x = " + x + " is out of bounds for this Bézier curve");
+
+        // Solve for t given x, should be one t per x since the curve passes the vertical line test
         UnivariateFunction xFunc = t -> getCubicBezierCurve2D().point(t).x() - x;
         try {
             return solver.solve(MaxEval.unlimited().getMaxEval(), xFunc, T_MIN, T_MAX);
         } catch (Exception e) {
             throw new RuntimeException("Failed to solve for t given x = " + x, e);
         }
+    }
+
+    /**
+     * @return x, the left endpoint of the section which this curve is on
+     */
+    @JsonIgnore
+    public double getX() {
+        double xAtTMin = getCubicBezierCurve2D().point(T_MIN).x();
+        double xAtTMax = getCubicBezierCurve2D().point(T_MAX).x();
+        return Math.min(xAtTMin, xAtTMax);
+    }
+
+    /**
+     * @return rX, the left endpoint of the section which this curve is on
+     */
+    @JsonIgnore
+    public double getRx() {
+        double xAtTMin = getCubicBezierCurve2D().point(T_MIN).x();
+        double xAtTMax = getCubicBezierCurve2D().point(T_MAX).x();
+        return Math.max(xAtTMin, xAtTMax);
     }
 
     /**

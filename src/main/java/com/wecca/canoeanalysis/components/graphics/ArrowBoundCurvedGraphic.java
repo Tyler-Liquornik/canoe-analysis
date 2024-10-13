@@ -2,7 +2,7 @@ package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.FunctionSection;
+import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.Group;
@@ -15,20 +15,20 @@ import lombok.Setter;
  * Icon used for a uniformly distributed load over a curved surface
  */
 @Getter @Setter
-public class ArrowBoundCurveGraphic extends Group implements Graphic {
+public class ArrowBoundCurvedGraphic extends Group implements Graphic {
     private ArrowGraphic lArrow;
     private ArrowGraphic rArrow;
-    private CurvedHullGraphicBase borderCurve;
+    private CurvedGraphic borderCurve;
     private boolean isColored;
-    private FunctionSection section;
+    private Section section;
 
-    public ArrowBoundCurveGraphic(BoundedUnivariateFunction function, FunctionSection section, Rectangle encasingRectangle, ArrowGraphic lArrow, ArrowGraphic rArrow) {
+    public ArrowBoundCurvedGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle, ArrowGraphic lArrow, ArrowGraphic rArrow) {
         super();
         this.section = section;
         this.isColored = false;
         this.lArrow = lArrow;
         this.rArrow = rArrow;
-        this.borderCurve = new CurvedHullGraphicBase(function, section, encasingRectangle);
+        this.borderCurve = new CurvedGraphic(function, section, encasingRectangle);
         draw();
 
         JFXDepthManager.setDepth(this, 4);

@@ -2,6 +2,9 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+/src/main/resources/com/wecca/canoeanalysis/settings/settings.yaml
+venv/
+util/matplotlib/scatter-plot.py
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
@@ -36,4 +39,3 @@ build/
 
 ### Mac OS ###
 .DS_Store
-/src/main/resources/com/wecca/canoeanalysis/settings/settings.yaml

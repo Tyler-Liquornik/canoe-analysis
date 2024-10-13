@@ -16,6 +16,7 @@ module com.wecca.canoeanalysis {
     requires org.aspectj.weaver;
     requires ch.qos.logback.core;
     requires javaGeom;
+    requires jama;
 
     exports com.wecca.canoeanalysis;
     opens com.wecca.canoeanalysis to javafx.fxml;

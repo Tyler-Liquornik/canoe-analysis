@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.FunctionSection;
+import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.paint.Color;
@@ -12,14 +12,14 @@ import lombok.Setter;
 
 /**
  * Icon used for the canoe hull
- * Same as curve but with an extra line that closes the area
+ * Same as curve but with an extra line that closes off the area
  */
 @Getter @Setter
-public class CurvedHullGraphic extends CurvedHullGraphicBase {
+public class CurvedHullGraphic extends CurvedGraphic {
 
     private Line closingLine;
 
-    public CurvedHullGraphic(BoundedUnivariateFunction function, FunctionSection section, Rectangle encasingRectangle) {
+    public CurvedHullGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
         super(function, section, encasingRectangle);
         draw();
         ColorManagerService.registerInColorPalette(this);

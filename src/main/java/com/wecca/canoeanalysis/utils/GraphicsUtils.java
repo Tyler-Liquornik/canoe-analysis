@@ -1,8 +1,6 @@
 package com.wecca.canoeanalysis.utils;
 
 import com.wecca.canoeanalysis.components.graphics.*;
-import javafx.beans.binding.Bindings;
-import javafx.beans.binding.StringBinding;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 
@@ -33,10 +31,10 @@ public class GraphicsUtils {
     public static void sortGraphics(List<Graphic> graphics) {
         // Define the order to sort by type
         Map<Class<? extends Graphic>, Integer> classOrder = new HashMap<>();
-        classOrder.put(CurvedHullGraphicBase.class, 0);
+        classOrder.put(CurvedGraphic.class, 0);
         classOrder.put(TriangleStandGraphic.class, 1);
         classOrder.put(ArrowGraphic.class, 2);
-        classOrder.put(ArrowBoundCurveGraphic.class, 3);
+        classOrder.put(ArrowBoundCurvedGraphic.class, 3);
         classOrder.put(BeamHullGraphic.class, 4);
 
         // Sort by type, and then by position
@@ -49,25 +47,22 @@ public class GraphicsUtils {
      * @param canoeGraphic the CurvedGraphic object
      * @return the loadMaxToHullMaxRatio
      */
-    public static double calculateLoadMaxToCurvedGraphicMaxRatio(HullGraphic canoeGraphic) {
+    public static double calculateLoadMaxToCurvedGraphicMaxRatio(FunctionGraphic canoeGraphic) {
         return (acceptedBeamLoadGraphicHeightRange[1] - acceptedBeamLoadGraphicHeightRange[0]) / canoeGraphic.getEncasingRectangle().getHeight();
     }
 
     /**
-     * Binds the given label's text to the projected length of the node as it rotates.
+     * Sets the given label's text to the projected length of the node as it rotates.
      * The projected length is calculated using Pythagoras' theorem based on the current rotation angle.
      *
-     * @param label The label to bind the projected length text to.
+     * @param label The label to set the projected length text to.
      * @param node The node representing the canoe graphic.
      * @param length The original length of the canoe (before rotation).
      */
-    public static void bindProjectedLengthToLabel(Label label, Node node, double length) {
-        StringBinding lengthBinding = Bindings.createStringBinding(() -> {
-            double rotationInDegrees = node.getRotate();
-            double rotationInRadians = Math.toRadians(rotationInDegrees);
-            double projectedLength = length * Math.cos(rotationInRadians);
-            return String.format("%.2f m", projectedLength);
-        }, node.rotateProperty());
-        label.textProperty().bind(lengthBinding);
+    public static void setProjectedLengthToLabel(Label label, Node node, double length) {
+        double rotationInDegrees = node.getRotate();
+        double rotationInRadians = Math.toRadians(rotationInDegrees);
+        double projectedLength = length * Math.cos(rotationInRadians);
+        label.setText(String.format("%.2f m", projectedLength));
     }
 }
