@@ -166,19 +166,21 @@ public class BeamSolverService {
     }
 
     /**
-     * Guess a waterline and get the moment on the section at that waterline
-     * @param waterline the level below y = 0 of the waterline guess
-     * @param theta the counterclockwise angle rotation of the canoe from fla
-     * @param section the section to calculate the buoyant force on
-     * @param rotationX the x coordinate of the point of rotation, on the same scale as the interval of the HullSection itself
-     * @return the moment in kN * m
+     * Guess a waterline and get the moment on the section at that waterline.
+     * @param waterline the level below y = 0 of the waterline guess.
+     * @param theta the counterclockwise angle rotation of the canoe from flat.
+     * @param section the section to calculate the buoyant force on.
+     * @param rotationX the x-coordinate of the point of rotation, on the same scale as the interval of the HullSection.
+     * @return the moment in kN * m.
      */
     @TraceIgnore
     private static double getBuoyancyMomentOnSection(double waterline, double theta, double rotationX, HullSection section) {
-        double buoyantForce = getBuoyancyForceOnSection(waterline, theta, rotationX, section);
-        double xSectionMidpoint = (section.getX() + section.getRx()) / 2.0;
-        double leverArm = xSectionMidpoint - rotationX;
-        return buoyantForce * leverArm;
+        return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), x -> {
+            double xSec = getSubmergedCrossSectionalAreaFunction(waterline, theta, rotationX, section).value(x);
+            double buoyantForceAtX = xSec * PhysicalConstants.DENSITY_OF_WATER.getValue() * PhysicalConstants.GRAVITY.getValue() / 1000.0;
+            double leverArm = x - rotationX;  // Distance from the rotation point
+            return buoyantForceAtX * leverArm;
+        }, section.getX(), section.getRx());
     }
 
     /**
@@ -240,11 +242,6 @@ public class BeamSolverService {
         return new double[]{h, 0};
     }
 
-
-    // TODO: finish new solver algorithm
-    // Need the inherent moment of the canoe to balance with the buoyancy force
-    // validateWaterLine is failing, meaning our guesses are wrong from the algorithm?
-
     /**
      * Iteratively solve for the equilibrium of the floating canoe using 2D Newton-Raphson
      * This works by matching the total canoe internal/external weight/moment with the reactionary buoyancy force/moment
@@ -254,7 +251,6 @@ public class BeamSolverService {
     public static double[] getEquilibriumWaterLine(Canoe canoe) {
         double netForce = canoe.getNetForce();
         double netMoment = canoe.getNetMoment();
-        System.out.println("Canoe net force: " + netForce + ", Canoe net moment: " + netMoment);
         double minWaterLine = -canoe.getHull().getMaxHeight();
         double maxWaterLine = 0;
         double rotationX = canoe.getHull().getLength() / 2;
@@ -275,9 +271,6 @@ public class BeamSolverService {
 
             double systemNetForce = forceBalance.value(h, theta);
             double systemNetMoment = momentBalance.value(h, theta);
-
-            System.out.println("hGuess: " + h + ", thetaGuess: " + theta +
-                    ", systemNetForce: " + systemNetForce + ", systemNetMoment: " + systemNetMoment);
 
             // Check if the solution is within tolerance for both force and moment balance
             if (Math.abs(systemNetForce) < tolerance && Math.abs(systemNetMoment) < tolerance)
@@ -306,13 +299,11 @@ public class BeamSolverService {
             theta += delta.get(1, 0);
 
             // Check if h guess is diverging out of bounds
-            if (h < minWaterLine || h > maxWaterLine) {
-                System.out.println("Diverging h: " + h);
+            if (h < minWaterLine || h > maxWaterLine)
                 return null;
-            }
         }
 
-        // No convergence
+        // No convergence after max amount of allowed iterations
         return null;
     }
 

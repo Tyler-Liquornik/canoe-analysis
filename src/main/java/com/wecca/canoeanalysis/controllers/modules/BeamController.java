@@ -502,8 +502,6 @@ public class BeamController implements Initializable {
         double thetaRadians = Math.toRadians(solution.getSolvedTheta());
         double hTilt = (canoe.getHull().getLength() / 2) * Math.tan(thetaRadians);
 
-        System.out.println("hSol: " + solution.getSolvedH() + ", thetaSol: " + solution.getSolvedTheta() + ", hTiltSol: " + hTilt);
-
         // Check if the tilt causes the canoe to sink
         if (Math.abs(hTilt) >= Math.abs(solution.getSolvedH())) {
             mainController.showSnackbar("Canoe will tip over, too much load on one side");
