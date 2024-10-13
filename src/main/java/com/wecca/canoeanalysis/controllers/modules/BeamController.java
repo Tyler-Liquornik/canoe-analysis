@@ -512,14 +512,6 @@ public class BeamController implements Initializable {
         PiecewiseContinuousLoadDistribution buoyancy = solution.getSolvedBuoyancy();
         if (buoyancy.getForce() != 0) addPiecewiseLoadDistribution(buoyancy);
 
-        // temp logging
-        List<Load> loads = canoe.getAllLoads();
-        loads.add(buoyancy);
-        loads.forEach(load -> System.out.println("Type: " + load.getType()
-                + ", Force:" + load.getForce()
-                + ", Moment:" + load.getMoment(canoe.getHull().getLength() / 2)
-                + ", x: " + load.getX()));
-
         return true;
     }
 

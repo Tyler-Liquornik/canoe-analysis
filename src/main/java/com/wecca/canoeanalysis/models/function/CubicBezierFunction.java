@@ -105,9 +105,9 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
      * @return The value of the parameter 't' (in the range [0, 1]) where the x-coordinate of the Bézier curve matches the input 'x'.
      */
     private double getT(double x) {
-
         // Ensure x is within the range of the curve
-        if (x < getX() || x > getRx())
+        double tolerance = 1e-3;
+        if (x < getX() - tolerance || x > getRx() + tolerance)
             throw new IllegalArgumentException("x = " + x + " is out of bounds for this Bézier curve");
 
         // Solve for t given x, should be one t per x since the curve passes the vertical line test
