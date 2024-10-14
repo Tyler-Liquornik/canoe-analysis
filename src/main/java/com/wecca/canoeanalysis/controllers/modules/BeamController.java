@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.controllers.modules;
 
+import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXTreeView;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
@@ -52,7 +53,11 @@ public class BeamController implements Initializable {
             clearLoadsButton, deleteLoadButton;
     @FXML
     private TextField pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
-            distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField;
+            distributedIntervalTextFieldL, distributedIntervalTextFieldR;
+
+    @FXML
+    private JFXTextField canoeLengthTextField;
+
     @FXML
     private ComboBox<String> pointDirectionComboBox, pointMagnitudeComboBox, pointLocationComboBox, distributedIntervalComboBox,
             distributedDirectionComboBox, distributedMagnitudeComboBox, canoeLengthComboBox;
@@ -86,8 +91,6 @@ public class BeamController implements Initializable {
         deleteLoadButton.setDisable(isTreeViewEmpty);
         clearLoadsButton.setDisable(isTreeViewEmpty);
     }
-
-    //Testing New Branch - Cam
 
     /**
      * Updates the view order (z-axis rendering) property of all graphics for rendering
@@ -206,6 +209,32 @@ public class BeamController implements Initializable {
         }
         else
             mainController.showSnackbar("One or more entered values are not valid numbers");
+    }
+
+    public void highlightInvalidInput() {
+        if (InputParsingUtils.validateTextAsDouble(canoeLengthTextField.getText())) {
+            // Convert to metric
+            double length = InputParsingUtils.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
+
+            canoeLengthTextField.getStyleClass().removeAll("invalid-input"); // Remove previous styles
+
+            // Only allow lengths in the specified range
+            if (!(length >= 2 && length <= 10)) {
+                canoeLengthTextField.getStyleClass().add("invalid-input"); // Add invalid style
+            }
+        }
+
+        else {
+            canoeLengthTextField.getStyleClass().add("invalid-input"); // Add invalid style
+        }
+    }
+
+    public void restrictPrecision(JFXTextField textField) {
+        textField.textProperty().addListener((observable, oldValue, newValue) -> {
+            //Regex allows for any number of digits before an optional decimal then up to two digits after the decimal
+            if (!(newValue.matches("^\\d*\\.?\\d{0,2}$")))
+                textField.setText(oldValue);
+        });
     }
 
     /**
@@ -911,5 +940,13 @@ public class BeamController implements Initializable {
         TextField[] tfs = new TextField[]{pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
                 distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField};
         for (TextField tf : tfs) {tf.setText("0.00");}
+
+        //Validation Highlighting Init
+        canoeLengthTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            highlightInvalidInput(); // Automatically highlight invalid input
+        });
+
+        //Precision Restricting Init
+        restrictPrecision(canoeLengthTextField);
     }
 }
