@@ -433,8 +433,6 @@ public class DiagramService {
         Map<String, Point2D> diagramPoints = getDiagramPointMap(intervals, canoe.getHull().getLength());
         ArrayList<Point2D> sfdPoints = new ArrayList<>(diagramPoints.values());
 
-        LoggerService.logPoints(sfdPoints);
-
         // Return the generated points
         return new ArrayList<>(sfdPoints);
     }

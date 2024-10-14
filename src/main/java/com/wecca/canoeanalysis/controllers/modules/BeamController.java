@@ -3,7 +3,6 @@ package com.wecca.canoeanalysis.controllers.modules;
 import com.jfoenix.controls.JFXTreeView;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
 import com.wecca.canoeanalysis.components.graphics.*;
 import com.wecca.canoeanalysis.controllers.popups.*;
@@ -16,16 +15,19 @@ import com.wecca.canoeanalysis.models.function.RectFunction;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.services.*;
+import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.*;
-import javafx.animation.AnimationTimer;
-import javafx.animation.RotateTransition;
+import javafx.animation.*;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.fxml.*;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
 import lombok.*;
 
@@ -41,7 +43,7 @@ public class BeamController implements Initializable {
     @FXML
     private Label axisLabelR, lengthLabel, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,
             pointTitleLabel, supportTitleLabel, distributedDirectionLabel, distributedMagntiudeLabel,
-            distributedIntervalLabel, distributedTitleLabel;
+            distributedIntervalLabel, distributedTitleLabel, waterlineLabel, tiltAngleLabel, tippedLabel;
     @FXML
     private JFXTreeView<String> loadsTreeView;
 
@@ -57,7 +59,7 @@ public class BeamController implements Initializable {
     @FXML
     private RadioButton standsRadioButton, floatingRadioButton, submergedRadioButton;
     @FXML @Getter
-    private AnchorPane loadContainer, beamContainer;
+    private AnchorPane loadContainer, beamContainer, waterlineContainer, lowerRightAnchorPane;
 
     @Getter @Setter
     private MainController mainController;
@@ -146,7 +148,11 @@ public class BeamController implements Initializable {
             solveSystemButton.fire();
 
         clearAllCanoeModels();
+        waterlineContainer.getChildren().clear();
         axisLabelR.setText("X");
+        waterlineLabel.setText("");
+        tiltAngleLabel.setText("");
+        tippedLabel.setText("");
         axisLabelR.setLayoutX(581); // TODO: this will not be hard coded anymore once axis labels for new loads are implemented
         canoeLengthTextField.setDisable(false);
         canoeLengthComboBox.setDisable(false);
@@ -231,7 +237,7 @@ public class BeamController implements Initializable {
                 if (p.isSupport())
                     renderSupportGraphic(p.getX());
                 else
-                    renderGraphics();;
+                    renderGraphics();
                 LoadTreeManagerService.buildLoadTreeView(canoe);
                 checkAndSetEmptyLoadTreeSettings();
             }
@@ -327,7 +333,7 @@ public class BeamController implements Initializable {
     public void renderGraphics() {
         loadContainer.getChildren().clear();
         double canoeGraphicLength = canoeGraphic.getEncasingRectangle().getWidth();
-        double hullAbsMax = canoe.getHull().getPiecedSideProfileCurve().getMaxValue(canoe.getHull().getSection());
+        double hullAbsMax = canoe.getHull().getPiecedSideProfileCurveShiftedAboveYAxis().getMaxValue(canoe.getHull().getSection());
 
         // Rescale all graphics relative to the max load
         List<Graphic> rescaledGraphics = new ArrayList<>();
@@ -353,7 +359,7 @@ public class BeamController implements Initializable {
                     double startRy = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - deltaY : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(dist.getSection().getRx()) + deltaY;
 
                     // Hull curve graphic adjustment setup
-                    BoundedUnivariateFunction hullCurve = X -> canoe.getHull().getPiecedSideProfileCurve().value(X) - hullAbsMax;
+                    BoundedUnivariateFunction hullCurve = X -> canoe.getHull().getPiecedSideProfileCurveShiftedAboveYAxis().value(X) - hullAbsMax;
                     double hullCurveMaxX = hullCurve.getMaxSignedValuePoint(dist.getSection()).getX();
                     double hullCurveMaxY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(hullCurveMaxX) + deltaY;
                     double rectWidth = rx - x;
@@ -369,7 +375,7 @@ public class BeamController implements Initializable {
                                 double stepValue = step.value(X);
                                 return (loadMax < 0 || stepValue == 0 || hullAbsMax == 0)
                                         ? stepValue // Adjust the distribution graphic by adding the hull curve
-                                        : stepValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), stepValue / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
+                                        : stepValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), loadMax / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
                             };
                             rescaledGraphics.add(new ArrowBoundCurvedGraphic(f, dist.getSection(), rect, lArrow, rArrow));
                         }
@@ -379,7 +385,7 @@ public class BeamController implements Initializable {
                                     double piecewiseValue = piecewise.getPiecedFunction().value(X);
                                     return (loadMax < 0 || piecewiseValue == 0 || hullAbsMax == 0)
                                             ? piecewiseValue // Adjust the distribution graphic by adding the hull curve
-                                            : piecewiseValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), piecewiseValue / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
+                                            : piecewiseValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), loadMax / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
                                 };
                                 rescaledGraphics.add(new CurvedGraphic(f, piecewise.getSection(), rect));
                             }
@@ -421,10 +427,12 @@ public class BeamController implements Initializable {
 
         if (submergedRadioButton.isSelected()) {
             solveSubmergedSystem();
+            generateGraphsButton.setDisable(false);
             return; // TODO: after implemented solveSubmergedSystem()
         }
         if (standsRadioButton.isSelected()) {
             solveStandSystem();
+            generateGraphsButton.setDisable(false);
             solveSystemButton.setOnAction(e -> undoStandsSolve());
         }
         else if (floatingRadioButton.isSelected()) {
@@ -435,7 +443,6 @@ public class BeamController implements Initializable {
         }
 
         // Update UI state
-        generateGraphsButton.setDisable(false);
         disableLoadingControls(true);
         loadsTreeView.setDisable(false);
         solveSystemButton.setText("Undo Solve");
@@ -472,7 +479,9 @@ public class BeamController implements Initializable {
     /**
      * Solve and display the result of the "floating" system load case.
      * This entails a buoyancy distribution that keeps the canoe afloat
-     * @return true if the solution was successful, false if the canoe will tip
+     * @return true if the solution was successful, false if the canoe sinks
+     * Note: if the canoe tips, it will still solve, just prevents SFD/BMD graphs
+     * It will still display to the user the "nonsense" solution (since the canoe fills with water)
      */
     private boolean solveFloatingSystem() {
         // Check if the hull has been set from the default beam
@@ -499,28 +508,43 @@ public class BeamController implements Initializable {
             return false;
         }
 
-        double thetaRadians = Math.toRadians(solution.getSolvedTheta());
-        double hTilt = (canoe.getHull().getLength() / 2) * Math.tan(thetaRadians);
-
-        // Check if the tilt causes the canoe to sink
-        if (Math.abs(hTilt) >= Math.abs(solution.getSolvedH())) {
-            mainController.showSnackbar("Canoe will tip over, too much load on one side");
-            return false;
-        }
-
         // Proceed with floating system solve if no tipping or sinking is detected
         PiecewiseContinuousLoadDistribution buoyancy = solution.getSolvedBuoyancy();
         if (buoyancy.getForce() != 0) addPiecewiseLoadDistribution(buoyancy);
 
-        // temp logging
-        List<Load> loads = canoe.getAllLoads();
-        loads.add(buoyancy);
-        loads.forEach(load -> System.out.println("Type: " + load.getType()
-                + ", Force:" + load.getForce()
-                + ", Moment:" + load.getMoment(canoe.getHull().getLength() / 2)
-                + ", x: " + load.getX()));
+        // Show the resulting h and theta solutions visually
+        rotateGraphics(solution.getSolvedTheta(), 1);
+        addWaterline(solution.getSolvedH());
+        waterlineLabel.setText("Waterline: " + CalculusUtils.roundXDecimalDigits(Math.abs(solution.getSolvedH()), 2) + "m");
+        String thetaDirection = solution.getSolvedTheta() < 0 ? "CCW" : "CW";
+        tiltAngleLabel.setText("Tilt Angle: " + CalculusUtils.roundXDecimalDigits(Math.abs(solution.getSolvedTheta()), 2)
+        + "° " + thetaDirection);
+
+        // Show the user the canoe has tipped but do not let them generate graphs since it's technically an invalid solution
+        if (solution.isTippedOver()) {
+            mainController.showSnackbar("Canoe will tip over, too much load on one side");
+            double tippedLabelStartX = tiltAngleLabel.getLayoutX() + tiltAngleLabel.prefWidth(-1) + 5;
+            tippedLabel.setText("(Tipped Over)");
+            tippedLabel.setLayoutX(tippedLabelStartX);
+            tippedLabel.setTextFill(ColorPaletteService.getColor("danger"));
+        }
+        generateGraphsButton.setDisable(solution.isTippedOver());
 
         return true;
+    }
+
+    /**
+     * Draws a white dotted line at the solved waterline height h.
+     * @param h the solved waterline height (in the model coordinate space).
+     */
+    private void addWaterline(double h) {
+        double canoeGraphicHeight = canoeGraphic.getEndY() - canoeGraphic.getY();
+        double graphicY = canoeGraphic.getY() +
+                Math.abs((h / canoe.getHull().getMaxHeight())) * canoeGraphicHeight;
+        Line dashedWaterline = new Line(0, graphicY, waterlineContainer.getWidth(), graphicY);
+        dashedWaterline.setStroke(ColorPaletteService.getColor("white"));
+        dashedWaterline.getStrokeDashArray().addAll(5.0, 5.0);  // Dotted pattern
+        waterlineContainer.getChildren().add(dashedWaterline);
     }
 
     /**
@@ -528,7 +552,7 @@ public class BeamController implements Initializable {
      */
     private void undoFloatingSolve() {
         clearLoadsOfType(LoadType.BUOYANCY);
-        renderGraphics(); // removing buoyancy likely changes scaling, need to recalculate scaling
+        setCanoe(canoe);
         undoSolveUpdateUI();
     }
 
@@ -554,13 +578,18 @@ public class BeamController implements Initializable {
      */
     private void undoSolveUpdateUI() {
         solveSystemButton.setText("Solve System");
+        axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
         solveSystemButton.setOnAction(e -> solveSystem());
         generateGraphsButton.setDisable(true);
+        waterlineContainer.getChildren().clear();
         LoadTreeManagerService.buildLoadTreeView(canoe);
         disableLoadingControls(false);
         boolean isHullPresent = canoe.getHull().getWeight() != 0;
         mainController.disableModuleToolBarButton(isHullPresent, 2);
         checkAndSetEmptyLoadTreeSettings();
+        waterlineLabel.setText("");
+        tiltAngleLabel.setText("");
+        tippedLabel.setText("");
     }
 
     /**
@@ -698,46 +727,46 @@ public class BeamController implements Initializable {
         beamContainer.getChildren().add((Node) canoeGraphic);
     }
 
-    /**
-     * Rotate the hull graphic (either a beam or curved hull) with an animation transition
-     * @param degrees the amount of degrees to rotate clockwise
-     */
-    public void rotateCanoeGraphicCounterClockwise(double degrees, double speed) {
-        // Update the node's current rotation state
-        double currentRotation = canoeGraphic.getNode().getRotate();
-        double targetRotation = currentRotation - degrees;
+    public void rotateGraphics(double degrees, double duration) {
         double length = canoe.getHull().getLength();
 
-        // Animate the rotation transition
-        RotateTransition rotateTransition = new RotateTransition();
-        rotateTransition.setNode(canoeGraphic.getNode());
-        rotateTransition.setDuration(Duration.seconds(speed));
-        rotateTransition.setFromAngle(currentRotation);
-        rotateTransition.setToAngle(targetRotation);
-        rotateTransition.setCycleCount(1);
-        rotateTransition.setAutoReverse(false);
+        // Calculate the pivot point (midpoint of the canoe graphic)
+        double pivotX = (canoeGraphic.getEndX() + canoeGraphic.getX()) / 2.0;
+        double pivotY = canoeGraphic.getY();
 
-        // Create an AnimationTimer to smoothly update the label as the rotation progresses
-        AnimationTimer timer = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                // Update the label with the projected length as the rotation changes
-                GraphicsUtils.setProjectedLengthToLabel(axisLabelR, canoeGraphic.getNode(), length);
-            }
-        };
+        // Collect all nodes to rotate
+        List<Node> allNodes = new ArrayList<>();
+        allNodes.add(canoeGraphic.getNode());
+        allNodes.addAll(loadContainer.getChildren());
 
-        // Start the AnimationTimer right before playing the RotateTransition
-        timer.start();
+        // Create timelines for each node
+        List<Timeline> timelines = new ArrayList<>();
+        for (Node node : allNodes) {
+            // Create and add a Rotate transform to each node
+            Rotate rotate = new Rotate(0, pivotX, pivotY);
+            node.getTransforms().add(rotate);
 
-        // Stop the timer when the animation finishes
-        rotateTransition.setOnFinished(e -> {
-            timer.stop();
-            // Ensure final update of the projected length
-            GraphicsUtils.setProjectedLengthToLabel(axisLabelR, canoeGraphic.getNode(), length);
-        });
+            // Update the label using the Rotate transform's angle property
+            rotate.angleProperty().addListener((observable, oldValue, newValue) -> {
+                double angle = newValue.doubleValue();
+                GraphicsUtils.setProjectedLengthToLabel(axisLabelR, length, angle);
+            });
 
-        // Start the rotation animation
-        rotateTransition.play();
+            // Create the timeline
+            Timeline timeline = new Timeline(
+                    new KeyFrame(Duration.ZERO, new KeyValue(rotate.angleProperty(), rotate.getAngle())),
+                    new KeyFrame(Duration.seconds(duration), new KeyValue(rotate.angleProperty(), rotate.getAngle() + degrees))
+            );
+            timelines.add(timeline);
+        }
+
+        // Combine all timelines into a parallel transition
+        ParallelTransition parallelTransition = new ParallelTransition();
+        parallelTransition.getChildren().addAll(timelines);
+        parallelTransition.setOnFinished(e ->
+                GraphicsUtils.setProjectedLengthToLabel(axisLabelR, length, degrees)
+        );
+        parallelTransition.play();
     }
 
     /**
@@ -790,7 +819,7 @@ public class BeamController implements Initializable {
         Rectangle rect = canoeGraphic.getEncasingRectangle();
         rect.setHeight(35);
         setCanoeGraphic(new CurvedHullGraphic(
-                hull.getPiecedSideProfileCurve(), hull.getSection(), rect));
+                hull.getPiecedSideProfileCurveShiftedAboveYAxis(), hull.getSection(), rect));
         beamContainer.getChildren().clear();
         beamContainer.getChildren().add((Node) canoeGraphic);
         renderGraphics();

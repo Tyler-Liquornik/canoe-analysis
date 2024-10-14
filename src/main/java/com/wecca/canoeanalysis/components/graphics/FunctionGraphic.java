@@ -11,6 +11,7 @@ public interface FunctionGraphic extends Graphic {
     Section getSection();
     BoundedUnivariateFunction getFunction();
     double getEndX();
+    double getY();
     double getEndY();
     Rectangle getEncasingRectangle();
     double getHeight(double functionX);

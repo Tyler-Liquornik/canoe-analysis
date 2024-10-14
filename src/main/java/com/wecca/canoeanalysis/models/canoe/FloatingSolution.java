@@ -12,4 +12,5 @@ public class FloatingSolution {
     PiecewiseContinuousLoadDistribution solvedBuoyancy;
     double solvedH; // h is the height of the waterline, -canoeMaxHeight <= h <= 0
     double solvedTheta; // theta is the angle of the waterline -maxTilt <= theta <= maxTilt
+    boolean isTippedOver;
 }

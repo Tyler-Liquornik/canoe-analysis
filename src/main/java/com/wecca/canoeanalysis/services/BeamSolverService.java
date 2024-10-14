@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Utility class for solving system equations
+ * Solves load cases
  */
 public class BeamSolverService {
     /**
@@ -95,7 +95,7 @@ public class BeamSolverService {
 
             // Create the PiecewiseContinuousLoadDistribution with zero-valued functions
             PiecewiseContinuousLoadDistribution buoyancyForce = new PiecewiseContinuousLoadDistribution(LoadType.BUOYANCY, pieces, sections);
-            return new FloatingSolution(buoyancyForce, 0, 0);
+            return new FloatingSolution(buoyancyForce, canoe.getHull().getMaxHeight(), 0, false);
         }
 
         // Case where the hull has no weight (only exists to provide length)
@@ -106,13 +106,13 @@ public class BeamSolverService {
 
         // Solve for the equilibrium waterline and get the buoyancy force distribution at that waterline
         double[] waterLine = getEquilibriumWaterLine(canoe);
-
-        if (waterLine == null)
-            return null;
+        if (waterLine == null) return null;
         else {
             double h = waterLine[0];
             double theta = waterLine[1];
-            return new FloatingSolution(getBuoyancyForceDistribution(h, theta, canoe), h, theta);
+            double hTilt = (canoe.getHull().getLength() / 2) * Math.tan(Math.toRadians(theta));
+            boolean isTippedOver =  Math.abs(hTilt) >= Math.abs(h);
+            return new FloatingSolution(getBuoyancyForceDistribution(h, theta, canoe), h, theta, isTippedOver);
         }
     }
 
@@ -175,6 +175,7 @@ public class BeamSolverService {
      */
     @TraceIgnore
     private static double getBuoyancyMomentOnSection(double waterline, double theta, double rotationX, HullSection section) {
+        validateWaterLine(waterline);
         return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), x -> {
             double xSec = getSubmergedCrossSectionalAreaFunction(waterline, theta, rotationX, section).value(x);
             double buoyantForceAtX = xSec * PhysicalConstants.DENSITY_OF_WATER.getValue() * PhysicalConstants.GRAVITY.getValue() / 1000.0;
@@ -226,7 +227,7 @@ public class BeamSolverService {
         double minWaterLine = -canoe.getHull().getMaxHeight();
         double maxWaterLine = 0;
         double h = (minWaterLine + maxWaterLine) / 2.0;
-        double totalBuoyancy; double totalMoment;
+        double totalBuoyancy;
 
         // Binary search until equilibrium is reached within a reasonable tolerance
         while (maxWaterLine - minWaterLine > 1e-6) {
