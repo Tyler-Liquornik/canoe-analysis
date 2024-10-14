@@ -41,6 +41,11 @@
     -fx-font-size: 14px;
 }
 
+.bold {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
 .about-body {
     -fx-font-size: 12px;
 }

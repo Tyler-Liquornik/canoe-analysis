@@ -43,7 +43,7 @@ public class BeamController implements Initializable {
     @FXML
     private Label axisLabelR, lengthLabel, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,
             pointTitleLabel, supportTitleLabel, distributedDirectionLabel, distributedMagntiudeLabel,
-            distributedIntervalLabel, distributedTitleLabel;
+            distributedIntervalLabel, distributedTitleLabel, waterlineLabel, tiltAngleLabel, tippedLabel;
     @FXML
     private JFXTreeView<String> loadsTreeView;
 
@@ -59,7 +59,7 @@ public class BeamController implements Initializable {
     @FXML
     private RadioButton standsRadioButton, floatingRadioButton, submergedRadioButton;
     @FXML @Getter
-    private AnchorPane loadContainer, beamContainer, waterlineContainer;
+    private AnchorPane loadContainer, beamContainer, waterlineContainer, lowerRightAnchorPane;
 
     @Getter @Setter
     private MainController mainController;
@@ -150,6 +150,9 @@ public class BeamController implements Initializable {
         clearAllCanoeModels();
         waterlineContainer.getChildren().clear();
         axisLabelR.setText("X");
+        waterlineLabel.setText("");
+        tiltAngleLabel.setText("");
+        tippedLabel.setText("");
         axisLabelR.setLayoutX(581); // TODO: this will not be hard coded anymore once axis labels for new loads are implemented
         canoeLengthTextField.setDisable(false);
         canoeLengthComboBox.setDisable(false);
@@ -424,10 +427,12 @@ public class BeamController implements Initializable {
 
         if (submergedRadioButton.isSelected()) {
             solveSubmergedSystem();
+            generateGraphsButton.setDisable(false);
             return; // TODO: after implemented solveSubmergedSystem()
         }
         if (standsRadioButton.isSelected()) {
             solveStandSystem();
+            generateGraphsButton.setDisable(false);
             solveSystemButton.setOnAction(e -> undoStandsSolve());
         }
         else if (floatingRadioButton.isSelected()) {
@@ -438,7 +443,6 @@ public class BeamController implements Initializable {
         }
 
         // Update UI state
-        generateGraphsButton.setDisable(false);
         disableLoadingControls(true);
         loadsTreeView.setDisable(false);
         solveSystemButton.setText("Undo Solve");
@@ -475,7 +479,9 @@ public class BeamController implements Initializable {
     /**
      * Solve and display the result of the "floating" system load case.
      * This entails a buoyancy distribution that keeps the canoe afloat
-     * @return true if the solution was successful, false if the canoe will tip
+     * @return true if the solution was successful, false if the canoe sinks
+     * Note: if the canoe tips, it will still solve, just prevents SFD/BMD graphs
+     * It will still display to the user the "nonsense" solution (since the canoe fills with water)
      */
     private boolean solveFloatingSystem() {
         // Check if the hull has been set from the default beam
@@ -502,15 +508,6 @@ public class BeamController implements Initializable {
             return false;
         }
 
-        double thetaRadians = Math.toRadians(solution.getSolvedTheta());
-        double hTilt = (canoe.getHull().getLength() / 2) * Math.tan(thetaRadians);
-
-        // Check if the tilt causes the canoe to sink
-        if (Math.abs(hTilt) >= Math.abs(solution.getSolvedH())) {
-            mainController.showSnackbar("Canoe will tip over, too much load on one side");
-            return false;
-        }
-
         // Proceed with floating system solve if no tipping or sinking is detected
         PiecewiseContinuousLoadDistribution buoyancy = solution.getSolvedBuoyancy();
         if (buoyancy.getForce() != 0) addPiecewiseLoadDistribution(buoyancy);
@@ -518,6 +515,20 @@ public class BeamController implements Initializable {
         // Show the resulting h and theta solutions visually
         rotateGraphics(solution.getSolvedTheta(), 1);
         addWaterline(solution.getSolvedH());
+        waterlineLabel.setText("Waterline: " + CalculusUtils.roundXDecimalDigits(Math.abs(solution.getSolvedH()), 2) + "m");
+        String thetaDirection = solution.getSolvedTheta() < 0 ? "CCW" : "CW";
+        tiltAngleLabel.setText("Tilt Angle: " + CalculusUtils.roundXDecimalDigits(Math.abs(solution.getSolvedTheta()), 2)
+        + "° " + thetaDirection);
+
+        // Show the user the canoe has tipped but do not let them generate graphs since it's technically an invalid solution
+        if (solution.isTippedOver()) {
+            mainController.showSnackbar("Canoe will tip over, too much load on one side");
+            double tippedLabelStartX = tiltAngleLabel.getLayoutX() + tiltAngleLabel.prefWidth(-1) + 5;
+            tippedLabel.setText("(Tipped Over)");
+            tippedLabel.setLayoutX(tippedLabelStartX);
+            tippedLabel.setTextFill(ColorPaletteService.getColor("danger"));
+        }
+        generateGraphsButton.setDisable(solution.isTippedOver());
 
         return true;
     }
@@ -576,6 +587,9 @@ public class BeamController implements Initializable {
         boolean isHullPresent = canoe.getHull().getWeight() != 0;
         mainController.disableModuleToolBarButton(isHullPresent, 2);
         checkAndSetEmptyLoadTreeSettings();
+        waterlineLabel.setText("");
+        tiltAngleLabel.setText("");
+        tippedLabel.setText("");
     }
 
     /**

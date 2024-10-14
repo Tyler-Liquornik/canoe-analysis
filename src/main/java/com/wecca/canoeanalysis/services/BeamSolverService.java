@@ -95,7 +95,7 @@ public class BeamSolverService {
 
             // Create the PiecewiseContinuousLoadDistribution with zero-valued functions
             PiecewiseContinuousLoadDistribution buoyancyForce = new PiecewiseContinuousLoadDistribution(LoadType.BUOYANCY, pieces, sections);
-            return new FloatingSolution(buoyancyForce, 0, 0);
+            return new FloatingSolution(buoyancyForce, canoe.getHull().getMaxHeight(), 0, false);
         }
 
         // Case where the hull has no weight (only exists to provide length)
@@ -110,7 +110,9 @@ public class BeamSolverService {
         else {
             double h = waterLine[0];
             double theta = waterLine[1];
-            return new FloatingSolution(getBuoyancyForceDistribution(h, theta, canoe), h, theta);
+            double hTilt = (canoe.getHull().getLength() / 2) * Math.tan(Math.toRadians(theta));
+            boolean isTippedOver =  Math.abs(hTilt) >= Math.abs(h);
+            return new FloatingSolution(getBuoyancyForceDistribution(h, theta, canoe), h, theta, isTippedOver);
         }
     }
 
