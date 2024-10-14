@@ -727,11 +727,6 @@ public class BeamController implements Initializable {
         beamContainer.getChildren().add((Node) canoeGraphic);
     }
 
-    /**
-     * Rotates the canoe graphic and all load graphics around (x = L/2, y = 0)
-     * @param degrees the angle in degrees to rotate the graphics (clockwise if positive).
-     * @param duration of the animation in seconds.
-     */
     public void rotateGraphics(double degrees, double duration) {
         double length = canoe.getHull().getLength();
 
@@ -739,16 +734,25 @@ public class BeamController implements Initializable {
         double pivotX = (canoeGraphic.getEndX() + canoeGraphic.getX()) / 2.0;
         double pivotY = canoeGraphic.getY();
 
-        // Apply rotation using a Rotate transform for each node
+        // Collect all nodes to rotate
         List<Node> allNodes = new ArrayList<>();
         allNodes.add(canoeGraphic.getNode());
         allNodes.addAll(loadContainer.getChildren());
 
-        // Create a timeline for each node to rotate
+        // Create timelines for each node
         List<Timeline> timelines = new ArrayList<>();
         for (Node node : allNodes) {
+            // Create and add a Rotate transform to each node
             Rotate rotate = new Rotate(0, pivotX, pivotY);
             node.getTransforms().add(rotate);
+
+            // Update the label using the Rotate transform's angle property
+            rotate.angleProperty().addListener((observable, oldValue, newValue) -> {
+                double angle = newValue.doubleValue();
+                GraphicsUtils.setProjectedLengthToLabel(axisLabelR, length, angle);
+            });
+
+            // Create the timeline
             Timeline timeline = new Timeline(
                     new KeyFrame(Duration.ZERO, new KeyValue(rotate.angleProperty(), rotate.getAngle())),
                     new KeyFrame(Duration.seconds(duration), new KeyValue(rotate.angleProperty(), rotate.getAngle() + degrees))
@@ -756,22 +760,12 @@ public class BeamController implements Initializable {
             timelines.add(timeline);
         }
 
-        // AnimationTimer to update the axis label during rotation
-        AnimationTimer timer = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                GraphicsUtils.setProjectedLengthToLabel(axisLabelR, canoeGraphic.getNode(), length);
-            }
-        };
-        timer.start();
-
         // Combine all timelines into a parallel transition
         ParallelTransition parallelTransition = new ParallelTransition();
         parallelTransition.getChildren().addAll(timelines);
-        parallelTransition.setOnFinished(e -> {
-            timer.stop();
-            GraphicsUtils.setProjectedLengthToLabel(axisLabelR, canoeGraphic.getNode(), length);
-        });
+        parallelTransition.setOnFinished(e ->
+                GraphicsUtils.setProjectedLengthToLabel(axisLabelR, length, degrees)
+        );
         parallelTransition.play();
     }
 
