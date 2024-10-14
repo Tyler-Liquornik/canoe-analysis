@@ -1,8 +1,10 @@
 package com.wecca.canoeanalysis.utils;
 
 import com.wecca.canoeanalysis.components.graphics.*;
+import javafx.animation.RotateTransition;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.util.Duration;
 
 import java.util.Comparator;
 import java.util.HashMap;

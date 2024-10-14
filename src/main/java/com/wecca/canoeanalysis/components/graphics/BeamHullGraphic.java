@@ -63,6 +63,11 @@ public class BeamHullGraphic extends Group implements FunctionGraphic {
     }
 
     @Override
+    public double getY() {
+        return encasingRectangle.getY();
+    }
+
+    @Override
     public void recolor(boolean setColored) {
         this.isColored = setColored;
 

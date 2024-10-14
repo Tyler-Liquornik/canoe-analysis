@@ -200,7 +200,7 @@ public class Hull {
      * Note that this returned function has been shifted so that it's bottom is at y = 0 instead of its top at y = 0
      */
     @JsonIgnore
-    public BoundedUnivariateFunction getPiecedSideProfileCurve() {
+    public BoundedUnivariateFunction getPiecedSideProfileCurveShiftedAboveYAxis() {
         BoundedUnivariateFunction f = x -> {
             for (HullSection section : hullSections) {
                 if (section.getX() <= x && x <= section.getRx())

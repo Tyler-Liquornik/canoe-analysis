@@ -78,4 +78,20 @@ public class ColorUtils {
         // Normalize to [0, 1] as JavaFX Color uses double values for RGB
         return Color.rgb(red, green, blue);
     }
+
+    /**
+     * @param color the original color
+     * @param opacity the new opacity (between 0.0 and 1.0)
+     * @return a new Color object with the same RGB values and updated opacity
+     */
+    public static Color withOpacity(Color color, double opacity) {
+        // Ensure the opacity is within the valid range
+        opacity = clamp(opacity);
+        return new Color(
+                color.getRed(),
+                color.getGreen(),
+                color.getBlue(),
+                opacity
+        );
+    }
 }

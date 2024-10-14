@@ -66,6 +66,7 @@
             <Line endX="5.0" layoutX="585.0" layoutY="255.0" rotate="90.0" startX="-5.0" stroke="WHITE" />
             <Label fx:id="axisLabelL" alignment="CENTER" contentDisplay="CENTER" layoutX="15.0" layoutY="265.0" text="0.00 m" textAlignment="CENTER" />
             <Label fx:id="axisLabelR" alignment="CENTER" contentDisplay="CENTER" layoutX="581.0" layoutY="265.0" text="X" textAlignment="CENTER" />
+            <AnchorPane fx:id="waterlineContainer" layoutY="30.0" prefHeight="210.0" prefWidth="620.0" />
             <AnchorPane fx:id="loadContainer" layoutX="35.0" layoutY="30.0" prefHeight="210.0" prefWidth="550.0" />
             <AnchorPane fx:id="beamContainer" layoutX="35.0" layoutY="30.0" prefHeight="210.0" prefWidth="550.0" />
          </children>
