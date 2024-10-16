@@ -241,6 +241,27 @@ jfx-toggle-button,
     -jfx-rippler-fill: -fx-primary-light;
 }
 
+.custom-text-field {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #1e88e5 transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-padding: 3;
+    -fx-focus-color: #1e88e5;
+    -fx-faint-focus-color: transparent;
+}
+
+.blue-button {
+    -fx-background-color: #1e88e5; /* Set the background color */
+    -fx-text-fill: white;
+}
+
+.round-button {
+    -fx-background-color: #1e88e5; /* Set the background color */
+    -fx-text-fill: white;          /* Set the text color */
+    -fx-background-radius: 50px;   /* Make the button round */
+    -fx-border-radius: 50px;
+}
+
 .pass {
     -fx-text-fill: #A0B55F;
 }

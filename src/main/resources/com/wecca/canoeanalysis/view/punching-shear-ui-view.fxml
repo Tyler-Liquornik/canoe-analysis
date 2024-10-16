@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.text.Font?>
+
+<GridPane fx:id="gridPane" alignment="CENTER" hgap="20" prefHeight="800" prefWidth="1200" style="-fx-background-color: #333;" stylesheets="@../css/style.css" vgap="20" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
+
+    <!-- Column Constraints -->
+    <columnConstraints>
+        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="400.0" />
+        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="400.0" />
+    </columnConstraints>
+
+    <!-- Row Constraints -->
+    <rowConstraints>
+        <RowConstraints minHeight="10.0" prefHeight="400.0" vgrow="ALWAYS" />
+        <RowConstraints minHeight="10.0" prefHeight="300.0" vgrow="SOMETIMES" />
+    </rowConstraints>
+
+    <!-- Shear Diagram (Top-Left) with AnchorPane -->
+    <AnchorPane style="-fx-background-color: #222; -fx-border-color: white; -fx-border-width: 2;" GridPane.columnIndex="0" GridPane.rowIndex="0">
+        <Label layoutX="236.0" layoutY="14.0" style="-fx-text-fill: white;" text="Shear Diagram" AnchorPane.leftAnchor="236.0" AnchorPane.topAnchor="14.0">
+            <font>
+                <Font size="18.0" />
+            </font>
+        </Label>
+        <Label layoutX="185.0" layoutY="233.0" style="-fx-text-fill: white;" text="Shear Diagram is not implemented yet" AnchorPane.leftAnchor="185.0" AnchorPane.topAnchor="233.0" />
+        <HBox spacing="5" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" />
+         <Label layoutX="352.0" layoutY="446.0" style="-fx-text-fill: white;" text="N" />
+         <TextField alignment="CENTER" layoutX="266.0" layoutY="441.0" prefHeight="3.0" prefWidth="80" styleClass="custom-text-field" />
+         <Label layoutX="164.0" layoutY="445.0" style="-fx-text-fill: white;" text="Max shear (Vf) =" />
+    </AnchorPane>
+
+    <!-- 2-Way Shear (Top-Right) with AnchorPane -->
+    <AnchorPane style="-fx-background-color: #222; -fx-border-color: white; -fx-border-width: 2;" GridPane.columnIndex="1" GridPane.rowIndex="0">
+        <HBox spacing="5" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="50.0" />
+        <HBox spacing="5" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="90.0" />
+        <HBox spacing="10" AnchorPane.bottomAnchor="50.0" AnchorPane.leftAnchor="10.0" />
+        <HBox spacing="10" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" />
+        <Label layoutX="10.0" layoutY="17.0" style="-fx-text-fill: white;" text="2-way Shear" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="17.0">
+         <font>
+            <Font size="18.0" />
+         </font></Label>
+        <Button layoutX="22.0" layoutY="436.0" styleClass="round-button" text="View Equations" AnchorPane.leftAnchor="18.0" AnchorPane.topAnchor="436.0" />
+        <Button layoutX="522.0" layoutY="438.0" styleClass="blue-button" text="Reset" AnchorPane.leftAnchor="517.0" AnchorPane.topAnchor="438.0" />
+    </AnchorPane>
+
+    <!-- Hull Builder (Bottom-Left) with AnchorPane -->
+    <AnchorPane style="-fx-background-color: #222; -fx-border-color: white; -fx-border-width: 2;" GridPane.columnIndex="0" GridPane.rowIndex="1">
+        <Label layoutX="262.0" layoutY="14.0" style="-fx-text-fill: white;" text="Hull Builder" AnchorPane.leftAnchor="262.0" AnchorPane.topAnchor="14.0" />
+        <HBox spacing="5" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="50.0" />
+        <HBox spacing="5" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="90.0" />
+        <HBox spacing="5" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="130.0" />
+         <Label layoutX="355.0" layoutY="160.0" style="-fx-text-fill: white;" text="MPa" />
+         <Label layoutX="357.0" layoutY="128.0" style="-fx-text-fill: white;" text="mm" />
+         <Label layoutX="357.0" layoutY="96.0" style="-fx-text-fill: white;" text="mm" />
+         <TextField alignment="CENTER" layoutX="268.0" layoutY="91.0" prefWidth="80" styleClass="custom-text-field" text="13" />
+         <TextField alignment="CENTER" layoutX="268.0" layoutY="123.0" prefWidth="80" styleClass="custom-text-field" text="700" />
+         <TextField alignment="CENTER" layoutX="268.0" layoutY="155.0" prefWidth="80" styleClass="custom-text-field" text="10.9" />
+         <Label layoutX="106.0" layoutY="159.0" style="-fx-text-fill: white;" text="Compressive Strength (f) =" />
+         <Label layoutX="169.0" layoutY="128.0" style="-fx-text-fill: white;" text="Hull Width (w) =" />
+         <Label layoutX="135.0" layoutY="96.0" style="-fx-text-fill: white;" text="Canoe Thickness (t) =" />
+    </AnchorPane>
+
+    <!-- 1-Way Shear (Bottom-Right) with AnchorPane -->
+    <AnchorPane style="-fx-background-color: #222; -fx-border-color: white; -fx-border-width: 2;" GridPane.columnIndex="1" GridPane.rowIndex="1">
+        <Label layoutX="14.0" layoutY="17.0" style="-fx-text-fill: white;" text="1-way Shear" AnchorPane.leftAnchor="14.0" AnchorPane.topAnchor="17.0">
+         <font>
+            <Font size="18.0" />
+         </font></Label>
+         <Label layoutX="381.0" layoutY="131.0" style="-fx-text-fill: white;" text="Vc &gt; Vf" />
+         <TextField alignment="CENTER" layoutX="97.0" layoutY="115.0" prefWidth="80" styleClass="custom-text-field" text="80" />
+         <Label layoutX="64.0" layoutY="118.0" style="-fx-text-fill: white;" text="Vf =" />
+         <Label layoutX="178.0" layoutY="149.0" style="-fx-text-fill: white;" text="N" />
+         <Label layoutX="64.0" layoutY="148.0" style="-fx-text-fill: white;" text="Vc =" />
+         <TextField alignment="CENTER" layoutX="97.0" layoutY="144.0" prefWidth="80" styleClass="custom-text-field" text="79" />
+         <Label layoutX="178.0" layoutY="120.0" style="-fx-text-fill: white;" text="N" />
+         <Button layoutX="22.0" layoutY="258.0" styleClass="round-button" text="View Equations" />
+         <Button layoutX="522.0" layoutY="258.0" styleClass="blue-button" text="Test" />
+      <TextField fx:id="SafeUnsafe" layoutX="325.0" layoutY="152.0" style="-fx-background-color: black;-fx-text-fill: white;" text="Safe                      Unsafe" />
+    </AnchorPane>
+
+</GridPane>
