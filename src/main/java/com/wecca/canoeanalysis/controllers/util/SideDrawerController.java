@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.controllers.util;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.fxml.FXML;
@@ -13,17 +14,19 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+@Traceable
 public class SideDrawerController implements Initializable {
 
     @FXML
-    private FontAwesomeIcon beamIcon, punchingShearIcon, criticalSectionsIcon, failureEnvelopeIcon, poaIcon;
+    private FontAwesomeIcon hullBuilderIcon, beamIcon, punchingShearIcon, criticalSectionsIcon, failureEnvelopeIcon, poaIcon;
 
-    private Module selectedModule;
-    public FontAwesomeIcon selectedIcon;
+    public static Module selectedModule;
+    private static FontAwesomeIcon selectedIcon;
 
     @Getter
     public enum Module {
 
+        HULL_BUILDER("hull-builder-view"),
         BEAM("beam-view"),
         PUNCHING_SHEAR("punching-shear-view"),
         CRITICAL_SECTIONS("critical-sections-view"),
@@ -38,6 +41,7 @@ public class SideDrawerController implements Initializable {
     }
 
     // Module selection handlers
+    public void clickHullBuilderButton() throws IOException {selectModule(Module.HULL_BUILDER, hullBuilderIcon);}
     public void clickBeamButton() throws IOException {selectModule(Module.BEAM, beamIcon);}
     public void clickPunchingShearButton() throws IOException {selectModule(Module.PUNCHING_SHEAR, punchingShearIcon);}
     public void clickCriticalSectionsButton() throws IOException {selectModule(Module.CRITICAL_SECTIONS, criticalSectionsIcon);}
@@ -54,8 +58,7 @@ public class SideDrawerController implements Initializable {
     }
 
     public void selectModule(Module module, FontAwesomeIcon icon) throws IOException {
-        if (selectedModule != module)
-        {
+        if (selectedModule != module) {
             // Change the icon for the selected module in the drawer
             selectedModule = module;
             selectedIcon.setGlyphName("ANGLE_RIGHT");
@@ -73,7 +76,7 @@ public class SideDrawerController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        this.selectedModule = Module.BEAM;
-        this.selectedIcon = beamIcon;
+        selectedModule = Module.HULL_BUILDER;
+        selectedIcon = hullBuilderIcon;
     }
 }

@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.Section;
+import com.wecca.canoeanalysis.models.function.FunctionSection;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.paint.Color;
@@ -15,11 +15,11 @@ import lombok.Setter;
  * Same as curve but with an extra line that closes the area
  */
 @Getter @Setter
-public class ClosedCurve extends Curve implements CurvedProfile {
+public class CurvedHullGraphic extends CurvedHullGraphicBase {
 
     private Line closingLine;
 
-    public ClosedCurve(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
+    public CurvedHullGraphic(BoundedUnivariateFunction function, FunctionSection section, Rectangle encasingRectangle) {
         super(function, section, encasingRectangle);
         draw();
         ColorManagerService.registerInColorPalette(this);

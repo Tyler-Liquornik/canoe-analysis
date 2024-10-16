@@ -2,7 +2,7 @@ package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.Section;
+import com.wecca.canoeanalysis.models.function.FunctionSection;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
@@ -14,8 +14,6 @@ import javafx.scene.shape.Path;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import lombok.Getter;
-import lombok.Setter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 
 import java.util.List;
 
@@ -24,17 +22,17 @@ import java.util.List;
  * A curve with shaded area between the curve and the y-axis
  */
 @Getter
-public class Curve extends Group implements CurvedProfile {
+public class CurvedHullGraphicBase extends Group implements HullGraphic {
 
     protected BoundedUnivariateFunction function;
-    protected Section section;
+    protected FunctionSection section;
     protected Rectangle encasingRectangle;
     protected Path linePath;
     protected Polygon area;
     protected boolean isColored;
     private final double maxSignedValue;
 
-    public Curve(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
+    public CurvedHullGraphicBase(BoundedUnivariateFunction function, FunctionSection section, Rectangle encasingRectangle) {
         super();
         this.function = function;
         this.section = section;
@@ -129,7 +127,7 @@ public class Curve extends Group implements CurvedProfile {
     }
 
     @Override
-    public Section getSection() {
+    public FunctionSection getSection() {
         return section;
     }
 

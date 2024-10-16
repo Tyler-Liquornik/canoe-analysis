@@ -13,7 +13,7 @@ import lombok.Setter;
  * Icon used for a point load
  */
 @Getter @Setter
-public class Arrow extends Path implements Graphic {
+public class ArrowGraphic extends Path implements Graphic {
 
     private static final double arrowHeadSize = 10;
     private double startX;
@@ -23,7 +23,7 @@ public class Arrow extends Path implements Graphic {
     private boolean isColored;
     private boolean isHighlighted;
 
-    public Arrow(double startX, double endX, double startY, double endY) {
+    public ArrowGraphic(double startX, double endX, double startY, double endY) {
         super();
 
         this.startX = startX;

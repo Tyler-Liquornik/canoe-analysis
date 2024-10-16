@@ -3,12 +3,11 @@ package com.wecca.canoeanalysis.models.load;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.Section;
+import com.wecca.canoeanalysis.models.function.FunctionSection;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 
 import java.util.*;
 
@@ -60,7 +59,7 @@ public class DiscreteLoadDistribution extends Load {
      */
     public static DiscreteLoadDistribution fromHull(Hull hull) {
         List<HullSection> hullSections = new ArrayList<>(hull.getHullSections());
-        hullSections.sort(Comparator.comparingDouble(Section::getX));
+        hullSections.sort(Comparator.comparingDouble(FunctionSection::getX));
 
         List<UniformLoadDistribution> loads = new ArrayList<>();
         for (HullSection section : hullSections) {
@@ -82,7 +81,7 @@ public class DiscreteLoadDistribution extends Load {
     public static DiscreteLoadDistribution fromPiecewiseContinuous(LoadType type, PiecewiseContinuousLoadDistribution piecewise) {
         List<UniformLoadDistribution> loads = piecewise.getPieces().entrySet().stream()
                 .map(piece -> {
-                    Section section = piece.getKey();
+                    FunctionSection section = piece.getKey();
                     double midpoint = (section.getX() + section.getRx()) / 2.0;
                     double mag = piece.getValue().value(midpoint);
 
@@ -131,7 +130,7 @@ public class DiscreteLoadDistribution extends Load {
      * @return the section [x, rx] that the load distribution is on
      */
     @JsonIgnore
-    public Section getSection() {
-        return new Section(loads.getFirst().getX(), loads.getLast().getRx());
+    public FunctionSection getSection() {
+        return new FunctionSection(loads.getFirst().getX(), loads.getLast().getRx());
     }
 }

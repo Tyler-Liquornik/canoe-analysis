@@ -11,6 +11,7 @@ import com.wecca.canoeanalysis.services.YamlMarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
+import com.wecca.canoeanalysis.utils.ControlUtils;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.animation.*;
 import javafx.event.ActionEvent;
@@ -210,22 +211,10 @@ public class MainController implements Initializable {
     public void setIconToolBarButtons(LinkedHashMap<IconGlyphType, Consumer<ActionEvent>> iconGlyphToFunctionMap) {
         List<Button> buttons = new ArrayList<>();
         for (Map.Entry<IconGlyphType, Consumer<ActionEvent>> entry : iconGlyphToFunctionMap.entrySet()) {
-            Button button = getIconButton(entry.getKey(), entry.getValue());
+            Button button = ControlUtils.getIconButton(entry.getKey(), entry.getValue(), 25, false);
             buttons.add(button);
         }
         setToolBarButtons(buttons);
-    }
-
-    public Button getIconButton(IconGlyphType iconGlyphName, Consumer<ActionEvent> onClick) {
-        Button button = new Button();
-        button.getStyleClass().add("transparent-button");
-        button.setOnAction(onClick::accept);
-        FontAwesomeIcon icon = new FontAwesomeIcon();
-        icon.setFill(ColorPaletteService.getColor("white"));
-        icon.setGlyphName(iconGlyphName.getGlyphName());
-        icon.setSize("25");
-        button.setGraphic(icon);
-        return button;
     }
 
     public void setToolBarButtons(List<Button> buttons) {
@@ -272,15 +261,14 @@ public class MainController implements Initializable {
      * Disable all module toolbar buttons (doesn't include the hamburger, minus, or X buttons)
      * @param b choose whether to enable or disable
      */
-    public void disableAllModuleToolbarButton(boolean b) {
+    public void disableAllModuleToolbarButtons(boolean b) {
         for (int i = 0; i < moduleToolBarButtons.size(); i++) {
             disableModuleToolBarButton(b, i);
         }
     }
 
     public void resetToolBarButtons() {
-        if (!moduleToolBarButtons.isEmpty())
-        {
+        if (!moduleToolBarButtons.isEmpty()) {
             // Extra index skips the hamburger which is always first
             toolBarPane.getChildren().remove(1, 1 + moduleToolBarButtons.size());
             moduleToolBarButtons.clear();

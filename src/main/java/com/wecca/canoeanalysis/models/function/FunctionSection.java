@@ -11,14 +11,14 @@ import lombok.Getter;
  * In essence, this is just a sub-interval of R^+
  */
 @Getter @EqualsAndHashCode
-public class Section {
+public class FunctionSection {
     @JsonProperty("x")
     protected double x;
     @JsonProperty("rx")
     protected double rx;
 
     @JsonCreator
-    public Section(@JsonProperty("x") double x, @JsonProperty("rx") double rx) {
+    public FunctionSection(@JsonProperty("x") double x, @JsonProperty("rx") double rx) {
         if (rx <= x || x < 0) {
             throw new IllegalArgumentException("Invalid values: start must be non-negative and less than end.");
         }
