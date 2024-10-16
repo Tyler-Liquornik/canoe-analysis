@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.utils;
 
+import com.wecca.canoeanalysis.controllers.modules.PunchingShearController;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 
@@ -90,4 +91,16 @@ public class InputParsingUtils {
     }
 
 
+    /**
+     * Validates that all text fields provided contain valid double values.
+     * @param fields List of text fields to validate.
+     * @return True if all fields are valid, false otherwise.
+     */
+    public static boolean validateFields(List<TextField> fields) {
+        if (!allTextFieldsAreDouble(fields)) {
+            PunchingShearController.mainController.showSnackbar("Please fill all the fields with valid numeric values.");
+            return false;
+        }
+        return true;
+    }
 }

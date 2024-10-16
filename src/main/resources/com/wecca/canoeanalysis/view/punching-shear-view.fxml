@@ -17,12 +17,12 @@
             <Font size="18.0" />
          </font>
       </Label>
-      <JFXTextField fx:id="maxShear" alignment="CENTER" layoutX="207.0" layoutY="270.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="maxShearTextField" alignment="CENTER" layoutX="207.0" layoutY="270.0" prefHeight="25.0" prefWidth="75.0">
          <padding>
             <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <JFXButton layoutX="337.0" layoutY="268.0" onAction="#UploadShear" prefHeight="43.0" prefWidth="69.0" styleClass="action-object" text="Upload Shear" textAlignment="CENTER" wrapText="true" />
+      <JFXButton layoutX="337.0" layoutY="268.0" onAction="#uploadShear" prefHeight="43.0" prefWidth="69.0" styleClass="action-object" text="Upload Shear" textAlignment="CENTER" wrapText="true" />
       <Label layoutX="111.0" layoutY="291.0" text="Max shear (Vf)  = " />
       <Label layoutX="284.0" layoutY="291.0" text=" N" />
       <ImageView fitHeight="174.0" fitWidth="200.0" layoutX="103.0" layoutY="75.0" pickOnBounds="true" preserveRatio="true" />
@@ -41,15 +41,15 @@
          </styleClass>
       </JFXButton>
       <Rectangle arcHeight="5.0" arcWidth="5.0" fill="DODGERBLUE" height="27.0" layoutX="258.0" layoutY="86.0" stroke="BLACK" strokeType="INSIDE" styleClass="rectangle" width="143.0" />
-      <Label fx:id="oneWaySafe" layoutX="268.0" layoutY="91.0" opacity="0.5" styleClass="pass" text="Safe" />
-      <Label fx:id="oneWayUnsafe" layoutX="356.0" layoutY="91.0" opacity="0.5" styleClass="fail" text="Unsafe" />
+      <Label fx:id="oneWaySafeLabel" layoutX="268.0" layoutY="91.0" opacity="0.5" styleClass="pass" text="Safe" />
+      <Label fx:id="oneWayUnsafeLabel" layoutX="356.0" layoutY="91.0" opacity="0.5" styleClass="fail" text="Unsafe" />
       <Label layoutX="311.0" layoutY="65.0" text="Vc &gt; Vf" />
-      <JFXTextField fx:id="Shear" alignment="CENTER" disable="true" layoutX="82.0" layoutY="71.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="oneWayVcTextField" alignment="CENTER" disable="true" layoutX="82.0" layoutY="71.0" prefHeight="25.0" prefWidth="75.0">
          <padding>
             <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <JFXTextField fx:id="MaxShear" alignment="CENTER" disable="true" layoutX="82.0" layoutY="44.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="oneWayVfTextField" alignment="CENTER" disable="true" layoutX="82.0" layoutY="44.0" prefHeight="25.0" prefWidth="75.0">
          <padding>
             <Insets top="20.0" />
          </padding>
@@ -66,37 +66,37 @@
             <Font size="18.0" />
          </font>
       </Label>
-      <JFXTextField fx:id="pCrit" alignment="CENTER" layoutX="80.0" layoutY="65.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="twoWayPCritTextField" alignment="CENTER" layoutX="80.0" layoutY="65.0" prefHeight="25.0" prefWidth="75.0">
          <padding>
             <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <JFXTextField fx:id="aCrit" alignment="CENTER" layoutX="80.0" layoutY="90.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="twoWayACritTextField" alignment="CENTER" layoutX="80.0" layoutY="90.0" prefHeight="25.0" prefWidth="75.0">
          <padding>
             <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <JFXTextField fx:id="vf" alignment="CENTER" layoutX="80.0" layoutY="135.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="twoWayVfTextField" alignment="CENTER" layoutX="80.0" layoutY="135.0" prefHeight="25.0" prefWidth="75.0">
          <padding>
             <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <JFXTextField fx:id="vc1" alignment="CENTER" layoutX="304.0" layoutY="40.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="twoWayVc1TextField" alignment="CENTER" layoutX="304.0" layoutY="40.0" prefHeight="25.0" prefWidth="75.0">
          <padding>
             <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <JFXTextField fx:id="vc2" alignment="CENTER" layoutX="304.0" layoutY="65.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="twoWayVc2TextField" alignment="CENTER" layoutX="304.0" layoutY="65.0" prefHeight="25.0" prefWidth="75.0">
          <padding>
             <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <JFXTextField fx:id="vc3" alignment="CENTER" layoutX="304.0" layoutY="90.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="twoWayVc3TextField" alignment="CENTER" layoutX="304.0" layoutY="90.0" prefHeight="25.0" prefWidth="75.0">
          <padding>
             <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <JFXTextField fx:id="vcMin" alignment="CENTER" disable="true" layoutX="304.0" layoutY="135.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="vcMinTextField" alignment="CENTER" disable="true" layoutX="304.0" layoutY="135.0" prefHeight="25.0" prefWidth="75.0">
          <padding>
             <Insets top="20.0" />
          </padding>
@@ -108,7 +108,7 @@
          </styleClass>
       </JFXButton>
       <JFXButton layoutX="155.0" layoutY="271.0" onAction="#safetyTest2" prefHeight="30.0" prefWidth="125.0" styleClass="action-object" text="Test" />
-      <JFXButton layoutX="360.0" layoutY="274.0" onAction="#Reset" prefHeight="23.0" prefWidth="55.0" styleClass="action-object" text="Reset" />
+      <JFXButton layoutX="360.0" layoutY="274.0" onAction="#reset" prefHeight="23.0" prefWidth="55.0" styleClass="action-object" text="Reset" />
       <Label layoutX="20.0" layoutY="82.0" prefHeight="17.0" text="Pcritical = " textAlignment="RIGHT" />
       <Label layoutX="20.0" layoutY="107.0" prefHeight="17.0" text="Acritical = " textAlignment="RIGHT" />
       <Label layoutX="54.0" layoutY="152.0" prefHeight="17.0" text="vf = " textAlignment="RIGHT" />
@@ -123,8 +123,8 @@
          </font>
       </Label>
       <Rectangle arcHeight="5.0" arcWidth="5.0" fill="DODGERBLUE" height="27.0" layoutX="249.0" layoutY="208.0" stroke="BLACK" strokeType="INSIDE" styleClass="rectangle" width="143.0" />
-      <Label fx:id="twoWaySafe" layoutX="259.0" layoutY="213.0" opacity="0.5" styleClass="pass" text="Safe" />
-      <Label fx:id="twoWayUnsafe" layoutX="347.0" layoutY="213.0" opacity="0.5" styleClass="fail" text="Unsafe" />
+      <Label fx:id="twoWaySafeLabel" layoutX="259.0" layoutY="213.0" opacity="0.5" styleClass="pass" text="Safe" />
+      <Label fx:id="twoWayUnsafeLabel" layoutX="347.0" layoutY="213.0" opacity="0.5" styleClass="fail" text="Unsafe" />
       <Label layoutX="157.0" layoutY="87.0" text="mm" />
       <Label layoutX="157.0" layoutY="112.0" text="mm" />
       <Label layoutX="157.0" layoutY="157.0" text="MPa" />
@@ -139,25 +139,25 @@
             <Font size="18.0" />
          </font>
       </Label>
-      <JFXTextField fx:id="CanoeThickness" alignment="CENTER" layoutX="176.0" layoutY="50.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="hullThicknessTextField" alignment="CENTER" layoutX="176.0" layoutY="50.0" prefHeight="25.0" prefWidth="75.0">
          <padding>
             <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <JFXTextField fx:id="HullWidth" alignment="CENTER" layoutX="176.0" layoutY="80.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="hullWidthTextField" alignment="CENTER" layoutX="176.0" layoutY="80.0" prefHeight="25.0" prefWidth="75.0">
          <padding>
             <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <JFXTextField fx:id="CompressiveStrength" alignment="CENTER" layoutX="176.0" layoutY="110.0" prefHeight="25.0" prefWidth="75.0">
+      <JFXTextField fx:id="compressiveStrengthTextField" alignment="CENTER" layoutX="176.0" layoutY="110.0" prefHeight="25.0" prefWidth="75.0">
          <padding>
             <Insets top="20.0" />
          </padding>
       </JFXTextField>
-      <JFXButton layoutX="321.0" layoutY="19.0" onAction="#CalculateOneWay" prefHeight="25.0" prefWidth="85.0" styleClass="action-object" text="1-way Shear" textAlignment="CENTER" />
-      <JFXButton layoutX="321.0" layoutY="63.0" onAction="#ClearOneWay" prefHeight="25.0" prefWidth="85.0" styleClass="action-object" text="Clear 1-way" textAlignment="CENTER" />
-      <JFXButton layoutX="321.0" layoutY="107.0" onAction="#CalculateTwoWay" prefHeight="25.0" prefWidth="85.0" styleClass="action-object" text="2-way Shear" textAlignment="CENTER" wrapText="true" />
-      <JFXButton layoutX="321.0" layoutY="151.0" onAction="#ClearTwoWay" prefHeight="25.0" prefWidth="85.0" styleClass="action-object" text="Clear 2-way" textAlignment="CENTER" />
+      <JFXButton layoutX="321.0" layoutY="19.0" onAction="#calculateOneWay" prefHeight="25.0" prefWidth="85.0" styleClass="action-object" text="1-way Shear" textAlignment="CENTER" />
+      <JFXButton layoutX="321.0" layoutY="63.0" onAction="#clearOneWay" prefHeight="25.0" prefWidth="85.0" styleClass="action-object" text="Clear 1-way" textAlignment="CENTER" />
+      <JFXButton layoutX="321.0" layoutY="107.0" onAction="#calculateTwoWay" prefHeight="25.0" prefWidth="85.0" styleClass="action-object" text="2-way Shear" textAlignment="CENTER" wrapText="true" />
+      <JFXButton layoutX="321.0" layoutY="151.0" onAction="#clearTwoWay" prefHeight="25.0" prefWidth="85.0" styleClass="action-object" text="Clear 2-way" textAlignment="CENTER" />
       <Label layoutX="58.0" layoutY="71.0" prefHeight="17.0" prefWidth="128.0" text="Canoe Thickness (t) =" />
       <Label layoutX="89.0" layoutY="102.0" text="Hull Width (w) =" />
       <Label layoutX="31.0" layoutY="131.0" text="Compressive Strength (f) =" />
