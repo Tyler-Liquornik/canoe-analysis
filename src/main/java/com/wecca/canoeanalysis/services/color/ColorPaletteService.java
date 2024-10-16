@@ -5,6 +5,9 @@ import javafx.scene.paint.Color;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Holds the current color palette
+ */
 public class ColorPaletteService {
     private static final Map<String, Color> COLORS = new HashMap<>();
 

@@ -1,6 +1,5 @@
 package com.wecca.canoeanalysis.services;
 
-import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.DiagramInterval;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
@@ -12,10 +11,14 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-
 import java.util.*;
 import java.util.List;
 
+/**
+ * The DiagramService class provides utility methods for setting up and managing diagrams such as the Shear Force Diagram (SFD) and Bending Moment Diagram (BMD) for a given canoe.
+ * It is designed to handle point-wise defined piecewise functions with potential jump discontinuities
+ * Overall the service aids in the visualization of structural parameters like shear forces and bending moments for more effective analysis.
+ */
 public class DiagramService {
 
     /**
@@ -73,13 +76,24 @@ public class DiagramService {
         return xAxis;
     }
 
+    /**
+     * Adds a series of points to an AreaChart to represent a piecewise function
+     * for a given canoe object (used for SFD, BMD, and maybe more in the future).
+     * Sections are partitioned into sections based on the critical points of the canoe,
+     * and each section is added to the chart as a separate series, so we can manage them separately.
+     *
+     * @param canoe The Canoe object containing the section endpoints that define the critical points for partitioning the points.
+     * @param points A list of points representing the data points to be plotted.
+     * @param yUnits A string representing the units of the Y-axis (e.g., "meters", "kilograms").
+     * @param chart to which the partitioned point series will be added.
+     */
     public static void addSeriesToChart(Canoe canoe, List<Point2D> points, String yUnits, AreaChart<Number, Number> chart) {
 
         TreeSet<Double> criticalPoints = canoe.getSectionEndpoints();
 
         // Adding the sections of the pseudo piecewise function separately
         boolean set = false; // only need to set the name of the series once since its really one piecewise function
-        List<List<Point2D>> intervals = partitionPoints(canoe, points, criticalPoints);
+        List<List<Point2D>> intervals = partitionPoints(points, criticalPoints);
         for (List<Point2D> interval : intervals) {
             XYChart.Series<Number, Number> series = new XYChart.Series<>();
             for (Point2D point : interval) {
@@ -146,15 +160,11 @@ public class DiagramService {
 //    }
 
     /**
-     * Consider the list of points is a "pseudo piecewise function"
-     * This method breaks it into a set of "pseudo functions"
-     * Pseudo because it's just a set of points rather with no clear partitions by their definition only
-     * @param canoe to work with
-     * @param points act together as a piecewise function
+     * @param points act together as a point-wise defined C0 function
      * @param partitions the locations where the form of the piecewise changes
      * @return a list containing each section of the piecewise pseudo functions with unique form
      */
-    private static List<List<Point2D>> partitionPoints(Canoe canoe, List<Point2D> points, TreeSet<Double> partitions) {
+    private static List<List<Point2D>> partitionPoints(List<Point2D> points, TreeSet<Double> partitions) {
         // Initializing lists
         List<List<Point2D>> partitionedIntervals = new ArrayList<>();
         List<Double> partitionsList = new ArrayList<>(partitions);

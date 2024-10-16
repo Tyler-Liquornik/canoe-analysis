@@ -18,7 +18,6 @@ import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.*;
 import javafx.animation.*;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Point2D;
 import javafx.scene.*;

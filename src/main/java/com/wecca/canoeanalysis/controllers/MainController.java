@@ -267,6 +267,9 @@ public class MainController implements Initializable {
         }
     }
 
+    /**
+     * Remove all toolbar buttons
+     */
     public void resetToolBarButtons() {
         if (!moduleToolBarButtons.isEmpty()) {
             // Extra index skips the hamburger which is always first

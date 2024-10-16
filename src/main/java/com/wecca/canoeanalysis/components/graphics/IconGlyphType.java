@@ -5,6 +5,8 @@ import lombok.Getter;
 
 /**
  * Stores easy access of the FontAwesomeFX glyph names for different icons used for module toolbar buttons
+ * Note: To get these names, go to SceneBuilder > Library Settings (teeny tiny gear icon) > JAR/FXML Manager > Pencil Icon for fontawesomefx.jar > Glyphs Browser
+ * If you're not seeing the JAR in there you need to upload it. See setup steps in README.md
  */
 @Getter @AllArgsConstructor
 public enum IconGlyphType {

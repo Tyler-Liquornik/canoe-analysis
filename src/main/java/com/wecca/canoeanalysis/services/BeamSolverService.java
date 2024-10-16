@@ -14,7 +14,6 @@ import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import org.apache.commons.math3.analysis.BivariateFunction;
 import org.apache.commons.math3.optim.MaxEval;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,6 +22,7 @@ import java.util.List;
  * Solves load cases
  */
 public class BeamSolverService {
+
     /**
      * Solve the "stand" system to find point loads at ends of canoe, assuming loads already on canoe.
      * Note: the weight of the canoe must be added as one/more distributed load(s).

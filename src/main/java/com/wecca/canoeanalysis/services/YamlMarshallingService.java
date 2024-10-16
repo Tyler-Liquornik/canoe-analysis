@@ -17,6 +17,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
+/**
+ * Marshalling and unmarshalling of POJO models in YAML for state management
+ * This includes writing YAML to and from files
+ */
 @Traceable
 public class YamlMarshallingService {
 
@@ -29,6 +33,7 @@ public class YamlMarshallingService {
     public static final String DEV_CONFIG_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/dev-config.yaml", true);
     public static final boolean TRACING;
 
+    // Initializations, and loading state
     static {
         yamlMapper = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
         yamlMapper.findAndRegisterModules();
@@ -115,10 +120,21 @@ public class YamlMarshallingService {
         }
     }
 
+    /**
+     * Write the current state of settings to a file
+     * @param settings the POJO containing all settings information
+     */
     public static void saveSettings(Settings settings) throws IOException {
         yamlMapper.writeValue(new File(SETTINGS_FILE_PATH), settings);
     }
 
+    /**
+     *
+     * @param dataClass the POJO representing the structure of the data to load
+     * @param defaultData the data to upload if the file does not exist
+     * @param path to the YAML file to demarshall
+     * @return the demarshalled YAML file as a POJO
+     */
     public static <T> T loadYamlData(Class<T> dataClass, T defaultData, String path) throws IOException {
         File file = new File(path);
         if (file.exists())

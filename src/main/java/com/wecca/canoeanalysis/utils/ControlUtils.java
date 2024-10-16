@@ -40,6 +40,19 @@ public class ControlUtils {
         comboBox.getSelectionModel().select(selectedIndex);
     }
 
+    /**
+     * Creates a Button with a Font Awesome icon and registers an event handler for a specified event type.
+     * The button's appearance can be customized to become transparent on hover, and an icon of a given size
+     * is displayed on it.
+     *
+     * @param <T> The type of the event to handle
+     * @param iconGlyphName represents the icon to be displayed on the button.
+     * @param eventType The type of the event to listen for
+     * @param onEvent The action to perform when the specified event is triggered.
+     * @param iconSize The size of the icon in pixels.
+     * @param transparentOnHover Whether the button should become transparent when hovered.
+     * @return A button with the specified icon and event handler.
+     */
     public static <T extends Event> Button getIconButton(IconGlyphType iconGlyphName, EventType<T> eventType, Consumer<? super T> onEvent, double iconSize, boolean transparentOnHover) {
         Button button = new Button();
         button.getStyleClass().add("transparent-button");
