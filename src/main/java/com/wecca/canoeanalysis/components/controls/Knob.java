@@ -1,16 +1,12 @@
 package com.wecca.canoeanalysis.components.controls;
 
-import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
-import com.wecca.canoeanalysis.utils.ControlUtils;
 import javafx.animation.AnimationTimer;
-import javafx.event.ActionEvent;
-import javafx.event.EventType;
+import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.SkinBase;
 import javafx.scene.control.Slider;
-import javafx.scene.input.MouseDragEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -39,7 +35,7 @@ public class Knob extends Slider {
     @Getter @Setter
     public class KnobSkin extends SkinBase<Knob> {
         private AnimationTimer animationTimer;
-        private boolean itsAHold;
+        private boolean itsAPlusHold;
         private boolean itsAMinusHold;
         private Long currentTime = (long) 0;
 
@@ -98,22 +94,24 @@ public class Knob extends Slider {
             // Draggable Knob handle
             knobHandleCircle = new Circle(knobHandleSizeRadius, ColorPaletteService.getColor("white"));
             knobHandleCircle.setStrokeWidth(0);
-            knobHandleCircle.setOnMouseDragged(e -> setValueOnDrag(e.getX(), e.getY()));
+            knobHandleCircle.setOnMouseEntered(e -> knobHandleCircle.setCursor(Cursor.HAND));
+            knobHandleCircle.setOnMouseDragged(e -> {
+                knobHandleCircle.setCursor(javafx.scene.Cursor.HAND);
+                setValueOnDrag(e.getX(), e.getY());
+            });
+            knobHandleCircle.setOnMousePressed(e -> knobHandleCircle.setCursor(Cursor.HAND));
+            knobHandleCircle.setOnMouseReleased(e -> knobHandleCircle.setCursor(Cursor.DEFAULT));
 
             // Plus and Minus buttons using FontAwesome icons
-            plusButton = ControlUtils.getIconButton(IconGlyphType.PLUS, MouseEvent.MOUSE_PRESSED, this::plusButtonPressed, iconSize, true);
-            minusButton = ControlUtils.getIconButton(IconGlyphType.MINUS,MouseEvent.MOUSE_PRESSED ,this::minusButtonPressed, iconSize, true);
-            plusButton.setOnMouseReleased(event -> plusButtonReleased());
-            minusButton.setOnMouseReleased(event -> minusButtonReleased());
+            plusButton = IconButton.getKnobPlusOrMinusButton(true, this::plusButtonPressed, this::plusButtonReleased, iconSize);
+            minusButton = IconButton.getKnobPlusOrMinusButton(false, this::minusButtonPressed, this::minusButtonReleased, iconSize);
 
-            animationTimer = new AnimationTimer() { // A timer that is called in each frame after starting, will check if the button clicked or held, and react accordingl
+            // A timer that is called in each frame after starting, will check if the button clicked or held, and react accordingly
+            animationTimer = new AnimationTimer() {
                 @Override
                 public void handle(long l) {
-                    if(itsAHold && (System.currentTimeMillis() - currentTime)>200)
-                        increaseValue(0.3);
-
-                    if(itsAMinusHold && (System.currentTimeMillis() - currentTime)>200)
-                        decreaseValue(0.3);
+                    if (itsAPlusHold && (System.currentTimeMillis() - currentTime) > 200) increaseValue(0.3);
+                    if (itsAMinusHold && (System.currentTimeMillis() - currentTime) > 200) decreaseValue(0.3);
                 }
             };
 
@@ -167,8 +165,8 @@ public class Knob extends Slider {
          * Increase the value of the knob
          * AnimationTimer is also stopped
          */
-        private void plusButtonReleased() {
-            itsAHold = false;
+        private void plusButtonReleased(MouseEvent event) {
+            itsAPlusHold = false;
             if((System.currentTimeMillis() - currentTime)<200)
                 increaseValue(1);
             animationTimer.stop();
@@ -179,7 +177,7 @@ public class Knob extends Slider {
          * Decrease the value of the knob
          * AnimationTimer is also stopped
          */
-        private void minusButtonReleased() {
+        private void minusButtonReleased(MouseEvent event) {
             itsAMinusHold = false;
             if((System.currentTimeMillis() - currentTime)<200)
                 decreaseValue(1);
@@ -191,7 +189,7 @@ public class Knob extends Slider {
          * @param event the press that triggered this method
          */
         private void plusButtonPressed(MouseEvent event) {
-            itsAHold = true;
+            itsAPlusHold = true;
             currentTime = System.currentTimeMillis();
             animationTimer.start();
         }

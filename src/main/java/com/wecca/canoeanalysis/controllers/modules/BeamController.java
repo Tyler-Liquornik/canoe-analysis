@@ -22,6 +22,7 @@ import javafx.event.ActionEvent;
 import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.fxml.*;
 import javafx.scene.shape.Line;
@@ -851,7 +852,7 @@ public class BeamController implements Initializable {
      * Currently, this provides buttons to download and upload the Canoe object as JSON
      */
     public void initModuleToolBarButtons() {
-        LinkedHashMap<IconGlyphType, Consumer<ActionEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
+        LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
         iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.WRENCH, e -> openHullBuilderPopup());
