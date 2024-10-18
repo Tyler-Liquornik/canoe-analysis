@@ -27,6 +27,10 @@ public class BeamHullGraphic extends Group implements FunctionGraphic {
     private boolean isColored;
     private static final double borderExtension = 5; // Amount by which the borders extend beyond the beam
 
+    /**
+     * @param rectangle the graphics space coordinates of the beam rectangle
+     * Note that the border extensions do stick out of this region
+     */
     public BeamHullGraphic(Rectangle rectangle) {
         super();
         this.encasingRectangle = rectangle;

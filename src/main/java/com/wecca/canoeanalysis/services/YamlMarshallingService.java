@@ -136,9 +136,12 @@ public class YamlMarshallingService {
      * @return the demarshalled YAML file as a POJO
      */
     public static <T> T loadYamlData(Class<T> dataClass, T defaultData, String path) throws IOException {
-        File file = new File(path);
-        if (file.exists())
-            return yamlMapper.readValue(file, dataClass);
-        return defaultData;
+       try {
+           File file = new File(path);
+           if (file.exists())
+               return yamlMapper.readValue(file, dataClass);
+       }
+       catch (Exception ignored) {}
+       return defaultData;
     }
 }

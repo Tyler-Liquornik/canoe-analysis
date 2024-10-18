@@ -1,10 +1,9 @@
 package com.wecca.canoeanalysis.utils;
 
 import com.wecca.canoeanalysis.components.graphics.*;
-import javafx.animation.RotateTransition;
-import javafx.scene.Node;
+import javafx.geometry.Point2D;
 import javafx.scene.control.Label;
-import javafx.util.Duration;
+import javafx.scene.shape.Rectangle;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -65,5 +64,25 @@ public class GraphicsUtils {
         double rotationInRadians = Math.toRadians(angle);
         double projectedLength = length * Math.cos(rotationInRadians);
         label.setText(String.format("%.2f m", projectedLength));
+    }
+
+    /**
+     * Maps a point from function space to graphic space using the bounds.
+     */
+    public static Point2D mapToGraphicSpace(Point2D point, Rectangle functionSpace, Rectangle graphicSpace) {
+        double funcMinX = functionSpace.getX();
+        double funcMaxX = functionSpace.getX() + functionSpace.getWidth();
+        double funcMinY = functionSpace.getY();
+        double funcMaxY = functionSpace.getY() + functionSpace.getHeight();
+
+        double graphicMinX = graphicSpace.getX();
+        double graphicMaxX = graphicSpace.getX() + graphicSpace.getWidth();
+        double graphicMinY = graphicSpace.getY();
+        double graphicMaxY = graphicSpace.getY() + graphicSpace.getHeight();
+
+        double scaledX = graphicMinX + (point.getX() - funcMinX) / (funcMaxX - funcMinX) * (graphicMaxX - graphicMinX);
+        double scaledY = graphicMaxY - (point.getY() - funcMinY) / (funcMaxY - funcMinY) * (graphicMaxY - graphicMinY); // Flip Y-axis for graphic space
+
+        return new Point2D(scaledX, scaledY);
     }
 }

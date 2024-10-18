@@ -2,7 +2,6 @@ package com.wecca.canoeanalysis.components.graphics;
 
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
-import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -19,10 +18,16 @@ public class CurvedHullGraphic extends CurvedGraphic {
 
     private Line closingLine;
 
+    /**
+     * Deals with mapping between function space and graphic space
+     * @param function the function definition in function space
+     * @param section the interval of the function in function space
+     * @param encasingRectangle the smallest region in function space that encloses all points in the function
+     *                          is mapped to this rectangle in graphics space
+     */
     public CurvedHullGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
         super(function, section, encasingRectangle);
         draw();
-        ColorManagerService.registerInColorPalette(this);
     }
 
     public void draw() {
