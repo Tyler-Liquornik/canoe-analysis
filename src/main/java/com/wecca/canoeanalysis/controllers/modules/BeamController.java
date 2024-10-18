@@ -51,12 +51,10 @@ public class BeamController implements Initializable {
     @FXML
     private Button solveSystemButton, pointLoadButton, distributedLoadButton, setCanoeLengthButton, generateGraphsButton,
             clearLoadsButton, deleteLoadButton;
-    @FXML
-    private TextField pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
-            distributedIntervalTextFieldL, distributedIntervalTextFieldR;
 
     @FXML
-    private JFXTextField canoeLengthTextField;
+    private JFXTextField canoeLengthTextField, pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
+            distributedIntervalTextFieldL, distributedIntervalTextFieldR;
 
     @FXML
     private ComboBox<String> pointDirectionComboBox, pointMagnitudeComboBox, pointLocationComboBox, distributedIntervalComboBox,
@@ -948,5 +946,10 @@ public class BeamController implements Initializable {
 
         //Precision Restricting Init
         restrictPrecision(canoeLengthTextField);
+        restrictPrecision(pointMagnitudeTextField);
+        restrictPrecision(pointLocationTextField);
+        restrictPrecision(distributedMagnitudeTextField);
+        restrictPrecision(distributedIntervalTextFieldL);
+        restrictPrecision(distributedIntervalTextFieldR);
     }
 }
