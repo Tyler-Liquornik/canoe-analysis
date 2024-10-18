@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.controllers.modules;
 
+import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXTreeView;
 import com.jfoenix.effects.JFXDepthManager;
@@ -199,6 +200,57 @@ public class BeamController implements Initializable {
                 setCanoeLengthButton.setText("Reset Canoe");
                 setCanoeLengthButton.setOnAction(e -> resetCanoe());
 
+                //Validation Highlighting for Point Load Magnitude
+                pointMagnitudeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(pointMagnitudeComboBox, pointMagnitudeTextField, 0, 5, 'l'); // Automatically highlight invalid input
+                });
+
+                pointMagnitudeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(pointMagnitudeComboBox, pointMagnitudeTextField, 0, 5, 'l'); // Automatically highlight invalid input
+                });
+
+                //Validation Highlighting for Point Load Location
+                pointLocationTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(pointLocationComboBox, pointLocationTextField, 0, length, 'd'); // Automatically highlight invalid input
+                });
+
+                pointLocationComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(pointLocationComboBox, pointLocationTextField, 0, length, 'd'); // Automatically highlight invalid input
+                });
+
+                //Validation Highlighting for Distributed Load Magnitude
+                distributedMagnitudeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(distributedMagnitudeComboBox, distributedMagnitudeTextField, 0, 5, 'l'); // Automatically highlight invalid input
+                });
+
+                distributedMagnitudeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(distributedMagnitudeComboBox, distributedMagnitudeTextField, 0, 5, 'l'); // Automatically highlight invalid input
+                });
+
+                //Validation Highlighting for Distributed Load Location
+
+                //Left Interval
+                distributedIntervalTextFieldL.textProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldL, 0, distributedIntervalTextFieldR, 'd'); // Automatically highlight invalid input
+                });
+
+                distributedIntervalTextFieldR.textProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldL, 0, distributedIntervalTextFieldR, 'd'); // Automatically highlight invalid input
+                });
+
+                //Right Interval
+                distributedIntervalTextFieldR.textProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldR, distributedIntervalTextFieldL, length, 'd'); // Automatically highlight invalid input
+                });
+
+                distributedIntervalTextFieldL.textProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldR, distributedIntervalTextFieldL, length, 'd'); // Automatically highlight invalid input
+                });
+
+                distributedIntervalComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldR, distributedIntervalTextFieldL, length, 'd'); // Automatically highlight invalid input
+                });
+
                 checkAndSetEmptyLoadTreeSettings();
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
@@ -209,21 +261,46 @@ public class BeamController implements Initializable {
             mainController.showSnackbar("One or more entered values are not valid numbers");
     }
 
-    public void highlightInvalidInput() {
-        if (InputParsingUtils.validateTextAsDouble(canoeLengthTextField.getText())) {
+    public void highlightInvalidInput(ComboBox<String> comboBox, JFXTextField textField, double min, double max, Character type) {
+        if (InputParsingUtils.validateTextAsDouble(textField.getText())) {
             // Convert to metric
-            double length = InputParsingUtils.getDistanceConverted(canoeLengthComboBox, canoeLengthTextField);
+            double value = 0;
+            if (type.equals('d'))
+                value = InputParsingUtils.getDistanceConverted(comboBox, textField);
+            else if (type.equals('l'))
+                value = InputParsingUtils.getLoadConverted(comboBox, textField);
+            else
+                System.out.println("Invalid Type");
 
-            canoeLengthTextField.getStyleClass().removeAll("invalid-input"); // Remove previous styles
+            textField.getStyleClass().removeAll("invalid-input"); // Remove previous styles
 
             // Only allow lengths in the specified range
-            if (!(length >= 2 && length <= 10)) {
-                canoeLengthTextField.getStyleClass().add("invalid-input"); // Add invalid style
+            if (!(value >= min && value <= max)) {
+                textField.getStyleClass().add("invalid-input"); // Add invalid style
             }
         }
-
         else {
-            canoeLengthTextField.getStyleClass().add("invalid-input"); // Add invalid style
+            textField.getStyleClass().add("invalid-input"); // Add invalid style
+        }
+    }
+
+    public void highlightInvalidInput(ComboBox<String> comboBox, JFXTextField textField, JFXTextField min, double max, Character type) {
+        if (InputParsingUtils.validateTextAsDouble(min.getText())) {
+            double minConverted = InputParsingUtils.getDistanceConverted(comboBox, min);
+            highlightInvalidInput(comboBox, textField, minConverted, max, type);
+        }
+        else {
+            textField.getStyleClass().add("invalid-input"); // Add invalid style
+        }
+    }
+
+    public void highlightInvalidInput(ComboBox<String> comboBox, JFXTextField textField, double min, JFXTextField max, Character type) {
+        if (InputParsingUtils.validateTextAsDouble(max.getText())) {
+            double maxConverted = InputParsingUtils.getDistanceConverted(comboBox, max);
+            highlightInvalidInput(comboBox, textField, min, maxConverted, type);
+        }
+        else {
+            textField.getStyleClass().add("invalid-input"); // Add invalid style
         }
     }
 
@@ -939,9 +1016,13 @@ public class BeamController implements Initializable {
                 distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField};
         for (TextField tf : tfs) {tf.setText("0.00");}
 
-        //Validation Highlighting Init
+        //Validation Highlighting for Canoe Length
         canoeLengthTextField.textProperty().addListener((observable, oldValue, newValue) -> {
-            highlightInvalidInput(); // Automatically highlight invalid input
+            highlightInvalidInput(canoeLengthComboBox, canoeLengthTextField, 2, 10, 'd'); // Automatically highlight invalid input
+        });
+
+        canoeLengthComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            highlightInvalidInput(canoeLengthComboBox, canoeLengthTextField, 2, 10, 'd'); // Automatically highlight invalid input
         });
 
         //Precision Restricting Init
@@ -951,5 +1032,7 @@ public class BeamController implements Initializable {
         restrictPrecision(distributedMagnitudeTextField);
         restrictPrecision(distributedIntervalTextFieldL);
         restrictPrecision(distributedIntervalTextFieldR);
+
+
     }
 }
