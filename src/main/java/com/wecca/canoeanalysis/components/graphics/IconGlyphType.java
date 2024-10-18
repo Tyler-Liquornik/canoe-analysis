@@ -10,6 +10,9 @@ import lombok.Getter;
  */
 @Getter @AllArgsConstructor
 public enum IconGlyphType {
+    LEFT("CHEVRON_LEFT"),
+    RIGHT("CHEVRON_RIGHT"),
+    SWITCH("EXCHANGE"),
     PLUS("PLUS"),
     MINUS("MINUS"),
     WRENCH("WRENCH"),

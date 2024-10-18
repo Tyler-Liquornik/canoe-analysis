@@ -9,6 +9,7 @@ import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.load.DiscreteLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
+import com.wecca.canoeanalysis.utils.CalculusUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -201,14 +202,9 @@ public class Hull {
      */
     @JsonIgnore
     public BoundedUnivariateFunction getPiecedSideProfileCurveShiftedAboveYAxis() {
-        BoundedUnivariateFunction f = x -> {
-            for (HullSection section : hullSections) {
-                if (section.getX() <= x && x <= section.getRx())
-                    return section.getSideProfileCurve().value(x);
-            }
-            throw new IllegalArgumentException("x is out of bounds of the hull sections");
-        };
-        return x -> f.value(x) - f.getMinValue(getSection());
+        List<BoundedUnivariateFunction> functions = hullSections.stream().map(HullSection::getSideProfileCurve).toList();
+        List<Section> sections = hullSections.stream().map(sec -> (Section) sec).toList();
+        return CalculusUtils.createCompositeFunctionShiftedPositive(functions, sections);
     }
 
     /**

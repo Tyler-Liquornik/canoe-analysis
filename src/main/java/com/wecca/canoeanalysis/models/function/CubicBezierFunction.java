@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis.models.function;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import javafx.geometry.Point2D;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -12,6 +13,9 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
 import org.apache.commons.math3.optim.MaxEval;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * A Cubic Bézier curve that passes the vertical line test, therefore can be represented as a function.
@@ -164,5 +168,25 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
 
         if (!xIsIncreasingWithT && !xIsDecreasingWithT)
             throw new IllegalArgumentException("The Bézier curve fails the vertical line test and cannot be represented as a function.");
+    }
+
+    /**
+     * @return a list of Point2D objects for each of the knot and control points
+     */
+    public List<Point2D> getKnotAndControlPoints() {
+        Point2D p1 = new Point2D(x1, y1);
+        Point2D cp1 = new Point2D(controlX1, controlY1);
+        Point2D cp2 = new Point2D(controlX2, controlY2);
+        Point2D p2 = new Point2D(x2, y2);
+        return Arrays.asList(p1, cp1, cp2, p2);
+    }
+
+    /**
+     * @return a list of Point2D objects for each of the knot and control points
+     */
+    public List<Point2D> getKnotPoints() {
+        Point2D p1 = new Point2D(x1, y1);
+        Point2D p2 = new Point2D(x2, y2);
+        return Arrays.asList(p1, p2);
     }
 }
