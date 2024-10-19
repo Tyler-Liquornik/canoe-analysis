@@ -20,6 +20,7 @@ import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.*;
 import javafx.animation.*;
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Point2D;
@@ -272,15 +273,20 @@ public class BeamController implements Initializable {
             else
                 System.out.println("Invalid Type");
 
-            textField.getStyleClass().removeAll("invalid-input"); // Remove previous styles
-
             // Only allow lengths in the specified range
-            if (!(value >= min && value <= max)) {
+            if (!(value >= min && value <= max) && !(textField.getStyleClass().contains("invalid-input"))) {
                 textField.getStyleClass().add("invalid-input"); // Add invalid style
+                triggerAnimation(textField);
+            }
+
+            else if (value >= min && value <= max && textField.getStyleClass().contains("invalid-input")){
+                textField.getStyleClass().removeAll("invalid-input"); // Remove invalid style
+                triggerAnimation(textField);
             }
         }
-        else {
+        else if (!(textField.getStyleClass().contains("invalid-input"))){
             textField.getStyleClass().add("invalid-input"); // Add invalid style
+            triggerAnimation(textField);
         }
     }
 
@@ -302,6 +308,24 @@ public class BeamController implements Initializable {
         else {
             textField.getStyleClass().add("invalid-input"); // Add invalid style
         }
+    }
+
+    private void triggerAnimation(JFXTextField textField) {
+        //Store the current focused node
+        Node focusedNode = textField.getScene().getFocusOwner();
+
+        if (focusedNode != textField)
+            return;
+
+        // Trigger the slide animation
+        textField.getParent().requestFocus(); // Temporarily move focus away
+        Platform.runLater(() -> {
+            // Restore focus to trigger the animation
+            textField.requestFocus();
+
+            // Set the caret position to the end of the text
+            textField.positionCaret(textField.getText().length());
+        });
     }
 
     public void restrictPrecision(JFXTextField textField) {
