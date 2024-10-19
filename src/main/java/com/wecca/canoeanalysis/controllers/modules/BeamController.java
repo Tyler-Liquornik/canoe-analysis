@@ -202,11 +202,11 @@ public class BeamController implements Initializable {
 
                 //Validation Highlighting for Point Load Magnitude
                 pointMagnitudeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(pointMagnitudeComboBox, pointMagnitudeTextField, 0, 5, 'l'); // Automatically highlight invalid input
+                    highlightInvalidInput(pointMagnitudeComboBox, pointMagnitudeTextField, 0.01, 5, 'l'); // Automatically highlight invalid input
                 });
 
                 pointMagnitudeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(pointMagnitudeComboBox, pointMagnitudeTextField, 0, 5, 'l'); // Automatically highlight invalid input
+                    highlightInvalidInput(pointMagnitudeComboBox, pointMagnitudeTextField, 0.01, 5, 'l'); // Automatically highlight invalid input
                 });
 
                 //Validation Highlighting for Point Load Location
@@ -220,11 +220,11 @@ public class BeamController implements Initializable {
 
                 //Validation Highlighting for Distributed Load Magnitude
                 distributedMagnitudeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(distributedMagnitudeComboBox, distributedMagnitudeTextField, 0, 5, 'l'); // Automatically highlight invalid input
+                    highlightInvalidInput(distributedMagnitudeComboBox, distributedMagnitudeTextField, 0.01, 5, 'l'); // Automatically highlight invalid input
                 });
 
                 distributedMagnitudeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(distributedMagnitudeComboBox, distributedMagnitudeTextField, 0, 5, 'l'); // Automatically highlight invalid input
+                    highlightInvalidInput(distributedMagnitudeComboBox, distributedMagnitudeTextField, 0.01, 5, 'l'); // Automatically highlight invalid input
                 });
 
                 //Validation Highlighting for Distributed Load Location
