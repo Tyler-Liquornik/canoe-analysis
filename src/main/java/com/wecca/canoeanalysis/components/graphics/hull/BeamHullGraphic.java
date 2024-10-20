@@ -1,6 +1,7 @@
-package com.wecca.canoeanalysis.components.graphics;
+package com.wecca.canoeanalysis.components.graphics.hull;
 
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.components.graphics.FunctionGraphic;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;

@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.utils;
 
 import com.wecca.canoeanalysis.components.graphics.*;
+import com.wecca.canoeanalysis.components.graphics.hull.BeamHullGraphic;
 import javafx.geometry.Point2D;
 import javafx.scene.control.Label;
 import javafx.scene.shape.Rectangle;

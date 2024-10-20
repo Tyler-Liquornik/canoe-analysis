@@ -5,6 +5,8 @@ import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
 import com.wecca.canoeanalysis.components.graphics.*;
+import com.wecca.canoeanalysis.components.graphics.hull.BeamHullGraphic;
+import com.wecca.canoeanalysis.components.graphics.hull.CurvedHullGraphic;
 import com.wecca.canoeanalysis.controllers.popups.*;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
@@ -652,7 +654,7 @@ public class BeamController implements Initializable {
             if (selectedItem.getLoad() != null && selectedItem.getLoad().getType() != null &&
                     selectedItem.getLoad().getType() == LoadType.HULL) {
                 canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
-                resetCanoeGraphic();
+                resetHullGraphic();
                 mainController.disableModuleToolBarButton(false, 2);
             }
             else {
@@ -712,13 +714,13 @@ public class BeamController implements Initializable {
         canoe.setHull(hull);
         LoadTreeManagerService.buildLoadTreeView(canoe);
         checkAndSetEmptyLoadTreeSettings();
-        resetCanoeGraphic();
+        resetHullGraphic();
     }
 
     /**
      * Reset and rerender the canoe graphic back to the beam (default graphic on load)
      */
-    public void resetCanoeGraphic() {
+    public void resetHullGraphic() {
         Rectangle rect = new Rectangle(0, 84, beamContainer.getPrefWidth(), 25);
         setHullGraphic(new BeamHullGraphic(rect));
         beamContainer.getChildren().clear();
@@ -799,7 +801,7 @@ public class BeamController implements Initializable {
             // Update UI to new canoe
             renderGraphics();
             if (isBeam)
-                resetCanoeGraphic();
+                resetHullGraphic();
             else
                 setHullGraphicFromHull(canoe.getHull());
             LoadTreeManagerService.buildLoadTreeView(this.canoe);
@@ -877,7 +879,7 @@ public class BeamController implements Initializable {
         JFXDepthManager.setDepth(loadsTreeView, 4);
 
         // Graphics init
-        resetCanoeGraphic();
+        resetHullGraphic();
 
         double maxGraphicHeight = 84;
         double minimumGraphicHeight = 14;

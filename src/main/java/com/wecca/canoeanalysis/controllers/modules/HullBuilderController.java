@@ -4,7 +4,7 @@ import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.controls.IconButton;
 import com.wecca.canoeanalysis.components.controls.Knob;
-import com.wecca.canoeanalysis.components.graphics.CubicBezierSplineHullGraphic;
+import com.wecca.canoeanalysis.components.graphics.hull.CubicBezierSplineHullGraphic;
 import com.wecca.canoeanalysis.components.graphics.FunctionGraphic;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.controllers.MainController;
@@ -67,7 +67,7 @@ public class HullBuilderController implements Initializable {
     public void setSideViewHullGraphic(Hull hull) {
         // Set and layout parent pane
         double sideViewPanelWidth = 700;
-        double sideViewPanelHeight = 44.5;
+        double sideViewPanelHeight = 45;
         double paneX = hullViewAnchorPane.prefWidth(-1) / 2 - sideViewPanelWidth / 2;
         double paneY = hullViewAnchorPane.prefHeight(-1) / 2 - sideViewPanelHeight / 2;
         hullGraphicPane.setPrefSize(sideViewPanelWidth, sideViewPanelHeight);

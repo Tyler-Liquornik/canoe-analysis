@@ -1,5 +1,6 @@
-package com.wecca.canoeanalysis.components.graphics;
+package com.wecca.canoeanalysis.components.graphics.hull;
 
+import com.wecca.canoeanalysis.components.graphics.CurvedGraphic;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
