@@ -84,9 +84,7 @@ public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
      */
     @Override
     public void recolor(boolean setColored) {
-        for (BezierHullTangentGraphic slopeGraphic : slopeGraphics) {
-            slopeGraphic.recolor(setColored);
-        }
+        colorBezierPointGroup(coloredSectionIndex, setColored);
     }
 
     /**
@@ -96,7 +94,7 @@ public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
      * @param sectionIndex the index of the section to color.
      * sectionIndex lines up with iterating through sections of the hull that this model represents
      */
-    public void colorBezierPointGroup(int sectionIndex) {
+    public void colorBezierPointGroup(int sectionIndex, boolean setColored) {
         // One less section than the number of section endpoints (one slope graphic on every section endpoint)
         if (sectionIndex < 0 || sectionIndex >= slopeGraphics.size() - 1)
             throw new IndexOutOfBoundsException("sectionIndex out of bounds");
@@ -105,21 +103,23 @@ public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
         coloredSectionIndex = sectionIndex;
 
         // Uncolor everything first
-        recolor(false);
+        for (BezierHullTangentGraphic tangentGraphic : slopeGraphics) {
+            tangentGraphic.recolor(false);
+        }
 
         // Recolor the right side of the first tangent and the left side of the second tangent
         BezierHullTangentGraphic firstTangent = slopeGraphics.get(sectionIndex);
         BezierHullTangentGraphic secondTangent = slopeGraphics.get(sectionIndex + 1);
-        firstTangent.recolorRight(true);
-        secondTangent.recolorLeft(true);
+        firstTangent.recolorRight(setColored);
+        secondTangent.recolorLeft(setColored);
     }
 
     /**
      * Switches to the next section and recolors it.
      */
     public void colorNextBezierPointGroup() {
-        coloredSectionIndex = (++coloredSectionIndex) % (slopeGraphics.size() - 1);
-        colorBezierPointGroup(coloredSectionIndex);
+        coloredSectionIndex = (coloredSectionIndex + 1) % (slopeGraphics.size() - 1);
+        colorBezierPointGroup(coloredSectionIndex, true);
     }
 
     /**
@@ -127,10 +127,10 @@ public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
      */
     public void colorPreviousBezierPointGroup() {
         if (coloredSectionIndex != -1)
-            coloredSectionIndex = (--coloredSectionIndex + slopeGraphics.size() - 1) % (slopeGraphics.size() - 1);
+            coloredSectionIndex = (coloredSectionIndex + slopeGraphics.size() - 2) % (slopeGraphics.size() - 1);
         else
             coloredSectionIndex = slopeGraphics.size() - 2;
-        colorBezierPointGroup(coloredSectionIndex);
+        colorBezierPointGroup(coloredSectionIndex, true);
     }
 
     @Override
