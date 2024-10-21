@@ -1,12 +1,12 @@
 package com.wecca.canoeanalysis.components.graphics.hull;
 
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.graphics.Graphic;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,21 +16,21 @@ import lombok.Setter;
  * Can highlight only one half of the slope within either the left or right section.
  */
 @Getter @Setter
-public class BezierTangentGraphic extends Group implements Graphic {
+public class BezierHullTangentGraphic extends Group implements Graphic {
 
     private Point2D centerPoint;
     private Point2D lControlPoint;
     private Point2D rControlPoint;
 
-    private BezierPointGraphic tangentPointGraphic;
-    private BezierPointGraphic lControlPointGraphic;
-    private BezierPointGraphic rControlPointGraphic;
+    private BezierHullPointGraphic tangentPointGraphic;
+    private BezierHullPointGraphic lControlPointGraphic;
+    private BezierHullPointGraphic rControlPointGraphic;
 
     private Line lineToLControl;
     private Line lineToRControl;
 
-    private boolean colored;
     private boolean isLeftColored;
+    private boolean isRightColored;
 
     /**
      * @param centerPoint The main point representing the center of the slope.
@@ -38,12 +38,12 @@ public class BezierTangentGraphic extends Group implements Graphic {
      * @param rControlPoint The right control point (can be null).
      * Note that lControlPoint and rControlPoint cannot both be null.
      */
-    public BezierTangentGraphic(Point2D centerPoint, Point2D lControlPoint, Point2D rControlPoint) {
+    public BezierHullTangentGraphic(Point2D centerPoint, Point2D lControlPoint, Point2D rControlPoint) {
         this.centerPoint = centerPoint;
         this.lControlPoint = lControlPoint;
         this.rControlPoint = rControlPoint;
-        this.colored = false;
         this.isLeftColored = false;
+        this.isRightColored = false;
 
         // Validation
         if (lControlPoint == null && rControlPoint == null)
@@ -72,25 +72,25 @@ public class BezierTangentGraphic extends Group implements Graphic {
     @Override
     public void draw() {
         // Create the center point circle
-        tangentPointGraphic = new BezierPointGraphic(centerPoint.getX(), centerPoint.getY(), 5);
+        tangentPointGraphic = new BezierHullPointGraphic(centerPoint.getX(), centerPoint.getY(), 4);
 
         // Create the lines to the control points for whichever exist
         // +1 shifts graphics misalignment from points getY
         if (lControlPoint != null) {
             lineToLControl = new Line(centerPoint.getX(), centerPoint.getY() + 1, lControlPoint.getX(), lControlPoint.getY() + 1);
             lineToLControl.setStroke(ColorPaletteService.getColor("white"));
-            lineToLControl.setStrokeWidth(1.5);
+            lineToLControl.setStrokeWidth(2);
             lineToLControl.getStrokeDashArray().addAll(3.0, 3.0);
-            lControlPointGraphic = new BezierPointGraphic(lControlPoint.getX(), lControlPoint.getY(), 4);
+            lControlPointGraphic = new BezierHullPointGraphic(lControlPoint.getX(), lControlPoint.getY(), 3);
             this.getChildren().addAll(lineToLControl, lControlPointGraphic);
         }
 
         if (rControlPoint != null) {
             lineToRControl = new Line(centerPoint.getX(), centerPoint.getY() + 1, rControlPoint.getX(), rControlPoint.getY() + 1);
             lineToRControl.setStroke(ColorPaletteService.getColor("white"));
-            lineToRControl.setStrokeWidth(1.5);
+            lineToRControl.setStrokeWidth(2);
             lineToRControl.getStrokeDashArray().addAll(3.0, 3.0);
-            rControlPointGraphic = new BezierPointGraphic(rControlPoint.getX(), rControlPoint.getY(), 4);
+            rControlPointGraphic = new BezierHullPointGraphic(rControlPoint.getX(), rControlPoint.getY(), 3);
             this.getChildren().addAll(lineToRControl, rControlPointGraphic);
         }
 
@@ -100,25 +100,53 @@ public class BezierTangentGraphic extends Group implements Graphic {
 
     @Override
     public void recolor(boolean setColored) {
-        // Update colored state
-        if (setColored) {
-            if (!colored && !isLeftColored)
-                isLeftColored = true;
-            else
-                isLeftColored = !isLeftColored;
-        }
-        this.colored = setColored;
-
-        // Recolor points
+        Color lineColor = setColored ? ColorPaletteService.getColor("primary-light") : ColorPaletteService.getColor("white");
         tangentPointGraphic.recolor(setColored);
-        if (lControlPointGraphic != null && lineToLControl != null)
+        if (lControlPointGraphic != null && lineToLControl != null) {
             lControlPointGraphic.recolor(setColored);
-        if (rControlPointGraphic != null && lineToRControl != null)
+            lineToLControl.setStroke(lineColor);
+        }
+        if (rControlPointGraphic != null && lineToRControl != null) {
             rControlPointGraphic.recolor(setColored);
+            lineToRControl.setStroke(lineColor);
+        }
+    }
+
+    /**
+     * Recolor the left control point and the line to it.
+     * @param setColored whether the left point should be colored or uncolored.
+     */
+    public void recolorLeft(boolean setColored) {
+        Color leftLineColor = setColored ? ColorPaletteService.getColor("primary-light") : ColorPaletteService.getColor("white");
+        if (lControlPointGraphic != null && lineToLControl != null) {
+            lControlPointGraphic.recolor(setColored);
+            lineToLControl.setStroke(leftLineColor);
+        }
+        tangentPointGraphic.recolor(isRightColored || setColored);
+        this.isLeftColored = setColored;
+    }
+
+    /**
+     * Recolor the right control point and the line to it.
+     * @param setColored whether the right point should be colored or uncolored.
+     */
+    public void recolorRight(boolean setColored) {
+        Color rightLineColor = setColored ? ColorPaletteService.getColor("primary-light") : ColorPaletteService.getColor("white");
+        if (rControlPointGraphic != null && lineToRControl != null) {
+            rControlPointGraphic.recolor(setColored);
+            lineToRControl.setStroke(rightLineColor);
+        }
+        tangentPointGraphic.recolor(isLeftColored || setColored);
+        this.isRightColored = setColored;
     }
 
     @Override
     public double getX() {
         return tangentPointGraphic.getX();
+    }
+
+    @Override
+    public boolean isColored() {
+        return isLeftColored || isRightColored;
     }
 }

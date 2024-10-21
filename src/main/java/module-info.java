@@ -50,4 +50,6 @@ module com.wecca.canoeanalysis {
     opens com.wecca.canoeanalysis.utils to javafx.fxml;
     exports com.wecca.canoeanalysis.components.graphics.hull;
     opens com.wecca.canoeanalysis.components.graphics.hull to javafx.fxml;
+    exports com.wecca.canoeanalysis.components.graphics.load;
+    opens com.wecca.canoeanalysis.components.graphics.load to javafx.fxml;
 }

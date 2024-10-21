@@ -8,7 +8,6 @@ import javafx.geometry.Point2D;
 import javafx.scene.shape.Rectangle;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +19,8 @@ import java.util.List;
 public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
 
     private List<CubicBezierFunction> beziers;
-    private List<BezierTangentGraphic> slopeGraphics;
+    private List<BezierHullTangentGraphic> slopeGraphics;
+    private int coloredSectionIndex;
 
     /**
      * Deals with mapping between function space and graphic space.
@@ -33,6 +33,7 @@ public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
         this.beziers = beziers;
         this.slopeGraphics = new ArrayList<>();
         this.encasingRectangle = encasingRectangle;
+        this.coloredSectionIndex = -1;
         draw(beziers);
     }
 
@@ -60,12 +61,16 @@ public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
             Point2D mappedRControlPoint = rControlPoint != null ? GraphicsUtils.mapToGraphicSpace(rControlPoint, functionSpace, graphicSpace) : null;
 
             // Create the slope graphic with the mapped points
-            BezierTangentGraphic slopeGraphic = new BezierTangentGraphic(mappedKnotPoint, mappedLControlPoint, mappedRControlPoint);
+            BezierHullTangentGraphic slopeGraphic = new BezierHullTangentGraphic(mappedKnotPoint, mappedLControlPoint, mappedRControlPoint);
             slopeGraphics.add(slopeGraphic);
             this.getChildren().add(slopeGraphic.getNode());
         }
     }
 
+    /**
+     * @param beziers the curves that make up a spline
+     * @return all the construction points of the bezier in L to R order ([knot, control, control, knot] order for each bezier)
+     */
     private List<Point2D> getAllKnotAndControlPoints(List<CubicBezierFunction> beziers) {
         return beziers.stream()
                 .flatMap(bezier -> bezier.getKnotAndControlPoints().stream())
@@ -73,17 +78,64 @@ public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
                 .toList();
     }
 
-    // TODO
+    /**
+     * Recolors all slope graphics based on the given boolean flag.
+     * If true, all points are colored. If false, all points are uncolored.
+     */
     @Override
     public void recolor(boolean setColored) {
-        for (BezierTangentGraphic slopeGraphic : slopeGraphics) {
+        for (BezierHullTangentGraphic slopeGraphic : slopeGraphics) {
             slopeGraphic.recolor(setColored);
         }
     }
 
+    /**
+     * ReColors a specific point group by its index.
+     * Point groups are groups of 4 bezier construction points
+     * The L & R (or x and rx) section endpoints (knots), and their respective control points
+     * @param sectionIndex the index of the section to color.
+     * sectionIndex lines up with iterating through sections of the hull that this model represents
+     */
+    public void colorBezierPointGroup(int sectionIndex) {
+        // One less section than the number of section endpoints (one slope graphic on every section endpoint)
+        if (sectionIndex < 0 || sectionIndex >= slopeGraphics.size() - 1)
+            throw new IndexOutOfBoundsException("sectionIndex out of bounds");
+
+        // Set the current colored section index
+        coloredSectionIndex = sectionIndex;
+
+        // Uncolor everything first
+        recolor(false);
+
+        // Recolor the right side of the first tangent and the left side of the second tangent
+        BezierHullTangentGraphic firstTangent = slopeGraphics.get(sectionIndex);
+        BezierHullTangentGraphic secondTangent = slopeGraphics.get(sectionIndex + 1);
+        firstTangent.recolorRight(true);
+        secondTangent.recolorLeft(true);
+    }
+
+    /**
+     * Switches to the next section and recolors it.
+     */
+    public void colorNextBezierPointGroup() {
+        coloredSectionIndex = (++coloredSectionIndex) % (slopeGraphics.size() - 1);
+        colorBezierPointGroup(coloredSectionIndex);
+    }
+
+    /**
+     * Switches to the previous section and recolors it.
+     */
+    public void colorPreviousBezierPointGroup() {
+        if (coloredSectionIndex != -1)
+            coloredSectionIndex = (--coloredSectionIndex + slopeGraphics.size() - 1) % (slopeGraphics.size() - 1);
+        else
+            coloredSectionIndex = slopeGraphics.size() - 2;
+        colorBezierPointGroup(coloredSectionIndex);
+    }
+
     @Override
     public boolean isColored() {
-        return slopeGraphics.stream().anyMatch(BezierTangentGraphic::isColored);
+        return slopeGraphics.stream().anyMatch(BezierHullTangentGraphic::isColored);
     }
 
     @Override

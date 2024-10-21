@@ -1,6 +1,7 @@
-package com.wecca.canoeanalysis.components.graphics;
+package com.wecca.canoeanalysis.components.graphics.load;
 
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.components.graphics.Graphic;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.shape.LineTo;

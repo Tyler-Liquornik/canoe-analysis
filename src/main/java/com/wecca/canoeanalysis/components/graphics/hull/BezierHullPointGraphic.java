@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics.hull;
 
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.graphics.Graphic;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
@@ -13,7 +14,7 @@ import lombok.Setter;
  * Represents a Bézier tangent point, a circle with a white border
  */
 @Getter @Setter
-public class BezierPointGraphic extends javafx.scene.Group implements Graphic {
+public class BezierHullPointGraphic extends javafx.scene.Group implements Graphic {
 
     private Circle outerCircle;
     private Circle innerCircle;
@@ -27,12 +28,11 @@ public class BezierPointGraphic extends javafx.scene.Group implements Graphic {
      * @param x             The x-coordinate for the center of the circles.
      * @param y             The y-coordinate for the center of the circles.
      */
-    public BezierPointGraphic(double x, double y, double radius) {
+    public BezierHullPointGraphic(double x, double y, double radius) {
         // Calculate the radii of the inner and outer circles
         double innerCircleRadius = radius * (1 - OUTER_RING_PERCENTAGE);
 
-        // Create the outer circle with a white color from ColorPalette
-        // +1 shifts graphics misalignment
+        // Note: +1 shifts graphics misalignment
         outerCircle = new Circle(x, y + 1, radius);
         outerCircle.setFill(ColorPaletteService.getColor("white"));
         innerCircle = new Circle(x, y + 1, innerCircleRadius);
@@ -55,9 +55,9 @@ public class BezierPointGraphic extends javafx.scene.Group implements Graphic {
     @Override
     public void recolor(boolean setColored) {
         this.isColored = setColored;
-        Color primaryOrWhite = setColored ? ColorPaletteService.getColor("primary")
-                : ColorPaletteService.getColor("white");
-        innerCircle.setFill(primaryOrWhite);
+        Color primaryOrAboveSurface = setColored ? ColorPaletteService.getColor("primary")
+                : ColorPaletteService.getColor("above-surface");
+        innerCircle.setFill(primaryOrAboveSurface);
     }
 
     @Override
