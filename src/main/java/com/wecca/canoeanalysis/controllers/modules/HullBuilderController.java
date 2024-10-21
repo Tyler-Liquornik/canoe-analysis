@@ -4,9 +4,8 @@ import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.controls.IconButton;
 import com.wecca.canoeanalysis.components.controls.Knob;
-import com.wecca.canoeanalysis.components.graphics.CubicBezierSplineHullGraphic;
-import com.wecca.canoeanalysis.components.graphics.FunctionGraphic;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
+import com.wecca.canoeanalysis.components.graphics.hull.CubicBezierSplineHullGraphic;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
@@ -27,7 +26,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
-@Traceable
 public class HullBuilderController implements Initializable {
 
     @Setter
@@ -39,7 +37,7 @@ public class HullBuilderController implements Initializable {
     @Getter
     private Hull hull;
     @Getter @Setter
-    private FunctionGraphic hullGraphic;
+    private CubicBezierSplineHullGraphic hullGraphic;
     private AnchorPane hullGraphicPane;
 
     /**
@@ -67,7 +65,7 @@ public class HullBuilderController implements Initializable {
     public void setSideViewHullGraphic(Hull hull) {
         // Set and layout parent pane
         double sideViewPanelWidth = 700;
-        double sideViewPanelHeight = 44.5;
+        double sideViewPanelHeight = 45;
         double paneX = hullViewAnchorPane.prefWidth(-1) / 2 - sideViewPanelWidth / 2;
         double paneY = hullViewAnchorPane.prefHeight(-1) / 2 - sideViewPanelHeight / 2;
         hullGraphicPane.setPrefSize(sideViewPanelWidth, sideViewPanelHeight);
@@ -85,12 +83,11 @@ public class HullBuilderController implements Initializable {
             else
                 throw new RuntimeException("Not a bezier hull");
         }).toList();
-        // hullGraphic = new CurvedHullGraphic(CalculusUtils.createCompositeBezierFunctionShiftedPositive(beziers), new Section(beziers.getFirst().getX(), beziers.getLast().getRx()), rect);
         hullGraphic = new CubicBezierSplineHullGraphic(beziers, rect);
 
         // Add graphic to pane
         hullGraphicPane.getChildren().clear();
-        hullGraphicPane.getChildren().add((Node) hullGraphic);
+        hullGraphicPane.getChildren().add(hullGraphic);
         hullViewAnchorPane.getChildren().add(hullGraphicPane);
     }
 
@@ -110,6 +107,20 @@ public class HullBuilderController implements Initializable {
     public void setFrontViewHullGraphic(Hull hull) {
     }
 
+    /**
+     * Highlight the previous section to the left to view and edit (wraps w modulo)
+     */
+    public void selectPreviousHullSection(MouseEvent e) {
+        hullGraphic.colorPreviousBezierPointGroup();
+    }
+
+    /**
+     * Highlight the next section to the right to view and edit (wraps w modulo)
+     */
+    public void selectNextHullSection(MouseEvent e) {
+        hullGraphic.colorNextBezierPointGroup();
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         // Set the local instance of the main controller
@@ -123,8 +134,8 @@ public class HullBuilderController implements Initializable {
         curveParameterizationAnchorPane.getChildren().addAll(leftKnob, middleKnob, rightKnob);
 
         // Add and position panel buttons
-        IconButton nextLeftSectionButton = IconButton.getPanelButton(IconGlyphType.LEFT, this::dummyOnClick, 12);
-        IconButton nextRightSectionButton = IconButton.getPanelButton(IconGlyphType.RIGHT, this::dummyOnClick, 12);
+        IconButton nextLeftSectionButton = IconButton.getPanelButton(IconGlyphType.LEFT, this::selectPreviousHullSection, 12);
+        IconButton nextRightSectionButton = IconButton.getPanelButton(IconGlyphType.RIGHT, this::selectNextHullSection, 12);
         IconButton curveParameterizationPlusButton = IconButton.getPanelButton(IconGlyphType.PLUS, this::dummyOnClick, 14);
         IconButton canoePropertiesSwitchButton = IconButton.getPanelButton(IconGlyphType.SWITCH, this::dummyOnClick, 14);
         IconButton canoePropertiesPlusButton = IconButton.getPanelButton(IconGlyphType.PLUS, this::dummyOnClick, 14);

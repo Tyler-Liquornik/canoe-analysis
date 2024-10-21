@@ -242,7 +242,12 @@ public class CalculusUtils
         return x -> f.value(x) - f.getMinValue(fullSection);
     }
 
-    public static BoundedUnivariateFunction createCompositeBezierFunctionShiftedPositive(List<CubicBezierFunction> functions) {
+    /**
+     * Essentially an overload of createCompositeFunctionShiftedPositive
+     * @param functions the cubic bezier functions which have the section encoded into their constructions points
+     * @return the shifted bezier spline based function.
+     */
+    public static BoundedUnivariateFunction createBezierSplineFunctionShiftedPositive(List<CubicBezierFunction> functions) {
         List<BoundedUnivariateFunction> functionsMapped = functions.stream().map(CubicBezierFunction::getFunction).toList();
         List<Section> sections = functions.stream().map(f -> new Section(f.getX1(), f.getX2())).toList();
         return createCompositeFunctionShiftedPositive(functionsMapped, sections);
