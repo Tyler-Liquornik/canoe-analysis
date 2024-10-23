@@ -92,6 +92,35 @@ public class PercentOpenAreaController implements Initializable {
         try {
             Image image = new Image(new FileInputStream(imageFile));
             imageview.setImage(image);
+
+            if (image != null) { // Checking if an image has been uploaded
+
+                // Variable for saving final height and width
+                double width = 0;
+                double height = 0;
+
+                // Ratios of how the image fits into the image view (this maintains the aspect ratio while editing size)
+                double ratioX = imageview.getFitWidth() / image.getWidth();
+                double ratioY = imageview.getFitHeight() / image.getHeight();
+
+                double reductionCoefficient = 0; // Variable to store the reduction coefficient for scaling the image
+
+                // Determining which ratio is smaller to maintain the aspect ratio of the image
+                if(ratioX >= ratioY) {
+                    reductionCoefficient = ratioY; // If height ratio is smaller or equal, use it to fit image within bounds
+                } else {
+                    reductionCoefficient = ratioX; // Otherwise, use width ratio
+                }
+
+                // Calculate the new width and height based on the reduction coefficient
+                width = image.getWidth() * reductionCoefficient;
+                height = image.getHeight() * reductionCoefficient;
+
+                // Center the image within the imageView by adjusting the x and y positions
+                imageview.setX((imageview.getFitWidth() - width) / 2);
+                imageview.setY((imageview.getFitHeight() - height) / 2);
+            }
+
             popupStage.close();
             uploadOrClearButton.setText("Delete Image");
             orLabel.setText("");
