@@ -125,6 +125,14 @@
     -fx-stroke: -fx-primary;
 }
 
+.invalid-input > .input-focused-line{
+    -fx-background-color: #D10647; /* For invalid input */
+}
+
+.invalid-input > .input-line{
+    -fx-background-color: #D10647; /* For invalid input */
+}
+
 .jfx-decorator > .jfx-decorator-buttons-container > .jfx-button:hover {
     -fx-background-color: -fx-primary-light;
 }
