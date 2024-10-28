@@ -1036,9 +1036,13 @@ public class BeamController implements Initializable {
         ControlUtils.initComboBoxesWithDefaultSelected(distributedMagnitudeComboBox, distributedLoadUnits, 0);
         ControlUtils.initComboBoxesWithDefaultSelected(canoeLengthComboBox, distanceUnits, 0);
 
-        TextField[] tfs = new TextField[]{pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
-                distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField};
-        for (TextField tf : tfs) {tf.setText("0.00");}
+        TextField[] zeroTextFields = new TextField[]{pointLocationTextField, distributedIntervalTextFieldL};
+        for (TextField tf : zeroTextFields) {tf.setText("0.00");}
+
+        TextField[] oneTextFields = new TextField[]{pointMagnitudeTextField, distributedMagnitudeTextField, distributedIntervalTextFieldR};
+        for (TextField tf : oneTextFields) {tf.setText("1.00");}
+
+        canoeLengthTextField.setText("5.00");
 
         //Validation Highlighting for Canoe Length
         canoeLengthTextField.textProperty().addListener((observable, oldValue, newValue) -> {
