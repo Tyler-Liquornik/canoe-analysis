@@ -3,17 +3,21 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.HullBuilderController">
+<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.HullBuilderController">
    <children>
-      <AnchorPane fx:id="canoeViewAnchorPane" layoutX="40.0" layoutY="18.0" prefHeight="300.0" prefWidth="505.0" styleClass="surface" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0" />
-      <AnchorPane fx:id="curveKnobsAnchorPane" layoutX="84.0" layoutY="193.0" prefHeight="220.0" prefWidth="545.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="15.0">
+      <AnchorPane fx:id="hullViewAnchorPane" layoutX="40.0" layoutY="18.0" prefHeight="300.0" prefWidth="870.0" styleClass="surface" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">
          <children>
-            <Label layoutX="15.0" layoutY="15.0" styleClass="title" text="Curve Parameterization" />
+            <Label styleClass="title" text="Hull View" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="19.0" />
+            <Label layoutX="610.0" styleClass="subtitle" text="Select Section: " AnchorPane.rightAnchor="85.0" AnchorPane.topAnchor="19.0" />
+         </children></AnchorPane>
+      <AnchorPane fx:id="curveParameterizationAnchorPane" layoutX="84.0" layoutY="193.0" prefHeight="220.0" prefWidth="545.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="15.0">
+         <children>
+            <Label styleClass="title" text="Curve Parameterization" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="19.0" />
          </children>
       </AnchorPane>
-      <AnchorPane fx:id="sectionPropertiesAnchorPane" layoutX="169.0" layoutY="291.0" prefHeight="220.0" prefWidth="310.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.rightAnchor="15.0">
+      <AnchorPane fx:id="propertiesAnchorPane" layoutX="169.0" layoutY="291.0" prefHeight="220.0" prefWidth="310.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.rightAnchor="15.0">
          <children>
-            <Label layoutX="15.0" layoutY="15.0" styleClass="title" text="Section Properties" />
+            <Label layoutX="15.0" layoutY="15.0" styleClass="title" text="Section Properties" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="19.0" />
          </children>
       </AnchorPane>
    </children>

@@ -1,6 +1,7 @@
-package com.wecca.canoeanalysis.components.graphics;
+package com.wecca.canoeanalysis.components.graphics.hull;
 
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.components.graphics.FunctionGraphic;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
@@ -27,6 +28,10 @@ public class BeamHullGraphic extends Group implements FunctionGraphic {
     private boolean isColored;
     private static final double borderExtension = 5; // Amount by which the borders extend beyond the beam
 
+    /**
+     * @param rectangle the graphics space coordinates of the beam rectangle
+     * Note that the border extensions do stick out of this region
+     */
     public BeamHullGraphic(Rectangle rectangle) {
         super();
         this.encasingRectangle = rectangle;

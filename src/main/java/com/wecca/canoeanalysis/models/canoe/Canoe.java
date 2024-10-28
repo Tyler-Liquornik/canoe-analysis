@@ -193,9 +193,7 @@ public class Canoe
     }
 
     /**
-     * This is needed because right now the floating case cannot be solved with asymmetry
-     * This is because asymmetry introduces a tilt angle with vastly complicates everything in the current model
-     * In addition, for realistic sufficient load cases we typically have symmetry
+     * @deprecated by new floating solver algorithm which can solve asymmetrical load cases so we no longer need to check for symmetry
      * @return if the canoe, including the hull self-weight and external loads are symmetrical about the canoes lengthwise midpoints
      */
     @JsonIgnore

@@ -7,6 +7,11 @@ import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
 import com.wecca.canoeanalysis.components.graphics.*;
+import com.wecca.canoeanalysis.components.graphics.hull.BeamHullGraphic;
+import com.wecca.canoeanalysis.components.graphics.hull.CurvedHullGraphic;
+import com.wecca.canoeanalysis.components.graphics.load.ArrowBoundCurvedGraphic;
+import com.wecca.canoeanalysis.components.graphics.load.ArrowGraphic;
+import com.wecca.canoeanalysis.components.graphics.load.TriangleStandGraphic;
 import com.wecca.canoeanalysis.controllers.popups.*;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
@@ -26,6 +31,7 @@ import javafx.event.ActionEvent;
 import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.fxml.*;
 import javafx.scene.shape.Line;
@@ -33,7 +39,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
 import lombok.*;
-
 import java.io.File;
 import java.net.URL;
 import java.util.*;
@@ -71,7 +76,7 @@ public class BeamController implements Initializable {
     @Getter
     private Canoe canoe;
     @Getter @Setter
-    private FunctionGraphic canoeGraphic;
+    private FunctionGraphic hullGraphic;
 
     /**
      * Toggles settings for empty tree view if it's considered empty (placeholder doesn't count)
@@ -445,8 +450,8 @@ public class BeamController implements Initializable {
                 .map(node -> (Graphic) node).toList());
 
         // Create and add the support graphic
-        double tipY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + (int) canoeGraphic.getHeight(pLoadX);
-        double scaledX = GraphicsUtils.getScaledFromModelToGraphic(pLoadX, canoeGraphic.getEncasingRectangle().getWidth(), canoe.getHull().getLength());
+        double tipY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + (int) hullGraphic.getHeight(pLoadX);
+        double scaledX = GraphicsUtils.getScaledFromModelToGraphic(pLoadX, hullGraphic.getEncasingRectangle().getWidth(), canoe.getHull().getLength());
         TriangleStandGraphic support = new TriangleStandGraphic(scaledX, tipY);
         loadContainerChildren.add(support);
 
@@ -462,7 +467,7 @@ public class BeamController implements Initializable {
      */
     public void renderGraphics() {
         loadContainer.getChildren().clear();
-        double canoeGraphicLength = canoeGraphic.getEncasingRectangle().getWidth();
+        double canoeGraphicLength = hullGraphic.getEncasingRectangle().getWidth();
         double hullAbsMax = canoe.getHull().getPiecedSideProfileCurveShiftedAboveYAxis().getMaxValue(canoe.getHull().getSection());
 
         // Rescale all graphics relative to the max load
@@ -470,14 +475,14 @@ public class BeamController implements Initializable {
         for (Load load : canoe.getAllLoads()) {
             // Scaling ratios
             double loadMagnitudeRatio = LoadUtils.getLoadMagnitudeRatio(canoe, load);
-            double loadMaxToCurvedProfileMaxRatio = GraphicsUtils.calculateLoadMaxToCurvedGraphicMaxRatio(canoeGraphic);
+            double loadMaxToCurvedProfileMaxRatio = GraphicsUtils.calculateLoadMaxToCurvedGraphicMaxRatio(hullGraphic);
 
             // Load graphic position coordinates (distribution graphic left end) and magnitude
             double loadMax = load.getMaxSignedValue();
             double x = GraphicsUtils.getScaledFromModelToGraphic(load.getX(), canoeGraphicLength, canoe.getHull().getLength());
-            double endY = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(load.getX());
+            double endY = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + hullGraphic.getHeight(load.getX());
             double deltaY = (GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - GraphicsUtils.acceptedBeamLoadGraphicHeightRange[0]) * loadMagnitudeRatio;
-            double startY = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - deltaY : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(load.getX()) + deltaY;
+            double startY = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - deltaY : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + hullGraphic.getHeight(load.getX()) + deltaY;
 
             // Render the correct graphic based on the subtype of the load
             switch (load) {
@@ -485,13 +490,13 @@ public class BeamController implements Initializable {
                 case LoadDistribution dist -> {
                     // Distribution graphic right end coordinates
                     double rx = GraphicsUtils.getScaledFromModelToGraphic(dist.getSection().getRx(), canoeGraphicLength, canoe.getHull().getLength());
-                    double endRy = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(dist.getSection().getRx());
-                    double startRy = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - deltaY : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(dist.getSection().getRx()) + deltaY;
+                    double endRy = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + hullGraphic.getHeight(dist.getSection().getRx());
+                    double startRy = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - deltaY : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + hullGraphic.getHeight(dist.getSection().getRx()) + deltaY;
 
                     // Hull curve graphic adjustment setup
                     BoundedUnivariateFunction hullCurve = X -> canoe.getHull().getPiecedSideProfileCurveShiftedAboveYAxis().value(X) - hullAbsMax;
                     double hullCurveMaxX = hullCurve.getMaxSignedValuePoint(dist.getSection()).getX();
-                    double hullCurveMaxY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(hullCurveMaxX) + deltaY;
+                    double hullCurveMaxY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + hullGraphic.getHeight(hullCurveMaxX) + deltaY;
                     double rectWidth = rx - x;
                     double rectHeight = loadMax < 0 ? deltaY : Math.min(endY, endRy) - hullCurveMaxY;
                     double rectY = loadMax < 0 ? startY : hullCurveMaxY;
@@ -668,8 +673,8 @@ public class BeamController implements Initializable {
      * @param h the solved waterline height (in the model coordinate space).
      */
     private void addWaterline(double h) {
-        double canoeGraphicHeight = canoeGraphic.getEndY() - canoeGraphic.getY();
-        double graphicY = canoeGraphic.getY() +
+        double canoeGraphicHeight = hullGraphic.getEndY() - hullGraphic.getY();
+        double graphicY = hullGraphic.getY() +
                 Math.abs((h / canoe.getHull().getMaxHeight())) * canoeGraphicHeight;
         Line dashedWaterline = new Line(0, graphicY, waterlineContainer.getWidth(), graphicY);
         dashedWaterline.setStroke(ColorPaletteService.getColor("white"));
@@ -784,7 +789,7 @@ public class BeamController implements Initializable {
             if (selectedItem.getLoad() != null && selectedItem.getLoad().getType() != null &&
                     selectedItem.getLoad().getType() == LoadType.HULL) {
                 canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
-                resetCanoeGraphic();
+                resetHullGraphic();
                 mainController.disableModuleToolBarButton(false, 2);
             }
             else {
@@ -844,29 +849,29 @@ public class BeamController implements Initializable {
         canoe.setHull(hull);
         LoadTreeManagerService.buildLoadTreeView(canoe);
         checkAndSetEmptyLoadTreeSettings();
-        resetCanoeGraphic();
+        resetHullGraphic();
     }
 
     /**
      * Reset and rerender the canoe graphic back to the beam (default graphic on load)
      */
-    public void resetCanoeGraphic() {
+    public void resetHullGraphic() {
         Rectangle rect = new Rectangle(0, 84, beamContainer.getPrefWidth(), 25);
-        setCanoeGraphic(new BeamHullGraphic(rect));
+        setHullGraphic(new BeamHullGraphic(rect));
         beamContainer.getChildren().clear();
-        beamContainer.getChildren().add((Node) canoeGraphic);
+        beamContainer.getChildren().add((Node) hullGraphic);
     }
 
     public void rotateGraphics(double degrees, double duration) {
         double length = canoe.getHull().getLength();
 
         // Calculate the pivot point (midpoint of the canoe graphic)
-        double pivotX = (canoeGraphic.getEndX() + canoeGraphic.getX()) / 2.0;
-        double pivotY = canoeGraphic.getY();
+        double pivotX = (hullGraphic.getEndX() + hullGraphic.getX()) / 2.0;
+        double pivotY = hullGraphic.getY();
 
         // Collect all nodes to rotate
         List<Node> allNodes = new ArrayList<>();
-        allNodes.add(canoeGraphic.getNode());
+        allNodes.add(hullGraphic.getNode());
         allNodes.addAll(loadContainer.getChildren());
 
         // Create timelines for each node
@@ -931,9 +936,9 @@ public class BeamController implements Initializable {
             // Update UI to new canoe
             renderGraphics();
             if (isBeam)
-                resetCanoeGraphic();
+                resetHullGraphic();
             else
-                setCanoeGraphicFromCanoe(canoe);
+                setHullGraphicFromHull(canoe.getHull());
             LoadTreeManagerService.buildLoadTreeView(this.canoe);
             axisLabelR.setText(String.format("%.2f m", this.canoe.getHull().getLength()));
             checkAndSetEmptyLoadTreeSettings();
@@ -942,16 +947,15 @@ public class BeamController implements Initializable {
 
     /**
      * Use the hull curvature of the canoe to set the canoe graphic
-     * @param canoe with teh hull curvature to create the graphic for
+     * @param hull with the desired curvature to create the graphic for
      */
-    public void setCanoeGraphicFromCanoe(Canoe canoe) {
-        Hull hull = canoe.getHull();
-        Rectangle rect = canoeGraphic.getEncasingRectangle();
+    public void setHullGraphicFromHull(Hull hull) {
+        Rectangle rect = hullGraphic.getEncasingRectangle();
         rect.setHeight(35);
-        setCanoeGraphic(new CurvedHullGraphic(
+        setHullGraphic(new CurvedHullGraphic(
                 hull.getPiecedSideProfileCurveShiftedAboveYAxis(), hull.getSection(), rect));
         beamContainer.getChildren().clear();
-        beamContainer.getChildren().add((Node) canoeGraphic);
+        beamContainer.getChildren().add((Node) hullGraphic);
         renderGraphics();
     }
 
@@ -982,7 +986,7 @@ public class BeamController implements Initializable {
      * Currently, this provides buttons to download and upload the Canoe object as JSON
      */
     public void initModuleToolBarButtons() {
-        LinkedHashMap<IconGlyphType, Consumer<ActionEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
+        LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
         iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.WRENCH, e -> openHullBuilderPopup());
@@ -1010,7 +1014,7 @@ public class BeamController implements Initializable {
         JFXDepthManager.setDepth(loadsTreeView, 4);
 
         // Graphics init
-        resetCanoeGraphic();
+        resetHullGraphic();
 
         double maxGraphicHeight = 84;
         double minimumGraphicHeight = 14;

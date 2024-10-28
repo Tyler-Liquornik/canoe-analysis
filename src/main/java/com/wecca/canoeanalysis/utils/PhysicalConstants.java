@@ -3,6 +3,9 @@ package com.wecca.canoeanalysis.utils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * Universal constants that are not user defined and can never change
+ */
 @Getter @AllArgsConstructor
 public enum PhysicalConstants {
     FEET_TO_METRES(0.3048), // conversion factor ft to m

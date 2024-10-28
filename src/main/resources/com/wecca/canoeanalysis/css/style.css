@@ -161,21 +161,28 @@
     -fx-font-weight: bold;
 }
 
-.transparent-button,
-.transparent-button:disabled {
+.transparent-until-hover-button,
+.transparent-until-hover-button:disabled {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
     -fx-border-width: 0;
     -fx-border-radius: 0;
     -fx-opacity: 1.0;
+    -fx-cursor: hand;
 }
 
-.transparent-button:hover {
+.transparent-until-hover-button:hover {
     -fx-background-color: -fx-primary-light;
 }
 
-.transparent-button-no-hover:hover {
+.transparent-on-hover-button:hover {
     -fx-background-color: transparent;
+}
+
+.panel-button {
+    -fx-background-color: -fx-primary;
+    -fx-background-radius: 50%;
+    -fx-cursor: hand;
 }
 
 .close-window-button:hover {
@@ -263,5 +270,5 @@ jfx-toggle-button,
 }
 
 .fail {
-    -fx-text-fill: #F03030;
+    -fx-text-fill: -fx-danger;
 }

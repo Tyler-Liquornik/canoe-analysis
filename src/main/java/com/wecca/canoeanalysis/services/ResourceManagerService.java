@@ -17,6 +17,7 @@ import java.util.Objects;
 public class ResourceManagerService {
     private static final Path resourcesDir;
 
+    // Set the resources directory as soon as this class is loaded
     static {
         try {
             if (isRunningFromJar()) {

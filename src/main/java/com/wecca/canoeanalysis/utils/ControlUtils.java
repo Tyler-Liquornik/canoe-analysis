@@ -4,7 +4,8 @@ import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.collections.FXCollections;
-import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.RadioButton;
@@ -20,12 +21,10 @@ public class ControlUtils {
      * @param buttons the radio buttons to add to the group
      * @param selectedIndex the index in buttons to be selected on initialization
      */
-    public static void addAllRadioButtonsToToggleGroup(ToggleGroup group, RadioButton[] buttons, int selectedIndex)
-    {
+    public static void addAllRadioButtonsToToggleGroup(ToggleGroup group, RadioButton[] buttons, int selectedIndex) {
         for (RadioButton b : buttons) {
             b.setToggleGroup(group);
         }
-
         buttons[selectedIndex].setSelected(true);
     }
 
@@ -39,19 +38,5 @@ public class ControlUtils {
     {
         comboBox.setItems(FXCollections.observableArrayList(options));
         comboBox.getSelectionModel().select(selectedIndex);
-    }
-
-    public static Button getIconButton(IconGlyphType iconGlyphName, Consumer<ActionEvent> onClick, double iconSize, boolean transparentOnHover) {
-        Button button = new Button();
-        button.getStyleClass().add("transparent-button");
-        if (transparentOnHover)
-            button.getStyleClass().add("transparent-button-no-hover");
-        button.setOnAction(onClick::accept);
-        FontAwesomeIcon icon = new FontAwesomeIcon();
-        icon.setFill(ColorPaletteService.getColor("white"));
-        icon.setGlyphName(iconGlyphName.getGlyphName());
-        icon.setSize(String.valueOf(iconSize));
-        button.setGraphic(icon);
-        return button;
     }
 }

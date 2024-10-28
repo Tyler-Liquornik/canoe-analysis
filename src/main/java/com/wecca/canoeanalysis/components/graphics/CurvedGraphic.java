@@ -32,6 +32,13 @@ public class CurvedGraphic extends Group implements FunctionGraphic {
     protected boolean isColored;
     private final double maxSignedValue;
 
+    /**
+     * Deals with mapping between function space and graphic space
+     * @param function the function definition in function space
+     * @param section the interval of the function in function space
+     * @param encasingRectangle the smallest region in function space that encloses all points in the function
+     *                          is mapped to this rectangle in graphics space
+     */
     public CurvedGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
         super();
         this.function = function;
@@ -48,7 +55,7 @@ public class CurvedGraphic extends Group implements FunctionGraphic {
 
     public void draw() {
         // Partition the section
-        int numSamples = 1000;
+        int numSamples = 250;
         double step = (section.getRx() - section.getX()) / numSamples;
         double currentX = section.getX();
 
@@ -134,11 +141,6 @@ public class CurvedGraphic extends Group implements FunctionGraphic {
     @Override
     public Section getSection() {
         return section;
-    }
-
-    @Override
-    public BoundedUnivariateFunction getFunction() {
-        return function;
     }
 
     @Override

@@ -2,8 +2,6 @@ package com.wecca.canoeanalysis.services;
 
 import com.jfoenix.controls.JFXDecorator;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.aop.TraceIgnore;
-import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import javafx.fxml.FXMLLoader;
@@ -113,11 +111,23 @@ public class WindowManagerService {
      */
     public static void minimizeWindow(Stage stage) {stage.setIconified(true);}
 
+    /**
+     * Sets the initial offsets of the stage based on the mouse event's coordinates within the scene.
+     * This method is typically used when a drag operation starts, storing the offsets between
+     * the mouse position and the top-left corner of the stage.
+     * @param event contains the current position of the mouse within the scene.
+     */
     public static void setStageOffsets(MouseEvent event) {
         stageXOffset = event.getSceneX();
         stageYOffset = event.getSceneY();
     }
 
+    /**
+     * Moves the given stage to a new position based on the current mouse position on the screen.
+     * Called during a drag operation to reposition the stage as the user drags it.
+     * @param event contains g the current screen coordinates of the mouse.
+     * @param stage to be moved
+     */
     public static void moveStage(MouseEvent event, Stage stage) {
         if (stage != null) {
             stage.setX(event.getScreenX() - stageXOffset);

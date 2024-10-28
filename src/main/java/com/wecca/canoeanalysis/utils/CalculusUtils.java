@@ -1,7 +1,9 @@
 package com.wecca.canoeanalysis.utils;
 
 import Jama.Matrix;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
+import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.function.Section;
 import org.apache.commons.math3.analysis.BivariateFunction;
@@ -115,6 +117,7 @@ public class CalculusUtils
      * @param pieces the pieces to validate
      * @param sections the sections of the pieces
      */
+    @Traceable
     public static void validatePiecewiseAsUpOrDown(List<BoundedUnivariateFunction> pieces, List<Section> sections) {
         UnivariateSolver solver = new BrentSolver(1e-10, 1e-14);
         int numSamples = 1000;
@@ -209,5 +212,44 @@ public class CalculusUtils
         jacobian.set(1, 0, df2_dx.value(x)); // ∂f2 / ∂x evaluated at x
         jacobian.set(1, 1, df2_dy.value(y)); // ∂f2 / ∂y evaluated at y
         return jacobian;
+    }
+
+    /**
+     * Creates a composite function from a list of bounded univariate functions
+     * along with their corresponding sections.
+     * Shifts the result so that its minimum y value is at y = 0.
+     *
+     * @param functions The list of bounded univariate functions.
+     * @param sections  The list of sections that correspond to each function.
+     * @return The shifted composite function.
+     */
+    public static BoundedUnivariateFunction createCompositeFunctionShiftedPositive(List<BoundedUnivariateFunction> functions, List<Section> sections) {
+        if (functions.size() != sections.size())
+            throw new IllegalArgumentException("The number of functions must match the number of sections.");
+
+        // Create the composite function that checks each function's section before evaluation
+        BoundedUnivariateFunction f = x -> {
+            for (int i = 0; i < functions.size(); i++) {
+                BoundedUnivariateFunction func = functions.get(i);
+                Section section = sections.get(i);
+                if (section.getX() <= x && x <= section.getRx())
+                    return func.value(x);
+            }
+            throw new IllegalArgumentException("x is out of bounds of the provided functions.");
+        };
+
+        Section fullSection = new Section(sections.getFirst().getX(), sections.getLast().getRx());
+        return x -> f.value(x) - f.getMinValue(fullSection);
+    }
+
+    /**
+     * Essentially an overload of createCompositeFunctionShiftedPositive
+     * @param functions the cubic bezier functions which have the section encoded into their constructions points
+     * @return the shifted bezier spline based function.
+     */
+    public static BoundedUnivariateFunction createBezierSplineFunctionShiftedPositive(List<CubicBezierFunction> functions) {
+        List<BoundedUnivariateFunction> functionsMapped = functions.stream().map(CubicBezierFunction::getFunction).toList();
+        List<Section> sections = functions.stream().map(f -> new Section(f.getX1(), f.getX2())).toList();
+        return createCompositeFunctionShiftedPositive(functionsMapped, sections);
     }
 }
