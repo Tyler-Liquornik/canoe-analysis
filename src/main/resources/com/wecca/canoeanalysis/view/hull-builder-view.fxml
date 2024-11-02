@@ -17,7 +17,15 @@
       </AnchorPane>
       <AnchorPane fx:id="propertiesAnchorPane" layoutX="169.0" layoutY="291.0" prefHeight="220.0" prefWidth="310.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.rightAnchor="15.0">
          <children>
-            <Label layoutX="15.0" layoutY="15.0" styleClass="title" text="Section Properties" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="19.0" />
+            <Label fx:id="PropertiesType" layoutX="15.0" layoutY="15.0" styleClass="title" text="Section Properties" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="19.0" />
+            <Label layoutX="15.0" layoutY="54.0" text="Interval:" />
+            <Label layoutX="19.0" layoutY="94.0" text="Height:" />
+            <Label layoutX="15.0" layoutY="134.0" text="Volume:" />
+            <Label layoutX="26.0" layoutY="174.0" text="Mass:" />
+            <Label fx:id="inter" layoutX="73.0" layoutY="54.0" />
+            <Label fx:id="height" layoutX="73.0" layoutY="94.0" />
+            <Label fx:id="volume" layoutX="73.0" layoutY="135.0" />
+            <Label fx:id="mass" layoutX="73.0" layoutY="175.0" />
          </children>
       </AnchorPane>
    </children>

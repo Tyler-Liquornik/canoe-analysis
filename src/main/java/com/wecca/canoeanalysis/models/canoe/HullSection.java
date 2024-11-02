@@ -222,6 +222,8 @@ public class HullSection extends Section
         return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getMassDistributionFunction(), x, rx);
     }
 
+
+
     /**
      * Defines a function w(x) which models the load of the hull section along its length (negative for download load)
      * @return the function w(x)
@@ -279,5 +281,10 @@ public class HullSection extends Section
             throw new IllegalArgumentException("Hull shape function must be positive on its domain [start, end]");
         else if (!positive && maxValue > 0)
             throw new IllegalArgumentException("Hull shape function must be non-positive on its domain [start, end]");
+    }
+
+    @Override
+    public String toString() {
+        return "We In";
     }
 }
