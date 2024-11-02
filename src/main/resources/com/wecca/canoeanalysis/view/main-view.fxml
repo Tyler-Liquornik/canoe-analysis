@@ -11,12 +11,12 @@
    <children>
       <AnchorPane fx:id="toolBarPane" maxHeight="35.0" maxWidth="900.0" minHeight="35.0" minWidth="600.0" onMouseDragged="#draggableWindowMove" onMousePressed="#draggableWindowGetLocation" prefHeight="35.0" prefWidth="900.0" styleClass="action-object" translateZ="5.0">
          <children>
-            <Button fx:id="hamburgerButton" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#toggleDrawer" prefHeight="34.0" prefWidth="35.0" styleClass="transparent-button" AnchorPane.leftAnchor="15.0">
+            <Button fx:id="hamburgerButton" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#toggleDrawer" prefHeight="34.0" prefWidth="35.0" styleClass="transparent-until-hover-button" AnchorPane.leftAnchor="15.0">
                <graphic>
                   <JFXHamburger fx:id="hamburger" prefHeight="10.0" prefWidth="19.0" scaleX="0.9" scaleY="0.75" />
                </graphic>
             </Button>
-            <Button fx:id="minimizeButton" layoutX="900.0" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#minimizeWindow" prefHeight="34.0" prefWidth="35.0" styleClass="transparent-button" AnchorPane.rightAnchor="50.0">
+            <Button fx:id="minimizeButton" layoutX="900.0" maxHeight="34.0" maxWidth="35.0" minHeight="34.0" minWidth="35.0" mnemonicParsing="false" onAction="#minimizeWindow" prefHeight="34.0" prefWidth="35.0" styleClass="transparent-until-hover-button" AnchorPane.rightAnchor="50.0">
                <graphic>
                   <FontAwesomeIcon fill="WHITE" glyphName="MINUS" scaleY="0.8" size="25" tabSize="0" translateY="2.0" />
                </graphic>
@@ -26,7 +26,7 @@
                   <FontAwesomeIcon fill="WHITE" glyphName="TIMES" scaleX="0.9" scaleY="0.9" size="25" tabSize="0"/>
                </graphic>
                <styleClass>
-                  <String fx:value="transparent-button" />
+                  <String fx:value="transparent-until-hover-button" />
                   <String fx:value="close-window-button" />
                </styleClass>
             </Button>

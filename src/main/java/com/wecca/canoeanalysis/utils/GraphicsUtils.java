@@ -1,6 +1,13 @@
 package com.wecca.canoeanalysis.utils;
 
 import com.wecca.canoeanalysis.components.graphics.*;
+import com.wecca.canoeanalysis.components.graphics.hull.BeamHullGraphic;
+import com.wecca.canoeanalysis.components.graphics.load.ArrowBoundCurvedGraphic;
+import com.wecca.canoeanalysis.components.graphics.load.ArrowGraphic;
+import com.wecca.canoeanalysis.components.graphics.load.TriangleStandGraphic;
+import javafx.geometry.Point2D;
+import javafx.scene.control.Label;
+import javafx.scene.shape.Rectangle;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -29,10 +36,10 @@ public class GraphicsUtils {
     public static void sortGraphics(List<Graphic> graphics) {
         // Define the order to sort by type
         Map<Class<? extends Graphic>, Integer> classOrder = new HashMap<>();
-        classOrder.put(CurvedHullGraphicBase.class, 0);
+        classOrder.put(CurvedGraphic.class, 0);
         classOrder.put(TriangleStandGraphic.class, 1);
         classOrder.put(ArrowGraphic.class, 2);
-        classOrder.put(ArrowBoundCurveGraphic.class, 3);
+        classOrder.put(ArrowBoundCurvedGraphic.class, 3);
         classOrder.put(BeamHullGraphic.class, 4);
 
         // Sort by type, and then by position
@@ -45,7 +52,41 @@ public class GraphicsUtils {
      * @param canoeGraphic the CurvedGraphic object
      * @return the loadMaxToHullMaxRatio
      */
-    public static double calculateLoadMaxToCurvedGraphicMaxRatio(HullGraphic canoeGraphic) {
+    public static double calculateLoadMaxToCurvedGraphicMaxRatio(FunctionGraphic canoeGraphic) {
         return (acceptedBeamLoadGraphicHeightRange[1] - acceptedBeamLoadGraphicHeightRange[0]) / canoeGraphic.getEncasingRectangle().getHeight();
+    }
+
+    /**
+     * Sets the given label's text to the projected length of the node as it rotates.
+     * The projected length is calculated using Pythagoras' theorem based on the current rotation angle.
+     *
+     * @param label The label to set the projected length text to.
+     * @param length The original length of the canoe (before rotation).
+     * @param angle The current rotation angle in degrees.
+     */
+    public static void setProjectedLengthToLabel(Label label, double length, double angle) {
+        double rotationInRadians = Math.toRadians(angle);
+        double projectedLength = length * Math.cos(rotationInRadians);
+        label.setText(String.format("%.2f m", projectedLength));
+    }
+
+    /**
+     * Maps a point from function space to graphic space using the bounds.
+     */
+    public static Point2D mapToGraphicSpace(Point2D point, Rectangle functionSpace, Rectangle graphicSpace) {
+        double funcMinX = functionSpace.getX();
+        double funcMaxX = functionSpace.getX() + functionSpace.getWidth();
+        double funcMinY = functionSpace.getY();
+        double funcMaxY = functionSpace.getY() + functionSpace.getHeight();
+
+        double graphicMinX = graphicSpace.getX();
+        double graphicMaxX = graphicSpace.getX() + graphicSpace.getWidth();
+        double graphicMinY = graphicSpace.getY();
+        double graphicMaxY = graphicSpace.getY() + graphicSpace.getHeight();
+
+        double scaledX = graphicMinX + (point.getX() - funcMinX) / (funcMaxX - funcMinX) * (graphicMaxX - graphicMinX);
+        double scaledY = graphicMaxY - (point.getY() - funcMinY) / (funcMaxY - funcMinY) * (graphicMaxY - graphicMinY); // Flip Y-axis for graphic space
+
+        return new Point2D(scaledX, scaledY);
     }
 }

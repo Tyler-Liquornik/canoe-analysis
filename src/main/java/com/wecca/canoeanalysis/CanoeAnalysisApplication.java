@@ -24,6 +24,9 @@ public class CanoeAnalysisApplication extends Application {
     @Getter @Setter
     private static MainController mainController;
 
+    /**
+     * Called implicitly by launch() in main()
+     */
     @Override
     public void start(Stage stage) throws IOException, URISyntaxException {
 

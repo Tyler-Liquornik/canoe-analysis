@@ -1,8 +1,9 @@
-package com.wecca.canoeanalysis.components.graphics;
+package com.wecca.canoeanalysis.components.graphics.hull;
 
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.components.graphics.FunctionGraphic;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.FunctionSection;
+import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.Group;
@@ -14,10 +15,10 @@ import lombok.Setter;
 
 /**
  * Icon used for an unset/simplified canoe hull
- * Technically a "curve" that it just flat
+ * Technically a "curve" that it just flat (the function is y = c for some constant c)
  */
 @Getter @Setter
-public class BeamHullGraphic extends Group implements HullGraphic {
+public class BeamHullGraphic extends Group implements FunctionGraphic {
 
     private Rectangle encasingRectangle;
     private Line topBorder;
@@ -27,6 +28,10 @@ public class BeamHullGraphic extends Group implements HullGraphic {
     private boolean isColored;
     private static final double borderExtension = 5; // Amount by which the borders extend beyond the beam
 
+    /**
+     * @param rectangle the graphics space coordinates of the beam rectangle
+     * Note that the border extensions do stick out of this region
+     */
     public BeamHullGraphic(Rectangle rectangle) {
         super();
         this.encasingRectangle = rectangle;
@@ -63,6 +68,11 @@ public class BeamHullGraphic extends Group implements HullGraphic {
     }
 
     @Override
+    public double getY() {
+        return encasingRectangle.getY();
+    }
+
+    @Override
     public void recolor(boolean setColored) {
         this.isColored = setColored;
 
@@ -77,8 +87,8 @@ public class BeamHullGraphic extends Group implements HullGraphic {
     }
 
     @Override
-    public FunctionSection getSection() {
-        return new FunctionSection(encasingRectangle.getX(), encasingRectangle.getX() + encasingRectangle.getWidth());
+    public Section getSection() {
+        return new Section(encasingRectangle.getX(), encasingRectangle.getX() + encasingRectangle.getWidth());
     }
 
     @Override

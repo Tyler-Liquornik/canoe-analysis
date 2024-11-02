@@ -1,16 +1,17 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.FunctionSection;
+import com.wecca.canoeanalysis.models.function.Section;
 import javafx.scene.shape.Rectangle;
 
 /**
- * Parent interface for Beam & ClosedCurve, used to display the canoe hull
+ * A graphic with a curve defined by some function
  */
-public interface HullGraphic extends Graphic {
-    FunctionSection getSection();
+public interface FunctionGraphic extends Graphic {
+    Section getSection();
     BoundedUnivariateFunction getFunction();
     double getEndX();
+    double getY();
     double getEndY();
     Rectangle getEncasingRectangle();
     double getHeight(double functionX);

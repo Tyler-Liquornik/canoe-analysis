@@ -1,29 +1,44 @@
 package com.wecca.canoeanalysis.controllers.modules;
 
+import com.jfoenix.controls.JFXComboBox;
+import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXTreeView;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
 import com.wecca.canoeanalysis.components.graphics.*;
+import com.wecca.canoeanalysis.components.graphics.hull.BeamHullGraphic;
+import com.wecca.canoeanalysis.components.graphics.hull.CurvedHullGraphic;
+import com.wecca.canoeanalysis.components.graphics.load.ArrowBoundCurvedGraphic;
+import com.wecca.canoeanalysis.components.graphics.load.ArrowGraphic;
+import com.wecca.canoeanalysis.components.graphics.load.TriangleStandGraphic;
 import com.wecca.canoeanalysis.controllers.popups.*;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
+import com.wecca.canoeanalysis.models.canoe.FloatingSolution;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.RectFunction;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.services.DiagramService;
 import com.wecca.canoeanalysis.services.*;
+import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.*;
+import javafx.animation.*;
+import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.fxml.*;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.transform.Rotate;
+import javafx.util.Duration;
 import lombok.*;
-
 import java.io.File;
 import java.net.URL;
 import java.util.*;
@@ -32,35 +47,36 @@ import java.util.function.Consumer;
 /**
  * Primary controller for longitudinal analysis of a beam
  */
-@Traceable
 public class BeamController implements Initializable {
     @FXML
     private Label axisLabelR, lengthLabel, pointDirectionLabel, pointMagnitudeLabel, pointLocationLabel,
             pointTitleLabel, supportTitleLabel, distributedDirectionLabel, distributedMagntiudeLabel,
-            distributedIntervalLabel, distributedTitleLabel;
+            distributedIntervalLabel, distributedTitleLabel, waterlineLabel, tiltAngleLabel, tippedLabel;
     @FXML
     private JFXTreeView<String> loadsTreeView;
 
     @FXML
     private Button solveSystemButton, pointLoadButton, distributedLoadButton, setCanoeLengthButton, generateGraphsButton,
             clearLoadsButton, deleteLoadButton;
+
     @FXML
-    private TextField pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
-            distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField;
+    private JFXTextField canoeLengthTextField, pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
+            distributedIntervalTextFieldL, distributedIntervalTextFieldR;
+
     @FXML
     private ComboBox<String> pointDirectionComboBox, pointMagnitudeComboBox, pointLocationComboBox, distributedIntervalComboBox,
             distributedDirectionComboBox, distributedMagnitudeComboBox, canoeLengthComboBox;
     @FXML
     private RadioButton standsRadioButton, floatingRadioButton, submergedRadioButton;
     @FXML @Getter
-    private AnchorPane loadContainer, beamContainer;
+    private AnchorPane loadContainer, beamContainer, waterlineContainer, lowerRightAnchorPane;
 
     @Getter @Setter
     private MainController mainController;
     @Getter
     private Canoe canoe;
     @Getter @Setter
-    private HullGraphic canoeGraphic;
+    private FunctionGraphic hullGraphic;
 
     /**
      * Toggles settings for empty tree view if it's considered empty (placeholder doesn't count)
@@ -93,11 +109,11 @@ public class BeamController implements Initializable {
         // Layering priority is TriangleStands => above Arrows => above ArrowBoundCurves => above Curves
         int viewOrder = Integer.MAX_VALUE;
         for (Node node : loadContainerChildren) {
-            if (node instanceof CurvedHullGraphicBase)
+            if (node instanceof CurvedGraphic)
                 node.setViewOrder(viewOrder--);
         }
         for (Node node : loadContainerChildren) {
-            if (node instanceof ArrowBoundCurveGraphic)
+            if (node instanceof ArrowBoundCurvedGraphic)
                 node.setViewOrder(viewOrder--);
         }
         for (Node node : loadContainerChildren) {
@@ -142,7 +158,11 @@ public class BeamController implements Initializable {
             solveSystemButton.fire();
 
         clearAllCanoeModels();
+        waterlineContainer.getChildren().clear();
         axisLabelR.setText("X");
+        waterlineLabel.setText("");
+        tiltAngleLabel.setText("");
+        tippedLabel.setText("");
         axisLabelR.setLayoutX(581); // TODO: this will not be hard coded anymore once axis labels for new loads are implemented
         canoeLengthTextField.setDisable(false);
         canoeLengthComboBox.setDisable(false);
@@ -186,6 +206,57 @@ public class BeamController implements Initializable {
                 setCanoeLengthButton.setText("Reset Canoe");
                 setCanoeLengthButton.setOnAction(e -> resetCanoe());
 
+                //Validation Highlighting for Point Load Magnitude
+                pointMagnitudeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(pointMagnitudeComboBox, pointMagnitudeTextField, 0.01, 5, 'l'); // Automatically highlight invalid input
+                });
+
+                pointMagnitudeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(pointMagnitudeComboBox, pointMagnitudeTextField, 0.01, 5, 'l'); // Automatically highlight invalid input
+                });
+
+                //Validation Highlighting for Point Load Location
+                pointLocationTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(pointLocationComboBox, pointLocationTextField, 0, length, 'd'); // Automatically highlight invalid input
+                });
+
+                pointLocationComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(pointLocationComboBox, pointLocationTextField, 0, length, 'd'); // Automatically highlight invalid input
+                });
+
+                //Validation Highlighting for Distributed Load Magnitude
+                distributedMagnitudeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(distributedMagnitudeComboBox, distributedMagnitudeTextField, 0.01, 5, 'l'); // Automatically highlight invalid input
+                });
+
+                distributedMagnitudeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(distributedMagnitudeComboBox, distributedMagnitudeTextField, 0.01, 5, 'l'); // Automatically highlight invalid input
+                });
+
+                //Validation Highlighting for Distributed Load Location
+
+                //Left Interval
+                distributedIntervalTextFieldL.textProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldL, 0, distributedIntervalTextFieldR, 'd'); // Automatically highlight invalid input
+                });
+
+                distributedIntervalTextFieldR.textProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldL, 0, distributedIntervalTextFieldR, 'd'); // Automatically highlight invalid input
+                });
+
+                //Right Interval
+                distributedIntervalTextFieldR.textProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldR, distributedIntervalTextFieldL, length, 'd'); // Automatically highlight invalid input
+                });
+
+                distributedIntervalTextFieldL.textProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldR, distributedIntervalTextFieldL, length, 'd'); // Automatically highlight invalid input
+                });
+
+                distributedIntervalComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldR, distributedIntervalTextFieldL, length, 'd'); // Automatically highlight invalid input
+                });
+
                 checkAndSetEmptyLoadTreeSettings();
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
@@ -194,6 +265,80 @@ public class BeamController implements Initializable {
         }
         else
             mainController.showSnackbar("One or more entered values are not valid numbers");
+    }
+
+    public void highlightInvalidInput(ComboBox<String> comboBox, JFXTextField textField, double min, double max, Character type) {
+        if (InputParsingUtils.validateTextAsDouble(textField.getText())) {
+            // Convert to metric
+            double value = 0;
+            if (type.equals('d'))
+                value = InputParsingUtils.getDistanceConverted(comboBox, textField);
+            else if (type.equals('l'))
+                value = InputParsingUtils.getLoadConverted(comboBox, textField);
+            else
+                System.out.println("Invalid Type");
+
+            // Only allow lengths in the specified range
+            if (!(value >= min && value <= max) && !(textField.getStyleClass().contains("invalid-input"))) {
+                textField.getStyleClass().add("invalid-input"); // Add invalid style
+                triggerAnimation(textField);
+            }
+
+            else if (value >= min && value <= max && textField.getStyleClass().contains("invalid-input")){
+                textField.getStyleClass().removeAll("invalid-input"); // Remove invalid style
+                triggerAnimation(textField);
+            }
+        }
+        else if (!(textField.getStyleClass().contains("invalid-input"))){
+            textField.getStyleClass().add("invalid-input"); // Add invalid style
+            triggerAnimation(textField);
+        }
+    }
+
+    public void highlightInvalidInput(ComboBox<String> comboBox, JFXTextField textField, JFXTextField min, double max, Character type) {
+        if (InputParsingUtils.validateTextAsDouble(min.getText())) {
+            double minConverted = InputParsingUtils.getDistanceConverted(comboBox, min);
+            highlightInvalidInput(comboBox, textField, minConverted, max, type);
+        }
+        else {
+            textField.getStyleClass().add("invalid-input"); // Add invalid style
+        }
+    }
+
+    public void highlightInvalidInput(ComboBox<String> comboBox, JFXTextField textField, double min, JFXTextField max, Character type) {
+        if (InputParsingUtils.validateTextAsDouble(max.getText())) {
+            double maxConverted = InputParsingUtils.getDistanceConverted(comboBox, max);
+            highlightInvalidInput(comboBox, textField, min, maxConverted, type);
+        }
+        else {
+            textField.getStyleClass().add("invalid-input"); // Add invalid style
+        }
+    }
+
+    private void triggerAnimation(JFXTextField textField) {
+        //Store the current focused node
+        Node focusedNode = textField.getScene().getFocusOwner();
+
+        if (focusedNode != textField)
+            return;
+
+        // Trigger the slide animation
+        textField.getParent().requestFocus(); // Temporarily move focus away
+        Platform.runLater(() -> {
+            // Restore focus to trigger the animation
+            textField.requestFocus();
+
+            // Set the caret position to the end of the text
+            textField.positionCaret(textField.getText().length());
+        });
+    }
+
+    public void restrictPrecision(JFXTextField textField) {
+        textField.textProperty().addListener((observable, oldValue, newValue) -> {
+            //Regex allows for any number of digits before an optional decimal then up to two digits after the decimal
+            if (!(newValue.matches("^\\d*\\.?\\d{0,2}$")))
+                textField.setText(oldValue);
+        });
     }
 
     /**
@@ -227,7 +372,7 @@ public class BeamController implements Initializable {
                 if (p.isSupport())
                     renderSupportGraphic(p.getX());
                 else
-                    renderGraphics();;
+                    renderGraphics();
                 LoadTreeManagerService.buildLoadTreeView(canoe);
                 checkAndSetEmptyLoadTreeSettings();
             }
@@ -305,8 +450,8 @@ public class BeamController implements Initializable {
                 .map(node -> (Graphic) node).toList());
 
         // Create and add the support graphic
-        double tipY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + (int) canoeGraphic.getHeight(pLoadX);
-        double scaledX = GraphicsUtils.getScaledFromModelToGraphic(pLoadX, canoeGraphic.getEncasingRectangle().getWidth(), canoe.getHull().getLength());
+        double tipY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + (int) hullGraphic.getHeight(pLoadX);
+        double scaledX = GraphicsUtils.getScaledFromModelToGraphic(pLoadX, hullGraphic.getEncasingRectangle().getWidth(), canoe.getHull().getLength());
         TriangleStandGraphic support = new TriangleStandGraphic(scaledX, tipY);
         loadContainerChildren.add(support);
 
@@ -322,22 +467,22 @@ public class BeamController implements Initializable {
      */
     public void renderGraphics() {
         loadContainer.getChildren().clear();
-        double canoeGraphicLength = canoeGraphic.getEncasingRectangle().getWidth();
-        double hullAbsMax = canoe.getHull().getPiecedSideProfileCurve().getMaxValue(canoe.getHull().getSection());
+        double canoeGraphicLength = hullGraphic.getEncasingRectangle().getWidth();
+        double hullAbsMax = canoe.getHull().getPiecedSideProfileCurveShiftedAboveYAxis().getMaxValue(canoe.getHull().getSection());
 
         // Rescale all graphics relative to the max load
         List<Graphic> rescaledGraphics = new ArrayList<>();
         for (Load load : canoe.getAllLoads()) {
             // Scaling ratios
             double loadMagnitudeRatio = LoadUtils.getLoadMagnitudeRatio(canoe, load);
-            double loadMaxToCurvedProfileMaxRatio = GraphicsUtils.calculateLoadMaxToCurvedGraphicMaxRatio(canoeGraphic);
+            double loadMaxToCurvedProfileMaxRatio = GraphicsUtils.calculateLoadMaxToCurvedGraphicMaxRatio(hullGraphic);
 
             // Load graphic position coordinates (distribution graphic left end) and magnitude
             double loadMax = load.getMaxSignedValue();
             double x = GraphicsUtils.getScaledFromModelToGraphic(load.getX(), canoeGraphicLength, canoe.getHull().getLength());
-            double endY = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(load.getX());
+            double endY = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + hullGraphic.getHeight(load.getX());
             double deltaY = (GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - GraphicsUtils.acceptedBeamLoadGraphicHeightRange[0]) * loadMagnitudeRatio;
-            double startY = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - deltaY : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(load.getX()) + deltaY;
+            double startY = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - deltaY : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + hullGraphic.getHeight(load.getX()) + deltaY;
 
             // Render the correct graphic based on the subtype of the load
             switch (load) {
@@ -345,13 +490,13 @@ public class BeamController implements Initializable {
                 case LoadDistribution dist -> {
                     // Distribution graphic right end coordinates
                     double rx = GraphicsUtils.getScaledFromModelToGraphic(dist.getSection().getRx(), canoeGraphicLength, canoe.getHull().getLength());
-                    double endRy = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(dist.getSection().getRx());
-                    double startRy = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - deltaY : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(dist.getSection().getRx()) + deltaY;
+                    double endRy = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + hullGraphic.getHeight(dist.getSection().getRx());
+                    double startRy = loadMax < 0 ? GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] - deltaY : GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + hullGraphic.getHeight(dist.getSection().getRx()) + deltaY;
 
                     // Hull curve graphic adjustment setup
-                    BoundedUnivariateFunction hullCurve = X -> canoe.getHull().getPiecedSideProfileCurve().value(X) - hullAbsMax;
+                    BoundedUnivariateFunction hullCurve = X -> canoe.getHull().getPiecedSideProfileCurveShiftedAboveYAxis().value(X) - hullAbsMax;
                     double hullCurveMaxX = hullCurve.getMaxSignedValuePoint(dist.getSection()).getX();
-                    double hullCurveMaxY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + canoeGraphic.getHeight(hullCurveMaxX) + deltaY;
+                    double hullCurveMaxY = GraphicsUtils.acceptedBeamLoadGraphicHeightRange[1] + hullGraphic.getHeight(hullCurveMaxX) + deltaY;
                     double rectWidth = rx - x;
                     double rectHeight = loadMax < 0 ? deltaY : Math.min(endY, endRy) - hullCurveMaxY;
                     double rectY = loadMax < 0 ? startY : hullCurveMaxY;
@@ -365,9 +510,9 @@ public class BeamController implements Initializable {
                                 double stepValue = step.value(X);
                                 return (loadMax < 0 || stepValue == 0 || hullAbsMax == 0)
                                         ? stepValue // Adjust the distribution graphic by adding the hull curve
-                                        : stepValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), stepValue / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
+                                        : stepValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), loadMax / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
                             };
-                            rescaledGraphics.add(new ArrowBoundCurveGraphic(f, dist.getSection(), rect, lArrow, rArrow));
+                            rescaledGraphics.add(new ArrowBoundCurvedGraphic(f, dist.getSection(), rect, lArrow, rArrow));
                         }
                         case PiecewiseContinuousLoadDistribution piecewise -> {
                             if (piecewise.getForce() != 0) {
@@ -375,9 +520,9 @@ public class BeamController implements Initializable {
                                     double piecewiseValue = piecewise.getPiecedFunction().value(X);
                                     return (loadMax < 0 || piecewiseValue == 0 || hullAbsMax == 0)
                                             ? piecewiseValue // Adjust the distribution graphic by adding the hull curve
-                                            : piecewiseValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), piecewiseValue / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
+                                            : piecewiseValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), loadMax / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
                                 };
-                                rescaledGraphics.add(new CurvedHullGraphicBase(f, piecewise.getSection(), rect));
+                                rescaledGraphics.add(new CurvedGraphic(f, piecewise.getSection(), rect));
                             }
                         }
                         default -> throw new IllegalStateException("Invalid load type");
@@ -417,33 +562,22 @@ public class BeamController implements Initializable {
 
         if (submergedRadioButton.isSelected()) {
             solveSubmergedSystem();
+            generateGraphsButton.setDisable(false);
             return; // TODO: after implemented solveSubmergedSystem()
         }
         if (standsRadioButton.isSelected()) {
             solveStandSystem();
+            generateGraphsButton.setDisable(false);
             solveSystemButton.setOnAction(e -> undoStandsSolve());
         }
         else if (floatingRadioButton.isSelected()) {
-            if (canoe.getHull().getWeight() == 0) {
-                mainController.showSnackbar("Cannot solve for buoyancy without a hull. Please build a hull first");
-                mainController.flashModuleToolBarButton(2, 8000); // as a hint for the user
+            if (solveFloatingSystem()) // Solve can fail
+                solveSystemButton.setOnAction(e -> undoFloatingSolve());
+            else
                 return;
-            }
-            double maximumPossibleBuoyancyForce = BeamSolverService.getTotalBuoyancy(canoe, 0);
-            if (-canoe.getNetForce() > maximumPossibleBuoyancyForce) {
-                mainController.showSnackbar("Cannot solve for buoyancy as there is too much load. The canoe will sink!");
-                return;
-            }
-            if (!canoe.isSymmetricallyLoaded()) {
-                mainController.showSnackbar("Cannot solve for buoyancy for an asymmetrically loaded canoe. The canoe will tip over!");
-                return;
-            }
-            solveFloatingSystem();
-            solveSystemButton.setOnAction(e -> undoFloatingSolve());
         }
 
         // Update UI state
-        generateGraphsButton.setDisable(false);
         disableLoadingControls(true);
         loadsTreeView.setDisable(false);
         solveSystemButton.setText("Undo Solve");
@@ -480,11 +614,72 @@ public class BeamController implements Initializable {
     /**
      * Solve and display the result of the "floating" system load case.
      * This entails a buoyancy distribution that keeps the canoe afloat
+     * @return true if the solution was successful, false if the canoe sinks
+     * Note: if the canoe tips, it will still solve, just prevents SFD/BMD graphs
+     * It will still display to the user the "nonsense" solution (since the canoe fills with water)
      */
-    private void solveFloatingSystem() {
-        PiecewiseContinuousLoadDistribution buoyancy = BeamSolverService.solveFloatingSystem(canoe);
-        if (!(buoyancy.getForce() == 0))
-            addPiecewiseLoadDistribution(buoyancy);
+    private boolean solveFloatingSystem() {
+        // Check if the hull has been set from the default beam
+        if (canoe.getHull().getWeight() == 0) {
+            mainController.showSnackbar("Cannot solve for buoyancy without a hull. Please build a hull first");
+            mainController.flashModuleToolBarButton(2, 8000); // as a hint for the user
+            return false;
+        }
+
+        // Check if there's too much force and the canoe will sink - we know this before solving
+        double rotationX = canoe.getHull().getLength() / 2;
+        double maximumPossibleBuoyancyForce = BeamSolverService.getTotalBuoyancyForce(canoe, 0, rotationX, 0);
+        if (-canoe.getNetForce() > maximumPossibleBuoyancyForce) {
+            mainController.showSnackbar("Cannot solve for buoyancy as there is too much load. The canoe will sink!");
+            return false;
+        }
+
+        // Solve the system
+        FloatingSolution solution = BeamSolverService.solveFloatingSystem(canoe);
+
+        // Solver algorithm doesn't converge
+        if (solution == null) {
+            mainController.showSnackbar("Error, buoyancy solver could not converge to a solution");
+            return false;
+        }
+
+        // Proceed with floating system solve if no tipping or sinking is detected
+        PiecewiseContinuousLoadDistribution buoyancy = solution.getSolvedBuoyancy();
+        if (buoyancy.getForce() != 0) addPiecewiseLoadDistribution(buoyancy);
+
+        // Show the resulting h and theta solutions visually
+        rotateGraphics(solution.getSolvedTheta(), 1);
+        addWaterline(solution.getSolvedH());
+        waterlineLabel.setText("Waterline: " + CalculusUtils.roundXDecimalDigits(Math.abs(solution.getSolvedH()), 2) + "m");
+        String thetaDirection = solution.getSolvedTheta() < 0 ? "CCW" : "CW";
+        tiltAngleLabel.setText("Tilt Angle: " + CalculusUtils.roundXDecimalDigits(Math.abs(solution.getSolvedTheta()), 2)
+        + "° " + thetaDirection);
+
+        // Show the user the canoe has tipped but do not let them generate graphs since it's technically an invalid solution
+        if (solution.isTippedOver()) {
+            mainController.showSnackbar("Canoe will tip over, too much load on one side");
+            double tippedLabelStartX = tiltAngleLabel.getLayoutX() + tiltAngleLabel.prefWidth(-1) + 5;
+            tippedLabel.setText("(Tipped Over)");
+            tippedLabel.setLayoutX(tippedLabelStartX);
+            tippedLabel.setTextFill(ColorPaletteService.getColor("danger"));
+        }
+        generateGraphsButton.setDisable(solution.isTippedOver());
+
+        return true;
+    }
+
+    /**
+     * Draws a white dotted line at the solved waterline height h.
+     * @param h the solved waterline height (in the model coordinate space).
+     */
+    private void addWaterline(double h) {
+        double canoeGraphicHeight = hullGraphic.getEndY() - hullGraphic.getY();
+        double graphicY = hullGraphic.getY() +
+                Math.abs((h / canoe.getHull().getMaxHeight())) * canoeGraphicHeight;
+        Line dashedWaterline = new Line(0, graphicY, waterlineContainer.getWidth(), graphicY);
+        dashedWaterline.setStroke(ColorPaletteService.getColor("white"));
+        dashedWaterline.getStrokeDashArray().addAll(5.0, 5.0);  // Dotted pattern
+        waterlineContainer.getChildren().add(dashedWaterline);
     }
 
     /**
@@ -492,7 +687,7 @@ public class BeamController implements Initializable {
      */
     private void undoFloatingSolve() {
         clearLoadsOfType(LoadType.BUOYANCY);
-        renderGraphics(); // removing buoyancy likely changes scaling, need to recalculate scaling
+        setCanoe(canoe);
         undoSolveUpdateUI();
     }
 
@@ -518,13 +713,18 @@ public class BeamController implements Initializable {
      */
     private void undoSolveUpdateUI() {
         solveSystemButton.setText("Solve System");
+        axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
         solveSystemButton.setOnAction(e -> solveSystem());
         generateGraphsButton.setDisable(true);
+        waterlineContainer.getChildren().clear();
         LoadTreeManagerService.buildLoadTreeView(canoe);
         disableLoadingControls(false);
         boolean isHullPresent = canoe.getHull().getWeight() != 0;
         mainController.disableModuleToolBarButton(isHullPresent, 2);
         checkAndSetEmptyLoadTreeSettings();
+        waterlineLabel.setText("");
+        tiltAngleLabel.setText("");
+        tippedLabel.setText("");
     }
 
     /**
@@ -560,8 +760,10 @@ public class BeamController implements Initializable {
      * Generates an SFD and BMD based on the canoe's load state.
      */
     public void generateDiagram() {
-        WindowManagerService.openDiagramWindow("Shear Force Diagram", canoe, DiagramService.generateSfdPoints(canoe), "Force [kN]");
-        WindowManagerService.openDiagramWindow("Bending Moment Diagram", canoe, DiagramService.generateBmdPoints(canoe), "Moment [kN·m]");
+        List<Point2D> sfdPoints = DiagramService.generateSfdPoints(canoe);
+        List<Point2D> bmdPoints = DiagramService.generateBmdPoints(canoe, sfdPoints);
+        WindowManagerService.openDiagramWindow("Shear Force Diagram", canoe, sfdPoints, "Force [kN]");
+        WindowManagerService.openDiagramWindow("Bending Moment Diagram", canoe, bmdPoints, "Moment [kN·m]");
     }
 
     /**
@@ -587,7 +789,7 @@ public class BeamController implements Initializable {
             if (selectedItem.getLoad() != null && selectedItem.getLoad().getType() != null &&
                     selectedItem.getLoad().getType() == LoadType.HULL) {
                 canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
-                resetCanoeGraphic();
+                resetHullGraphic();
                 mainController.disableModuleToolBarButton(false, 2);
             }
             else {
@@ -647,17 +849,59 @@ public class BeamController implements Initializable {
         canoe.setHull(hull);
         LoadTreeManagerService.buildLoadTreeView(canoe);
         checkAndSetEmptyLoadTreeSettings();
-        resetCanoeGraphic();
+        resetHullGraphic();
     }
 
     /**
      * Reset and rerender the canoe graphic back to the beam (default graphic on load)
      */
-    public void resetCanoeGraphic() {
+    public void resetHullGraphic() {
         Rectangle rect = new Rectangle(0, 84, beamContainer.getPrefWidth(), 25);
-        setCanoeGraphic(new BeamHullGraphic(rect));
+        setHullGraphic(new BeamHullGraphic(rect));
         beamContainer.getChildren().clear();
-        beamContainer.getChildren().add((Node) canoeGraphic);
+        beamContainer.getChildren().add((Node) hullGraphic);
+    }
+
+    public void rotateGraphics(double degrees, double duration) {
+        double length = canoe.getHull().getLength();
+
+        // Calculate the pivot point (midpoint of the canoe graphic)
+        double pivotX = (hullGraphic.getEndX() + hullGraphic.getX()) / 2.0;
+        double pivotY = hullGraphic.getY();
+
+        // Collect all nodes to rotate
+        List<Node> allNodes = new ArrayList<>();
+        allNodes.add(hullGraphic.getNode());
+        allNodes.addAll(loadContainer.getChildren());
+
+        // Create timelines for each node
+        List<Timeline> timelines = new ArrayList<>();
+        for (Node node : allNodes) {
+            // Create and add a Rotate transform to each node
+            Rotate rotate = new Rotate(0, pivotX, pivotY);
+            node.getTransforms().add(rotate);
+
+            // Update the label using the Rotate transform's angle property
+            rotate.angleProperty().addListener((observable, oldValue, newValue) -> {
+                double angle = newValue.doubleValue();
+                GraphicsUtils.setProjectedLengthToLabel(axisLabelR, length, angle);
+            });
+
+            // Create the timeline
+            Timeline timeline = new Timeline(
+                    new KeyFrame(Duration.ZERO, new KeyValue(rotate.angleProperty(), rotate.getAngle())),
+                    new KeyFrame(Duration.seconds(duration), new KeyValue(rotate.angleProperty(), rotate.getAngle() + degrees))
+            );
+            timelines.add(timeline);
+        }
+
+        // Combine all timelines into a parallel transition
+        ParallelTransition parallelTransition = new ParallelTransition();
+        parallelTransition.getChildren().addAll(timelines);
+        parallelTransition.setOnFinished(e ->
+                GraphicsUtils.setProjectedLengthToLabel(axisLabelR, length, degrees)
+        );
+        parallelTransition.play();
     }
 
     /**
@@ -692,9 +936,9 @@ public class BeamController implements Initializable {
             // Update UI to new canoe
             renderGraphics();
             if (isBeam)
-                resetCanoeGraphic();
+                resetHullGraphic();
             else
-                setCanoeGraphicFromCanoe(canoe);
+                setHullGraphicFromHull(canoe.getHull());
             LoadTreeManagerService.buildLoadTreeView(this.canoe);
             axisLabelR.setText(String.format("%.2f m", this.canoe.getHull().getLength()));
             checkAndSetEmptyLoadTreeSettings();
@@ -703,16 +947,15 @@ public class BeamController implements Initializable {
 
     /**
      * Use the hull curvature of the canoe to set the canoe graphic
-     * @param canoe with teh hull curvature to create the graphic for
+     * @param hull with the desired curvature to create the graphic for
      */
-    public void setCanoeGraphicFromCanoe(Canoe canoe) {
-        Hull hull = canoe.getHull();
-        Rectangle rect = canoeGraphic.getEncasingRectangle();
+    public void setHullGraphicFromHull(Hull hull) {
+        Rectangle rect = hullGraphic.getEncasingRectangle();
         rect.setHeight(35);
-        setCanoeGraphic(new CurvedHullGraphic(
-                hull.getPiecedSideProfileCurve(), hull.getSection(), rect));
+        setHullGraphic(new CurvedHullGraphic(
+                hull.getPiecedSideProfileCurveShiftedAboveYAxis(), hull.getSection(), rect));
         beamContainer.getChildren().clear();
-        beamContainer.getChildren().add((Node) canoeGraphic);
+        beamContainer.getChildren().add((Node) hullGraphic);
         renderGraphics();
     }
 
@@ -743,7 +986,7 @@ public class BeamController implements Initializable {
      * Currently, this provides buttons to download and upload the Canoe object as JSON
      */
     public void initModuleToolBarButtons() {
-        LinkedHashMap<IconGlyphType, Consumer<ActionEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
+        LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
         iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.WRENCH, e -> openHullBuilderPopup());
@@ -771,7 +1014,7 @@ public class BeamController implements Initializable {
         JFXDepthManager.setDepth(loadsTreeView, 4);
 
         // Graphics init
-        resetCanoeGraphic();
+        resetHullGraphic();
 
         double maxGraphicHeight = 84;
         double minimumGraphicHeight = 14;
@@ -797,8 +1040,31 @@ public class BeamController implements Initializable {
         ControlUtils.initComboBoxesWithDefaultSelected(distributedMagnitudeComboBox, distributedLoadUnits, 0);
         ControlUtils.initComboBoxesWithDefaultSelected(canoeLengthComboBox, distanceUnits, 0);
 
-        TextField[] tfs = new TextField[]{pointMagnitudeTextField, pointLocationTextField, distributedMagnitudeTextField,
-                distributedIntervalTextFieldL, distributedIntervalTextFieldR, canoeLengthTextField};
-        for (TextField tf : tfs) {tf.setText("0.00");}
+        TextField[] zeroTextFields = new TextField[]{pointLocationTextField, distributedIntervalTextFieldL};
+        for (TextField tf : zeroTextFields) {tf.setText("0.00");}
+
+        TextField[] oneTextFields = new TextField[]{pointMagnitudeTextField, distributedMagnitudeTextField, distributedIntervalTextFieldR};
+        for (TextField tf : oneTextFields) {tf.setText("1.00");}
+
+        canoeLengthTextField.setText("5.00");
+
+        //Validation Highlighting for Canoe Length
+        canoeLengthTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            highlightInvalidInput(canoeLengthComboBox, canoeLengthTextField, 2, 10, 'd'); // Automatically highlight invalid input
+        });
+
+        canoeLengthComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            highlightInvalidInput(canoeLengthComboBox, canoeLengthTextField, 2, 10, 'd'); // Automatically highlight invalid input
+        });
+
+        //Precision Restricting Init
+        restrictPrecision(canoeLengthTextField);
+        restrictPrecision(pointMagnitudeTextField);
+        restrictPrecision(pointLocationTextField);
+        restrictPrecision(distributedMagnitudeTextField);
+        restrictPrecision(distributedIntervalTextFieldL);
+        restrictPrecision(distributedIntervalTextFieldR);
+
+
     }
 }

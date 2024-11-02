@@ -2,7 +2,7 @@ package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
-import com.wecca.canoeanalysis.models.function.FunctionSection;
+import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
@@ -22,17 +22,24 @@ import java.util.List;
  * A curve with shaded area between the curve and the y-axis
  */
 @Getter
-public class CurvedHullGraphicBase extends Group implements HullGraphic {
+public class CurvedGraphic extends Group implements FunctionGraphic {
 
     protected BoundedUnivariateFunction function;
-    protected FunctionSection section;
+    protected Section section;
     protected Rectangle encasingRectangle;
     protected Path linePath;
     protected Polygon area;
     protected boolean isColored;
     private final double maxSignedValue;
 
-    public CurvedHullGraphicBase(BoundedUnivariateFunction function, FunctionSection section, Rectangle encasingRectangle) {
+    /**
+     * Deals with mapping between function space and graphic space
+     * @param function the function definition in function space
+     * @param section the interval of the function in function space
+     * @param encasingRectangle the smallest region in function space that encloses all points in the function
+     *                          is mapped to this rectangle in graphics space
+     */
+    public CurvedGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
         super();
         this.function = function;
         this.section = section;
@@ -48,7 +55,7 @@ public class CurvedHullGraphicBase extends Group implements HullGraphic {
 
     public void draw() {
         // Partition the section
-        int numSamples = 1000;
+        int numSamples = 250;
         double step = (section.getRx() - section.getX()) / numSamples;
         double currentX = section.getX();
 
@@ -90,6 +97,11 @@ public class CurvedHullGraphicBase extends Group implements HullGraphic {
     }
 
     @Override
+    public double getY() {
+        return encasingRectangle.getY();
+    }
+
+    @Override
     public void recolor(boolean setColored) {
         this.isColored = setColored;
 
@@ -127,13 +139,8 @@ public class CurvedHullGraphicBase extends Group implements HullGraphic {
     }
 
     @Override
-    public FunctionSection getSection() {
+    public Section getSection() {
         return section;
-    }
-
-    @Override
-    public BoundedUnivariateFunction getFunction() {
-        return function;
     }
 
     @Override

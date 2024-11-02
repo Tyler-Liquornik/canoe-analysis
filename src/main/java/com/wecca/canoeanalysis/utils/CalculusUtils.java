@@ -1,8 +1,12 @@
 package com.wecca.canoeanalysis.utils;
 
+import Jama.Matrix;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
+import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
-import com.wecca.canoeanalysis.models.function.FunctionSection;
+import com.wecca.canoeanalysis.models.function.Section;
+import org.apache.commons.math3.analysis.BivariateFunction;
 import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
@@ -23,7 +27,7 @@ public class CalculusUtils
     public static BoundedUnivariateFunction differentiate(BoundedUnivariateFunction function)
     {
         double h = 1e-6; // Small value for h implies the limit as h -> 0
-        return x -> (function.value(x + h) - function.value(x - h)) / h;
+        return x -> (function.value(x + h) - function.value(x - h)) / (2 * h);
     }
 
     /**
@@ -67,11 +71,11 @@ public class CalculusUtils
      * @param endpoints the points to turn into sections (endpoints in terms of the formed intervals)
      * @return the list of sections
      */
-    public static List<FunctionSection> sectionsFromEndpoints(List<Double> endpoints) {
+    public static List<Section> sectionsFromEndpoints(List<Double> endpoints) {
         if (endpoints.size() < 2)
             throw new IllegalArgumentException("Cannot form a section without at least two points");
 
-        List<FunctionSection> sections = new ArrayList<>();
+        List<Section> sections = new ArrayList<>();
 
         for (int i = 0; i < endpoints.size() - 1; i++) {
             double curr = endpoints.get(i);
@@ -80,7 +84,7 @@ public class CalculusUtils
             if (next - curr < 0.01)
                 throw new IllegalArgumentException("All sections must be of width at least 0.01m");
 
-            sections.add(new FunctionSection(curr, next));
+            sections.add(new Section(curr, next));
         }
 
         return sections;
@@ -91,13 +95,13 @@ public class CalculusUtils
      * @param pieces the pieces to validate
      * @param sections the sections of the pieces
      */
-    public static void validatePiecewiseContinuity(List<BoundedUnivariateFunction> pieces, List<FunctionSection> sections) {
+    public static void validatePiecewiseContinuity(List<BoundedUnivariateFunction> pieces, List<Section> sections) {
         if (sections.size() != pieces.size())
             throw new IllegalArgumentException("Unequal amount of sections and pieces");
 
         for (int i = 1; i < pieces.size(); i++) {
-            FunctionSection prevSec = sections.get(i - 1);
-            FunctionSection currSec = sections.get(i);
+            Section prevSec = sections.get(i - 1);
+            Section currSec = sections.get(i);
             if (prevSec.getRx() != currSec.getX())
                 throw new IllegalArgumentException("Sections do not form a continuous interval.");
         }
@@ -113,52 +117,53 @@ public class CalculusUtils
      * @param pieces the pieces to validate
      * @param sections the sections of the pieces
      */
-    public static void validatePiecewiseAsUpOrDown(List<BoundedUnivariateFunction> pieces, List<FunctionSection> sections) {
-//        UnivariateSolver solver = new BrentSolver(1e-10, 1e-14);
-//        int numSamples = 1000;
-//
-//        boolean allNonNegative = true;
-//        boolean allNonPositive = true;
-//
-//        for (int p = 0; p < pieces.size(); p++) {
-//            BoundedUnivariateFunction piece = pieces.get(p);
-//            FunctionSection section = sections.get(p);
-//
-//            // Find zeros within the section
-//            double step = section.getLength() / (double) numSamples;
-//            List<Double> zeros = new ArrayList<>();
-//            double currentX = section.getX();
-//            for (int i = 1; i <= numSamples; i++) {
-//                double nextX = section.getX() + i * step;
-//                try {
-//                    double zero = solver.solve(1000, piece, currentX, nextX);
-//                    if (!Double.isNaN(zero)) {
-//                        zeros.add(zero);
-//                    }
-//                } catch (Exception ignored) {}
-//                currentX = nextX;
-//            }
-//
-//            double tolerance = 1e-3;
-//            for (int i = 0; i < zeros.size() - 1; i++) {
-//                double midpoint = (zeros.get(i) + zeros.get(i + 1)) / 2;
-//                double value = piece.value(midpoint);
-//                if (value < -tolerance)
-//                    allNonNegative = false;
-//                if (value > tolerance)
-//                    allNonPositive = false;
-//            }
-//        }
-//
-//        if (!(allNonNegative || allNonPositive))
-//            throw new IllegalArgumentException("The piecewise function must be entirely non-negative or non-positive.");
+    @Traceable
+    public static void validatePiecewiseAsUpOrDown(List<BoundedUnivariateFunction> pieces, List<Section> sections) {
+        UnivariateSolver solver = new BrentSolver(1e-10, 1e-14);
+        int numSamples = 1000;
+
+        boolean allNonNegative = true;
+        boolean allNonPositive = true;
+
+        for (int p = 0; p < pieces.size(); p++) {
+            BoundedUnivariateFunction piece = pieces.get(p);
+            Section section = sections.get(p);
+
+            // Find zeros within the section
+            double step = section.getLength() / (double) numSamples;
+            List<Double> zeros = new ArrayList<>();
+            double currentX = section.getX();
+            for (int i = 1; i <= numSamples; i++) {
+                double nextX = section.getX() + i * step;
+                try {
+                    double zero = solver.solve(1000, piece, currentX, nextX);
+                    if (!Double.isNaN(zero)) {
+                        zeros.add(zero);
+                    }
+                } catch (Exception ignored) {}
+                currentX = nextX;
+            }
+
+            double tolerance = 1e-2;
+            for (int i = 0; i < zeros.size() - 1; i++) {
+                double midpoint = (zeros.get(i) + zeros.get(i + 1)) / 2;
+                double value = piece.value(midpoint);
+                if (value < -tolerance)
+                    allNonNegative = false;
+                if (value > tolerance)
+                    allNonPositive = false;
+            }
+        }
+
+        if (!(allNonNegative || allNonPositive))
+            throw new IllegalArgumentException("The piecewise function must be entirely non-negative or non-positive.");
     }
 
     /**
      * Validates that the distribution is continuous over the section within a specified tolerance.
      * Note: tolerance and numSamples may need to be tweaked to avoid false invalidations
      */
-    public static void validateContinuity(BoundedUnivariateFunction function, FunctionSection section) {
+    public static void validateContinuity(BoundedUnivariateFunction function, Section section) {
         // Note: it's very possible this can cause false negatives and these numbers need to be tweaked in magnitude
         // It completely depends on how fast the function grows
         double tolerance = 1e-2;
@@ -184,5 +189,67 @@ public class CalculusUtils
     public static double roundXDecimalDigits(double num, int numDigits) {
         double factor = Math.pow(10, numDigits);
         return Math.round(num * factor) / factor;
+    }
+
+    /**
+     * @param x value of the first variable to evaluate the Jacobian for
+     * @param y value of the second variable to evaluate the Jacobian for
+     * @param f1  The first equation in the system, f1(x, y)
+     * @param f2  The first equation in the system, f2(x, y)
+     * @return the Jacobian matrix J for the system of equations [f1(x, y) = 0, f2(x, y) = 0] in R^2
+     */
+    public static Matrix evaluateR2Jacobian(double x, double y, BivariateFunction f1, BivariateFunction f2) {
+        // Partial derivatives of f1 and f2
+        BoundedUnivariateFunction df1_dx = differentiate(X -> f1.value(X, y));
+        BoundedUnivariateFunction df1_dy = differentiate(Y -> f1.value(x, Y));
+        BoundedUnivariateFunction df2_dx = differentiate(X -> f2.value(X, y));
+        BoundedUnivariateFunction df2_dy = differentiate(Y -> f2.value(x, Y));
+
+        // Construct the Jacobian
+        Matrix jacobian = new Matrix(2, 2);
+        jacobian.set(0, 0, df1_dx.value(x)); // ∂f1 / ∂x evaluated at x
+        jacobian.set(0, 1, df1_dy.value(y)); // ∂f1 / ∂y evaluated at y
+        jacobian.set(1, 0, df2_dx.value(x)); // ∂f2 / ∂x evaluated at x
+        jacobian.set(1, 1, df2_dy.value(y)); // ∂f2 / ∂y evaluated at y
+        return jacobian;
+    }
+
+    /**
+     * Creates a composite function from a list of bounded univariate functions
+     * along with their corresponding sections.
+     * Shifts the result so that its minimum y value is at y = 0.
+     *
+     * @param functions The list of bounded univariate functions.
+     * @param sections  The list of sections that correspond to each function.
+     * @return The shifted composite function.
+     */
+    public static BoundedUnivariateFunction createCompositeFunctionShiftedPositive(List<BoundedUnivariateFunction> functions, List<Section> sections) {
+        if (functions.size() != sections.size())
+            throw new IllegalArgumentException("The number of functions must match the number of sections.");
+
+        // Create the composite function that checks each function's section before evaluation
+        BoundedUnivariateFunction f = x -> {
+            for (int i = 0; i < functions.size(); i++) {
+                BoundedUnivariateFunction func = functions.get(i);
+                Section section = sections.get(i);
+                if (section.getX() <= x && x <= section.getRx())
+                    return func.value(x);
+            }
+            throw new IllegalArgumentException("x is out of bounds of the provided functions.");
+        };
+
+        Section fullSection = new Section(sections.getFirst().getX(), sections.getLast().getRx());
+        return x -> f.value(x) - f.getMinValue(fullSection);
+    }
+
+    /**
+     * Essentially an overload of createCompositeFunctionShiftedPositive
+     * @param functions the cubic bezier functions which have the section encoded into their constructions points
+     * @return the shifted bezier spline based function.
+     */
+    public static BoundedUnivariateFunction createBezierSplineFunctionShiftedPositive(List<CubicBezierFunction> functions) {
+        List<BoundedUnivariateFunction> functionsMapped = functions.stream().map(CubicBezierFunction::getFunction).toList();
+        List<Section> sections = functions.stream().map(f -> new Section(f.getX1(), f.getX2())).toList();
+        return createCompositeFunctionShiftedPositive(functionsMapped, sections);
     }
 }

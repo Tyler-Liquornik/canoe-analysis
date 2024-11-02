@@ -5,6 +5,7 @@ import com.jfoenix.controls.JFXSnackbar;
 import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.jfoenix.controls.JFXSnackbarLayout;
+import com.wecca.canoeanalysis.components.controls.IconButton;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.services.ResourceManagerService;
 import com.wecca.canoeanalysis.services.YamlMarshallingService;
@@ -208,35 +209,26 @@ public class MainController implements Initializable {
      * Set the toolbar buttons based on the glyphs (icon) and respective and onClick functions
      * @param iconGlyphToFunctionMap a map of <Button Icon : Button function>
      */
-    public void setIconToolBarButtons(LinkedHashMap<IconGlyphType, Consumer<ActionEvent>> iconGlyphToFunctionMap) {
+    public void setIconToolBarButtons(LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> iconGlyphToFunctionMap) {
         List<Button> buttons = new ArrayList<>();
-        for (Map.Entry<IconGlyphType, Consumer<ActionEvent>> entry : iconGlyphToFunctionMap.entrySet()) {
-            Button button = ControlUtils.getIconButton(entry.getKey(), entry.getValue(), 25, false);
+        for (Map.Entry<IconGlyphType, Consumer<MouseEvent>> entry : iconGlyphToFunctionMap.entrySet()) {
+            Button button = IconButton.getToolbarButton(entry.getKey(), entry.getValue());
             buttons.add(button);
         }
         setToolBarButtons(buttons);
     }
 
     public void setToolBarButtons(List<Button> buttons) {
-        double buttonHeight = 34.0; // 1px difference is on purpose so the hover fill doesn't stick out of the toolbar
-        double buttonWidth = 35.0;
+        double buttonWidth = buttons.getFirst().prefWidth(-1);
 
         // Account for space taken up by minimize and close window buttons and padding
-        double buttonX = toolBarPane.getWidth() - buttonWidth * 2 - AnchorPane.getRightAnchor(toolBarPane.getChildren().getLast());
+        double buttonX = toolBarPane.getWidth() - buttonWidth * 2 -
+                AnchorPane.getRightAnchor(toolBarPane.getChildren().getLast());
         double buttonY = 0.0;
 
         moduleToolBarButtons = buttons;
-
         for (Button button : moduleToolBarButtons) {
             buttonX = buttonX - buttonWidth;
-
-            button.getStyleClass().add("primary");
-            button.setPrefHeight(buttonHeight);
-            button.setPrefWidth(buttonWidth);
-            button.setMaxHeight(buttonHeight);
-            button.setMaxWidth(buttonWidth);
-            button.setMinHeight(buttonHeight);
-            button.setMinWidth(buttonWidth);
             button.setLayoutX(buttonX);
             button.setLayoutY(buttonY);
         }
@@ -267,6 +259,9 @@ public class MainController implements Initializable {
         }
     }
 
+    /**
+     * Remove all toolbar buttons
+     */
     public void resetToolBarButtons() {
         if (!moduleToolBarButtons.isEmpty()) {
             // Extra index skips the hamburger which is always first

@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis.models.function;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import javafx.geometry.Point2D;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -12,6 +13,13 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
 import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.univariate.BrentOptimizer;
+import org.apache.commons.math3.optim.univariate.SearchInterval;
+import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
+import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * A Cubic Bézier curve that passes the vertical line test, therefore can be represented as a function.
@@ -104,13 +112,42 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
      * @param x The x-coordinate for which we want to find the corresponding parameter 't'.
      * @return The value of the parameter 't' (in the range [0, 1]) where the x-coordinate of the Bézier curve matches the input 'x'.
      */
-    private double getT(double x) {
+    private double getT(double x)
+    {
+        // Ensure x is within the range of the curve
+        double tolerance = 1e-3;
+        if (x < getX() - tolerance || x > getRx() + tolerance)
+            throw new IllegalArgumentException("x = " + x + " is out of bounds for this Bézier curve");
+
+        // Solve for t given x, should be one t per x since the curve passes the vertical line test
         UnivariateFunction xFunc = t -> getCubicBezierCurve2D().point(t).x() - x;
         try {
             return solver.solve(MaxEval.unlimited().getMaxEval(), xFunc, T_MIN, T_MAX);
         } catch (Exception e) {
             throw new RuntimeException("Failed to solve for t given x = " + x, e);
         }
+    }
+
+
+
+    /**
+     * @return x, the left endpoint of the section which this curve is on
+     */
+    @JsonIgnore
+    public double getX() {
+        double xAtTMin = getCubicBezierCurve2D().point(T_MIN).x();
+        double xAtTMax = getCubicBezierCurve2D().point(T_MAX).x();
+        return Math.min(xAtTMin, xAtTMax);
+    }
+
+    /**
+     * @return rX, the left endpoint of the section which this curve is on
+     */
+    @JsonIgnore
+    public double getRx() {
+        double xAtTMin = getCubicBezierCurve2D().point(T_MIN).x();
+        double xAtTMax = getCubicBezierCurve2D().point(T_MAX).x();
+        return Math.max(xAtTMin, xAtTMax);
     }
 
     /**
@@ -138,5 +175,25 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
 
         if (!xIsIncreasingWithT && !xIsDecreasingWithT)
             throw new IllegalArgumentException("The Bézier curve fails the vertical line test and cannot be represented as a function.");
+    }
+
+    /**
+     * @return a list of Point2D objects for each of the knot and control points
+     */
+    public List<Point2D> getKnotAndControlPoints() {
+        Point2D p1 = new Point2D(x1, y1);
+        Point2D cp1 = new Point2D(controlX1, controlY1);
+        Point2D cp2 = new Point2D(controlX2, controlY2);
+        Point2D p2 = new Point2D(x2, y2);
+        return Arrays.asList(p1, cp1, cp2, p2);
+    }
+
+    /**
+     * @return a list of Point2D objects for each of the knot and control points
+     */
+    public List<Point2D> getKnotPoints() {
+        Point2D p1 = new Point2D(x1, y1);
+        Point2D p2 = new Point2D(x2, y2);
+        return Arrays.asList(p1, p2);
     }
 }

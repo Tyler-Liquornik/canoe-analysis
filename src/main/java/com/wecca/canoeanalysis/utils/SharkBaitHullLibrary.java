@@ -102,13 +102,62 @@ public class SharkBaitHullLibrary {
     }
 
     /**
+     * @deprecated by generateSharkBaitHullScaledFromBezier
+     * Note: THIS IS A DIFFERENT VERSION OF THE OLD MODEL
+     * Generate the hull for 2024's Shark Bait canoe scaled to the specified length
+     * This serves as a placeholder for the user defining their own hull in the hull builder until that is developed
+     *
+     * @param length the length to scale to
+     * @return the scaled hull
+     */
+    public static Hull generateSharkBaitHullScaledFromParabolasC1Smooth(double length) {
+
+        // The two systems solved for parameters:
+        // \frac{1}{67t}\left(\frac{1}{2}t-3t\right)^2-0.4t=a\left(\frac{1}{2}t-ht\right)^2-kt,\:\frac{2}{67t}\left(\frac{1}{2}t-3t\right)=2a\left(\frac{1}{2}t-ht\right),\:ah^2t^2-kt=0
+        // \frac{1}{67t}\left(\frac{11}{2}t-3t\right)^2-0.4t=a\left(\frac{11}{2}t-ht\right)^2-kt,\:\frac{2}{67t}\left(\frac{11}{2}t-3t\right)=2a\left(\frac{11}{2}t-ht\right),\:a\left(6t-ht\right)^2-kt=0
+
+        // Scale compared to the actual length of Shark Bait
+        scalingFactor = length / SHARK_BAIT_LENGTH;
+
+        // Define hull shape
+        double aL = (361.0 / (335.0 * scalingFactor));
+        double hL = 193.0 / 361.0;
+        double kL = 37249.0 / 120935.0;
+        VertexFormParabolaFunction hullLeftEdgeCurve = new VertexFormParabolaFunction(aL, hL * scalingFactor, -kL * scalingFactor);
+
+        double aR = aL;
+        double hR = 1973.0 / 361.0;
+        double kR = kL;
+        VertexFormParabolaFunction hullRightEdgeCurve = new VertexFormParabolaFunction(aR, hR * scalingFactor, -kR * scalingFactor);
+
+        double aM = 1.0 / (67.0 * scalingFactor);
+        double hM = 3.0 * scalingFactor;
+        double kM = -0.4 * scalingFactor;
+        VertexFormParabolaFunction hullMidProfileCurve = new VertexFormParabolaFunction(aM, hM, kM);
+
+        double a1 = - 7.0 / (180.0 * scalingFactor);
+        double h1 = 3.0 * scalingFactor;
+        double k1 = 0.35 * scalingFactor;
+        VertexFormParabolaFunction hullTopCurve = new VertexFormParabolaFunction(a1, h1, k1);
+
+        List<HullSection> sections = new ArrayList<>();
+        double thickness = 0.013;
+        sections.add(new HullSection(hullLeftEdgeCurve, hullTopCurve, 0.0, 0.5 * scalingFactor, thickness * scalingFactor, true));
+        sections.add(new HullSection(hullMidProfileCurve, hullTopCurve, 0.5 * scalingFactor, 5.5 * scalingFactor, thickness * scalingFactor, false));
+        sections.add(new HullSection(hullRightEdgeCurve, hullTopCurve, 5.5 * scalingFactor, 6.0 * scalingFactor, thickness * scalingFactor, true));
+
+        return new Hull(1056, 28.82, sections);
+    }
+
+    /**
+     * @deprecated by generateSharkBaitHullScaledFromBezier, generateSharkBaitHullScaledFromParabolasC1Smooth
      * Note: THIS IS THE OLD MODEL
      * Generate the hull for 2024's Shark Bait canoe scaled to the specified length
      * This serves as a placeholder for the user defining their own hull in the hull builder until that is developed
      * @param length the length to scale to
      * @return the scaled hull
      */
-    public static Hull generateSharkBaitHullScaledFromParabolas(double length) {
+    public static Hull generateSharkBaitHullScaledFromParabolasC0Smooth(double length) {
         // Scale compared to the actual length of Shark Bait
         scalingFactor = length / SHARK_BAIT_LENGTH;
 
