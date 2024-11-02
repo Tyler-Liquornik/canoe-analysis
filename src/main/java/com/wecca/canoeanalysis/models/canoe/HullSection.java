@@ -254,6 +254,22 @@ public class HullSection extends Section
         return 2 * optimizer.optimize(MaxEval.unlimited(), objectiveFunction, searchInterval).getValue();
     }
 
+    public double getHeight()
+    {
+        // Find the sections minimum
+        // Function is negated as BrentOptimizer looks for the maximum
+        UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(x -> -this.sideProfileCurve.value(x));
+        SearchInterval searchInterval = new SearchInterval(this.getX(), this.getRx());
+        UnivariatePointValuePair result = (new BrentOptimizer(1e-10, 1e-14)).optimize(
+                MaxEval.unlimited(),
+                objectiveFunction,
+                searchInterval
+        );
+
+        return result.getValue();
+
+    }
+
     /**
      * Validates that the hull shape function is non-positive on its domain [start, end]
      * This convention allows waterline height y = h (downward is +y)

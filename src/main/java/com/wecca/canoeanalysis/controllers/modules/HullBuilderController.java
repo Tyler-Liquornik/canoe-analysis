@@ -174,7 +174,7 @@ public class HullBuilderController implements Initializable
         }
 
         if(sectionPropertiesSelected) //sets all the section properties ( if that is what the user clicked on, other option is Canoe Properties)
-            setSectionProperties(hull.getMaxHeight(),selectedHullSection.getVolume(), selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx(),false);
+            setSectionProperties(selectedHullSection.getHeight(),selectedHullSection.getVolume(), selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx(),false);
 
         previousPressedBefore = true;
     }
@@ -216,7 +216,7 @@ public class HullBuilderController implements Initializable
 
 
         if(sectionPropertiesSelected)
-            setSectionProperties(hull.getMaxHeight(), selectedHullSection.getVolume(),selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx(),false);
+            setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx(),false);
 
         previousPressedBefore = false;
 
@@ -288,10 +288,10 @@ public class HullBuilderController implements Initializable
             String interval = "("+x+","+rx+")";
             this.inter.setText(interval);
 
-            String volumeFormated = String.format("%.2fm",volume);
+            String volumeFormated = String.format("%.2f m^3",volume);
             this.volume.setText(volumeFormated);
 
-            String massFormated = String.format("%.2fm",mass);
+            String massFormated = String.format("%.2f kg",mass);
             this.mass.setText(massFormated);
 
         }
@@ -325,11 +325,11 @@ public class HullBuilderController implements Initializable
             PropertiesType.setText("Section Properties");
             try
             {
-                setSectionProperties(hull.getMaxHeight(), selectedHullSection.getVolume(),selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx(),false);
+                setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx(),false);
             }
             catch (Exception ex)
             {
-                setSectionProperties(hull.getMaxHeight(), selectedHullSection.getVolume(),selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx(),true);
+                setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx(),true);
             }
         }
 
