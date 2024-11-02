@@ -25,37 +25,24 @@ import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class HullBuilderController implements Initializable
-{
-    private boolean sectionPropertiesSelected = true;
-    @FXML
-    private Label inter;
-
-    @FXML
-    private Label height;
-
-    @FXML
-    private Label volume;
-
-    @FXML
-    private Label mass;
-
-    @FXML
-    private Label PropertiesType;
-
-    private boolean previousPressedBefore;
-    private ListIterator<HullSection> listOfHullSections;
-    private HullSection selectedHullSection;
-    @Setter
-    private static MainController mainController;
+public class HullBuilderController implements Initializable {
 
     @FXML
     private AnchorPane hullViewAnchorPane, curveParameterizationAnchorPane, propertiesAnchorPane;
 
+    @FXML
+    private Label intervalLabel, heightLabel, volumeLabel, massLabel, propertiesPanelTitleLabel;
+
+    private boolean sectionPropertiesSelected = true;
+    private boolean previousPressedBefore;
+    private ListIterator<HullSection> listOfHullSections;
+    private HullSection selectedHullSection;
+
+    @Setter
+    private static MainController mainController;
     @Getter
     private Hull hull;
-    @Getter
-    @Setter
+    @Getter @Setter
     private CubicBezierSplineHullGraphic hullGraphic;
     private AnchorPane hullGraphicPane;
 
@@ -117,7 +104,7 @@ public class HullBuilderController implements Initializable
      * Set the side view hull to build
      *
      * @param hull to set from
-     *             TODO
+     * TODO
      */
     public void setTopViewHullGraphic(Hull hull) {
     }
@@ -126,7 +113,7 @@ public class HullBuilderController implements Initializable
      * Set the front view hull to build
      *
      * @param hull to set from
-     *             TODO
+     * TODO
      */
     public void setFrontViewHullGraphic(Hull hull) {
     }
@@ -134,92 +121,105 @@ public class HullBuilderController implements Initializable
     /**
      * Highlight the previous section to the left to view and edit (wraps w modulo)
      */
-    public void selectPreviousHullSection(MouseEvent e)
-    {
+    public void selectPreviousHullSection(MouseEvent e) {
         // Entering this method indicates that the "previous" button was clicked.
         // This try block checks if the "next" button was clicked before the "previous" button.
         // If so, and the iterator is, for example, at index 3, we’ll need to call the iterator’s `previous` method twice
         // to correctly move it back to index 2.
         // This would be the first call of the previous method
-        try
-        {
+        try {
             if(!previousPressedBefore)
-            {
                 selectedHullSection = listOfHullSections.previous();
-            }
         }
         catch(Exception ignored) {}
 
         hullGraphic.colorPreviousBezierPointGroup();
 
         // Check if we're at the start or if previous index is -1 (no valid previous element)
-        if (!listOfHullSections.hasPrevious())
-        {
+        if (!listOfHullSections.hasPrevious()) {
             // Reset to the end of the list by iterating through all elements
-            while (listOfHullSections.hasNext())
-            {
+            while (listOfHullSections.hasNext()) {
                 selectedHullSection = listOfHullSections.next();
-
             }
-
-            // Since the "next" method was called to reach the end, we need to call "previous" once to properly
-            // set up for any additional "previous" calls that follow. This prepares the iterator position correctly.
-            selectedHullSection = listOfHullSections.previous();
         }
-        else
-        {
-            selectedHullSection = listOfHullSections.previous();
-
-
-        }
-
+        // Since the "next" method was called to reach the end, we need to call "previous" once to properly
+        // set up for any additional "previous" calls that follow. This prepares the iterator position correctly.
+        selectedHullSection = listOfHullSections.previous();
         if(sectionPropertiesSelected) //sets all the section properties ( if that is what the user clicked on, other option is Canoe Properties)
             setSectionProperties(selectedHullSection.getHeight(),selectedHullSection.getVolume(), selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx(),false);
-
         previousPressedBefore = true;
     }
 
     /**
      * Highlight the next section to the right to view and edit (wraps w modulo)
      */
-    public void selectNextHullSection(MouseEvent e)
-    {
+    public void selectNextHullSection(MouseEvent e) {
         // This if block checks if the "previous" button was clicked before the "next" button.
         // If so, and the iterator is, for example, at index 2, we’ll need to call the iterator’s `next` method twice
         // to correctly move it forward to index 3.
         // This would be the first call of the next method
-
         if(previousPressedBefore)
-        {
             selectedHullSection = listOfHullSections.next();
-        }
-
         hullGraphic.colorNextBezierPointGroup();
 
         // Check if we're at the end or if next index is null
-      if (!listOfHullSections.hasNext())
-        {
+        if (!listOfHullSections.hasNext()) {
             // Reset to the start of the list by iterating through all elements
-            while (listOfHullSections.hasPrevious())
-            {
+            while (listOfHullSections.hasPrevious()) {
                 selectedHullSection = listOfHullSections.previous();
             }
-
-            // Since the "previous" method was called to reach the end, we need to call "next" once to properly
-            // set up for any additional "next" calls that follow. This prepares the iterator position correctly.
-            selectedHullSection = listOfHullSections.next();
         }
-        else
-        {
-            selectedHullSection = listOfHullSections.next();
-        }
-
+        // Since the "previous" method was called to reach the end, we need to call "next" once to properly
+        // set up for any additional "next" calls that follow. This prepares the iterator position correctly.
+        selectedHullSection = listOfHullSections.next();
 
         if(sectionPropertiesSelected)
             setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx(),false);
-
         previousPressedBefore = false;
+    }
 
+    /**
+     * Sets up all section properties with corresponding attributes
+     */
+    public void setSectionProperties(double height, double volume, double mass, double x, double rx,boolean error) {
+        if(!error) {
+            String heightInfo = String.format("%.2f m",height);
+            this.heightLabel.setText(heightInfo);
+            String interval = "("+x+" m, "+rx+" m)";
+            this.intervalLabel.setText(interval);
+            String volumeFormated = String.format("%.2f m^3",volume);
+            this.volumeLabel.setText(volumeFormated);
+            String massFormated = String.format("%.2f kg",mass);
+            this.massLabel.setText(massFormated);
+        }
+        // Scenario in which no section is selected
+        else {
+            String heightInfo = String.format("%.2fm",hull.getMaxHeight());
+            this.heightLabel.setText(heightInfo);
+            String interval = "N/A";
+            this.intervalLabel.setText(interval);
+            String volumeFormated = "N/A";
+            this.volumeLabel.setText(volumeFormated);
+            String massFormated = "N/A";
+            this.massLabel.setText(massFormated);
+        }
+    }
+
+    public void switchButton(MouseEvent e) {
+        if(sectionPropertiesSelected) {
+            sectionPropertiesSelected = false;
+            propertiesPanelTitleLabel.setText("Canoes Properties");
+            setSectionProperties(hull.getMaxHeight(), hull.getTotalVolume(),hull.getMass(), 0, hull.getLength(),false);
+        }
+        else {
+            sectionPropertiesSelected = true;
+            propertiesPanelTitleLabel.setText("Section Properties");
+            try {
+                setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx(),false);
+            } catch (Exception ex) {
+                setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx(),true);
+            }
+        }
     }
 
     @Override
@@ -274,66 +274,5 @@ public class HullBuilderController implements Initializable
 
 
         listOfHullSections = hull.getHullSections().listIterator();
-
-
     }
-
-    public void setSectionProperties(double height, double volume, double mass, double x, double rx,boolean error) //sets up all section properties with corresponding attributes
-    {
-        if(!error)
-        {
-            String heightInfo = String.format("%.2fm",height);
-            this.height.setText(heightInfo);
-
-            String interval = "("+x+","+rx+")";
-            this.inter.setText(interval);
-
-            String volumeFormated = String.format("%.2f m^3",volume);
-            this.volume.setText(volumeFormated);
-
-            String massFormated = String.format("%.2f kg",mass);
-            this.mass.setText(massFormated);
-
-        }
-        else // Scenario in which no section is selected
-        {
-            String heightInfo = String.format("%.2fm",hull.getMaxHeight());
-            this.height.setText(heightInfo);
-
-            String interval = "N/A";
-            this.inter.setText(interval);
-
-            String volumeFormated = "N/A";
-            this.volume.setText(volumeFormated);
-
-            String massFormated = "N/A";
-            this.mass.setText(massFormated);
-        }
-    }
-
-    public void switchButton(MouseEvent e)
-    {
-        if(sectionPropertiesSelected)
-        {
-            sectionPropertiesSelected = false;
-            PropertiesType.setText("Canoes Properties");
-            setSectionProperties(hull.getMaxHeight(), hull.getTotalVolume(),hull.getMass(), 0, hull.getLength(),false);
-        }
-        else
-        {
-            sectionPropertiesSelected = true;
-            PropertiesType.setText("Section Properties");
-            try
-            {
-                setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx(),false);
-            }
-            catch (Exception ex)
-            {
-                setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx(),true);
-            }
-        }
-
-
-    }
-
 }
