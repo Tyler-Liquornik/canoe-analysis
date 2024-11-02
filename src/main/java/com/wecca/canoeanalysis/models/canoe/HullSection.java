@@ -222,6 +222,8 @@ public class HullSection extends Section
         return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getMassDistributionFunction(), x, rx);
     }
 
+
+
     /**
      * Defines a function w(x) which models the load of the hull section along its length (negative for download load)
      * @return the function w(x)
@@ -252,6 +254,22 @@ public class HullSection extends Section
         return 2 * optimizer.optimize(MaxEval.unlimited(), objectiveFunction, searchInterval).getValue();
     }
 
+    public double getHeight()
+    {
+        // Find the sections minimum
+        // Function is negated as BrentOptimizer looks for the maximum
+        UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(x -> -this.sideProfileCurve.value(x));
+        SearchInterval searchInterval = new SearchInterval(this.getX(), this.getRx());
+        UnivariatePointValuePair result = (new BrentOptimizer(1e-10, 1e-14)).optimize(
+                MaxEval.unlimited(),
+                objectiveFunction,
+                searchInterval
+        );
+
+        return result.getValue();
+
+    }
+
     /**
      * Validates that the hull shape function is non-positive on its domain [start, end]
      * This convention allows waterline height y = h (downward is +y)
@@ -279,5 +297,10 @@ public class HullSection extends Section
             throw new IllegalArgumentException("Hull shape function must be positive on its domain [start, end]");
         else if (!positive && maxValue > 0)
             throw new IllegalArgumentException("Hull shape function must be non-positive on its domain [start, end]");
+    }
+
+    @Override
+    public String toString() {
+        return "We In";
     }
 }

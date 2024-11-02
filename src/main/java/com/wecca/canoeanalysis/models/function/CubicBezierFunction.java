@@ -13,6 +13,10 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
 import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.univariate.BrentOptimizer;
+import org.apache.commons.math3.optim.univariate.SearchInterval;
+import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
+import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
 
 import java.util.Arrays;
 import java.util.List;
@@ -108,7 +112,8 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
      * @param x The x-coordinate for which we want to find the corresponding parameter 't'.
      * @return The value of the parameter 't' (in the range [0, 1]) where the x-coordinate of the Bézier curve matches the input 'x'.
      */
-    private double getT(double x) {
+    private double getT(double x)
+    {
         // Ensure x is within the range of the curve
         double tolerance = 1e-3;
         if (x < getX() - tolerance || x > getRx() + tolerance)
@@ -122,6 +127,8 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
             throw new RuntimeException("Failed to solve for t given x = " + x, e);
         }
     }
+
+
 
     /**
      * @return x, the left endpoint of the section which this curve is on
