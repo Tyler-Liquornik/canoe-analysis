@@ -46,26 +46,28 @@ public class CalculusUtils
     }
 
     /**
-     * Converts polar coordinates to Cartesian coordinates.
+     * Converts polar coordinates to Cartesian coordinates with respect to a given origin.
      * @param polarPoint the point in polar form where x represents the radius (r) and y represents the angle (theta) in degrees
-     * @return a Point2D in Cartesian form (x, y)
+     * @param origin the reference point to use as the origin
+     * @return a Point2D in Cartesian form (x, y) relative to the origin
      */
-    public static Point2D toCartesian(Point2D polarPoint) {
+    public static Point2D toCartesian(Point2D polarPoint, Point2D origin) {
         double r = polarPoint.getX();
         double theta = Math.toRadians(polarPoint.getY());
-        double x = r * Math.cos(theta);
-        double y = r * Math.sin(theta);
+        double x = r * Math.cos(theta) + origin.getX();
+        double y = r * Math.sin(theta) + origin.getY();
         return new Point2D(x, y);
     }
 
     /**
-     * Converts Cartesian coordinates to polar coordinates.
-     * @param cartesianPoint the point in cartesian form (x, y)
+     * Converts Cartesian coordinates to polar coordinates with respect to a given origin.
+     * @param cartesianPoint the point in Cartesian form (x, y)
+     * @param origin the reference point to use as the origin
      * @return a Point2D where x represents the radius (r) and y represents the angle (theta) in degrees
      */
-    public static Point2D toPolar(Point2D cartesianPoint) {
-        double x = cartesianPoint.getX();
-        double y = cartesianPoint.getY();
+    public static Point2D toPolar(Point2D cartesianPoint, Point2D origin) {
+        double x = cartesianPoint.getX() - origin.getX();
+        double y = cartesianPoint.getY() - origin.getY();
         double r = Math.sqrt(x * x + y * y);
         double theta = Math.toDegrees(Math.atan2(y, x));
         return new Point2D(r, theta);

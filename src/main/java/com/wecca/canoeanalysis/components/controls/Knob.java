@@ -123,8 +123,8 @@ public class Knob extends Slider {
                 @Override
                 public void handle(long l) {
                     if (!isLocked()) {
-                        if (itsAPlusHold && (System.currentTimeMillis() - currentTime) > 200) increaseValue(0.3);
-                        if (itsAMinusHold && (System.currentTimeMillis() - currentTime) > 200) decreaseValue(0.3);
+                        if (itsAPlusHold && (System.currentTimeMillis() - currentTime) > 200) changeValue(0.5 * 0.01 * (getMax() - getMin()));
+                        if (itsAMinusHold && (System.currentTimeMillis() - currentTime) > 200) changeValue(-0.5 * 0.01 * (getMax() - getMin()));
                     }
                 }
             };
@@ -183,8 +183,8 @@ public class Knob extends Slider {
          */
         private void plusButtonReleased(MouseEvent event) {
             itsAPlusHold = false;
-            if((System.currentTimeMillis() - currentTime)<200)
-                increaseValue(1);
+            if ((System.currentTimeMillis() - currentTime) < 200)
+                changeValue((getMax() - getMin()) * 0.01);
             animationTimer.stop();
         }
 
@@ -195,8 +195,8 @@ public class Knob extends Slider {
          */
         private void minusButtonReleased(MouseEvent event) {
             itsAMinusHold = false;
-            if((System.currentTimeMillis() - currentTime)<200)
-                decreaseValue(1);
+            if ((System.currentTimeMillis() - currentTime) < 200)
+                changeValue(-(getMax() - getMin()) * 0.01);
             animationTimer.stop();
         }
 
@@ -220,21 +220,19 @@ public class Knob extends Slider {
             animationTimer.start();
         }
 
-
         /**
-         * Decrease the knob's value
+         * Change the knob's value by a specified amount.
+         * @param delta the amount to change the value (positive to increase, negative to decrease).
          */
-        private void decreaseValue(double dec) {
-            if (getValue() > getMin())
-                setValue(getValue() - dec);
-        }
+        private void changeValue(double delta) {
+            double newValue = getValue() + delta;
 
-        /**
-         * Increase the knob's value
-         */
-        private void increaseValue(double inc) {
-            if (getValue() < getMax())
-                setValue(getValue() + inc);
+            // Clamp the new value within the bounds
+            if (newValue < getMin())
+                newValue = getMin();
+            else if (newValue > getMax())
+                newValue = getMax();
+            setValue(newValue);
         }
 
         /**
@@ -328,6 +326,7 @@ public class Knob extends Slider {
     }
 
     // TODO: Really need to refactor Knob, this is bad duplicated code
+    // Issue had without Skin extending class where it would go back to a slider
 
     /**
      * Lock control of the knob

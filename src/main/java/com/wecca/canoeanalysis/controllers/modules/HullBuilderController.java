@@ -174,11 +174,13 @@ public class HullBuilderController implements Initializable {
      * @param bezier the bezier of the hull section currently selected by the user to set knob values from
      */
     private void setKnobValues(CubicBezierFunction bezier) {
-        List<Point2D> polarKnotAndControlPoints = bezier.getControlPoints().stream().map(CalculusUtils::toPolar).toList();
-        knobs.get(0).setKnobValue(polarKnotAndControlPoints.getFirst().getX()); // rL
-        knobs.get(1).setKnobValue(polarKnotAndControlPoints.getFirst().getY()); // θL
-        knobs.get(2).setKnobValue(polarKnotAndControlPoints.getLast().getX()); // θR
-        knobs.get(3).setKnobValue(polarKnotAndControlPoints.getLast().getY()); // rR
+        List<Point2D> knotAndControlPoints = bezier.getKnotAndControlPoints();
+        Point2D pL = CalculusUtils.toPolar(knotAndControlPoints.get(1), knotAndControlPoints.get(0));
+        Point2D pR = CalculusUtils.toPolar(knotAndControlPoints.get(2), knotAndControlPoints.get(3));
+        knobs.get(0).setKnobValue(pL.getX()); // rL
+        knobs.get(1).setKnobValue(pL.getY()); // θL
+        knobs.get(2).setKnobValue(pR.getX()); // θR
+        knobs.get(3).setKnobValue(pR.getY()); // rR
     }
 
     /**
@@ -271,11 +273,11 @@ public class HullBuilderController implements Initializable {
         // Add knobs
         Knob leftRadiusKnob = new Knob("rL", 0, -1, 1, 30, layoutY, knobSize);
         leftRadiusKnob.setLocked(true);
-        Knob leftAngleKnob = new Knob("θL", 0, -2 * Math.PI, 2 * Math.PI, 140, layoutY, knobSize);
+        Knob leftAngleKnob = new Knob("θL", 0, -360, 360, 140, layoutY, knobSize);
         leftAngleKnob.setLocked(true);
         Knob rightRadiusKnob = new Knob("rR", 0, -1, 1, 290, layoutY, knobSize);
         rightRadiusKnob.setLocked(true);
-        Knob rightAngleKnob = new Knob("θR", 0, -2 * Math.PI, 2 * Math.PI, 400, layoutY, knobSize);
+        Knob rightAngleKnob = new Knob("θR", 0, -360, 360, 400, layoutY, knobSize);
         rightAngleKnob.setLocked(true);
         curveParameterizationAnchorPane.getChildren().addAll(leftRadiusKnob, leftAngleKnob, rightRadiusKnob, rightAngleKnob);
         knobs = new ArrayList<>(Arrays.asList(leftRadiusKnob, leftAngleKnob, rightRadiusKnob, rightAngleKnob));
