@@ -6,6 +6,7 @@ import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.function.Section;
+import javafx.geometry.Point2D;
 import org.apache.commons.math3.analysis.BivariateFunction;
 import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
@@ -42,6 +43,32 @@ public class CalculusUtils
                     x -> Math.sqrt(1 + Math.pow(differentiate(function).value(x), 2));
             return integrator.integrate(MaxEval.unlimited().getMaxEval(), profileArcLengthElementFunction, a, b);
         }
+    }
+
+    /**
+     * Converts polar coordinates to Cartesian coordinates.
+     * @param polarPoint the point in polar form where x represents the radius (r) and y represents the angle (theta) in degrees
+     * @return a Point2D in Cartesian form (x, y)
+     */
+    public static Point2D toCartesian(Point2D polarPoint) {
+        double r = polarPoint.getX();
+        double theta = Math.toRadians(polarPoint.getY());
+        double x = r * Math.cos(theta);
+        double y = r * Math.sin(theta);
+        return new Point2D(x, y);
+    }
+
+    /**
+     * Converts Cartesian coordinates to polar coordinates.
+     * @param cartesianPoint the point in cartesian form (x, y)
+     * @return a Point2D where x represents the radius (r) and y represents the angle (theta) in degrees
+     */
+    public static Point2D toPolar(Point2D cartesianPoint) {
+        double x = cartesianPoint.getX();
+        double y = cartesianPoint.getY();
+        double r = Math.sqrt(x * x + y * y);
+        double theta = Math.toDegrees(Math.atan2(y, x));
+        return new Point2D(r, theta);
     }
 
     /**
@@ -120,7 +147,7 @@ public class CalculusUtils
     @Traceable
     public static void validatePiecewiseAsUpOrDown(List<BoundedUnivariateFunction> pieces, List<Section> sections) {
         UnivariateSolver solver = new BrentSolver(1e-10, 1e-14);
-        int numSamples = 1000;
+        int numSamples = 100;
 
         boolean allNonNegative = true;
         boolean allNonPositive = true;

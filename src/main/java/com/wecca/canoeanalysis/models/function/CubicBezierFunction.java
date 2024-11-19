@@ -13,11 +13,6 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
 import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.optim.univariate.BrentOptimizer;
-import org.apache.commons.math3.optim.univariate.SearchInterval;
-import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
-import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -189,11 +184,20 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
     }
 
     /**
-     * @return a list of Point2D objects for each of the knot and control points
+     * @return a list of Point2D objects for each of the knot points
      */
     public List<Point2D> getKnotPoints() {
         Point2D p1 = new Point2D(x1, y1);
         Point2D p2 = new Point2D(x2, y2);
+        return Arrays.asList(p1, p2);
+    }
+
+    /**
+     * @return a list of Point2D objects for each of the control points
+     */
+    public List<Point2D> getControlPoints() {
+        Point2D p1 = new Point2D(controlX1, controlX1);
+        Point2D p2 = new Point2D(controlX2, controlY2);
         return Arrays.asList(p1, p2);
     }
 }

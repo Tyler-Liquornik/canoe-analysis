@@ -13,7 +13,7 @@ public interface BoundedUnivariateFunction extends UnivariateFunction {
      * @return the point (x, y) where the function has its minimum value within the specified section
      */
     default Point2D getMinPoint(Section section) {
-        double step = (section.getRx() - section.getX()) / 1000;
+        double step = (section.getRx() - section.getX()) / 100;
         double xMin = section.getX();
         double yMin = value(xMin);
 
@@ -34,7 +34,7 @@ public interface BoundedUnivariateFunction extends UnivariateFunction {
      * @return the point (x, y) where the function has its maximum value within the specified section
      */
     default Point2D getMaxPoint(Section section) {
-        double step = (section.getRx() - section.getX()) / 1000;
+        double step = (section.getRx() - section.getX()) / 100;
         double xMax = section.getX();
         double yMax = value(xMax);
 
@@ -56,7 +56,9 @@ public interface BoundedUnivariateFunction extends UnivariateFunction {
      */
     default Point2D getMaxSignedValuePoint(Section section) {
         Point2D minPoint = getMinPoint(section);
+        System.out.println("minPoint: " + minPoint);
         Point2D maxPoint = getMaxPoint(section);
+        System.out.println("maxPoint: " + maxPoint);
         return Math.abs(minPoint.getY()) > Math.abs(maxPoint.getY()) ? minPoint : maxPoint;
     }
 
