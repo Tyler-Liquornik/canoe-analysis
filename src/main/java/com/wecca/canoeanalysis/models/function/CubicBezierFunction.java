@@ -156,7 +156,7 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
         double prevX = curve.point(T_MIN).x();
         boolean xIsIncreasingWithT = true;
         boolean xIsDecreasingWithT = true;
-        int numSteps = 1000;
+        int numSteps = 500;
         double step = (T_MAX - T_MIN) / numSteps;
 
         for (double t = step; t <= T_MAX; t += step) {

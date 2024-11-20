@@ -26,6 +26,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 public class HullBuilderController implements Initializable {
 
@@ -261,28 +262,65 @@ public class HullBuilderController implements Initializable {
         }
     }
 
-    @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
-        // Set the local instance of the main controller
-        setMainController(CanoeAnalysisApplication.getMainController());
-        initModuleToolBarButtons();
+    /**
+     * Updates the knot and control points of the selected hull section and its graphic
+     * @param knobIndex the index of the knob that was changed (knobs indexed L to R in increasing order from 0)
+     * @param newVal the new value for the knob
+     */
+    private void updateHullFromKnob(int knobIndex, double newVal) {
+        if (selectedHullSection == null) return;
 
+        // Update the relevant knob value
+        knobs.get(knobIndex).setKnobValue(newVal);
+
+        // Get current knob values
+        double rL = knobs.get(0).getValue();
+        double thetaL = knobs.get(1).getValue();
+        double rR = knobs.get(2).getValue();
+        double thetaR = knobs.get(3).getValue();
+
+        // Update control points in polar coordinates
+        List<Point2D> knotPoints = ((CubicBezierFunction) selectedHullSection.getSideProfileCurve()).getKnotPoints();
+        Point2D lKnot = knotPoints.getFirst();
+        Point2D rKnot = knotPoints.getLast();
+        Point2D lControl = CalculusUtils.toCartesian(new Point2D(rL, thetaL), lKnot);
+        Point2D rControl = CalculusUtils.toCartesian(new Point2D(rR, thetaR), rKnot);
+        CubicBezierFunction bezier = (CubicBezierFunction) selectedHullSection.getSideProfileCurve();
+        bezier.initialize(lKnot.getX(), lKnot.getY(), lControl.getX(), lControl.getY(), rControl.getX(), rControl.getY(), rKnot.getX(), rKnot.getY());
+
+        // Redraw the hull graphic
+        hullGraphicPane.getChildren().clear();
+        setSideViewHullGraphic(hull);
+    }
+
+    /**
+     * Add 4 knobs with N/A displaying, for when no hull section is selected
+     */
+    private void layoutKnobs() {
         double layoutY = 55;
         double knobSize = 40;
-
-        // Add knobs
-        Knob leftRadiusKnob = new Knob("rL", 0, -1, 1, 30, layoutY, knobSize);
+        Knob leftRadiusKnob = new Knob("rL", 0, 0, 1, 30, layoutY, knobSize);
         leftRadiusKnob.setLocked(true);
-        Knob leftAngleKnob = new Knob("θL", 0, -360, 360, 140, layoutY, knobSize);
+        Knob leftAngleKnob = new Knob("θL", 0, -180, 180, 140, layoutY, knobSize);
         leftAngleKnob.setLocked(true);
-        Knob rightRadiusKnob = new Knob("rR", 0, -1, 1, 290, layoutY, knobSize);
+        Knob rightRadiusKnob = new Knob("rR", 0, 0, 1, 290, layoutY, knobSize);
         rightRadiusKnob.setLocked(true);
-        Knob rightAngleKnob = new Knob("θR", 0, -360, 360, 400, layoutY, knobSize);
+        Knob rightAngleKnob = new Knob("θR", 0, -180, 180, 400, layoutY, knobSize);
         rightAngleKnob.setLocked(true);
         curveParameterizationAnchorPane.getChildren().addAll(leftRadiusKnob, leftAngleKnob, rightRadiusKnob, rightAngleKnob);
         knobs = new ArrayList<>(Arrays.asList(leftRadiusKnob, leftAngleKnob, rightRadiusKnob, rightAngleKnob));
 
-        // Add and position panel buttons
+        IntStream.range(0, knobs.size())
+                .forEach(i -> {
+                    Knob knob = knobs.get(i);
+                    knob.valueProperty().addListener((obs, oldVal, newVal) -> updateHullFromKnob(i, newVal.doubleValue()));
+                });
+    }
+
+    /**
+     * Add and position blue buttons to corners of panels
+     */
+    private void layoutPanelButtons() {
         IconButton nextLeftSectionButton = IconButton.getPanelButton(IconGlyphType.LEFT, this::selectPreviousHullSection, 12);
         IconButton nextRightSectionButton = IconButton.getPanelButton(IconGlyphType.RIGHT, this::selectNextHullSection, 12);
         IconButton curveParameterizationPlusButton = IconButton.getPanelButton(IconGlyphType.PLUS, this::dummyOnClick, 14);
@@ -314,13 +352,23 @@ public class HullBuilderController implements Initializable {
         AnchorPane.setRightAnchor(canoePropertiesSwitchButton, marginToPanel);
         AnchorPane.setTopAnchor(canoePropertiesPlusButton, marginToPanel + marginBetween + buttonWidth);
         AnchorPane.setRightAnchor(canoePropertiesPlusButton, marginToPanel);
+    }
+
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        // Set the local instance of the main controller
+        setMainController(CanoeAnalysisApplication.getMainController());
+        initModuleToolBarButtons();
+
+        // Layout
+        layoutKnobs();
+        layoutPanelButtons();
 
         // Set default hull
         hullGraphicPane = new AnchorPane();
         hull = SharkBaitHullLibrary.generateSharkBaitHullScaledFromBezier(6);
         setSideViewHullGraphic(hull);
         hullSectionsListIterator = hull.getHullSections().listIterator();
-
         setBlankSectionProperties();
     }
 }

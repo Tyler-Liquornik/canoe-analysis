@@ -56,9 +56,7 @@ public interface BoundedUnivariateFunction extends UnivariateFunction {
      */
     default Point2D getMaxSignedValuePoint(Section section) {
         Point2D minPoint = getMinPoint(section);
-        System.out.println("minPoint: " + minPoint);
         Point2D maxPoint = getMaxPoint(section);
-        System.out.println("maxPoint: " + maxPoint);
         return Math.abs(minPoint.getY()) > Math.abs(maxPoint.getY()) ? minPoint : maxPoint;
     }
 
