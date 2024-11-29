@@ -147,7 +147,7 @@ public class LoggerService {
     }
 
     /**
-     * See other overload of logPoints, same idea
+     * See other overload of logPoints, same idea for a discrete set of points
      * @param points to log
      */
     public static void logPoints(List<Point2D> points) {
