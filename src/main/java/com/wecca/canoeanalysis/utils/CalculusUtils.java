@@ -63,17 +63,20 @@ public class CalculusUtils
      * Converts Cartesian coordinates to polar coordinates with respect to a given origin.
      * @param cartesianPoint the point in Cartesian form (x, y)
      * @param origin the reference point to use as the origin
-     * @return a Point2D where x represents the radius (r) and y represents the angle (theta) in degrees
+     * @return a Point2D where x represents the radius (r) and y represents the angle (theta) in degrees (0 <= theta < 360)
      */
     public static Point2D toPolar(Point2D cartesianPoint, Point2D origin) {
         double x = cartesianPoint.getX() - origin.getX();
         double y = cartesianPoint.getY() - origin.getY();
         double r = Math.sqrt(x * x + y * y);
         double theta = Math.toDegrees(Math.atan2(y, x));
-        return new Point2D(r, theta);
+
+        // Normalize theta to be in the range [0, 360)
+        return new Point2D(r, theta > 0 ? theta : theta + 360);
     }
 
     /**
+     * @deprecated by new floating solver algorithm which can solve asymmetrical load cases so we no longer need to check for symmetry
      * @param piecewise the function to check for symmetry on its section
      * @return if the function is symmetrical or not
      */
