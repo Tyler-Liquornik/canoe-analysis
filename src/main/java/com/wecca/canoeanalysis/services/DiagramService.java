@@ -1,24 +1,25 @@
 package com.wecca.canoeanalysis.services;
 
+import com.jfoenix.controls.JFXTooltip;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.DiagramInterval;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import javafx.geometry.Point2D;
-import javafx.scene.chart.AreaChart;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.XYChart;
+import javafx.scene.chart.*;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.util.Duration;
+
 import java.util.*;
 import java.util.List;
 
-/**
- * The DiagramService class provides utility methods for setting up and managing diagrams such as the Shear Force Diagram (SFD) and Bending Moment Diagram (BMD) for a given canoe.
- * It is designed to handle point-wise defined piecewise functions with potential jump discontinuities
- * Overall the service aids in the visualization of structural parameters like shear forces and bending moments for more effective analysis.
- */
 public class DiagramService {
 
     /**
@@ -29,6 +30,11 @@ public class DiagramService {
      * @param yUnits the label for the Y-axis units
      * @return the configured AreaChart
      */
+    private static boolean isHoveringOverCircle = false;
+    private static double lastTooltipX = -1;
+    private static double lastTooltipY = -1;
+    private static final double TOOLTIP_UPDATE_THRESHOLD = 5.0;
+
     public static AreaChart<Number, Number> setupChart(Canoe canoe, List<Point2D> points, String yUnits) {
         // Setting up the axes
         NumberAxis yAxis = setupYAxis(yUnits);
@@ -36,15 +42,173 @@ public class DiagramService {
 
         // Creating and styling the chart
         AreaChart<Number, Number> chart = new AreaChart<>(xAxis, yAxis);
+
         chart.setPrefSize(1125, 750);
         chart.setLegendVisible(false);
 
+
         // Adding data to chart
         addSeriesToChart(canoe, points, yUnits, chart);
-        // addTooltipsToChart(chart, yUnits);
+        showMousePositionAsTooltip(chart);
+        addSeriesWithPointsToChart(canoe, points, yUnits, chart);
+        setupTooltip(chart);
 
         return chart;
     }
+    public static void showMousePositionAsTooltip(AreaChart<Number, Number> chart) {
+        // Create the tooltip and configure its display settings
+        Tooltip tooltip = new Tooltip();
+        tooltip.setShowDelay(Duration.millis(0));
+        tooltip.setHideDelay(Duration.millis(0));
+        tooltip.setAutoHide(false);
+
+        // Set mouse moved event on the chart
+        chart.setOnMouseMoved(event -> {
+            if (!isHoveringOverCircle) {
+                updateTooltip(event, chart, tooltip);
+            }
+        });
+
+        // Set the tooltip on the chart
+        Tooltip.install(chart, tooltip);
+    }
+
+    private static void setupTooltip(AreaChart<Number, Number> chart) {
+        // Create a single tooltip for the chart
+        Tooltip tooltip = new Tooltip();
+        tooltip.setShowDelay(Duration.millis(0));
+        tooltip.setHideDelay(Duration.millis(0));
+        tooltip.setAutoHide(false);
+        Tooltip.install(chart, tooltip);
+
+        // Set mouse moved event on the chart to update tooltip position and content
+        chart.setOnMouseMoved(event -> {
+            if (!isHoveringOverCircle) {
+                updateTooltip(event, chart, tooltip);
+            }
+        });
+    }
+
+    private static void updateTooltip(MouseEvent event, AreaChart<Number, Number> chart, Tooltip tooltip) {
+        double mouseX = event.getX() - chart.getXAxis().getLayoutX();
+        double mouseY = event.getY() - chart.getYAxis().getLayoutY();
+
+        Axis<Number> xAxis = chart.getXAxis();
+        Axis<Number> yAxis = chart.getYAxis();
+
+        if (xAxis instanceof ValueAxis && yAxis instanceof ValueAxis) {
+            ValueAxis<Number> xValueAxis = (ValueAxis<Number>) xAxis;
+            ValueAxis<Number> yValueAxis = (ValueAxis<Number>) yAxis;
+
+            if (mouseX >= 0 && mouseX <= xValueAxis.getWidth() &&
+                    mouseY >= 0 && mouseY <= yValueAxis.getHeight()) {
+
+                double xValue = xValueAxis.getValueForDisplay(mouseX).doubleValue();
+                double yValue = yValueAxis.getValueForDisplay(mouseY).doubleValue();
+
+                // Only update tooltip if mouse has moved beyond threshold
+                if (Math.abs(mouseX - lastTooltipX) > TOOLTIP_UPDATE_THRESHOLD ||
+                        Math.abs(mouseY - lastTooltipY) > TOOLTIP_UPDATE_THRESHOLD) {
+
+                    tooltip.setText(String.format("Distance: %.2f, Momentum: %.2f", xValue, yValue));
+                    tooltip.setX(event.getScreenX() + 10);
+                    tooltip.setY(event.getScreenY() + 10);
+                    tooltip.show(chart, event.getScreenX() + 10, event.getScreenY() + 10);
+
+                    lastTooltipX = mouseX;
+                    lastTooltipY = mouseY;
+                }
+            } else {
+                tooltip.hide();
+            }
+        }
+    }
+    public static void addSeriesWithPointsToChart(Canoe canoe, List<Point2D> points, String yUnits, AreaChart<Number, Number> chart) {
+        XYChart.Series<Number, Number> series = new XYChart.Series<>();
+        double yThreshold = 0.05; // Define the threshold for considering y-values as close
+
+        // List to hold the current range of close points
+        List<XYChart.Data<Number, Number>> currentRange = new ArrayList<>();
+
+        for (int i = 0; i < points.size(); i++) {
+            Point2D point = points.get(i);
+            XYChart.Data<Number, Number> data = new XYChart.Data<>(point.getX(), point.getY());
+            series.getData().add(data);
+
+            // If the current range is empty, start a new range
+            if (currentRange.isEmpty()) {
+                currentRange.add(data);
+            } else {
+                // Check if the y-value is close to the last point in the current range
+                double lastY = currentRange.get(currentRange.size() - 1).getYValue().doubleValue();
+                if (Math.abs(lastY - point.getY()) <= yThreshold) {
+                    // Add the point to the current range
+                    currentRange.add(data);
+                } else {
+                    // Process the current range, then start a new one
+                    processRange(currentRange);
+                    currentRange.clear();
+                    currentRange.add(data);
+                }
+            }
+        }
+
+        // Process the last range
+        if (!currentRange.isEmpty()) {
+            processRange(currentRange);
+        }
+
+        series.setName(yUnits);
+        chart.getData().add(series);
+    }
+
+    /**
+     * Processes a range of points by finding the maximum y-value point in the range.
+     * Sets the radius of circles for all other points in the range to zero.
+     *
+     * @param range the list of XYChart.Data points in a range
+     */
+    private static void processRange(List<XYChart.Data<Number, Number>> range) {
+        // Find the point with the maximum y-value in the range
+        XYChart.Data<Number, Number> maxData = range.stream()
+                .max(Comparator.comparingDouble(data -> data.getYValue().doubleValue()))
+                .orElse(null);
+
+        for (XYChart.Data<Number, Number> data : range) {
+            Circle circle;
+            if (data == maxData) {
+                // Keep the circle visible for the max point
+                circle = new Circle(5, Color.BLUE);
+            } else {
+                // Set the circle radius to zero for other points
+                circle = new Circle(0, Color.BLUE);
+            }
+            data.setNode(circle);
+
+            // Add hover effect for each point with tooltip
+            Tooltip tooltip = new Tooltip(String.format("Distance: %.2f, Momentum: %.2f", data.getXValue().doubleValue(), data.getYValue().doubleValue()));
+            tooltip.setShowDelay(Duration.millis(0));
+            tooltip.setHideDelay(Duration.millis(0));
+            Tooltip.install(circle, tooltip);
+
+            // Track hover state to toggle the chart tooltip
+            circle.setOnMouseEntered(event -> {
+                isHoveringOverCircle = true;
+                tooltip.show(circle, event.getScreenX() + 10, event.getScreenY() + 10);
+                circle.setRadius(7);
+                circle.setFill(Color.RED);
+            });
+
+            circle.setOnMouseExited(event -> {
+                isHoveringOverCircle = false;
+                tooltip.hide();
+                circle.setRadius(5);
+                circle.setFill(Color.BLUE);
+            });
+        }
+    }
+
+
 
     /**
      * Sets up the Y-axis for the chart.
@@ -76,24 +240,13 @@ public class DiagramService {
         return xAxis;
     }
 
-    /**
-     * Adds a series of points to an AreaChart to represent a piecewise function
-     * for a given canoe object (used for SFD, BMD, and maybe more in the future).
-     * Sections are partitioned into sections based on the critical points of the canoe,
-     * and each section is added to the chart as a separate series, so we can manage them separately.
-     *
-     * @param canoe The Canoe object containing the section endpoints that define the critical points for partitioning the points.
-     * @param points A list of points representing the data points to be plotted.
-     * @param yUnits A string representing the units of the Y-axis (e.g., "meters", "kilograms").
-     * @param chart to which the partitioned point series will be added.
-     */
     public static void addSeriesToChart(Canoe canoe, List<Point2D> points, String yUnits, AreaChart<Number, Number> chart) {
 
         TreeSet<Double> criticalPoints = canoe.getSectionEndpoints();
 
         // Adding the sections of the pseudo piecewise function separately
         boolean set = false; // only need to set the name of the series once since its really one piecewise function
-        List<List<Point2D>> intervals = partitionPoints(points, criticalPoints);
+        List<List<Point2D>> intervals = partitionPoints(canoe, points, criticalPoints);
         for (List<Point2D> interval : intervals) {
             XYChart.Series<Number, Number> series = new XYChart.Series<>();
             for (Point2D point : interval) {
@@ -110,61 +263,16 @@ public class DiagramService {
         }
     }
 
-//    public static void addTooltipsToChart(AreaChart<Number, Number> chart, String yUnits) {
-//        for (XYChart.Series<Number, Number> series : chart.getData()) {
-//            for (XYChart.Data<Number, Number> data : series.getData()) {
-//                addTooltipToData(data, yUnits);
-//            }
-//        }
-//    }
-//
-//    private static void addTooltipToData(XYChart.Data<Number, Number> data, String yUnits) {
-//        JFXTooltip tooltip = new JFXTooltip();
-//        tooltip.setText(
-//                "x: " + data.getXValue() + "\n" +
-//                "mag: " + data.getYValue() + " " + yUnits
-//        );
-//
-//        // Apply CSS styling to the tooltip (placeholder needs to work properly with color services)
-//        //  tooltip.setStyle("-fx-background-color: " + ColorManagerService.getColor("tooltipBackground") + ";"
-//        //          + "-fx-text-fill: " + ColorManagerService.getColor("tooltipText") + ";"
-//        //          + "-fx-padding: 10px;"
-//        //          + "-fx-border-color: " + ColorManagerService.getColor("tooltipBorder") + ";"
-//        //          + "-fx-border-width: 1px;");
-//
-//        data.getNode().setOnMouseEntered(event -> {
-//            double mouseY = event.getScreenY();
-//            double screenHeight = data.getNode().getScene().getWindow().getHeight();
-//
-//            // Determine tooltip position
-//            if (mouseY > screenHeight / 2) {
-//                tooltip.show(data.getNode(), event.getScreenX(), event.getScreenY() - tooltip.getHeight() - 15);
-//            } else {
-//                tooltip.show(data.getNode(), event.getScreenX(), event.getScreenY() + 15);
-//            }
-//        });
-//
-//        data.getNode().setOnMouseMoved(event -> {
-//            double mouseY = event.getScreenY();
-//            double screenHeight = data.getNode().getScene().getWindow().getHeight();
-//
-//            // Determine tooltip position
-//            if (mouseY > screenHeight / 2) {
-//                tooltip.show(data.getNode(), event.getScreenX(), event.getScreenY() - tooltip.getHeight() - 15);
-//            } else {
-//                tooltip.show(data.getNode(), event.getScreenX(), event.getScreenY() + 15);
-//            }
-//        });
-//
-//        data.getNode().setOnMouseExited(event -> tooltip.hide());
-//    }
-
     /**
-     * @param points act together as a point-wise defined C0 function
+     * Consider the list of points is a "pseudo piecewise function"
+     * This method breaks it into a set of "pseudo functions"
+     * Pseudo because it's just a set of points rather with no clear partitions by their definition only
+     * @param canoe to work with
+     * @param points act together as a piecewise function
      * @param partitions the locations where the form of the piecewise changes
      * @return a list containing each section of the piecewise pseudo functions with unique form
      */
-    private static List<List<Point2D>> partitionPoints(List<Point2D> points, TreeSet<Double> partitions) {
+    private static List<List<Point2D>> partitionPoints(Canoe canoe, List<Point2D> points, TreeSet<Double> partitions) {
         // Initializing lists
         List<List<Point2D>> partitionedIntervals = new ArrayList<>();
         List<Double> partitionsList = new ArrayList<>(partitions);
@@ -356,6 +464,7 @@ public class DiagramService {
      * @param startY the baseline y value for the parabola.
      * @return the list of generated points along the parabola.
      */
+    @Traceable
     private static List<Point2D> generateParabolicPoints(Point2D start, Point2D end, double startY)
     {
         List<Point2D> points = new ArrayList<>();
@@ -392,6 +501,7 @@ public class DiagramService {
      * @param canoe the canoe object with loads.
      * @return the list of points to render for the SFD.
      */
+    @Traceable
     public static List<Point2D> generateSfdPoints(Canoe canoe) {
         // Get maps for each load type for efficient processing
         Map<Double, PointLoad> pointLoadMap = getPointLoadMap(canoe);
@@ -443,6 +553,8 @@ public class DiagramService {
         Map<String, Point2D> diagramPoints = getDiagramPointMap(intervals, canoe.getHull().getLength());
         ArrayList<Point2D> sfdPoints = new ArrayList<>(diagramPoints.values());
 
+        LoggerService.logPoints(sfdPoints);
+
         // Return the generated points
         return new ArrayList<>(sfdPoints);
     }
@@ -452,16 +564,10 @@ public class DiagramService {
      * @param canoe the canoe object with loads.
      * @return the list of points to render for the BMD.
      */
+    @Traceable
     public static List<Point2D> generateBmdPoints(Canoe canoe) {
-        return generateBmdPoints(canoe, generateSfdPoints(canoe));
-    }
-
-    /**
-     * Generate a list of points to comprise the Bending Moment Diagram from precalculated SFD points
-     * @param canoe the canoe object with loads.
-     * @return the list of points to render for the BMD.
-     */
-    public static List<Point2D> generateBmdPoints(Canoe canoe, List<Point2D> sfdPoints) {
+        // Gets the SFD points for the canoe
+        List<Point2D> sfdPoints = generateSfdPoints(canoe);
         List<Point2D> bmdPoints = new ArrayList<>();
         Point2D firstPoint = sfdPoints.getFirst();
 
