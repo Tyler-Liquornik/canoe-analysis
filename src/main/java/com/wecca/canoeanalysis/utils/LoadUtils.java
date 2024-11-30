@@ -24,15 +24,14 @@ public class LoadUtils {
                 return Integer.compare(order1, order2);
 
             // If both are PointLoad, compare by isSupport
-            if (l1 instanceof PointLoad && l2 instanceof PointLoad) {
-                boolean isSupport1 = ((PointLoad) l1).isSupport();
-                boolean isSupport2 = ((PointLoad) l2).isSupport();
-                if (isSupport1 != isSupport2) {
-                    return Boolean.compare(isSupport2, isSupport1); // true (isSupport) comes first
-                }
+            if (l1 instanceof PointLoad p1 && l2 instanceof PointLoad p2) {
+                boolean isSupport1 = p1.isSupport();
+                boolean isSupport2 = p2.isSupport();
+                if (isSupport1 != isSupport2)
+                    return Boolean.compare(isSupport2, isSupport1); // support load comes first
             }
 
-            // Equal order
+            // Equal order precedence, i.e. l1 = l2 for sorting purposes
             return 0;
         });
 
@@ -117,6 +116,7 @@ public class LoadUtils {
     }
 
     /**
+     * @deprecated by new floating solver algorithm which can solve asymmetrical load cases so we no longer need to check for symmetry
      * Flips a list of loads across a hull's length
      * Used in the process of checking for symmetrical loading
      * @param rightHalf the list of loads on the right half of the canoe

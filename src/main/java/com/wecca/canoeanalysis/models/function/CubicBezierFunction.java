@@ -13,7 +13,6 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolver;
 import org.apache.commons.math3.optim.MaxEval;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -108,7 +107,8 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
      * @param x The x-coordinate for which we want to find the corresponding parameter 't'.
      * @return The value of the parameter 't' (in the range [0, 1]) where the x-coordinate of the Bézier curve matches the input 'x'.
      */
-    private double getT(double x) {
+    private double getT(double x)
+    {
         // Ensure x is within the range of the curve
         double tolerance = 1e-3;
         if (x < getX() - tolerance || x > getRx() + tolerance)
@@ -122,6 +122,8 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
             throw new RuntimeException("Failed to solve for t given x = " + x, e);
         }
     }
+
+
 
     /**
      * @return x, the left endpoint of the section which this curve is on
@@ -154,7 +156,7 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
         double prevX = curve.point(T_MIN).x();
         boolean xIsIncreasingWithT = true;
         boolean xIsDecreasingWithT = true;
-        int numSteps = 1000;
+        int numSteps = 500;
         double step = (T_MAX - T_MIN) / numSteps;
 
         for (double t = step; t <= T_MAX; t += step) {
@@ -182,11 +184,20 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
     }
 
     /**
-     * @return a list of Point2D objects for each of the knot and control points
+     * @return a list of Point2D objects for each of the knot points
      */
     public List<Point2D> getKnotPoints() {
         Point2D p1 = new Point2D(x1, y1);
         Point2D p2 = new Point2D(x2, y2);
+        return Arrays.asList(p1, p2);
+    }
+
+    /**
+     * @return a list of Point2D objects for each of the control points
+     */
+    public List<Point2D> getControlPoints() {
+        Point2D p1 = new Point2D(controlX1, controlX1);
+        Point2D p2 = new Point2D(controlX2, controlY2);
         return Arrays.asList(p1, p2);
     }
 }
