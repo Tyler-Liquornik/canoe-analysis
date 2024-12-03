@@ -3,6 +3,9 @@ package com.wecca.canoeanalysis.aop;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +16,7 @@ import org.aspectj.lang.reflect.MethodSignature;
 public class TraceBuilder {
 
     private final ObjectMapper mapper;
+    private final Deque<Long> startTimeStack = new ArrayDeque<>();
 
     public TraceBuilder() {
         this.mapper = new ObjectMapper();
@@ -43,6 +47,7 @@ public class TraceBuilder {
      * @param joinPoint the execution point at which to introspect details of the running thread
      */
     public void beforeAdvice(JoinPoint joinPoint) {
+        startTimeStack.push(System.nanoTime());
         Map<String, String> inputMap = buildLogForAspect(joinPoint);
         String inputs = inputMap.get("inputs");
         log.info(String.format("%sInvoking %s::%s %s",
@@ -60,15 +65,26 @@ public class TraceBuilder {
      * @param result the object returned from the advised method
      */
     public void afterAdvice(JoinPoint joinPoint, Object result) {
+        long durationNs = System.nanoTime() - startTimeStack.pop();
+
         String logPrefix = getLogPrefix(joinPoint);
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         String className = signature.getDeclaringType().getSimpleName();
         String methodName = signature.getName();
         String returnType = signature.getReturnType().getSimpleName();
 
+        // Determine the optimal unit for duration formatting
+        String timeInfo;
+        if (durationNs >= 1_000_000)
+            timeInfo = String.format("(%d ms)", durationNs / 1_000_000);
+        else if (durationNs >= 1_000)
+            timeInfo = String.format("(%d μs)", durationNs / 1_000);
+        else
+            timeInfo = String.format("(%d ns)", durationNs);
+
         String message = returnType.equals("void")
-                ? String.format("%sExiting %s::%s with no response", logPrefix, className, methodName)
-                : String.format("%sExiting %s::%s with response %s", logPrefix, className, methodName, serializeResult(result));
+                ? String.format("%s%s Exiting %s::%s with no response", logPrefix, timeInfo,  className, methodName)
+                : String.format("%s%s Exiting %s::%s with response %s", logPrefix, timeInfo, className, methodName, serializeResult(result));
 
         log.info(message);
     }

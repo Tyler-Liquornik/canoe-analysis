@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
@@ -47,7 +48,9 @@ public class CurvedGraphic extends Group implements FunctionGraphic {
         this.maxSignedValue = function.getMaxSignedValue(section); // precalculated to save time fetching
         this.isColored = false;
 
-        CalculusUtils.validatePiecewiseAsUpOrDown(List.of(function), List.of(section));
+        // Commented out to improve rendering speed, but should be enforced... be careful lol
+        // CalculusUtils.validatePiecewiseAsUpOrDown(List.of(function), List.of(section));
+
         draw();
         JFXDepthManager.setDepth(this, 4);
         ColorManagerService.registerInColorPalette(this);
@@ -55,7 +58,7 @@ public class CurvedGraphic extends Group implements FunctionGraphic {
 
     public void draw() {
         // Partition the section
-        int numSamples = 250;
+        int numSamples = 200;
         double step = (section.getRx() - section.getX()) / numSamples;
         double currentX = section.getX();
 

@@ -18,12 +18,12 @@ import lombok.Setter;
 @Getter @Setter
 public class BezierHullTangentGraphic extends Group implements Graphic {
 
-    private Point2D centerPoint;
     private Point2D lControlPoint;
+    private Point2D centerPoint;
     private Point2D rControlPoint;
 
-    private BezierHullPointGraphic tangentPointGraphic;
     private BezierHullPointGraphic lControlPointGraphic;
+    private BezierHullPointGraphic tangentPointGraphic;
     private BezierHullPointGraphic rControlPointGraphic;
 
     private Line lineToLControl;
@@ -33,14 +33,14 @@ public class BezierHullTangentGraphic extends Group implements Graphic {
     private boolean isRightColored;
 
     /**
-     * @param centerPoint The main point representing the center of the slope.
      * @param lControlPoint The left control point (can be null).
+     * @param centerPoint The main point representing the center of the slope.
      * @param rControlPoint The right control point (can be null).
      * Note that lControlPoint and rControlPoint cannot both be null.
      */
-    public BezierHullTangentGraphic(Point2D centerPoint, Point2D lControlPoint, Point2D rControlPoint) {
-        this.centerPoint = centerPoint;
+    public BezierHullTangentGraphic(Point2D lControlPoint, Point2D centerPoint, Point2D rControlPoint) {
         this.lControlPoint = lControlPoint;
+        this.centerPoint = centerPoint;
         this.rControlPoint = rControlPoint;
         this.isLeftColored = false;
         this.isRightColored = false;
@@ -48,7 +48,9 @@ public class BezierHullTangentGraphic extends Group implements Graphic {
         // Validation
         if (lControlPoint == null && rControlPoint == null)
             throw new IllegalArgumentException("At least one of the left or right control points must be specified.");
-        validateSlope();
+
+        // Commented out to speed up rendering, but should be enforced, be careful
+        // validateSlope();
 
         ColorManagerService.registerInColorPalette(this);
         draw();
@@ -57,8 +59,9 @@ public class BezierHullTangentGraphic extends Group implements Graphic {
     /**
      * Validates that the slopes from the main point to the left and right control points (if present) are equal.
      * This is a requirement for C1 smoothness in the model and the graphic should reflect that.
-     * Note that if only one control point is present, it's valid by default.
+     * Note that if only one control point is present, it's valid by default (these are the edge sections, S_0 and S_n).
      */
+    @Traceable
     private void validateSlope() {
         if (lControlPoint != null && rControlPoint != null) {
             double leftSlope = (lControlPoint.getY() - centerPoint.getY()) / (lControlPoint.getX() - centerPoint.getX());

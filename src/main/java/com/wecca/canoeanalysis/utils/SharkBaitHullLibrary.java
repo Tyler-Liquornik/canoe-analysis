@@ -19,7 +19,7 @@ public class SharkBaitHullLibrary {
 
     /**
      * Note: THIS IS THE NEW MODEL
-     * Does not scale (for now) WIP
+     * Does not scale (for now) <-- TODO
      * Generate the hull for 2024's Shark Bait canoe scaled to the specified length
      * This serves as a placeholder for the user defining their own hull in the hull builder until that is developed
      * @return the hull
@@ -31,6 +31,7 @@ public class SharkBaitHullLibrary {
         scalingFactor = length / SHARK_BAIT_LENGTH;
 
         // Side view Curve Construction Bezier Spline
+        // Redundant lines are for readability, and for synchronization with desmos model
         double top = 0.00;
         double knot0 = 0.00;
         double knot1 = 0.50 * scalingFactor;
@@ -53,7 +54,7 @@ public class SharkBaitHullLibrary {
         double midLeftSlope1 = leftSlope2;
         double midLeftControlX1 = 0.76 * scalingFactor;
         double midLeftControlY1 = midLeftSlope1 * (midLeftControlX1 - midLeftX1) + midLeftY1;
-        double midLeftControlX2 = 1.4 * scalingFactor;
+        double midLeftControlX2 = 1.40 * scalingFactor;
         double midLeftControlY2 = -0.38 * scalingFactor;
         double midLeftX2 = knot2;
         double midRightY1 = -0.39 * scalingFactor;
@@ -112,7 +113,7 @@ public class SharkBaitHullLibrary {
      */
     public static Hull generateSharkBaitHullScaledFromParabolasC1Smooth(double length) {
 
-        // The two systems solved for parameters (paste into ChatGPT, just type "render":
+        // The two systems solved for parameters (paste into ChatGPT, just type "render"):
         // \frac{1}{67t}\left(\frac{1}{2}t-3t\right)^2-0.4t=a\left(\frac{1}{2}t-ht\right)^2-kt,\:\frac{2}{67t}\left(\frac{1}{2}t-3t\right)=2a\left(\frac{1}{2}t-ht\right),\:ah^2t^2-kt=0
         // \frac{1}{67t}\left(\frac{11}{2}t-3t\right)^2-0.4t=a\left(\frac{11}{2}t-ht\right)^2-kt,\:\frac{2}{67t}\left(\frac{11}{2}t-3t\right)=2a\left(\frac{11}{2}t-ht\right),\:a\left(6t-ht\right)^2-kt=0
 

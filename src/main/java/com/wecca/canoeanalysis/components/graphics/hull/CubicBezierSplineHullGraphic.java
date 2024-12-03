@@ -61,7 +61,7 @@ public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
             Point2D mappedRControlPoint = rControlPoint != null ? GraphicsUtils.mapToGraphicSpace(rControlPoint, functionSpace, graphicSpace) : null;
 
             // Create the slope graphic with the mapped points
-            BezierHullTangentGraphic slopeGraphic = new BezierHullTangentGraphic(mappedKnotPoint, mappedLControlPoint, mappedRControlPoint);
+            BezierHullTangentGraphic slopeGraphic = new BezierHullTangentGraphic(mappedLControlPoint, mappedKnotPoint, mappedRControlPoint);
             slopeGraphics.add(slopeGraphic);
             this.getChildren().add(slopeGraphic.getNode());
         }

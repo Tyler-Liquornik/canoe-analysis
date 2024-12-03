@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.controllers.modules;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.controls.IconButton;
 import com.wecca.canoeanalysis.components.controls.Knob;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
@@ -10,6 +11,7 @@ import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
+import com.wecca.canoeanalysis.services.LoggerService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import javafx.beans.value.ChangeListener;
@@ -27,7 +29,6 @@ import java.net.URL;
 import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
 
 public class HullBuilderController implements Initializable {
 
@@ -42,7 +43,9 @@ public class HullBuilderController implements Initializable {
     private boolean nextPressedBefore;
     private ListIterator<HullSection> hullSectionsListIterator;
     private List<Knob> knobs;
+    private List<ChangeListener<Number>> knobListeners;
     private HullSection selectedHullSection;
+    private int selectedHullSectionIndex = -1;
 
     @Setter
     private static MainController mainController;
@@ -51,11 +54,6 @@ public class HullBuilderController implements Initializable {
     @Getter @Setter
     private CubicBezierSplineHullGraphic hullGraphic;
     private AnchorPane hullGraphicPane;
-
-    private final ChangeListener<Number> knob0Listener = (observable, oldValue, newValue) -> updateHullFromKnob(0, newValue.doubleValue());
-    private final ChangeListener<Number> knob1Listener = (observable, oldValue, newValue) -> updateHullFromKnob(1, newValue.doubleValue());
-    private final ChangeListener<Number> knob2Listener = (observable, oldValue, newValue) -> updateHullFromKnob(2, newValue.doubleValue());
-    private final ChangeListener<Number> knob3Listener = (observable, oldValue, newValue) -> updateHullFromKnob(3, newValue.doubleValue());
 
 
     /**
@@ -148,8 +146,10 @@ public class HullBuilderController implements Initializable {
         // to correctly move it back to index 2.
         // This would be the first call of the previous method
         try {
-            if(!previousPressedBefore)
+            if(!previousPressedBefore) {
                 selectedHullSection = hullSectionsListIterator.previous();
+                selectedHullSectionIndex = 0;
+            }
         }
         catch(Exception ignored) {}
 
@@ -161,15 +161,18 @@ public class HullBuilderController implements Initializable {
             while (hullSectionsListIterator.hasNext()) {
                 selectedHullSection = hullSectionsListIterator.next();
             }
+            selectedHullSectionIndex = hull.getHullSections().size() - 1;
         }
         // Since the "next" method was called to reach the end, we need to call "previous" once to properly
         // set up for any additional "previous" calls that follow. This prepares the iterator position correctly.
         selectedHullSection = hullSectionsListIterator.previous();
+        selectedHullSectionIndex--;
+
         if (sectionPropertiesSelected) //sets all the section properties ( if that is what the user clicked on, other option is Canoe Properties)
             setSectionProperties(selectedHullSection.getHeight(),selectedHullSection.getVolume(), selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
         previousPressedBefore = true;
 
-        setKnobValues((CubicBezierFunction) selectedHullSection.getSideProfileCurve());
+        setKnobValuesToHullSection(selectedHullSection);
     }
 
     /**
@@ -182,8 +185,10 @@ public class HullBuilderController implements Initializable {
         // If so, and the iterator is, for example, at index 2, we’ll need to call the iterator’s `next` method twice
         // to correctly move it forward to index 3.
         // This would be the first call of the next method
-        if(previousPressedBefore)
+        if(previousPressedBefore) {
             selectedHullSection = hullSectionsListIterator.next();
+            selectedHullSectionIndex = hull.getHullSections().size() - 1;
+        }
         hullGraphic.colorNextBezierPointGroup();
 
         // Check if we're at the end or if next index is null
@@ -192,17 +197,19 @@ public class HullBuilderController implements Initializable {
             while (hullSectionsListIterator.hasPrevious()) {
                 selectedHullSection = hullSectionsListIterator.previous();
             }
+            selectedHullSectionIndex = 0;
         }
         // Since the "previous" method was called to reach the end, we need to call "next" once to properly
         // set up for any additional "next" calls that follow. This prepares the iterator position correctly.
         selectedHullSection = hullSectionsListIterator.next();
+        selectedHullSectionIndex++;
 
         if (sectionPropertiesSelected)
             setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
         previousPressedBefore = false;
         nextPressedBefore = true;
 
-        setKnobValues((CubicBezierFunction) selectedHullSection.getSideProfileCurve());
+        setKnobValuesToHullSection(selectedHullSection);
     }
 
     /**
@@ -218,31 +225,22 @@ public class HullBuilderController implements Initializable {
 
     /**
      * Calculates and sets the knob values in polar coordinates
-     * @param bezier the bezier of the hull section currently selected by the user to set knob values from
+     * @param hullSection the (required bezier) hull section currently selected by the user to set knob values from
      */
-    private void setKnobValues(CubicBezierFunction bezier) {
+    private void setKnobValuesToHullSection(HullSection hullSection) {
+
+        if (!(hullSection.getSideProfileCurve() instanceof CubicBezierFunction bezier))
+            throw new IllegalArgumentException("Cannot work in Hull Builder with non-bezier hull curve");
+
         List<Point2D> knotAndControlPoints = bezier.getKnotAndControlPoints();
         Point2D pL = CalculusUtils.toPolar(knotAndControlPoints.get(1), knotAndControlPoints.get(0));
         Point2D pR = CalculusUtils.toPolar(knotAndControlPoints.get(2), knotAndControlPoints.get(3));
+        List<Double> knobValues = List.of(pL.getX(), pL.getY(), pR.getX(), pR.getY());
 
-        // Remove listeners temporarily
-        // Prevents invalid state when hull updates with knob one at a time
-        knobs.get(0).valueProperty().removeListener(knob0Listener);
-        knobs.get(1).valueProperty().removeListener(knob1Listener);
-        knobs.get(2).valueProperty().removeListener(knob2Listener);
-
-        // Batch Update knob values except the last
-        knobs.get(0).setKnobValue(pL.getX()); // rL
-        knobs.get(1).setKnobValue(pL.getY()); // θL
-        knobs.get(2).setKnobValue(pR.getX()); // rR
-
-        // Reattach listeners
-        knobs.get(0).valueProperty().addListener(knob0Listener);
-        knobs.get(1).valueProperty().addListener(knob1Listener);
-        knobs.get(2).valueProperty().addListener(knob2Listener);
-
-        // Set the last value to trigger the hulls model and graphics update with listener
-        knobs.get(3).setKnobValue(pR.getY()); // θR
+        // Remove listeners, batch update values, add back listeners
+        for (int i = 0; i < knobs.size(); i++) {knobs.get(i).valueProperty().removeListener(knobListeners.get(i));}
+        for (int i = 0; i < knobs.size(); i++) {knobs.get(i).setKnobValue(knobValues.get(i));}
+        for (int i = 0; i < knobs.size(); i++) {knobs.get(i).valueProperty().addListener(knobListeners.get(i));}
     }
 
     /**
@@ -293,9 +291,9 @@ public class HullBuilderController implements Initializable {
     /**
      * Updates the knot and control points of the selected hull section and its graphic
      * @param knobIndex the index of the knob that was changed (knobs indexed L to R in increasing order from 0)
-     * @param newVal the new value for the knob
+     * @param newVal the new value for the knob (after user interaction)
      */
-    private void updateHullFromKnob(int knobIndex, double newVal) {
+    private void updateHullFromKnob(int knobIndex, double oldVal, double newVal) {
         if (selectedHullSection == null) return;
 
         // Update the relevant knob value
@@ -307,18 +305,77 @@ public class HullBuilderController implements Initializable {
         double rR = knobs.get(2).getValue();
         double thetaR = knobs.get(3).getValue();
 
-        // Update control points in polar coordinates
+        // Update the relevant control point from polar coordinates
         List<Point2D> knotPoints = ((CubicBezierFunction) selectedHullSection.getSideProfileCurve()).getKnotPoints();
         Point2D lKnot = knotPoints.getFirst();
         Point2D rKnot = knotPoints.getLast();
-        Point2D lControl = CalculusUtils.toCartesian(new Point2D(rL, thetaL), lKnot);
-        Point2D rControl = CalculusUtils.toCartesian(new Point2D(rR, thetaR), rKnot);
         CubicBezierFunction bezier = (CubicBezierFunction) selectedHullSection.getSideProfileCurve();
-        bezier.initialize(lKnot.getX(), lKnot.getY(), lControl.getX(), lControl.getY(), rControl.getX(), rControl.getY(), rKnot.getX(), rKnot.getY());
+        if (knobIndex == 0 || knobIndex == 1) { // Left control point
+            Point2D lControl = CalculusUtils.toCartesian(new Point2D(rL, thetaL), lKnot);
+            bezier.setControlX1(lControl.getX());
+            bezier.setControlY1(lControl.getY());
+        } else if (knobIndex == 2 || knobIndex == 3) { // Right control point
+            Point2D rControl = CalculusUtils.toCartesian(new Point2D(rR, thetaR), rKnot);
+            bezier.setControlX2(rControl.getX());
+            bezier.setControlY2(rControl.getY());
+        }
+
+        // When changing theta we need to adjust adjacent sections to maintain C1 smoothness
+        boolean adjustingLeftAdjacentSection = knobIndex == 1 && selectedHullSectionIndex != 0;
+        boolean adjustingRightAdjustSection = knobIndex == 3 && selectedHullSectionIndex != (hull.getHullSections().size() - 1);
+        if (adjustingLeftAdjacentSection || adjustingRightAdjustSection) {
+            // Compute delta for the updated control point
+            Point2D oldControl, newControl;
+            if (adjustingLeftAdjacentSection) {
+                oldControl = CalculusUtils.toCartesian(new Point2D(rL, oldVal), lKnot);
+                newControl = CalculusUtils.toCartesian(new Point2D(rL, newVal), lKnot);
+            } else { // adjustingRightAdjacentSection
+                oldControl = CalculusUtils.toCartesian(new Point2D(rR, oldVal), rKnot);
+                newControl = CalculusUtils.toCartesian(new Point2D(rR, newVal), rKnot);
+            }
+            // Inverted (*-1) because the adjacent section control point is mirrored across
+            double deltaX = oldControl.getX() - newControl.getX();
+            double deltaY = oldControl.getY() - newControl.getY();
+
+            // Propagate the change to the adjacent control point
+            HullSection adjustedSection = adjustAdjacentSectionControlPoints(knobIndex == 1, deltaX, deltaY);
+            hull.getHullSections().set(
+                    selectedHullSectionIndex + (adjustingLeftAdjacentSection ? -1 : 1),
+                    adjustedSection
+            );
+        }
 
         // Redraw the hull graphic
         hullGraphicPane.getChildren().clear();
         setSideViewHullGraphic(hull);
+    }
+
+    /**
+     * Adjusts the control points of the adjacent hull sections to maintain C1 continuity.
+     * @param adjustLeftOfSelected whether to adjust the adjacent left section (otherwise right)
+     * @param deltaX the amount by which to adjust the control point x in the adjacent section
+     * @param deltaY the amount by which to adjust the control point y in the adjacent section
+     */
+    private HullSection adjustAdjacentSectionControlPoints(boolean adjustLeftOfSelected, double deltaX, double deltaY) {
+        // Get the adjacent section needing adjustment
+        HullSection adjacentSection = adjustLeftOfSelected ? hull.getHullSections().get(selectedHullSectionIndex - 1)
+                : hull.getHullSections().get(selectedHullSectionIndex + 1);
+
+        // Update the control point in the adjacent section
+        CubicBezierFunction adjacentBezier = (CubicBezierFunction) adjacentSection.getSideProfileCurve();
+
+        // Adjust the control point by subtracting delta.
+        if (adjustLeftOfSelected) {
+            adjacentBezier.setControlX2(adjacentBezier.getControlX2() + deltaX);
+            adjacentBezier.setControlY2(adjacentBezier.getControlY2() + deltaY);
+        } else {
+            adjacentBezier.setControlX1(adjacentBezier.getControlX1() + deltaX);
+            adjacentBezier.setControlY1(adjacentBezier.getControlY1() + deltaY);
+        }
+
+        // Update the section's side profile curve
+        adjacentSection.setSideProfileCurve(adjacentBezier);
+        return adjacentSection;
     }
 
     /**
@@ -327,20 +384,24 @@ public class HullBuilderController implements Initializable {
     private void layoutKnobs() {
         double layoutY = 55;
         double knobSize = 40;
-        Knob leftRadiusKnob = new Knob("rL", 0, 0, 1.5, 30, layoutY, knobSize);
-        leftRadiusKnob.setLocked(true);
-        Knob leftAngleKnob = new Knob("θL", 0, 0, 360, 140, layoutY, knobSize);
-        leftAngleKnob.setLocked(true);
-        Knob rightRadiusKnob = new Knob("rR", 0, 0, 1.5, 290, layoutY, knobSize);
-        rightRadiusKnob.setLocked(true);
-        Knob rightAngleKnob = new Knob("θR", 0, 0, 360, 400, layoutY, knobSize);
-        rightAngleKnob.setLocked(true);
-        curveParameterizationAnchorPane.getChildren().addAll(leftRadiusKnob, leftAngleKnob, rightRadiusKnob, rightAngleKnob);
-        knobs = new ArrayList<>(Arrays.asList(leftRadiusKnob, leftAngleKnob, rightRadiusKnob, rightAngleKnob));
-        knobs.get(0).valueProperty().addListener(knob0Listener);
-        knobs.get(1).valueProperty().addListener(knob1Listener);
-        knobs.get(2).valueProperty().addListener(knob2Listener);
-        knobs.get(3).valueProperty().addListener(knob3Listener);
+        List<String> knobLabels = List.of("rL", "θL", "rR", "θR");
+        List<Double> minValues = List.of(0.0, 0.0, 0.0, 0.0);
+        List<Double> maxValues = List.of(1.5, 360.0, 1.5, 360.0);
+        List<Double> layoutXs = List.of(30.0, 140.0, 290.0, 400.0);
+
+        knobs = new ArrayList<>();
+        knobListeners = new ArrayList<>();
+
+        for (int i = 0; i < knobLabels.size(); i++) {
+            Knob knob = new Knob(knobLabels.get(i), minValues.get(i), 0, maxValues.get(i), layoutXs.get(i), layoutY, knobSize);
+            knob.setLocked(true);
+            knobs.add(knob);
+            int finalI = i;
+            knobListeners.add((observable, oldValue, newValue) -> updateHullFromKnob(finalI, oldValue.doubleValue(), newValue.doubleValue()));
+            knob.valueProperty().addListener(knobListeners.get(i));
+        }
+
+        curveParameterizationAnchorPane.getChildren().addAll(knobs);
     }
 
     /**
