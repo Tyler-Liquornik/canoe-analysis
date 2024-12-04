@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.controllers.modules;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.controls.IconButton;
 import com.wecca.canoeanalysis.components.controls.Knob;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
@@ -72,6 +73,9 @@ public class HullBuilderController implements Initializable {
     }
 
     public void dummyOnClick(MouseEvent event) {
+        CubicBezierFunction cbf = ((CubicBezierFunction) hull.getHullSections().get(1).getSideProfileCurve());
+        System.out.println("knobs.get(2).getValue() = " + knobs.get(2).getValue());
+        System.out.println("S_M_rR = " + (CalculusUtils.toPolar(new Point2D(cbf.getControlX2(), cbf.getControlY2()), cbf.getKnotPoints().getLast())).getX());
     }
 
     /**
@@ -140,11 +144,8 @@ public class HullBuilderController implements Initializable {
 
         // Entering this method indicates that the "previous" button was clicked.
         // This try block checks if the "next" button was clicked before the "previous" button.
-        // If so, and the iterator is, for example, at index 3, we’ll need to call the iterator’s `previous` method twice
-        // to correctly move it back to index 2.
-        // This would be the first call of the previous method
         try {
-            if(!previousPressedBefore) {
+            if (!previousPressedBefore) {
                 selectedHullSection = hullSectionsListIterator.previous();
                 selectedHullSectionIndex = 0;
             }
@@ -170,6 +171,7 @@ public class HullBuilderController implements Initializable {
             setSectionProperties(selectedHullSection.getHeight(),selectedHullSection.getVolume(), selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
         previousPressedBefore = true;
 
+        unboundKnobs();
         setKnobValues(selectedHullSection);
         setKnobBounds(selectedHullSection);
     }
@@ -181,10 +183,8 @@ public class HullBuilderController implements Initializable {
         unlockKnobsOnFirstSectionSelect();
 
         // This if block checks if the "previous" button was clicked before the "next" button.
-        // If so, and the iterator is, for example, at index 2, we’ll need to call the iterator’s `next` method twice
-        // to correctly move it forward to index 3.
-        // This would be the first call of the next method
-        if(previousPressedBefore) {
+        // If so, and the iterator is, for example, at index 2, we’ll need to call the iterator’s `next` method twice to correctly move it forward to index 3.
+        if (previousPressedBefore) {
             selectedHullSection = hullSectionsListIterator.next();
             selectedHullSectionIndex = hull.getHullSections().size() - 1;
         }
@@ -208,6 +208,7 @@ public class HullBuilderController implements Initializable {
         previousPressedBefore = false;
         nextPressedBefore = true;
 
+        unboundKnobs();
         setKnobValues(selectedHullSection);
         setKnobBounds(selectedHullSection);
     }
@@ -238,7 +239,7 @@ public class HullBuilderController implements Initializable {
     }
 
     /**
-     * Calculates and sets the knob values in polar coordinates
+     * Calculates and sets the knob values in polar coordinates, for when a user goes to the next/prev section
      * @param hullSection the (required bezier) hull section currently selected by the user to set knob values from
      */
     private void setKnobValues(HullSection hullSection) {
@@ -251,7 +252,7 @@ public class HullBuilderController implements Initializable {
         Point2D polarR = CalculusUtils.toPolar(knotAndControlPoints.get(2), knotAndControlPoints.get(3));
         List<Double> knobValues = List.of(polarL.getX(), polarL.getY(), polarR.getX(), polarR.getY());
 
-        // Remove listeners, batch update values, add back listeners
+        // Batch update values, add back listeners
         for (int i = 0; i < knobs.size(); i++) {knobs.get(i).valueProperty().removeListener(knobListeners.get(i));}
         for (int i = 0; i < knobs.size(); i++) {knobs.get(i).setKnobValue(knobValues.get(i));}
         for (int i = 0; i < knobs.size(); i++) {knobs.get(i).valueProperty().addListener(knobListeners.get(i));}
@@ -298,12 +299,12 @@ public class HullBuilderController implements Initializable {
         // Set bounds
         knobs.get(0).setKnobMin(rMin);
         knobs.get(0).setKnobMax(rLMax);
-        knobs.get(1).setKnobMin(thetaLMin);
-        knobs.get(1).setKnobMax(thetaLMax);
+//        knobs.get(1).setKnobMin(thetaLMin);
+//        knobs.get(1).setKnobMax(thetaLMax);
         knobs.get(2).setKnobMin(rMin);
         knobs.get(2).setKnobMax(rRMax);
-        knobs.get(3).setKnobMin(thetaRMin);
-        knobs.get(3).setKnobMax(thetaRMax);
+//        knobs.get(3).setKnobMin(thetaRMin);
+//        knobs.get(3).setKnobMax(thetaRMax);
     }
 
     /**
@@ -320,22 +321,18 @@ public class HullBuilderController implements Initializable {
         double cosTheta = Math.cos(thetaRad);
         double sinTheta = Math.sin(thetaRad);
 
-        // Check left or right boundaries as needed
+        // Check quadrant of R^2 to determine which bounds of the rectangle to check
         if (cosTheta < 0) {
             double rFromLeft = -knot.getX() / cosTheta;
             rMax = Math.min(rMax, rFromLeft);
-        }
-        else {
+        } else {
             double rFromRight = (hull.getLength() - knot.getX()) / cosTheta;
             rMax = Math.min(rMax, rFromRight);
         }
-
-        // Check top or bottom boundaries as needed
         if (sinTheta > 0) {
             double rFromTop = -knot.getY() / sinTheta;
             rMax = Math.min(rMax, rFromTop);
-        }
-        else {
+        } else {
             double rFromBottom = (-hull.getMaxHeight() - knot.getY()) / sinTheta;
             rMax = Math.min(rMax, rFromBottom);
         }
@@ -386,7 +383,7 @@ public class HullBuilderController implements Initializable {
             }
         }
 
-        return new double[]{minTheta, maxTheta};
+        return new double[] {minTheta, maxTheta};
     }
 
     /**
@@ -399,6 +396,35 @@ public class HullBuilderController implements Initializable {
         this.volumeLabel.setText(na);
         this.massLabel.setText(na);
     }
+
+    /**
+     * Set bounds for r and theta back to minimum and maximum possible in the whole rectangle bounding the model
+     * Used before setting the knob values to prevent setting the knob value sout of bounds
+     */
+    public void unboundKnobs() {
+        double minR = 0.001;
+        double maxPossibleR = hull.getLength();
+        double minPossibleTheta = 0;
+        double maxPossibleTheta = 360;
+
+        for (int i = 0; i < knobs.size(); i++) {
+            knobs.get(i).valueProperty().removeListener(knobListeners.get(i));
+        }
+
+        knobs.get(0).setKnobMin(minR);
+        knobs.get(0).setKnobMax(maxPossibleR);
+        knobs.get(1).setKnobMin(minPossibleTheta);
+        knobs.get(1).setKnobMax(maxPossibleTheta);
+        knobs.get(2).setKnobMin(minR);
+        knobs.get(2).setKnobMax(maxPossibleR);
+        knobs.get(3).setKnobMin(minPossibleTheta);
+        knobs.get(3).setKnobMax(maxPossibleTheta);
+
+        for (int i = 0; i < knobs.size(); i++) {
+            knobs.get(i).valueProperty().addListener(knobListeners.get(i));
+        }
+    }
+
 
     /**
      * Switches back and forth from canoe properties to section properties
@@ -425,6 +451,7 @@ public class HullBuilderController implements Initializable {
      * @param knobIndex the index of the knob that was changed (knobs indexed L to R in increasing order from 0)
      * @param newVal the new value for the knob (after user interaction)
      */
+    @Traceable
     private void updateHullFromKnob(int knobIndex, double oldVal, double newVal) {
         if (selectedHullSection == null) return;
 

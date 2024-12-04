@@ -111,7 +111,7 @@ public class Hull {
      * Note: two separate getMaxHeight methods are provided for a specific reason
      * one for internal validation purposes (hence, private) one for public use
      */
-    @JsonIgnore @Traceable
+    @JsonIgnore
     public double getMaxHeight() {
         return getMaxHeight(this.hullSections);
     }
