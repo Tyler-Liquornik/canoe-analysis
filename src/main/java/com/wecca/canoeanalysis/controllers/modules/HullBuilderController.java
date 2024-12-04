@@ -73,9 +73,6 @@ public class HullBuilderController implements Initializable {
     }
 
     public void dummyOnClick(MouseEvent event) {
-        CubicBezierFunction cbf = ((CubicBezierFunction) hull.getHullSections().get(1).getSideProfileCurve());
-        System.out.println("knobs.get(2).getValue() = " + knobs.get(2).getValue());
-        System.out.println("S_M_rR = " + (CalculusUtils.toPolar(new Point2D(cbf.getControlX2(), cbf.getControlY2()), cbf.getKnotPoints().getLast())).getX());
     }
 
     /**
@@ -172,8 +169,8 @@ public class HullBuilderController implements Initializable {
         previousPressedBefore = true;
 
         unboundKnobs();
-        setKnobValues(selectedHullSection);
-        setKnobBounds(selectedHullSection);
+        setKnobValues();
+        setKnobBounds();
     }
 
     /**
@@ -209,8 +206,8 @@ public class HullBuilderController implements Initializable {
         nextPressedBefore = true;
 
         unboundKnobs();
-        setKnobValues(selectedHullSection);
-        setKnobBounds(selectedHullSection);
+        setKnobValues();
+        setKnobBounds();
     }
 
     /**
@@ -240,11 +237,9 @@ public class HullBuilderController implements Initializable {
 
     /**
      * Calculates and sets the knob values in polar coordinates, for when a user goes to the next/prev section
-     * @param hullSection the (required bezier) hull section currently selected by the user to set knob values from
-     */
-    private void setKnobValues(HullSection hullSection) {
-
-        if (!(hullSection.getSideProfileCurve() instanceof CubicBezierFunction bezier))
+      */
+    private void setKnobValues() {
+        if (!(selectedHullSection.getSideProfileCurve() instanceof CubicBezierFunction bezier))
             throw new IllegalArgumentException("Cannot work in Hull Builder with non-bezier hull curve");
 
         List<Point2D> knotAndControlPoints = bezier.getKnotAndControlPoints();
@@ -265,11 +260,10 @@ public class HullBuilderController implements Initializable {
      *
      * MUST BE DONE AFTER SETTING KNOB VALUES
      *
-     * @param hullSection the selected section to bound knobs for
      */
-    private void setKnobBounds(HullSection hullSection) {
+    private void setKnobBounds() {
         // Validation
-        if (!(hullSection.getSideProfileCurve() instanceof CubicBezierFunction bezier))
+        if (!(selectedHullSection.getSideProfileCurve() instanceof CubicBezierFunction bezier))
             throw new IllegalArgumentException("Cannot work with non-bezier hull curve");
 
         // Get bezier knot points
@@ -285,7 +279,7 @@ public class HullBuilderController implements Initializable {
         double thetaL = polarL.getY();
         double thetaR = polarR.getY();
 
-        // Calculate r and theta bounds
+        // Calculate r and theta bounds for the control point to stay in the rectangle
         double rMin = 0.001;
         double rLMax = calculateMaxR(lKnot, thetaL);
         double rRMax = calculateMaxR(rKnot, thetaR);
@@ -299,12 +293,12 @@ public class HullBuilderController implements Initializable {
         // Set bounds
         knobs.get(0).setKnobMin(rMin);
         knobs.get(0).setKnobMax(rLMax);
-//        knobs.get(1).setKnobMin(thetaLMin);
-//        knobs.get(1).setKnobMax(thetaLMax);
+        knobs.get(1).setKnobMin(thetaLMin);
+        knobs.get(1).setKnobMax(thetaLMax);
         knobs.get(2).setKnobMin(rMin);
         knobs.get(2).setKnobMax(rRMax);
-//        knobs.get(3).setKnobMin(thetaRMin);
-//        knobs.get(3).setKnobMax(thetaRMax);
+        knobs.get(3).setKnobMin(thetaRMin);
+        knobs.get(3).setKnobMax(thetaRMax);
     }
 
     /**
@@ -325,14 +319,14 @@ public class HullBuilderController implements Initializable {
         if (cosTheta < 0) {
             double rFromLeft = -knot.getX() / cosTheta;
             rMax = Math.min(rMax, rFromLeft);
-        } else {
+        } else if (cosTheta > 0) {
             double rFromRight = (hull.getLength() - knot.getX()) / cosTheta;
             rMax = Math.min(rMax, rFromRight);
         }
         if (sinTheta > 0) {
             double rFromTop = -knot.getY() / sinTheta;
             rMax = Math.min(rMax, rFromTop);
-        } else {
+        } else if (sinTheta < 0) {
             double rFromBottom = (-hull.getMaxHeight() - knot.getY()) / sinTheta;
             rMax = Math.min(rMax, rFromBottom);
         }
@@ -346,44 +340,94 @@ public class HullBuilderController implements Initializable {
      *
      * @param knot the knot point which acts as the origin
      * @param r the radius of the control point relative to the knot
-     * @param isLeft whether the control point belongs to the left side of the knot
+     * @param isLeft whether the control point belongs to the left knot or right knot
      * @return [minTheta, maxTheta]
      */
+    @Traceable
     public double[] calculateThetaBounds(Point2D knot, double r, boolean isLeft) {
-        double minTheta = isLeft? 180 : 0;
+        double minTheta = isLeft ? 180 : 0;
         double maxTheta = isLeft ? 360 : 180;
         double xKnot = knot.getX();
         double yKnot = knot.getY();
         double l = hull.getLength();
         double h = -hull.getMaxHeight();
 
-        // Check the bounds for the control point
-        for (double theta = minTheta; theta <= minTheta + 180; theta += 0.0025) {
-
-            // Convert polar to Cartesian
-            double xControl = xKnot + r * Math.cos(Math.toRadians((theta + 90) % 360));
-            double yControl = yKnot + r * Math.sin(Math.toRadians((theta + 90) % 360));
-
-            // If the control point is inside the rectangle, update minTheta
-            if (xControl >= 0 && xControl <= l && yControl <= 0 && yControl >= h) {
-                minTheta = theta;
-                break;
-            }
+        // Binary search for minTheta
+        double start = minTheta;
+        double end = minTheta + 180;
+        while (end - start > 1e-3) {
+            double mid = (start + end) / 2;
+            if (isPointInBounds(mid, xKnot, yKnot, l, h, r)) end = mid;
+            else start = mid;
         }
-        for (double theta = maxTheta; theta >= maxTheta - 180; theta -= 0.0025) {
+        minTheta = start;
 
-            // Convert polar to Cartesian
-            double xControl = xKnot + r * Math.cos(Math.toRadians((theta + 90) % 360));
-            double yControl = yKnot + r * Math.sin(Math.toRadians((theta + 90) % 360));
-
-            // If the control point is inside the rectangle, update maxTheta
-            if (xControl >= 0 && xControl <= l && yControl <= 0 && yControl >= h) {
-                maxTheta = theta;
-                break;
-            }
+        // Binary search for maxTheta
+        start = maxTheta - 180;
+        end = maxTheta;
+        while (end - start > 1e-3) {
+            double mid = (start + end) / 2;
+            if (isPointInBounds(mid, xKnot, yKnot, l, h, r)) start = mid;
+            else end = mid;
         }
+        maxTheta = start;
+
+        // Incorporate additional bounds from adjacent sections
+        double[] additionalThetaBounds = calculateAdjacentSectionThetaBounds(knot, isLeft);
+        minTheta = Math.max(minTheta, additionalThetaBounds[0]);
+        maxTheta = Math.min(maxTheta, additionalThetaBounds[1]);
 
         return new double[] {minTheta, maxTheta};
+    }
+
+    /**
+     * Helper for calculateThetaBounds to check if the control point is within bounds
+     */
+    private boolean isPointInBounds(double thetaGuess, double xKnot, double yKnot, double l, double h, double rKnown) {
+        // Get control point position
+        double xControl = xKnot + rKnown * Math.cos(Math.toRadians((thetaGuess + 90) % 360));
+        double yControl = yKnot + rKnown * Math.sin(Math.toRadians((thetaGuess + 90) % 360));
+
+        // Fix floating point error
+        if (Math.abs(yControl - 0) < 1e-6) yControl = 0;
+        if (Math.abs(xControl - 0) < 1e-6) xControl = 0;
+
+        // Check bounds
+        return xControl >= 0 && xControl <= l && yControl <= 0 && yControl >= h;
+    }
+
+    /**
+     * Calculates additional theta bounds based on adjacent sections' control points to ensure smoothness and continuity.
+     *
+     * @param knot the knot point which acts as the origin
+     * @param isLeft whether the control point belongs to the left knot or right knot
+     * @return [additionalMinTheta, additionalMaxTheta]
+     */
+    private double[] calculateAdjacentSectionThetaBounds(Point2D knot, boolean isLeft) {
+        double additionalMinTheta = isLeft ? 180 : 0;
+        double additionalMaxTheta = isLeft ? 360 : 180;
+
+        // Handle left adjacent section
+        if (isLeft && selectedHullSectionIndex > 0) {
+            HullSection leftAdjacentHullSection = hull.getHullSections().get(selectedHullSectionIndex - 1);
+            Point2D coPoint = ((CubicBezierFunction) leftAdjacentHullSection.getSideProfileCurve()).getControlPoints().getLast();
+            double coPointR = CalculusUtils.toPolar(coPoint, knot).getX();
+            double[] thetaBounds = calculateThetaBounds(knot, coPointR, false);
+            additionalMinTheta = Math.max(additionalMinTheta, (thetaBounds[0] + 180) % 360);
+            additionalMaxTheta = Math.min(additionalMaxTheta, (thetaBounds[1] + 180) % 360);
+        }
+
+        // Handle right adjacent section
+        if (!isLeft && selectedHullSectionIndex < hull.getHullSections().size() - 1) {
+            HullSection rightAdjacentHullSection = hull.getHullSections().get(selectedHullSectionIndex + 1);
+            Point2D coPoint = ((CubicBezierFunction) rightAdjacentHullSection.getSideProfileCurve()).getControlPoints().getFirst();
+            double coPointR = CalculusUtils.toPolar(coPoint, knot).getX();
+            double[] thetaBounds = calculateThetaBounds(knot, coPointR, true);
+            additionalMinTheta = Math.max(additionalMinTheta, (thetaBounds[0] - 180) % 360);
+            additionalMaxTheta = Math.min(additionalMaxTheta, (thetaBounds[1] - 180) % 360);
+        }
+
+        return new double[]{additionalMinTheta, additionalMaxTheta};
     }
 
     /**
@@ -451,7 +495,6 @@ public class HullBuilderController implements Initializable {
      * @param knobIndex the index of the knob that was changed (knobs indexed L to R in increasing order from 0)
      * @param newVal the new value for the knob (after user interaction)
      */
-    @Traceable
     private void updateHullFromKnob(int knobIndex, double oldVal, double newVal) {
         if (selectedHullSection == null) return;
 
