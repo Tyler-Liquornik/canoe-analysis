@@ -55,7 +55,7 @@ public class SharkBaitHullLibrary {
         double midLeftControlX1 = 0.76 * scalingFactor;
         double midLeftControlY1 = midLeftSlope1 * (midLeftControlX1 - midLeftX1) + midLeftY1;
         double midLeftControlX2 = 1.40 * scalingFactor;
-        double midLeftControlY2 = -0.38 * scalingFactor;
+        double midLeftControlY2 = -0.39 * scalingFactor;
         double midLeftX2 = knot2;
         double midRightY1 = -0.39 * scalingFactor;
         double midLeftY2 = midRightY1;

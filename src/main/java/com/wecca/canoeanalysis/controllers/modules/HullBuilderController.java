@@ -1,7 +1,6 @@
 package com.wecca.canoeanalysis.controllers.modules;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.controls.IconButton;
 import com.wecca.canoeanalysis.components.controls.Knob;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
@@ -11,7 +10,6 @@ import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
-import com.wecca.canoeanalysis.services.LoggerService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import javafx.beans.value.ChangeListener;
@@ -172,7 +170,8 @@ public class HullBuilderController implements Initializable {
             setSectionProperties(selectedHullSection.getHeight(),selectedHullSection.getVolume(), selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
         previousPressedBefore = true;
 
-        setKnobValuesToHullSection(selectedHullSection);
+        setKnobValues(selectedHullSection);
+        setKnobBounds(selectedHullSection);
     }
 
     /**
@@ -209,7 +208,8 @@ public class HullBuilderController implements Initializable {
         previousPressedBefore = false;
         nextPressedBefore = true;
 
-        setKnobValuesToHullSection(selectedHullSection);
+        setKnobValues(selectedHullSection);
+        setKnobBounds(selectedHullSection);
     }
 
     /**
@@ -224,26 +224,6 @@ public class HullBuilderController implements Initializable {
     }
 
     /**
-     * Calculates and sets the knob values in polar coordinates
-     * @param hullSection the (required bezier) hull section currently selected by the user to set knob values from
-     */
-    private void setKnobValuesToHullSection(HullSection hullSection) {
-
-        if (!(hullSection.getSideProfileCurve() instanceof CubicBezierFunction bezier))
-            throw new IllegalArgumentException("Cannot work in Hull Builder with non-bezier hull curve");
-
-        List<Point2D> knotAndControlPoints = bezier.getKnotAndControlPoints();
-        Point2D pL = CalculusUtils.toPolar(knotAndControlPoints.get(1), knotAndControlPoints.get(0));
-        Point2D pR = CalculusUtils.toPolar(knotAndControlPoints.get(2), knotAndControlPoints.get(3));
-        List<Double> knobValues = List.of(pL.getX(), pL.getY(), pR.getX(), pR.getY());
-
-        // Remove listeners, batch update values, add back listeners
-        for (int i = 0; i < knobs.size(); i++) {knobs.get(i).valueProperty().removeListener(knobListeners.get(i));}
-        for (int i = 0; i < knobs.size(); i++) {knobs.get(i).setKnobValue(knobValues.get(i));}
-        for (int i = 0; i < knobs.size(); i++) {knobs.get(i).valueProperty().addListener(knobListeners.get(i));}
-    }
-
-    /**
      * Display section properties with corresponding attributes
      */
     public void setSectionProperties(double height, double volume, double mass, double x, double rx) {
@@ -255,6 +235,158 @@ public class HullBuilderController implements Initializable {
         this.volumeLabel.setText(volumeFormated);
         String massFormated = String.format("%.2f kg",mass);
         this.massLabel.setText(massFormated);
+    }
+
+    /**
+     * Calculates and sets the knob values in polar coordinates
+     * @param hullSection the (required bezier) hull section currently selected by the user to set knob values from
+     */
+    private void setKnobValues(HullSection hullSection) {
+
+        if (!(hullSection.getSideProfileCurve() instanceof CubicBezierFunction bezier))
+            throw new IllegalArgumentException("Cannot work in Hull Builder with non-bezier hull curve");
+
+        List<Point2D> knotAndControlPoints = bezier.getKnotAndControlPoints();
+        Point2D polarL = CalculusUtils.toPolar(knotAndControlPoints.get(1), knotAndControlPoints.get(0));
+        Point2D polarR = CalculusUtils.toPolar(knotAndControlPoints.get(2), knotAndControlPoints.get(3));
+        List<Double> knobValues = List.of(polarL.getX(), polarL.getY(), polarR.getX(), polarR.getY());
+
+        // Remove listeners, batch update values, add back listeners
+        for (int i = 0; i < knobs.size(); i++) {knobs.get(i).valueProperty().removeListener(knobListeners.get(i));}
+        for (int i = 0; i < knobs.size(); i++) {knobs.get(i).setKnobValue(knobValues.get(i));}
+        for (int i = 0; i < knobs.size(); i++) {knobs.get(i).valueProperty().addListener(knobListeners.get(i));}
+    }
+
+    /**
+     * Sets the bounds of the knobs so that the control points stay in the rectangle bounded by:
+     * x = 0, x = L, y = 0, y = -h.
+     * The height h comes from the front view and corresponds to the lowest y-value of the knot point.
+     *
+     * MUST BE DONE AFTER SETTING KNOB VALUES
+     *
+     * @param hullSection the selected section to bound knobs for
+     */
+    private void setKnobBounds(HullSection hullSection) {
+        // Validation
+        if (!(hullSection.getSideProfileCurve() instanceof CubicBezierFunction bezier))
+            throw new IllegalArgumentException("Cannot work with non-bezier hull curve");
+
+        // Get bezier knot points
+        List<Point2D> knotPoints = bezier.getKnotPoints();
+        Point2D lKnot = knotPoints.getFirst();
+        Point2D rKnot = knotPoints.getLast();
+
+        // Get r and theta values
+        Point2D polarL = CalculusUtils.toPolar(new Point2D(bezier.getControlX1(), bezier.getControlY1()), lKnot);
+        Point2D polarR = CalculusUtils.toPolar(new Point2D(bezier.getControlX2(), bezier.getControlY2()), rKnot);
+        double rL = polarL.getX();
+        double rR = polarR.getX();
+        double thetaL = polarL.getY();
+        double thetaR = polarR.getY();
+
+        // Calculate r and theta bounds
+        double rMin = 0.001;
+        double rLMax = calculateMaxR(lKnot, thetaL);
+        double rRMax = calculateMaxR(rKnot, thetaR);
+        double[] thetaLBounds = calculateThetaBounds(lKnot, rL, true);
+        double thetaLMin = thetaLBounds[0];
+        double thetaLMax = thetaLBounds[1];
+        double[] thetaRBounds = calculateThetaBounds(rKnot, rR, false);
+        double thetaRMin = thetaRBounds[0];
+        double thetaRMax = thetaRBounds[1];
+
+        // Set bounds
+        knobs.get(0).setKnobMin(rMin);
+        knobs.get(0).setKnobMax(rLMax);
+        knobs.get(1).setKnobMin(thetaLMin);
+        knobs.get(1).setKnobMax(thetaLMax);
+        knobs.get(2).setKnobMin(rMin);
+        knobs.get(2).setKnobMax(rRMax);
+        knobs.get(3).setKnobMin(thetaRMin);
+        knobs.get(3).setKnobMax(thetaRMax);
+    }
+
+    /**
+     * Calculates the maximum radius (r) such that a point at (r, theta) from an origin/knot (xO, yO)
+     * remains within the rectangular bounds defined by x = 0, x = L, y = 0, y = -h.
+     *
+     * @param knot the knot point which acts as the origin
+     * @param theta the angle in degrees (relative to the origin) at which the point lies.
+     * @return The maximum radius (r) such that the point stays within the bounds.
+     */
+    public double calculateMaxR(Point2D knot, double theta) {
+        double rMax = Double.MAX_VALUE;
+        double thetaRad = Math.toRadians((theta + 90) % 360);
+        double cosTheta = Math.cos(thetaRad);
+        double sinTheta = Math.sin(thetaRad);
+
+        // Check left or right boundaries as needed
+        if (cosTheta < 0) {
+            double rFromLeft = -knot.getX() / cosTheta;
+            rMax = Math.min(rMax, rFromLeft);
+        }
+        else {
+            double rFromRight = (hull.getLength() - knot.getX()) / cosTheta;
+            rMax = Math.min(rMax, rFromRight);
+        }
+
+        // Check top or bottom boundaries as needed
+        if (sinTheta > 0) {
+            double rFromTop = -knot.getY() / sinTheta;
+            rMax = Math.min(rMax, rFromTop);
+        }
+        else {
+            double rFromBottom = (-hull.getMaxHeight() - knot.getY()) / sinTheta;
+            rMax = Math.min(rMax, rFromBottom);
+        }
+
+        return Math.max(0, rMax);
+    }
+
+    /**
+     * Calculates the minimum and maximum angles (theta) such that the control point at (r, theta) relative to a knot
+     * remains within the rectangular bounds defined by x = 0, x = L, y = 0, y = -h.
+     *
+     * @param knot the knot point which acts as the origin
+     * @param r the radius of the control point relative to the knot
+     * @param isLeft whether the control point belongs to the left side of the knot
+     * @return [minTheta, maxTheta]
+     */
+    public double[] calculateThetaBounds(Point2D knot, double r, boolean isLeft) {
+        double minTheta = isLeft? 180 : 0;
+        double maxTheta = isLeft ? 360 : 180;
+        double xKnot = knot.getX();
+        double yKnot = knot.getY();
+        double l = hull.getLength();
+        double h = -hull.getMaxHeight();
+
+        // Check the bounds for the control point
+        for (double theta = minTheta; theta <= minTheta + 180; theta += 0.0025) {
+
+            // Convert polar to Cartesian
+            double xControl = xKnot + r * Math.cos(Math.toRadians((theta + 90) % 360));
+            double yControl = yKnot + r * Math.sin(Math.toRadians((theta + 90) % 360));
+
+            // If the control point is inside the rectangle, update minTheta
+            if (xControl >= 0 && xControl <= l && yControl <= 0 && yControl >= h) {
+                minTheta = theta;
+                break;
+            }
+        }
+        for (double theta = maxTheta; theta >= maxTheta - 180; theta -= 0.0025) {
+
+            // Convert polar to Cartesian
+            double xControl = xKnot + r * Math.cos(Math.toRadians((theta + 90) % 360));
+            double yControl = yKnot + r * Math.sin(Math.toRadians((theta + 90) % 360));
+
+            // If the control point is inside the rectangle, update maxTheta
+            if (xControl >= 0 && xControl <= l && yControl <= 0 && yControl >= h) {
+                maxTheta = theta;
+                break;
+            }
+        }
+
+        return new double[]{minTheta, maxTheta};
     }
 
     /**
@@ -329,16 +461,16 @@ public class HullBuilderController implements Initializable {
             if (adjustingLeftAdjacentSection) {
                 oldControl = CalculusUtils.toCartesian(new Point2D(rL, oldVal), lKnot);
                 newControl = CalculusUtils.toCartesian(new Point2D(rL, newVal), lKnot);
-            } else { // adjustingRightAdjacentSection
+            } else {
                 oldControl = CalculusUtils.toCartesian(new Point2D(rR, oldVal), rKnot);
                 newControl = CalculusUtils.toCartesian(new Point2D(rR, newVal), rKnot);
             }
-            // Inverted (*-1) because the adjacent section control point is mirrored across
-            double deltaX = oldControl.getX() - newControl.getX();
-            double deltaY = oldControl.getY() - newControl.getY();
+            double deltaX = newControl.getX() - oldControl.getX();
+            double deltaY = newControl.getY() - oldControl.getY();
 
-            // Propagate the change to the adjacent control point
-            HullSection adjustedSection = adjustAdjacentSectionControlPoints(knobIndex == 1, deltaX, deltaY);
+            // Propagate the change to the adjacent control point,
+            // Inverting deltas since adjacent section control point is mirrored across the knot
+            HullSection adjustedSection = adjustAdjacentSectionControlPoints(knobIndex == 1, -deltaX, -deltaY);
             hull.getHullSections().set(
                     selectedHullSectionIndex + (adjustingLeftAdjacentSection ? -1 : 1),
                     adjustedSection
@@ -385,15 +517,15 @@ public class HullBuilderController implements Initializable {
         double layoutY = 55;
         double knobSize = 40;
         List<String> knobLabels = List.of("rL", "θL", "rR", "θR");
-        List<Double> minValues = List.of(0.0, 0.0, 0.0, 0.0);
-        List<Double> maxValues = List.of(1.5, 360.0, 1.5, 360.0);
+        List<Double> minValues = List.of(0.0, 180.0, 0.0, 0.0);
+        List<Double> maxValues = List.of(1.5, 360.0, 1.5, 180.0);
         List<Double> layoutXs = List.of(30.0, 140.0, 290.0, 400.0);
 
         knobs = new ArrayList<>();
         knobListeners = new ArrayList<>();
 
         for (int i = 0; i < knobLabels.size(); i++) {
-            Knob knob = new Knob(knobLabels.get(i), minValues.get(i), 0, maxValues.get(i), layoutXs.get(i), layoutY, knobSize);
+            Knob knob = new Knob(knobLabels.get(i), 0, minValues.get(i), maxValues.get(i), layoutXs.get(i), layoutY, knobSize, 1.8);
             knob.setLocked(true);
             knobs.add(knob);
             int finalI = i;

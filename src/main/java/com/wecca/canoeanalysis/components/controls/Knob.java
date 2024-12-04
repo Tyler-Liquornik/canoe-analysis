@@ -24,14 +24,12 @@ public class Knob extends Slider {
     private String name;
     private boolean locked;
 
-    public Knob(String name, double value, double min, double max, double layoutX, double layoutY, double size) {
+    public Knob(String name, double value, double min, double max, double layoutX, double layoutY, double size, double holdButtonSpeed) {
         this.name = name;
         this.locked = false;
         setLayoutX(layoutX);
         setLayoutY(layoutY);
-        setMin(min);
-        setMax(max);
-        setSkin(new KnobSkin(value, size));
+        setSkin(new KnobSkin(value, min, max, size, holdButtonSpeed));
     }
 
     @Getter @Setter
@@ -64,7 +62,7 @@ public class Knob extends Slider {
         private final double knobBorderWidth;
         private final double arcWidth;
 
-        public KnobSkin(double value, double size) {
+        public KnobSkin(double value, double min, double max, double size, double holdButtonSpeedMultiplier) {
             super(Knob.this);
 
             knobHandleSizeRadius = size / 10.0;
@@ -123,8 +121,12 @@ public class Knob extends Slider {
                 @Override
                 public void handle(long l) {
                     if (!isLocked()) {
-                        if (itsAPlusHold && (System.currentTimeMillis() - currentTime) > 200) changeValue(0.5 * 0.01 * (getMax() - getMin()));
-                        if (itsAMinusHold && (System.currentTimeMillis() - currentTime) > 200) changeValue(-0.5 * 0.01 * (getMax() - getMin()));
+                        double millisecondsRequiredForAHold = 200;
+                        double baseSpeed = 0.005;
+                        if (itsAPlusHold && (System.currentTimeMillis() - currentTime) > millisecondsRequiredForAHold)
+                            changeValue(baseSpeed * holdButtonSpeedMultiplier *  (max - min));
+                        if (itsAMinusHold && (System.currentTimeMillis() - currentTime) > millisecondsRequiredForAHold)
+                            changeValue(-baseSpeed * holdButtonSpeedMultiplier *  (max - min));
                     }
                 }
             };
@@ -149,6 +151,8 @@ public class Knob extends Slider {
             });
 
             // Set the initial knob value
+            setKnobMin(min);
+            setKnobMax(max);
             setKnobValue(value);
 
             // Bind the value label x position to value to ensure it's always centered
@@ -304,6 +308,30 @@ public class Knob extends Slider {
         }
 
         /**
+         * Set the knobs minimum value unless disabled
+         * @param value to set as the minimum on the knob
+         */
+        public void setKnobMax(double value) {
+            if (!isLocked()) {
+                Knob.super.setMax(value);
+                updateKnobHandle();
+                valueArc.setLength(getValueArcLength());
+            }
+        }
+
+        /**
+         * Set the knobs maximum value unless disabled
+         * @param value to set as maximum on the knob
+         */
+        public void setKnobMin(double value) {
+            if (!isLocked()) {
+                Knob.super.setMin(value);
+                updateKnobHandle();
+                valueArc.setLength(getValueArcLength());
+            }
+        }
+
+        /**
          * Calculate the current angle based on the current value of the knob.
          * The angle is computed based on the percentage of the value within the min-max range.
          * @return The current angle of the knob in degrees.
@@ -341,5 +369,15 @@ public class Knob extends Slider {
     public void setKnobValue(double value) {
         KnobSkin skin = (KnobSkin) getSkin();
         skin.setKnobValue(value);
+    }
+
+    public void setKnobMax(double value) {
+        KnobSkin skin = (KnobSkin) getSkin();
+        skin.setKnobMax(value);
+    }
+
+    public void setKnobMin(double value) {
+        KnobSkin skin = (KnobSkin) getSkin();
+        skin.setKnobMin(value);
     }
 }
