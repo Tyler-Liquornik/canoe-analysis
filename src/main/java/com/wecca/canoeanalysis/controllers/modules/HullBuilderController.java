@@ -37,14 +37,6 @@ public class HullBuilderController implements Initializable {
     @FXML
     private Label intervalLabel, heightLabel, volumeLabel, massLabel, propertiesPanelTitleLabel;
 
-    private boolean sectionPropertiesSelected = true;
-    private boolean previousPressedBefore;
-    private boolean nextPressedBefore;
-    private List<Knob> knobs;
-    private List<ChangeListener<Number>> knobListeners;
-    private HullSection selectedHullSection;
-    private int selectedHullSectionIndex = -1;
-
     @Setter
     private static MainController mainController;
     @Getter
@@ -52,7 +44,16 @@ public class HullBuilderController implements Initializable {
     @Getter @Setter
     private CubicBezierSplineHullGraphic hullGraphic;
     private AnchorPane hullGraphicPane;
+    private List<Knob> knobs;
+    private List<ChangeListener<Number>> knobListeners;
 
+    // State
+    private boolean previousPressedBefore;
+    private boolean nextPressedBefore;
+    private HullSection selectedHullSection;
+    private int selectedHullSectionIndex;
+    private boolean sectionPropertiesSelected;
+    private int graphicsTransparencyState;
 
     /**
      * Clears the toolbar of buttons from other modules and adds ones from this module
@@ -107,6 +108,7 @@ public class HullBuilderController implements Initializable {
         hullGraphicPane.getChildren().clear();
         hullGraphicPane.getChildren().add(hullGraphic);
         hullViewAnchorPane.getChildren().set(1, hullGraphicPane);
+        applyGraphicsTransparencyState();
 
         // Keep the selected hull section colored
         if (selectedHullSection != null) {
@@ -581,12 +583,49 @@ public class HullBuilderController implements Initializable {
     }
 
     /**
+     * Toggle the transparency of all graphics except the hull itself
+     * Includes bezier tangents, will later include other graphics
+     */
+    private void toggleGraphicsTransparency(MouseEvent e) {
+        // State: Visible -> Transparent -> Invisible -> ...
+        graphicsTransparencyState = (graphicsTransparencyState + 1) % 3;
+
+        // Get the button instance
+        IconButton graphicsTransparencyButton = (IconButton) e.getSource();
+
+        // Update the button's icon based on the current state
+        IconGlyphType newIcon;
+        switch (graphicsTransparencyState) {
+            case 1 -> newIcon = IconGlyphType.HALF_FILLED_CIRCLE;
+            case 2 -> newIcon = IconGlyphType.RING;
+            default -> newIcon = IconGlyphType.CIRCLE;
+        }
+        graphicsTransparencyButton.setIcon(newIcon);
+        applyGraphicsTransparencyState();
+    }
+
+    /**
+     * Apply the current graphics transparency state to slopeGraphics (visible, transparent, invisible)
+     */
+    private void applyGraphicsTransparencyState() {
+        hullGraphic.getSlopeGraphics().forEach(slopeGraphic -> {
+            switch (graphicsTransparencyState) {
+                case 0 -> slopeGraphic.setOpacity(1.0);
+                case 1 -> slopeGraphic.setOpacity(0.4);
+                case 2 -> slopeGraphic.setOpacity(0.0);
+            }
+        });
+    }
+
+
+    /**
      * TODO: button on hull view panel: eye -> transparent eye -> closed eye for viewing graphics on hull
      * Add and position blue buttons to corners of panels
      */
     private void layoutPanelButtons() {
         IconButton nextLeftSectionButton = IconButton.getPanelButton(IconGlyphType.LEFT, this::selectPreviousHullSection, 12);
         IconButton nextRightSectionButton = IconButton.getPanelButton(IconGlyphType.RIGHT, this::selectNextHullSection, 12);
+        IconButton graphicsTransparencyButton = IconButton.getPanelButton(IconGlyphType.CIRCLE, this::toggleGraphicsTransparency, 12);
         IconButton curveParameterizationPlusButton = IconButton.getPanelButton(IconGlyphType.PLUS, this::dummyOnClick, 14);
         IconButton canoePropertiesSwitchButton = IconButton.getPanelButton(IconGlyphType.SWITCH, this::switchButton, 14);
         IconButton canoePropertiesPlusButton = IconButton.getPanelButton(IconGlyphType.PLUS, this::dummyOnClick, 14);
@@ -598,7 +637,7 @@ public class HullBuilderController implements Initializable {
         curveParameterizationPlusButton.getIcon().setTranslateY(1);
         canoePropertiesPlusButton.getIcon().setTranslateY(1);
 
-        hullViewAnchorPane.getChildren().addAll(nextLeftSectionButton, nextRightSectionButton);
+        hullViewAnchorPane.getChildren().addAll(nextLeftSectionButton, nextRightSectionButton, graphicsTransparencyButton);
         curveParameterizationAnchorPane.getChildren().add(curveParameterizationPlusButton);
         propertiesAnchorPane.getChildren().addAll(canoePropertiesSwitchButton, canoePropertiesPlusButton);
 
@@ -607,9 +646,11 @@ public class HullBuilderController implements Initializable {
         double buttonWidth = nextLeftSectionButton.prefWidth(-1);
 
         AnchorPane.setTopAnchor(nextLeftSectionButton, marginToPanel);
-        AnchorPane.setRightAnchor(nextLeftSectionButton, marginToPanel + marginBetween + buttonWidth);
+        AnchorPane.setRightAnchor(nextLeftSectionButton, marginToPanel + 2 * (marginBetween + buttonWidth));
         AnchorPane.setTopAnchor(nextRightSectionButton, marginToPanel);
         AnchorPane.setRightAnchor(nextRightSectionButton, marginToPanel);
+        AnchorPane.setTopAnchor(graphicsTransparencyButton, marginToPanel);
+        AnchorPane.setRightAnchor(graphicsTransparencyButton, marginToPanel + marginBetween + buttonWidth);
         AnchorPane.setTopAnchor(curveParameterizationPlusButton, marginToPanel);
         AnchorPane.setRightAnchor(curveParameterizationPlusButton, marginToPanel);
         AnchorPane.setTopAnchor(canoePropertiesSwitchButton, marginToPanel);
@@ -633,5 +674,13 @@ public class HullBuilderController implements Initializable {
         hull = SharkBaitHullLibrary.generateSharkBaitHullScaledFromBezier(6);
         setSideViewHullGraphic(hull);
         setBlankSectionProperties();
+
+        // Initialize state
+        previousPressedBefore = false;
+        nextPressedBefore = false;
+        selectedHullSection = null;
+        selectedHullSectionIndex = -1;
+        sectionPropertiesSelected = true;
+        graphicsTransparencyState = 0;
     }
 }

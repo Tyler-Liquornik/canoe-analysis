@@ -18,6 +18,7 @@ import java.util.function.Consumer;
 public class IconButton extends Button {
 
     private FontAwesomeIcon icon;
+    private double iconSize;
 
     /**
      * Constructs an IconButton with a Font Awesome icon, event handlers for press and release events, and initial CSS classes.
@@ -35,6 +36,7 @@ public class IconButton extends Button {
                        List<String> cssClasses, double iconSize) {
         FontAwesomeIcon icon = createIcon(iconGlyphName, iconSize);
         this.icon = icon;
+        this.iconSize = iconSize;
         this.setGraphic(icon);
         this.setOnMouseClicked(onClickFunction::accept);
         if (onReleaseFunction != null) {
@@ -105,5 +107,13 @@ public class IconButton extends Button {
         button.setMinHeight(buttonHeight);
         button.setMinWidth(buttonWidth);
         return button;
+    }
+
+    /**
+     * Set the icon from a glyph name
+     */
+    public void setIcon(IconGlyphType iconGlyphName) {
+        this.icon = createIcon(iconGlyphName, iconSize);
+        this.setGraphic(icon);
     }
 }
