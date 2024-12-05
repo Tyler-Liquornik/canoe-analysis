@@ -40,7 +40,6 @@ public class HullBuilderController implements Initializable {
     private boolean sectionPropertiesSelected = true;
     private boolean previousPressedBefore;
     private boolean nextPressedBefore;
-    private ListIterator<HullSection> hullSectionsListIterator;
     private List<Knob> knobs;
     private List<ChangeListener<Number>> knobListeners;
     private HullSection selectedHullSection;
@@ -73,6 +72,7 @@ public class HullBuilderController implements Initializable {
     }
 
     public void dummyOnClick(MouseEvent event) {
+        System.out.println("selectedHullSectionIndex = " + selectedHullSectionIndex);
     }
 
     /**
@@ -134,77 +134,46 @@ public class HullBuilderController implements Initializable {
     }
 
     /**
-     * Highlight the previous section to the left to view and edit (wraps w modulo)
+     * Highlight the previous section to the left to view and edit
      */
     public void selectPreviousHullSection(MouseEvent e) {
         unlockKnobsOnFirstSectionSelect();
 
-        // Entering this method indicates that the "previous" button was clicked.
-        // This try block checks if the "next" button was clicked before the "previous" button.
-        try {
-            if (!previousPressedBefore) {
-                selectedHullSection = hullSectionsListIterator.previous();
-                selectedHullSectionIndex = 0;
-            }
-        }
-        catch(Exception ignored) {}
+        // Use modulo to wrap index
+        selectedHullSectionIndex = (selectedHullSectionIndex - 1 + hull.getHullSections().size()) % hull.getHullSections().size();
+        selectedHullSection = hull.getHullSections().get(selectedHullSectionIndex);
 
         hullGraphic.colorPreviousBezierPointGroup();
 
-        // Check if we're at the start or if previous index is -1 (no valid previous element)
-        if (!hullSectionsListIterator.hasPrevious()) {
-            // Reset to the end of the list by iterating through all elements
-            while (hullSectionsListIterator.hasNext()) {
-                selectedHullSection = hullSectionsListIterator.next();
-            }
-            selectedHullSectionIndex = hull.getHullSections().size() - 1;
+        if (sectionPropertiesSelected) {
+            setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),
+                    selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
         }
-        // Since the "next" method was called to reach the end, we need to call "previous" once to properly
-        // set up for any additional "previous" calls that follow. This prepares the iterator position correctly.
-        selectedHullSection = hullSectionsListIterator.previous();
-        selectedHullSectionIndex--;
 
-        if (sectionPropertiesSelected) //sets all the section properties ( if that is what the user clicked on, other option is Canoe Properties)
-            setSectionProperties(selectedHullSection.getHeight(),selectedHullSection.getVolume(), selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
         previousPressedBefore = true;
-
         unboundKnobs();
         setKnobValues();
         setKnobBounds();
     }
 
     /**
-     * Highlight the next section to the right to view and edit (wraps w modulo)
+     * Highlight the next section to the right to view and edit
      */
     public void selectNextHullSection(MouseEvent e) {
         unlockKnobsOnFirstSectionSelect();
 
-        // This if block checks if the "previous" button was clicked before the "next" button.
-        // If so, and the iterator is, for example, at index 2, we’ll need to call the iterator’s `next` method twice to correctly move it forward to index 3.
-        if (previousPressedBefore) {
-            selectedHullSection = hullSectionsListIterator.next();
-            selectedHullSectionIndex = hull.getHullSections().size() - 1;
-        }
+        // Use modulo to wrap index
+        selectedHullSectionIndex = (selectedHullSectionIndex + 1) % hull.getHullSections().size();
+        selectedHullSection = hull.getHullSections().get(selectedHullSectionIndex);
+
         hullGraphic.colorNextBezierPointGroup();
 
-        // Check if we're at the end or if next index is null
-        if (!hullSectionsListIterator.hasNext()) {
-            // Reset to the start of the list by iterating through all elements
-            while (hullSectionsListIterator.hasPrevious()) {
-                selectedHullSection = hullSectionsListIterator.previous();
-            }
-            selectedHullSectionIndex = 0;
+        if (sectionPropertiesSelected) {
+            setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),
+                    selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
         }
-        // Since the "previous" method was called to reach the end, we need to call "next" once to properly
-        // set up for any additional "next" calls that follow. This prepares the iterator position correctly.
-        selectedHullSection = hullSectionsListIterator.next();
-        selectedHullSectionIndex++;
 
-        if (sectionPropertiesSelected)
-            setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
-        previousPressedBefore = false;
         nextPressedBefore = true;
-
         unboundKnobs();
         setKnobValues();
         setKnobBounds();
@@ -283,10 +252,10 @@ public class HullBuilderController implements Initializable {
         double rMin = 0.001;
         double rLMax = calculateMaxR(lKnot, thetaL);
         double rRMax = calculateMaxR(rKnot, thetaR);
-        double[] thetaLBounds = calculateThetaBounds(lKnot, rL, true);
+        double[] thetaLBounds = calculateThetaBounds(lKnot, rL, true, true);
         double thetaLMin = thetaLBounds[0];
         double thetaLMax = thetaLBounds[1];
-        double[] thetaRBounds = calculateThetaBounds(rKnot, rR, false);
+        double[] thetaRBounds = calculateThetaBounds(rKnot, rR, false, true);
         double thetaRMin = thetaRBounds[0];
         double thetaRMax = thetaRBounds[1];
 
@@ -315,7 +284,8 @@ public class HullBuilderController implements Initializable {
         double cosTheta = Math.cos(thetaRad);
         double sinTheta = Math.sin(thetaRad);
 
-        // Check quadrant of R^2 to determine which bounds of the rectangle to check
+        // Check quadrant of R^2 using CAST rule to determine which bounds of the rectangle to check
+        // Only need to check the two outer edges of the quadrant
         if (cosTheta < 0) {
             double rFromLeft = -knot.getX() / cosTheta;
             rMax = Math.min(rMax, rFromLeft);
@@ -323,12 +293,12 @@ public class HullBuilderController implements Initializable {
             double rFromRight = (hull.getLength() - knot.getX()) / cosTheta;
             rMax = Math.min(rMax, rFromRight);
         }
-        if (sinTheta > 0) {
-            double rFromTop = -knot.getY() / sinTheta;
-            rMax = Math.min(rMax, rFromTop);
-        } else if (sinTheta < 0) {
+        if (sinTheta < 0) {
             double rFromBottom = (-hull.getMaxHeight() - knot.getY()) / sinTheta;
             rMax = Math.min(rMax, rFromBottom);
+        } else if (sinTheta > 0) {
+            double rFromTop = -knot.getY() / sinTheta;
+            rMax = Math.min(rMax, rFromTop);
         }
 
         return Math.max(0, rMax);
@@ -341,10 +311,12 @@ public class HullBuilderController implements Initializable {
      * @param knot the knot point which acts as the origin
      * @param r the radius of the control point relative to the knot
      * @param isLeft whether the control point belongs to the left knot or right knot
+     * @param boundWithAdjacentSections prevents stack overflow since
+     *                                  calculateThetaBounds and calculateAdjacentSectionThetaBounds call each other
      * @return [minTheta, maxTheta]
      */
     @Traceable
-    public double[] calculateThetaBounds(Point2D knot, double r, boolean isLeft) {
+    public double[] calculateThetaBounds(Point2D knot, double r, boolean isLeft, boolean boundWithAdjacentSections) {
         double minTheta = isLeft ? 180 : 0;
         double maxTheta = isLeft ? 360 : 180;
         double xKnot = knot.getX();
@@ -373,15 +345,17 @@ public class HullBuilderController implements Initializable {
         maxTheta = start;
 
         // Incorporate additional bounds from adjacent sections
-        double[] additionalThetaBounds = calculateAdjacentSectionThetaBounds(knot, isLeft);
-        minTheta = Math.max(minTheta, additionalThetaBounds[0]);
-        maxTheta = Math.min(maxTheta, additionalThetaBounds[1]);
+        if (boundWithAdjacentSections) {
+            double[] additionalThetaBounds = calculateAdjacentSectionThetaBounds(knot, isLeft);
+            minTheta = Math.max(minTheta, additionalThetaBounds[0]);
+            maxTheta = Math.min(maxTheta, additionalThetaBounds[1]);
+        }
 
         return new double[] {minTheta, maxTheta};
     }
 
     /**
-     * Helper for calculateThetaBounds to check if the control point is within bounds
+     * Helper for calculateThetaBounds to check if the control point is within bounds of the rectangle
      */
     private boolean isPointInBounds(double thetaGuess, double xKnot, double yKnot, double l, double h, double rKnown) {
         // Get control point position
@@ -412,7 +386,7 @@ public class HullBuilderController implements Initializable {
             HullSection leftAdjacentHullSection = hull.getHullSections().get(selectedHullSectionIndex - 1);
             Point2D coPoint = ((CubicBezierFunction) leftAdjacentHullSection.getSideProfileCurve()).getControlPoints().getLast();
             double coPointR = CalculusUtils.toPolar(coPoint, knot).getX();
-            double[] thetaBounds = calculateThetaBounds(knot, coPointR, false);
+            double[] thetaBounds = calculateThetaBounds(knot, coPointR, false, false);
             additionalMinTheta = Math.max(additionalMinTheta, (thetaBounds[0] + 180) % 360);
             additionalMaxTheta = Math.min(additionalMaxTheta, (thetaBounds[1] + 180) % 360);
         }
@@ -422,7 +396,7 @@ public class HullBuilderController implements Initializable {
             HullSection rightAdjacentHullSection = hull.getHullSections().get(selectedHullSectionIndex + 1);
             Point2D coPoint = ((CubicBezierFunction) rightAdjacentHullSection.getSideProfileCurve()).getControlPoints().getFirst();
             double coPointR = CalculusUtils.toPolar(coPoint, knot).getX();
-            double[] thetaBounds = calculateThetaBounds(knot, coPointR, true);
+            double[] thetaBounds = calculateThetaBounds(knot, coPointR, true, false);
             additionalMinTheta = Math.max(additionalMinTheta, (thetaBounds[0] - 180) % 360);
             additionalMaxTheta = Math.min(additionalMaxTheta, (thetaBounds[1] - 180) % 360);
         }
@@ -566,7 +540,7 @@ public class HullBuilderController implements Initializable {
         // Update the control point in the adjacent section
         CubicBezierFunction adjacentBezier = (CubicBezierFunction) adjacentSection.getSideProfileCurve();
 
-        // Adjust the control point by subtracting delta.
+        // Adjust the control point by the delta
         if (adjustLeftOfSelected) {
             adjacentBezier.setControlX2(adjacentBezier.getControlX2() + deltaX);
             adjacentBezier.setControlY2(adjacentBezier.getControlY2() + deltaY);
@@ -607,6 +581,7 @@ public class HullBuilderController implements Initializable {
     }
 
     /**
+     * TODO: button on hull view panel: eye -> transparent eye -> closed eye for viewing graphics on hull
      * Add and position blue buttons to corners of panels
      */
     private void layoutPanelButtons() {
@@ -657,7 +632,6 @@ public class HullBuilderController implements Initializable {
         hullGraphicPane = new AnchorPane();
         hull = SharkBaitHullLibrary.generateSharkBaitHullScaledFromBezier(6);
         setSideViewHullGraphic(hull);
-        hullSectionsListIterator = hull.getHullSections().listIterator();
         setBlankSectionProperties();
     }
 }

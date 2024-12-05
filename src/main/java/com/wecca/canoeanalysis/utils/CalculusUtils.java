@@ -62,8 +62,8 @@ public class CalculusUtils
     /**
      * Converts Cartesian coordinates to polar coordinates with respect to a given origin.
      * Note: the zero degree line shifted ninety degrees to the vertical upward ray from y = 0 to y = inf
-     * This is because control points which use the polar system are either bounded to the left or right half
-     * Otherwise, the right half would be theta in {[0, 90] U [270, 360]} which cannot go on a knob
+     * This is because control points which use the polar system are either bounded to the left or right half-plane around their knot
+     * Otherwise, the right half would be theta in {[0, 90] U [270, 360]} which cannot go on a knob as multiple joined intervals
      * @param cartesianPoint the point in Cartesian form (x, y)
      * @param origin the reference point to use as the origin
      * @return a Point2D where x represents the radius (r) and y represents the angle (theta) in degrees (0 <= theta < 360)
@@ -74,7 +74,7 @@ public class CalculusUtils
         double r = Math.sqrt(x * x + y * y);
         double theta = Math.toDegrees(Math.atan2(y, x)) - 90;
 
-        // Normalize theta to be in the range [0, 360)
+        // Normalize theta to a 360 degree range
         return new Point2D(r, theta > 0 ? theta : theta + 360);
     }
 
