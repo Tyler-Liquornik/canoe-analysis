@@ -119,15 +119,8 @@ public class Knob extends Slider {
             // A timer that is called in each frame after starting, will check if the button clicked or held, and react accordingly
             animationTimer = new AnimationTimer() {
                 @Override
-                public void handle(long l) {
-                    if (!isLocked()) {
-                        double millisecondsRequiredForAHold = 200;
-                        double baseSpeed = 0.005;
-                        if (itsAPlusHold && (System.currentTimeMillis() - currentTime) > millisecondsRequiredForAHold)
-                            changeValue(baseSpeed * holdButtonSpeedMultiplier *  (max - min));
-                        if (itsAMinusHold && (System.currentTimeMillis() - currentTime) > millisecondsRequiredForAHold)
-                            changeValue(-baseSpeed * holdButtonSpeedMultiplier *  (max - min));
-                    }
+                public void handle(long now) {
+                    changeKnobValueOnHoldButton(holdButtonSpeedMultiplier, max - min);
                 }
             };
 
@@ -157,6 +150,21 @@ public class Knob extends Slider {
 
             // Bind the value label x position to value to ensure it's always centered
             valueLabel.layoutXProperty().bind(valueLabel.widthProperty().divide(-2).add(knobCenterLayoutOffset));
+        }
+
+        /**
+         * @param holdButtonSpeedMultiplier the factor by which to boost or slow speed by compared to the base speed
+         * @param range the range of the allowed knob values
+         */
+        private void changeKnobValueOnHoldButton(double holdButtonSpeedMultiplier, double range) {
+            if (!isLocked()) {
+                double millisecondsRequiredForAHold = 200;
+                double baseSpeed = 0.005;
+                if (itsAPlusHold && (System.currentTimeMillis() - currentTime) > millisecondsRequiredForAHold)
+                    changeValue(baseSpeed * holdButtonSpeedMultiplier * range);
+                if (itsAMinusHold && (System.currentTimeMillis() - currentTime) > millisecondsRequiredForAHold)
+                    changeValue(-baseSpeed * holdButtonSpeedMultiplier * range);
+            }
         }
 
         /**
@@ -287,10 +295,8 @@ public class Knob extends Slider {
                         : Math.max(newValue, currentValue - maxChange);
 
                 // Prevent setting past min or max
-                if (clampedValue < getMin())
-                    clampedValue = getMin();
-                if (clampedValue > getMax())
-                    clampedValue = getMax();
+                if (clampedValue < getMin()) clampedValue = getMin();
+                if (clampedValue > getMax()) clampedValue = getMax();
 
                 setKnobValue(clampedValue);
             }
@@ -356,10 +362,6 @@ public class Knob extends Slider {
     // TODO: Really need to refactor Knob, this is bad duplicated code
     // Issue had without Skin extending class where it would go back to a slider
 
-    /**
-     * Lock control of the knob
-     * @param lock whether to lock or unlock the knob
-     */
     public void setLocked(boolean lock) {
         KnobSkin skin = (KnobSkin) getSkin();
         this.locked = lock;

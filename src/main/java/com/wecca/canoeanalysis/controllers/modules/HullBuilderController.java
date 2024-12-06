@@ -53,7 +53,7 @@ public class HullBuilderController implements Initializable {
     private HullSection selectedHullSection;
     private int selectedHullSectionIndex;
     private boolean sectionPropertiesSelected;
-    private int graphicsTransparencyState;
+    private int graphicsViewingState;
 
     /**
      * Clears the toolbar of buttons from other modules and adds ones from this module
@@ -73,7 +73,6 @@ public class HullBuilderController implements Initializable {
     }
 
     public void dummyOnClick(MouseEvent event) {
-        System.out.println("selectedHullSectionIndex = " + selectedHullSectionIndex);
     }
 
     /**
@@ -108,7 +107,7 @@ public class HullBuilderController implements Initializable {
         hullGraphicPane.getChildren().clear();
         hullGraphicPane.getChildren().add(hullGraphic);
         hullViewAnchorPane.getChildren().set(1, hullGraphicPane);
-        applyGraphicsTransparencyState();
+        applyGraphicsViewingState();
 
         // Keep the selected hull section colored
         if (selectedHullSection != null) {
@@ -161,6 +160,7 @@ public class HullBuilderController implements Initializable {
     /**
      * Highlight the next section to the right to view and edit
      */
+    @Traceable
     public void selectNextHullSection(MouseEvent e) {
         unlockKnobsOnFirstSectionSelect();
 
@@ -317,7 +317,6 @@ public class HullBuilderController implements Initializable {
      *                                  calculateThetaBounds and calculateAdjacentSectionThetaBounds call each other
      * @return [minTheta, maxTheta]
      */
-    @Traceable
     public double[] calculateThetaBounds(Point2D knot, double r, boolean isLeft, boolean boundWithAdjacentSections) {
         double minTheta = isLeft ? 180 : 0;
         double maxTheta = isLeft ? 360 : 180;
@@ -386,9 +385,9 @@ public class HullBuilderController implements Initializable {
         // Handle left adjacent section
         if (isLeft && selectedHullSectionIndex > 0) {
             HullSection leftAdjacentHullSection = hull.getHullSections().get(selectedHullSectionIndex - 1);
-            Point2D coPoint = ((CubicBezierFunction) leftAdjacentHullSection.getSideProfileCurve()).getControlPoints().getLast();
-            double coPointR = CalculusUtils.toPolar(coPoint, knot).getX();
-            double[] thetaBounds = calculateThetaBounds(knot, coPointR, false, false);
+            Point2D siblingPoint = ((CubicBezierFunction) leftAdjacentHullSection.getSideProfileCurve()).getControlPoints().getLast();
+            double siblingPointR = CalculusUtils.toPolar(siblingPoint, knot).getX();
+            double[] thetaBounds = calculateThetaBounds(knot, siblingPointR, false, false);
             additionalMinTheta = Math.max(additionalMinTheta, (thetaBounds[0] + 180) % 360);
             additionalMaxTheta = Math.min(additionalMaxTheta, (thetaBounds[1] + 180) % 360);
         }
@@ -396,14 +395,14 @@ public class HullBuilderController implements Initializable {
         // Handle right adjacent section
         if (!isLeft && selectedHullSectionIndex < hull.getHullSections().size() - 1) {
             HullSection rightAdjacentHullSection = hull.getHullSections().get(selectedHullSectionIndex + 1);
-            Point2D coPoint = ((CubicBezierFunction) rightAdjacentHullSection.getSideProfileCurve()).getControlPoints().getFirst();
-            double coPointR = CalculusUtils.toPolar(coPoint, knot).getX();
-            double[] thetaBounds = calculateThetaBounds(knot, coPointR, true, false);
+            Point2D siblingPoint = ((CubicBezierFunction) rightAdjacentHullSection.getSideProfileCurve()).getControlPoints().getFirst();
+            double siblingPointR = CalculusUtils.toPolar(siblingPoint, knot).getX();
+            double[] thetaBounds = calculateThetaBounds(knot, siblingPointR, true, false);
             additionalMinTheta = Math.max(additionalMinTheta, (thetaBounds[0] - 180) % 360);
             additionalMaxTheta = Math.min(additionalMaxTheta, (thetaBounds[1] - 180) % 360);
         }
 
-        return new double[]{additionalMinTheta, additionalMaxTheta};
+        return new double[] {additionalMinTheta, additionalMaxTheta};
     }
 
     /**
@@ -468,59 +467,73 @@ public class HullBuilderController implements Initializable {
 
     /**
      * Updates the knot and control points of the selected hull section and its graphic
+     *
+     * IMPORTANT DISTINCTION:
+     *
+     * In order to maintain C1 smoothness, the angle must match for both sides of all bezier handles.
+     * Since handles lie of the edges of sections, adjusting a handle requires moving the control point in the adjacent section
+     * Thus we differentiate between the data of the selected and adjacent hull sections
+     *
      * @param knobIndex the index of the knob that was changed (knobs indexed L to R in increasing order from 0)
-     * @param newVal the new value for the knob (after user interaction)
+     * @param newThetaVal the new value for the knob (after user interaction)
      */
-    private void updateHullFromKnob(int knobIndex, double oldVal, double newVal) {
+    @Traceable
+    private void updateHullFromKnob(int knobIndex, double newThetaVal) {
         if (selectedHullSection == null) return;
 
         // Update the relevant knob value
-        knobs.get(knobIndex).setKnobValue(newVal);
+        knobs.get(knobIndex).setKnobValue(newThetaVal);
 
         // Get current knob values
-        double rL = knobs.get(0).getValue();
-        double thetaL = knobs.get(1).getValue();
-        double rR = knobs.get(2).getValue();
-        double thetaR = knobs.get(3).getValue();
+        double selectedRL = knobs.get(0).getValue();
+        double selectedThetaL = knobs.get(1).getValue();
+        double selectedRR = knobs.get(2).getValue();
+        double selectedThetaR = knobs.get(3).getValue();
 
         // Update the relevant control point from polar coordinates
-        List<Point2D> knotPoints = ((CubicBezierFunction) selectedHullSection.getSideProfileCurve()).getKnotPoints();
-        Point2D lKnot = knotPoints.getFirst();
-        Point2D rKnot = knotPoints.getLast();
-        CubicBezierFunction bezier = (CubicBezierFunction) selectedHullSection.getSideProfileCurve();
+        List<Point2D> selectedKnotPoints = ((CubicBezierFunction) selectedHullSection.getSideProfileCurve()).getKnotPoints();
+        Point2D selectedLKnot = selectedKnotPoints.getFirst();
+        Point2D selectedRKnot = selectedKnotPoints.getLast();
+        CubicBezierFunction selectedBezier = (CubicBezierFunction) selectedHullSection.getSideProfileCurve();
         if (knobIndex == 0 || knobIndex == 1) { // Left control point
-            Point2D lControl = CalculusUtils.toCartesian(new Point2D(rL, thetaL), lKnot);
-            bezier.setControlX1(lControl.getX());
-            bezier.setControlY1(lControl.getY());
+            Point2D lControl = CalculusUtils.toCartesian(new Point2D(selectedRL, selectedThetaL), selectedLKnot);
+            selectedBezier.setControlX1(lControl.getX());
+            selectedBezier.setControlY1(lControl.getY());
         } else if (knobIndex == 2 || knobIndex == 3) { // Right control point
-            Point2D rControl = CalculusUtils.toCartesian(new Point2D(rR, thetaR), rKnot);
-            bezier.setControlX2(rControl.getX());
-            bezier.setControlY2(rControl.getY());
+            Point2D rControl = CalculusUtils.toCartesian(new Point2D(selectedRR, selectedThetaR), selectedRKnot);
+            selectedBezier.setControlX2(rControl.getX());
+            selectedBezier.setControlY2(rControl.getY());
         }
 
         // When changing theta we need to adjust adjacent sections to maintain C1 smoothness
         boolean adjustingLeftAdjacentSection = knobIndex == 1 && selectedHullSectionIndex != 0;
-        boolean adjustingRightAdjustSection = knobIndex == 3 && selectedHullSectionIndex != (hull.getHullSections().size() - 1);
-        if (adjustingLeftAdjacentSection || adjustingRightAdjustSection) {
+        boolean adjustingRightAdjacentSection = knobIndex == 3 && selectedHullSectionIndex != (hull.getHullSections().size() - 1);
+        int adjacentHullSectionIndex = selectedHullSectionIndex + (adjustingLeftAdjacentSection ? -1 : 1);
+        HullSection adjacentHullSection = hull.getHullSections().get(adjacentHullSectionIndex);
+        if (adjustingLeftAdjacentSection || adjustingRightAdjacentSection) {
+
             // Compute delta for the updated control point
-            Point2D oldControl, newControl;
+            Point2D adjacentSectionOldControl, adjacentSectionNewControl;
+            double newValMirrored = (newThetaVal + 180) % 360;
             if (adjustingLeftAdjacentSection) {
-                oldControl = CalculusUtils.toCartesian(new Point2D(rL, oldVal), lKnot);
-                newControl = CalculusUtils.toCartesian(new Point2D(rL, newVal), lKnot);
+                // Get rR of the left-adjacent section, which stays constant as only its associated theta changes
+                adjacentSectionOldControl = ((CubicBezierFunction) adjacentHullSection.getSideProfileCurve()).getControlPoints().getLast();
+                double adjacentSectionRR = CalculusUtils.toPolar(adjacentSectionOldControl, selectedLKnot).getX();
+                adjacentSectionNewControl = CalculusUtils.toCartesian(new Point2D(adjacentSectionRR, newValMirrored), selectedLKnot);
             } else {
-                oldControl = CalculusUtils.toCartesian(new Point2D(rR, oldVal), rKnot);
-                newControl = CalculusUtils.toCartesian(new Point2D(rR, newVal), rKnot);
+                // Get rL of the right-adjacent section, which stays constant as only its associated theta changes
+                adjacentSectionOldControl = ((CubicBezierFunction) adjacentHullSection.getSideProfileCurve()).getControlPoints().getFirst();
+                double adjacentSectionRL = CalculusUtils.toPolar(adjacentSectionOldControl, selectedRKnot).getX();
+                adjacentSectionNewControl = CalculusUtils.toCartesian(new Point2D(adjacentSectionRL, newValMirrored), selectedRKnot);
             }
-            double deltaX = newControl.getX() - oldControl.getX();
-            double deltaY = newControl.getY() - oldControl.getY();
+            double deltaX = adjacentSectionNewControl.getX() - adjacentSectionOldControl.getX();
+            double deltaY = adjacentSectionNewControl.getY() - adjacentSectionOldControl.getY();
 
             // Propagate the change to the adjacent control point,
-            // Inverting deltas since adjacent section control point is mirrored across the knot
-            HullSection adjustedSection = adjustAdjacentSectionControlPoints(knobIndex == 1, -deltaX, -deltaY);
-            hull.getHullSections().set(
-                    selectedHullSectionIndex + (adjustingLeftAdjacentSection ? -1 : 1),
-                    adjustedSection
-            );
+            // Inverting deltas since adjacent section control point (i.e. sibling point on the bezier handle) is mirrored across the knot
+            HullSection adjustedAdjacentSection = adjustAdjacentSectionControlPoint(
+                    adjacentHullSection, knobIndex == 1, deltaX, deltaY);
+            hull.getHullSections().set(adjacentHullSectionIndex, adjustedAdjacentSection);
         }
 
         // Redraw the hull graphic
@@ -530,16 +543,13 @@ public class HullBuilderController implements Initializable {
 
     /**
      * Adjusts the control points of the adjacent hull sections to maintain C1 continuity.
+     * @param adjacentSection the adjacent section (either on the left or right) to adjust
+     *                        the correct section must be passed in, this logic is not in the method
      * @param adjustLeftOfSelected whether to adjust the adjacent left section (otherwise right)
      * @param deltaX the amount by which to adjust the control point x in the adjacent section
      * @param deltaY the amount by which to adjust the control point y in the adjacent section
      */
-    private HullSection adjustAdjacentSectionControlPoints(boolean adjustLeftOfSelected, double deltaX, double deltaY) {
-        // Get the adjacent section needing adjustment
-        HullSection adjacentSection = adjustLeftOfSelected ? hull.getHullSections().get(selectedHullSectionIndex - 1)
-                : hull.getHullSections().get(selectedHullSectionIndex + 1);
-
-        // Update the control point in the adjacent section
+    private HullSection adjustAdjacentSectionControlPoint(HullSection adjacentSection, boolean adjustLeftOfSelected, double deltaX, double deltaY) {
         CubicBezierFunction adjacentBezier = (CubicBezierFunction) adjacentSection.getSideProfileCurve();
 
         // Adjust the control point by the delta
@@ -575,7 +585,7 @@ public class HullBuilderController implements Initializable {
             knob.setLocked(true);
             knobs.add(knob);
             int finalI = i;
-            knobListeners.add((observable, oldValue, newValue) -> updateHullFromKnob(finalI, oldValue.doubleValue(), newValue.doubleValue()));
+            knobListeners.add((observable, oldValue, newValue) -> updateHullFromKnob(finalI, newValue.doubleValue()));
             knob.valueProperty().addListener(knobListeners.get(i));
         }
 
@@ -588,31 +598,36 @@ public class HullBuilderController implements Initializable {
      */
     private void toggleGraphicsTransparency(MouseEvent e) {
         // State: Visible -> Transparent -> Invisible -> ...
-        graphicsTransparencyState = (graphicsTransparencyState + 1) % 3;
+        graphicsViewingState = (graphicsViewingState + 1) % 3;
 
         // Get the button instance
         IconButton graphicsTransparencyButton = (IconButton) e.getSource();
 
         // Update the button's icon based on the current state
         IconGlyphType newIcon;
-        switch (graphicsTransparencyState) {
+        switch (graphicsViewingState) {
             case 1 -> newIcon = IconGlyphType.HALF_FILLED_CIRCLE;
             case 2 -> newIcon = IconGlyphType.RING;
             default -> newIcon = IconGlyphType.CIRCLE;
         }
         graphicsTransparencyButton.setIcon(newIcon);
-        applyGraphicsTransparencyState();
+        applyGraphicsViewingState();
     }
 
     /**
      * Apply the current graphics transparency state to slopeGraphics (visible, transparent, invisible)
      */
-    private void applyGraphicsTransparencyState() {
+    private void applyGraphicsViewingState() {
         hullGraphic.getSlopeGraphics().forEach(slopeGraphic -> {
-            switch (graphicsTransparencyState) {
+            switch (graphicsViewingState) {
                 case 0 -> slopeGraphic.setOpacity(1.0);
-                case 1 -> slopeGraphic.setOpacity(0.4);
-                case 2 -> slopeGraphic.setOpacity(0.0);
+                case 1 -> slopeGraphic.getAllGraphicsButCenterPoint()
+                        .forEach(node -> node.setOpacity(0.0));
+                case 2 -> {
+                    slopeGraphic.getAllGraphicsButCenterPoint()
+                            .forEach(node -> node.setOpacity(1.0));
+                    slopeGraphic.setOpacity(0.0);
+                }
             }
         });
     }
@@ -681,6 +696,6 @@ public class HullBuilderController implements Initializable {
         selectedHullSection = null;
         selectedHullSectionIndex = -1;
         sectionPropertiesSelected = true;
-        graphicsTransparencyState = 0;
+        graphicsViewingState = 0;
     }
 }
