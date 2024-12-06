@@ -55,7 +55,7 @@ public class BezierHullTangentGraphic extends Group implements Graphic {
         if (lControlPoint == null && rControlPoint == null)
             throw new IllegalArgumentException("At least one of the left or right control points must be specified.");
 
-        // Commented out to speed up rendering, but should be enforced, be careful
+        // Commented out to speed up rendering, but should be enforced, use this to test!
         // validateSlope();
 
         ColorManagerService.registerInColorPalette(this);
