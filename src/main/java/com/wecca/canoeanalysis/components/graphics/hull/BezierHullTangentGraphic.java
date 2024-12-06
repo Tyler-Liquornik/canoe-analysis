@@ -1,15 +1,21 @@
 package com.wecca.canoeanalysis.components.graphics.hull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.graphics.Graphic;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * A graphical component for displaying the slope at Bézier spline join points.
@@ -151,5 +157,10 @@ public class BezierHullTangentGraphic extends Group implements Graphic {
     @Override
     public boolean isColored() {
         return isLeftColored || isRightColored;
+    }
+
+    @JsonIgnore
+    public List<Node> getAllGraphicsButCenterPoint() {
+        return Stream.of(lControlPointGraphic,rControlPointGraphic, lineToLControl, lineToRControl).filter(Objects::nonNull).toList();
     }
 }
