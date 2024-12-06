@@ -29,6 +29,16 @@ import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * To whoever is coding here:
+ *
+ * You need to be extremely careful that everything here is very performant!
+ * As the user turns the knobs, they fire off a high frequency of events (picture like a machine gun but instead of bullets it shoots events XD)
+ * These events must be handled with low latency
+ * Because you might have to calculate several integrals or something PER EVENT!!!!
+ * Be smart with good DS&A knowledge, do not write slow code
+ * Otherwise animations and UI controls become choppy and the UX is ruined
+ */
 public class HullBuilderController implements Initializable {
 
     @FXML
@@ -506,31 +516,21 @@ public class HullBuilderController implements Initializable {
         }
 
         // When changing theta we need to adjust adjacent sections to maintain C1 smoothness
+        // Calculate new control point in Cartesian coordinates, derived by adjusting the angle (theta)
+        // while keeping the distance (radius) constant relative to selectedLKnot.
         boolean adjustingLeftAdjacentSection = knobIndex == 1 && selectedHullSectionIndex != 0;
         boolean adjustingRightAdjacentSection = knobIndex == 3 && selectedHullSectionIndex != (hull.getHullSections().size() - 1);
         int adjacentHullSectionIndex = selectedHullSectionIndex + (adjustingLeftAdjacentSection ? -1 : 1);
         HullSection adjacentHullSection = hull.getHullSections().get(adjacentHullSectionIndex);
+
+        // Compute deltas for the adjacent control point
         if (adjustingLeftAdjacentSection || adjustingRightAdjacentSection) {
+            Point2D selectedKnot = adjustingLeftAdjacentSection ? selectedLKnot : selectedRKnot;
+            Point2D deltas = computeAdjacentControlDeltas(adjacentHullSection, adjustingLeftAdjacentSection, newThetaVal, selectedKnot);
+            double deltaX = deltas.getX();
+            double deltaY = deltas.getY();
 
-            // Compute delta for the updated control point
-            Point2D adjacentSectionOldControl, adjacentSectionNewControl;
-            double newValMirrored = (newThetaVal + 180) % 360;
-            if (adjustingLeftAdjacentSection) {
-                // Get rR of the left-adjacent section, which stays constant as only its associated theta changes
-                adjacentSectionOldControl = ((CubicBezierFunction) adjacentHullSection.getSideProfileCurve()).getControlPoints().getLast();
-                double adjacentSectionRR = CalculusUtils.toPolar(adjacentSectionOldControl, selectedLKnot).getX();
-                adjacentSectionNewControl = CalculusUtils.toCartesian(new Point2D(adjacentSectionRR, newValMirrored), selectedLKnot);
-            } else {
-                // Get rL of the right-adjacent section, which stays constant as only its associated theta changes
-                adjacentSectionOldControl = ((CubicBezierFunction) adjacentHullSection.getSideProfileCurve()).getControlPoints().getFirst();
-                double adjacentSectionRL = CalculusUtils.toPolar(adjacentSectionOldControl, selectedRKnot).getX();
-                adjacentSectionNewControl = CalculusUtils.toCartesian(new Point2D(adjacentSectionRL, newValMirrored), selectedRKnot);
-            }
-            double deltaX = adjacentSectionNewControl.getX() - adjacentSectionOldControl.getX();
-            double deltaY = adjacentSectionNewControl.getY() - adjacentSectionOldControl.getY();
-
-            // Propagate the change to the adjacent control point,
-            // Inverting deltas since adjacent section control point (i.e. sibling point on the bezier handle) is mirrored across the knot
+            // Propagate the change to the adjacent control point
             HullSection adjustedAdjacentSection = adjustAdjacentSectionControlPoint(
                     adjacentHullSection, knobIndex == 1, deltaX, deltaY);
             hull.getHullSections().set(adjacentHullSectionIndex, adjustedAdjacentSection);
@@ -565,6 +565,41 @@ public class HullBuilderController implements Initializable {
         adjacentSection.setSideProfileCurve(adjacentBezier);
         return adjacentSection;
     }
+
+    /**
+     * Computes the new control point and deltas for adjusting the control point of an adjacent hull section
+     * to maintain C1 smoothness. The computation is based on polar coordinate transformations.
+     *
+     * @param adjacentHullSection       The adjacent hull section being adjusted.
+     * @param isLeftAdjacentSection     True if adjusting the left-adjacent section, false otherwise.
+     * @param newThetaVal               The new angle (theta) value for the selected control point.
+     * @param selectedKnot              The knot point used as the reference for polar transformations.
+     * @return A Point2D array where:
+     *         index 0 contains the deltaX,
+     *         index 1 contains the deltaY.
+     */
+    private Point2D computeAdjacentControlDeltas(HullSection adjacentHullSection, boolean isLeftAdjacentSection, double newThetaVal, Point2D selectedKnot) {
+        // Determine old control point and polar radius (r)
+        Point2D adjacentSectionOldControl;
+        double adjacentSectionRadius;
+        double adjacentSectionNewThetaVal = (newThetaVal + 180) % 360;
+
+        if (isLeftAdjacentSection)
+            adjacentSectionOldControl = ((CubicBezierFunction) adjacentHullSection.getSideProfileCurve()).getControlPoints().getLast();
+        else
+            adjacentSectionOldControl = ((CubicBezierFunction) adjacentHullSection.getSideProfileCurve()).getControlPoints().getFirst();
+        adjacentSectionRadius = CalculusUtils.toPolar(adjacentSectionOldControl, selectedKnot).getX();
+
+        // Compute new control point in Cartesian coordinates
+        Point2D adjacentSectionNewControl = CalculusUtils.toCartesian(
+                new Point2D(adjacentSectionRadius, adjacentSectionNewThetaVal), selectedKnot);
+
+        // Calculate and return deltas
+        double deltaX = adjacentSectionNewControl.getX() - adjacentSectionOldControl.getX();
+        double deltaY = adjacentSectionNewControl.getY() - adjacentSectionOldControl.getY();
+        return new Point2D(deltaX, deltaY);
+    }
+
 
     /**
      * Add 4 knobs with N/A displaying, for when no hull section is selected
