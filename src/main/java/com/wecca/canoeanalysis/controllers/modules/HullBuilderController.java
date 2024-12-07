@@ -287,14 +287,14 @@ public class HullBuilderController implements Initializable {
      * remains within the rectangular bounds defined by x = 0, x = L, y = 0, y = -h.
      *
      * @param knot the knot point which acts as the origin
-     * @param theta the angle in degrees (relative to the origin) at which the point lies.
+     * @param thetaKnown the known angle in degrees (relative to the origin) at which the point lies.
      * @return The maximum radius (r) such that the point stays within the bounds.
      */
-    public double calculateMaxR(Point2D knot, double theta) {
+    public double calculateMaxR(Point2D knot, double thetaKnown) {
         double rMax = Double.MAX_VALUE;
-        double thetaRad = Math.toRadians((theta + 90) % 360);
-        double cosTheta = Math.cos(thetaRad);
-        double sinTheta = Math.sin(thetaRad);
+        double thetaRad = Math.toRadians((thetaKnown + 90) % 360);
+        double cosTheta =  CalculusUtils.roundXDecimalDigits(Math.cos(thetaRad), 3);
+        double sinTheta = CalculusUtils.roundXDecimalDigits(Math.sin(thetaRad), 3);
 
         // Check quadrant of R^2 using CAST rule to determine which bounds of the rectangle to check
         // Only need to check the two outer edges of the quadrant
