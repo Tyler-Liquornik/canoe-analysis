@@ -13,6 +13,7 @@ import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
+import javafx.animation.Timeline;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -210,7 +211,7 @@ public class HullBuilderController implements Initializable {
         this.heightLabel.setText(heightInfo);
         String interval = "("+x+" m, "+rx+" m)";
         this.intervalLabel.setText(interval);
-        String volumeFormated = String.format("%.2f m^3",volume);
+        String volumeFormated = String.format("%.3f m^3",volume);
         this.volumeLabel.setText(volumeFormated);
         String massFormated = String.format("%.2f kg",mass);
         this.massLabel.setText(massFormated);
@@ -541,9 +542,10 @@ public class HullBuilderController implements Initializable {
             hull.getHullSections().set(adjacentHullSectionIndex, adjustedAdjacentSection);
         }
 
-        // Redraw the hull graphic
+        // Update UI
         hullGraphicPane.getChildren().clear();
         setSideViewHullGraphic(hull);
+        recalculateAndDisplayHullProperties();
     }
 
     /**
@@ -605,6 +607,18 @@ public class HullBuilderController implements Initializable {
         return new Point2D(deltaX, deltaY);
     }
 
+    /**
+     * Update the UI based on the current property selection
+     */
+    private void recalculateAndDisplayHullProperties() {
+        if (sectionPropertiesSelected && selectedHullSection != null) {
+            setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),
+                    selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
+        } else {
+            setSectionProperties(hull.getMaxHeight(), hull.getTotalVolume(),
+                    hull.getMass(), 0, hull.getLength());
+        }
+    }
 
     /**
      * Add 4 knobs with N/A displaying, for when no hull section is selected
