@@ -359,7 +359,7 @@ public class HullBuilderController implements Initializable {
         if (boundWithAdjacentSections) {
             double[] additionalThetaBounds = calculateAdjacentSectionThetaBounds(knot, isLeft);
             minTheta = Math.max(minTheta, additionalThetaBounds[0]);
-            maxTheta = Math.min(maxTheta, additionalThetaBounds[1]);
+            maxTheta = Math.max(Math.min(maxTheta, additionalThetaBounds[1]), minTheta);
         }
 
         return new double[] {minTheta, maxTheta};
@@ -520,11 +520,11 @@ public class HullBuilderController implements Initializable {
         // while keeping the distance (radius) constant relative to selectedLKnot.
         boolean adjustingLeftAdjacentSection = knobIndex == 1 && selectedHullSectionIndex != 0;
         boolean adjustingRightAdjacentSection = knobIndex == 3 && selectedHullSectionIndex != (hull.getHullSections().size() - 1);
-        int adjacentHullSectionIndex = selectedHullSectionIndex + (adjustingLeftAdjacentSection ? -1 : 1);
-        HullSection adjacentHullSection = hull.getHullSections().get(adjacentHullSectionIndex);
 
         // Compute deltas for the adjacent control point
         if (adjustingLeftAdjacentSection || adjustingRightAdjacentSection) {
+            int adjacentHullSectionIndex = selectedHullSectionIndex + (adjustingLeftAdjacentSection ? -1 : 1);
+            HullSection adjacentHullSection = hull.getHullSections().get(adjacentHullSectionIndex);
             Point2D selectedKnot = adjustingLeftAdjacentSection ? selectedLKnot : selectedRKnot;
             Point2D deltas = computeAdjacentControlDeltas(adjacentHullSection, adjustingLeftAdjacentSection, newThetaVal, selectedKnot);
             double deltaX = deltas.getX();
@@ -628,15 +628,16 @@ public class HullBuilderController implements Initializable {
     }
 
     /**
-     * Toggle the transparency of all graphics except the hull itself
-     * Includes bezier tangents, will later include other graphics
+     * Toggles the viewing state of all graphics except the hull itself.
+     * The toggle cycles through the following states:
+     * - Everything visible
+     * - Some things visible
+     * - Nothing visible
+     * @param e the MouseEvent triggered by the button click
      */
-    private void toggleGraphicsTransparency(MouseEvent e) {
-        // State: Visible -> Transparent -> Invisible -> ...
+    private void toggleGraphicsViewingStateButton(MouseEvent e) {
+        // 3 states
         graphicsViewingState = (graphicsViewingState + 1) % 3;
-
-        // Get the button instance
-        IconButton graphicsTransparencyButton = (IconButton) e.getSource();
 
         // Update the button's icon based on the current state
         IconGlyphType newIcon;
@@ -645,12 +646,13 @@ public class HullBuilderController implements Initializable {
             case 2 -> newIcon = IconGlyphType.RING;
             default -> newIcon = IconGlyphType.CIRCLE;
         }
-        graphicsTransparencyButton.setIcon(newIcon);
+        IconButton graphicsViewingStateButton = (IconButton) e.getSource();
+        graphicsViewingStateButton.setIcon(newIcon);
         applyGraphicsViewingState();
     }
 
     /**
-     * Apply the current graphics transparency state to slopeGraphics (visible, transparent, invisible)
+     * Apply the current graphics transparency state to slopeGraphics
      */
     private void applyGraphicsViewingState() {
         hullGraphic.getSlopeGraphics().forEach(slopeGraphic -> {
@@ -675,7 +677,7 @@ public class HullBuilderController implements Initializable {
     private void layoutPanelButtons() {
         IconButton nextLeftSectionButton = IconButton.getPanelButton(IconGlyphType.LEFT, this::selectPreviousHullSection, 12);
         IconButton nextRightSectionButton = IconButton.getPanelButton(IconGlyphType.RIGHT, this::selectNextHullSection, 12);
-        IconButton graphicsTransparencyButton = IconButton.getPanelButton(IconGlyphType.CIRCLE, this::toggleGraphicsTransparency, 12);
+        IconButton graphicsTransparencyButton = IconButton.getPanelButton(IconGlyphType.CIRCLE, this::toggleGraphicsViewingStateButton, 12);
         IconButton curveParameterizationPlusButton = IconButton.getPanelButton(IconGlyphType.PLUS, this::dummyOnClick, 14);
         IconButton canoePropertiesSwitchButton = IconButton.getPanelButton(IconGlyphType.SWITCH, this::switchButton, 14);
         IconButton canoePropertiesPlusButton = IconButton.getPanelButton(IconGlyphType.PLUS, this::dummyOnClick, 14);
