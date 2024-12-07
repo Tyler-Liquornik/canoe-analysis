@@ -317,21 +317,19 @@ public class HullBuilderController implements Initializable {
     }
 
     /**
-     * Calculates the minimum and maximum angles (theta) such that the control point at (r, theta) relative to a knot
+     * Calculates the minimum and maximum angles (theta) such that the control point at (rKnown, theta) relative to a knot
      * remains within the rectangular bounds defined by x = 0, x = L, y = 0, y = -h.
      *
      * @param knot the knot point which acts as the origin
-     * @param r the radius of the control point relative to the knot
+     * @param rKnown the known radius of the control point relative to the knot
      * @param isLeft whether the control point belongs to the left knot or right knot
-     * @param boundWithAdjacentSections prevents stack overflow since
-     *                                  calculateThetaBounds and calculateAdjacentSectionThetaBounds call each other
+     * @param boundWithAdjacentSections prevents stack overflow since calculateThetaBounds and calculateAdjacentSectionThetaBounds
+     *                                  call each other. Always set to true except in calculateAdjacentSectionThetaBounds
      * @return [minTheta, maxTheta]
      */
-    public double[] calculateThetaBounds(Point2D knot, double r, boolean isLeft, boolean boundWithAdjacentSections) {
+    public double[] calculateThetaBounds(Point2D knot, double rKnown, boolean isLeft, boolean boundWithAdjacentSections) {
         double minTheta = isLeft ? 180 : 0;
         double maxTheta = isLeft ? 360 : 180;
-        double xKnot = knot.getX();
-        double yKnot = knot.getY();
         double l = hull.getLength();
         double h = -hull.getMaxHeight();
 
@@ -339,9 +337,9 @@ public class HullBuilderController implements Initializable {
         double start = minTheta;
         double end = minTheta + 180;
         while (end - start > 1e-3) {
-            double mid = (start + end) / 2;
-            if (isPointInBounds(mid, xKnot, yKnot, l, h, r)) end = mid;
-            else start = mid;
+            double thetaGuess = (start + end) / 2;
+            if (isPointInBounds(rKnown, thetaGuess, knot, l, h)) end = thetaGuess;
+            else start = thetaGuess;
         }
         minTheta = start;
 
@@ -349,9 +347,9 @@ public class HullBuilderController implements Initializable {
         start = maxTheta - 180;
         end = maxTheta;
         while (end - start > 1e-3) {
-            double mid = (start + end) / 2;
-            if (isPointInBounds(mid, xKnot, yKnot, l, h, r)) start = mid;
-            else end = mid;
+            double thetaGuess = (start + end) / 2;
+            if (isPointInBounds(rKnown, thetaGuess, knot, l, h)) start = thetaGuess;
+            else end = thetaGuess;
         }
         maxTheta = start;
 
@@ -366,18 +364,25 @@ public class HullBuilderController implements Initializable {
     }
 
     /**
-     * Helper for calculateThetaBounds to check if the control point is within bounds of the rectangle
+     * Checks if a control point, specified in polar coordinates, lies within the bounds of a given rectangle.
+     * @param rKnown The radius of the control point in polar coordinates.
+     * @param thetaGuess The angle (in radians) of the control point in polar coordinates.
+     * @param knot The knot point (reference point) to which the polar coordinates are relative.
+     * @param l the length of the rectangle stretching rightward from 0
+     * @param h the height, should be inputted as negative to signify stretching downward from 0
+     * @return True if the control point lies within the bounds of the rectangle;
      */
-    private boolean isPointInBounds(double thetaGuess, double xKnot, double yKnot, double l, double h, double rKnown) {
+    private boolean isPointInBounds(double rKnown, double thetaGuess, Point2D knot, double l, double h) {
         // Get control point position
-        double xControl = xKnot + rKnown * Math.cos(Math.toRadians((thetaGuess + 90) % 360));
-        double yControl = yKnot + rKnown * Math.sin(Math.toRadians((thetaGuess + 90) % 360));
+        Point2D cartesianControl = CalculusUtils.toCartesian(new Point2D(rKnown, thetaGuess), knot);
+        double xControl = cartesianControl.getX();
+        double yControl = cartesianControl.getY();
 
         // Fix floating point error
         if (Math.abs(yControl - 0) < 1e-6) yControl = 0;
         if (Math.abs(xControl - 0) < 1e-6) xControl = 0;
 
-        // Check bounds
+        // Check rectangle bounds
         return xControl >= 0 && xControl <= l && yControl <= 0 && yControl >= h;
     }
 

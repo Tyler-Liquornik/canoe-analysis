@@ -103,7 +103,10 @@ public class Hull {
                 canoeHeight = sectionHeight;
             }
         }
-        return -canoeHeight; // canoe height is distance down from 0, so it must be negated
+
+        // canoe height is distance down from 0, so it must be negated
+        // rounding addresses a floating point error in HullBuildController::getThetaBounds
+        return CalculusUtils.roundXDecimalDigits(-canoeHeight, 10);
     }
 
     /**
