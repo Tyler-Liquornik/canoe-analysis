@@ -18,19 +18,19 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
- * A graphical component for displaying the slope at Bézier spline join points.
- * Can highlight only one half of the slope within either the left or right section.
+ * A graphical component for displaying the slope at Bézier spline join points as a handle.
+ * Can highlight only one half of the handle within either the left or right section.
  */
 @Getter @Setter
-public class BezierHullTangentGraphic extends Group implements Graphic {
+public class BezierHandleGraphic extends Group implements Graphic {
 
     private Point2D lControlPoint;
     private Point2D centerPoint;
     private Point2D rControlPoint;
 
-    private BezierHullPointGraphic lControlPointGraphic;
-    private BezierHullPointGraphic tangentPointGraphic;
-    private BezierHullPointGraphic rControlPointGraphic;
+    private PointGraphic lControlPointGraphic;
+    private PointGraphic tangentPointGraphic;
+    private PointGraphic rControlPointGraphic;
 
     private Line lineToLControl;
     private Line lineToRControl;
@@ -40,11 +40,11 @@ public class BezierHullTangentGraphic extends Group implements Graphic {
 
     /**
      * @param lControlPoint The left control point (can be null).
-     * @param centerPoint The main point representing the center of the slope.
+     * @param centerPoint The main point representing the center of the handle.
      * @param rControlPoint The right control point (can be null).
      * Note that lControlPoint and rControlPoint cannot both be null.
      */
-    public BezierHullTangentGraphic(Point2D lControlPoint, Point2D centerPoint, Point2D rControlPoint) {
+    public BezierHandleGraphic(Point2D lControlPoint, Point2D centerPoint, Point2D rControlPoint) {
         this.lControlPoint = lControlPoint;
         this.centerPoint = centerPoint;
         this.rControlPoint = rControlPoint;
@@ -81,7 +81,7 @@ public class BezierHullTangentGraphic extends Group implements Graphic {
     @Override
     public void draw() {
         // Create the center point circle
-        tangentPointGraphic = new BezierHullPointGraphic(centerPoint.getX(), centerPoint.getY(), 4);
+        tangentPointGraphic = new PointGraphic(centerPoint.getX(), centerPoint.getY(), 4);
 
         // Create the lines to the control points for whichever exist
         // +1 shifts graphics misalignment from points getY
@@ -90,7 +90,7 @@ public class BezierHullTangentGraphic extends Group implements Graphic {
             lineToLControl.setStroke(ColorPaletteService.getColor("white"));
             lineToLControl.setStrokeWidth(2);
             lineToLControl.getStrokeDashArray().addAll(3.0, 3.0);
-            lControlPointGraphic = new BezierHullPointGraphic(lControlPoint.getX(), lControlPoint.getY(), 3);
+            lControlPointGraphic = new PointGraphic(lControlPoint.getX(), lControlPoint.getY(), 3);
             this.getChildren().addAll(lineToLControl, lControlPointGraphic);
         }
 
@@ -99,11 +99,10 @@ public class BezierHullTangentGraphic extends Group implements Graphic {
             lineToRControl.setStroke(ColorPaletteService.getColor("white"));
             lineToRControl.setStrokeWidth(2);
             lineToRControl.getStrokeDashArray().addAll(3.0, 3.0);
-            rControlPointGraphic = new BezierHullPointGraphic(rControlPoint.getX(), rControlPoint.getY(), 3);
+            rControlPointGraphic = new PointGraphic(rControlPoint.getX(), rControlPoint.getY(), 3);
             this.getChildren().addAll(lineToRControl, rControlPointGraphic);
         }
 
-        // Add the main slope point to the graphic
         this.getChildren().add(tangentPointGraphic);
     }
 

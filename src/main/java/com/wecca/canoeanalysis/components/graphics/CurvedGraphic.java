@@ -15,6 +15,7 @@ import javafx.scene.shape.Path;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -22,7 +23,7 @@ import java.util.List;
  * Icon used for piecewise continuous load distributions
  * A curve with shaded area between the curve and the y-axis
  */
-@Getter
+@Getter @Setter
 public class CurvedGraphic extends Group implements FunctionGraphic {
 
     protected BoundedUnivariateFunction function;
@@ -89,6 +90,7 @@ public class CurvedGraphic extends Group implements FunctionGraphic {
         area.getPoints().addAll(encasingRectangle.getX(), initialPathY);
         area.setFill(ColorPaletteService.getColor("above-surface"));
         linePath.setStroke(ColorPaletteService.getColor("white"));
+        linePath.setStrokeWidth(1.5);
 
         // Group the elements
         getChildren().addAll(area, linePath);
