@@ -314,24 +314,42 @@ public class Knob extends Slider {
         }
 
         /**
-         * Set the knobs minimum value unless disabled
-         * @param value to set as the minimum on the knob
+         * Set the knob's maximum value unless disabled. Automatically adjust min if needed.
+         * @param value to set as the maximum on the knob
          */
         public void setKnobMax(double value) {
             if (!isLocked()) {
-                Knob.super.setMax(value);
+                // Prevents the knob from thinking it can change value if the amount it changes by
+                // from min to max is not visible (1e-3 or smaller) since we only display %.2f
+                double min = getMin();
+                if (Math.abs(value - min) < 1e-3) {
+                    double roundedValue = Math.round(value * 100.0) / 100.0;
+                    Knob.super.setMax(roundedValue);
+                    Knob.super.setMin(roundedValue);
+                } else {
+                    Knob.super.setMax(value);
+                }
                 updateKnobHandle();
                 valueArc.setLength(getValueArcLength());
             }
         }
 
         /**
-         * Set the knobs maximum value unless disabled
-         * @param value to set as maximum on the knob
+         * Set the knob's minimum value unless disabled. Automatically adjust max if needed.
+         * @param value to set as the minimum on the knob
          */
         public void setKnobMin(double value) {
             if (!isLocked()) {
-                Knob.super.setMin(value);
+                // Prevents the knob from thinking it can change value if the amount it changes by
+                // from min to max is not visible (1e-3 or smaller) since we only display %.2f
+                double max = getMax();
+                if (Math.abs(max - value) < 1e-3) {
+                    double roundedValue = Math.round(value * 100.0) / 100.0;
+                    Knob.super.setMin(roundedValue);
+                    Knob.super.setMax(roundedValue);
+                } else {
+                    Knob.super.setMin(value);
+                }
                 updateKnobHandle();
                 valueArc.setLength(getValueArcLength());
             }
