@@ -35,10 +35,24 @@ public class TraceBuilder {
         String className = joinPoint.getSignature().getDeclaringTypeName();
         String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
         inputMap.put("simpleClassName", simpleClassName);
-        try {
-            String inputs = mapper.writeValueAsString(joinPoint.getArgs());
-            inputMap.put("inputs", inputs);
-        } catch (JsonProcessingException ignored) {}
+
+        String[] parameterNames = methodSignature.getParameterNames();
+        Object[] parameterValues = joinPoint.getArgs();
+
+        StringBuilder parameters = new StringBuilder();
+        if (parameterNames != null && parameterValues != null) {
+            for (int i = 0; i < parameterNames.length; i++) {
+                if (i > 0) parameters.append(", ");
+                parameters.append(parameterNames[i]).append(": ");
+                try {
+                    parameters.append(mapper.writeValueAsString(parameterValues[i]));
+                } catch (JsonProcessingException e) {
+                    parameters.append("null");
+                }
+            }
+        }
+
+        inputMap.put("parameters", parameters.toString());
         return inputMap;
     }
 
@@ -49,14 +63,12 @@ public class TraceBuilder {
     public void beforeAdvice(JoinPoint joinPoint) {
         startTimeStack.push(System.nanoTime());
         Map<String, String> inputMap = buildLogForAspect(joinPoint);
-        String inputs = inputMap.get("inputs");
+        String parameters = inputMap.get("parameters");
         log.info(String.format("%sInvoking %s::%s %s",
                 getLogPrefix(joinPoint),
                 inputMap.get("simpleClassName"),
                 inputMap.get("methodName"),
-                inputs == null || inputs.equals("\"[[]]\"") || inputs.equals("\"[]\"") || inputs.equals("[]") || inputs.equals("[{}]")
-                        ? ""
-                        : "with inputs as " + inputs));
+                parameters.isEmpty() ? "" : "with inputs [" + parameters + "]"));
     }
 
     /**

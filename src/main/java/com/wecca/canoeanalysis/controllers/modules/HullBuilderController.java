@@ -13,7 +13,6 @@ import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
-import javafx.animation.Timeline;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -40,6 +39,7 @@ import java.util.function.Consumer;
  * Be smart with good DS&A knowledge, do not write slow code
  * Otherwise animations and UI controls become choppy and the UX is ruined
  */
+@Traceable
 public class HullBuilderController implements Initializable {
 
     @FXML
@@ -81,9 +81,11 @@ public class HullBuilderController implements Initializable {
     }
 
     public void dummy() {
+        mainController.showSnackbar("WIP");
     }
 
     public void dummyOnClick(MouseEvent event) {
+        System.out.println(knobs.get(2).getMax());
     }
 
     /**
@@ -165,7 +167,7 @@ public class HullBuilderController implements Initializable {
         previousPressedBefore = true;
         unboundKnobs();
         setKnobValues();
-        setKnobBounds();
+        setAllKnobBounds();
     }
 
     /**
@@ -189,7 +191,7 @@ public class HullBuilderController implements Initializable {
         nextPressedBefore = true;
         unboundKnobs();
         setKnobValues();
-        setKnobBounds();
+        setAllKnobBounds();
     }
 
     /**
@@ -207,13 +209,13 @@ public class HullBuilderController implements Initializable {
      * Display section properties with corresponding attributes
      */
     public void setSectionProperties(double height, double volume, double mass, double x, double rx) {
-        String heightInfo = String.format("%.2f m",height);
+        String heightInfo = String.format("%.4f m",height);
         this.heightLabel.setText(heightInfo);
         String interval = "("+x+" m, "+rx+" m)";
         this.intervalLabel.setText(interval);
-        String volumeFormated = String.format("%.3f m^3",volume);
+        String volumeFormated = String.format("%.4f m^3",volume);
         this.volumeLabel.setText(volumeFormated);
-        String massFormated = String.format("%.2f kg",mass);
+        String massFormated = String.format("%.4f kg",mass);
         this.massLabel.setText(massFormated);
     }
 
@@ -236,14 +238,52 @@ public class HullBuilderController implements Initializable {
     }
 
     /**
+     * In an r-θ pair of knobs, the bounds of one variable are relative to the other.
+     * Thus, if we update r, we must adjust the θ bounds, and vice versa.
+     */
+    @Traceable
+    private void setSiblingKnobBounds(int knobIndex) {
+        int siblingIndex = switch (knobIndex) {
+            case 0 -> 1; // rL -> θL
+            case 1 -> 0; // θL -> rL
+            case 2 -> 3; // rR -> θR
+            case 3 -> 2; // θR -> rR
+            default -> throw new IllegalArgumentException("Invalid knob index: " + knobIndex);
+        };
+        Knob siblingKnob = knobs.get(siblingIndex);
+
+        // Get current knob values
+        double r = knobs.get((knobIndex < 2) ? 0 : 2).getValue();
+        double theta = knobs.get((knobIndex < 2) ? 1 : 3).getValue();
+
+        // Get the corresponding knot point
+        CubicBezierFunction bezier = (CubicBezierFunction) selectedHullSection.getSideProfileCurve();
+        Point2D knot = (knobIndex < 2) ? bezier.getKnotPoints().getFirst() : bezier.getKnotPoints().getLast();
+
+        System.out.println("knobIndex = " + knobIndex);
+        // Update bounds for the sibling knob
+        if (knobIndex % 2 == 0) { // Updating r, adjust θ bounds
+            double[] thetaBounds = calculateThetaBounds(knot, r, knobIndex == 0, false);
+            double[] additionalThetaBounds = calculateAdjacentSectionThetaBounds(knot, knobIndex == 0);
+            double minTheta = Math.max(thetaBounds[0], additionalThetaBounds[0]);
+            double maxTheta = Math.max(Math.min(thetaBounds[1], additionalThetaBounds[1]), minTheta);
+            siblingKnob.setKnobMin(minTheta);
+            siblingKnob.setKnobMax(maxTheta);
+        } else { // Updating θ, adjust r bounds
+            double rMax = calculateMaxR(knot, theta);
+            siblingKnob.setKnobMax(rMax);
+        }
+    }
+
+    /**
      * Sets the bounds of the knobs so that the control points stay in the rectangle bounded by:
      * x = 0, x = L, y = 0, y = -h.
      * The height h comes from the front view and corresponds to the lowest y-value of the knot point.
      *
-     * MUST BE DONE AFTER SETTING KNOB VALUES
+     * MUST BE DONE AFTER SETTING KNOB VALUES WHEN SWITCHING SECTIONS
      *
      */
-    private void setKnobBounds() {
+    private void setAllKnobBounds() {
         // Validation
         if (!(selectedHullSection.getSideProfileCurve() instanceof CubicBezierFunction bezier))
             throw new IllegalArgumentException("Cannot work with non-bezier hull curve");
@@ -294,8 +334,8 @@ public class HullBuilderController implements Initializable {
     public double calculateMaxR(Point2D knot, double thetaKnown) {
         double rMax = Double.MAX_VALUE;
         double thetaRad = Math.toRadians((thetaKnown + 90) % 360);
-        double cosTheta =  CalculusUtils.roundXDecimalDigits(Math.cos(thetaRad), 3);
-        double sinTheta = CalculusUtils.roundXDecimalDigits(Math.sin(thetaRad), 3);
+        double cosTheta =  Math.cos(thetaRad);
+        double sinTheta = Math.sin(thetaRad);
 
         // Check quadrant of R^2 using CAST rule to determine which bounds of the rectangle to check
         // Only need to check the two outer edges of the quadrant
@@ -324,8 +364,8 @@ public class HullBuilderController implements Initializable {
      * @param knot the knot point which acts as the origin
      * @param rKnown the known radius of the control point relative to the knot
      * @param isLeft whether the control point belongs to the left knot or right knot
-     * @param boundWithAdjacentSections prevents stack overflow since calculateThetaBounds and calculateAdjacentSectionThetaBounds
-     *                                  call each other. Always set to true except in calculateAdjacentSectionThetaBounds
+     * @param boundWithAdjacentSections prevents stack overflow since
+     *                                  calculateThetaBounds and calculateAdjacentSectionThetaBounds call each other.
      * @return [minTheta, maxTheta]
      */
     public double[] calculateThetaBounds(Point2D knot, double rKnown, boolean isLeft, boolean boundWithAdjacentSections) {
@@ -381,7 +421,9 @@ public class HullBuilderController implements Initializable {
 
         // Fix floating point error
         if (Math.abs(yControl - 0) < 1e-6) yControl = 0;
+        if (Math.abs(yControl - h) < 1e-6) yControl = h;
         if (Math.abs(xControl - 0) < 1e-6) xControl = 0;
+        if (Math.abs(xControl - l) < 1e-6) xControl = l;
 
         // Check rectangle bounds
         return xControl >= 0 && xControl <= l && yControl <= 0 && yControl >= h;
@@ -483,6 +525,8 @@ public class HullBuilderController implements Initializable {
 
     /**
      * Updates the knot and control points of the selected hull section and its graphic
+     * Updates the section properties panel
+     * Updates associated knob bounds in r-theta pair
      *
      * IMPORTANT DISTINCTION:
      *
@@ -491,14 +535,14 @@ public class HullBuilderController implements Initializable {
      * Thus we differentiate between the data of the selected and adjacent hull sections
      *
      * @param knobIndex the index of the knob that was changed (knobs indexed L to R in increasing order from 0)
-     * @param newThetaVal the new value for the knob (after user interaction)
+     * @param newROrThetaVal the new value for the knob (after user interaction)
      */
     @Traceable
-    private void updateHullFromKnob(int knobIndex, double newThetaVal) {
+    private void updateSystemFromKnob(int knobIndex, double newROrThetaVal) {
         if (selectedHullSection == null) return;
 
         // Update the relevant knob value
-        knobs.get(knobIndex).setKnobValue(newThetaVal);
+        knobs.get(knobIndex).setKnobValue(newROrThetaVal);
 
         // Get current knob values
         double selectedRL = knobs.get(0).getValue();
@@ -532,7 +576,7 @@ public class HullBuilderController implements Initializable {
             int adjacentHullSectionIndex = selectedHullSectionIndex + (adjustingLeftAdjacentSection ? -1 : 1);
             HullSection adjacentHullSection = hull.getHullSections().get(adjacentHullSectionIndex);
             Point2D selectedKnot = adjustingLeftAdjacentSection ? selectedLKnot : selectedRKnot;
-            Point2D deltas = computeAdjacentControlDeltas(adjacentHullSection, adjustingLeftAdjacentSection, newThetaVal, selectedKnot);
+            Point2D deltas = computeAdjacentControlDeltas(adjacentHullSection, adjustingLeftAdjacentSection, newROrThetaVal, selectedKnot);
             double deltaX = deltas.getX();
             double deltaY = deltas.getY();
 
@@ -546,6 +590,7 @@ public class HullBuilderController implements Initializable {
         hullGraphicPane.getChildren().clear();
         setSideViewHullGraphic(hull);
         recalculateAndDisplayHullProperties();
+        setSiblingKnobBounds(knobIndex);
     }
 
     /**
@@ -639,7 +684,7 @@ public class HullBuilderController implements Initializable {
             knob.setLocked(true);
             knobs.add(knob);
             int finalI = i;
-            knobListeners.add((observable, oldValue, newValue) -> updateHullFromKnob(finalI, newValue.doubleValue()));
+            knobListeners.add((observable, oldValue, newValue) -> updateSystemFromKnob(finalI, newValue.doubleValue()));
             knob.valueProperty().addListener(knobListeners.get(i));
         }
 

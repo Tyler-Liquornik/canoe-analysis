@@ -84,8 +84,9 @@ public class BezierHandleGraphic extends Group implements Graphic {
         tangentPointGraphic = new PointGraphic(centerPoint.getX(), centerPoint.getY(), 4);
 
         // Create the lines to the control points for whichever exist
+        // + 1 shift so that a handle tangent to a horizontal peeks out below instead of overlapping to be seen easier
         if (lControlPoint != null) {
-            lineToLControl = new Line(centerPoint.getX(), centerPoint.getY(), lControlPoint.getX(), lControlPoint.getY() + 1);
+            lineToLControl = new Line(centerPoint.getX(), centerPoint.getY()  + 1, lControlPoint.getX(), lControlPoint.getY() + 1);
             lineToLControl.setStroke(ColorPaletteService.getColor("white"));
             lineToLControl.setStrokeWidth(2);
             lineToLControl.getStrokeDashArray().addAll(3.0, 3.0);
@@ -94,7 +95,7 @@ public class BezierHandleGraphic extends Group implements Graphic {
         }
 
         if (rControlPoint != null) {
-            lineToRControl = new Line(centerPoint.getX(), centerPoint.getY(), rControlPoint.getX(), rControlPoint.getY() + 1);
+            lineToRControl = new Line(centerPoint.getX(), centerPoint.getY()  + 1, rControlPoint.getX(), rControlPoint.getY() + 1);
             lineToRControl.setStroke(ColorPaletteService.getColor("white"));
             lineToRControl.setStrokeWidth(2);
             lineToRControl.getStrokeDashArray().addAll(3.0, 3.0);
