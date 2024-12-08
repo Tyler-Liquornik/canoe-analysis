@@ -1,14 +1,13 @@
 package com.wecca.canoeanalysis.controllers.modules;
 
-import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXTreeView;
 import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
 import com.wecca.canoeanalysis.components.graphics.*;
-import com.wecca.canoeanalysis.components.graphics.hull.BeamHullGraphic;
-import com.wecca.canoeanalysis.components.graphics.hull.CurvedHullGraphic;
+import com.wecca.canoeanalysis.components.graphics.hull.BeamGraphic;
+import com.wecca.canoeanalysis.components.graphics.hull.HullGraphic;
 import com.wecca.canoeanalysis.components.graphics.load.ArrowBoundCurvedGraphic;
 import com.wecca.canoeanalysis.components.graphics.load.ArrowGraphic;
 import com.wecca.canoeanalysis.components.graphics.load.TriangleStandGraphic;
@@ -26,8 +25,6 @@ import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.*;
 import javafx.animation.*;
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.control.*;
@@ -857,7 +854,7 @@ public class BeamController implements Initializable {
      */
     public void resetHullGraphic() {
         Rectangle rect = new Rectangle(0, 84, beamContainer.getPrefWidth(), 25);
-        setHullGraphic(new BeamHullGraphic(rect));
+        setHullGraphic(new BeamGraphic(rect));
         beamContainer.getChildren().clear();
         beamContainer.getChildren().add((Node) hullGraphic);
     }
@@ -952,7 +949,7 @@ public class BeamController implements Initializable {
     public void setHullGraphicFromHull(Hull hull) {
         Rectangle rect = hullGraphic.getEncasingRectangle();
         rect.setHeight(35);
-        setHullGraphic(new CurvedHullGraphic(
+        setHullGraphic(new HullGraphic(
                 hull.getPiecedSideProfileCurveShiftedAboveYAxis(), hull.getSection(), rect));
         beamContainer.getChildren().clear();
         beamContainer.getChildren().add((Node) hullGraphic);

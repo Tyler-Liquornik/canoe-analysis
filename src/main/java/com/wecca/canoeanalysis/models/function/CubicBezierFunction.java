@@ -196,7 +196,7 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
      * @return a list of Point2D objects for each of the control points
      */
     public List<Point2D> getControlPoints() {
-        Point2D p1 = new Point2D(controlX1, controlX1);
+        Point2D p1 = new Point2D(controlX1, controlY1);
         Point2D p2 = new Point2D(controlX2, controlY2);
         return Arrays.asList(p1, p2);
     }
