@@ -266,9 +266,15 @@ public class HullBuilderController implements Initializable {
         // Update bounds for the sibling knob
         if (knobIndex % 2 == 0) { // Updating r, adjust θ bounds
             double[] thetaBounds = calculateThetaBounds(knot, r, currTheta, knobIndex == 0, false, selectedHullSectionIndex);
+
+            // Apply adjacent section theta bounds if applicable (returns null if the knot is an edge knot)
             double[] additionalThetaBounds = calculateAdjacentSectionThetaBounds(knot, knobIndex == 0, currTheta);
-            double minTheta = Math.max(thetaBounds[0], additionalThetaBounds[0]);
-            double maxTheta = Math.max(Math.min(thetaBounds[1], additionalThetaBounds[1]), minTheta);
+            double minTheta = additionalThetaBounds != null
+                    ? Math.max(thetaBounds[0], additionalThetaBounds[0])
+                    : thetaBounds[0];
+            double maxTheta = additionalThetaBounds != null
+                    ? Math.max(Math.min(thetaBounds[1], additionalThetaBounds[1]), minTheta)
+                    : Math.max(thetaBounds[1], minTheta);
 
             // This prevents the user the ignore the bounds if they hold down the plus/minus knob button
             // Essentially clipping the last 0.5 of a degree off the bounds as a buffer
@@ -356,8 +362,8 @@ public class HullBuilderController implements Initializable {
 
         // Use CAST rule to determine which rectangle boundaries to calculate rMax
         // Edge cases of 0/90/180/270/330 handled appropriately
-        double cosOfApproximatelyZeroRadians = Math.cos(approximatelyZeroRadians);
-        if (Math.abs(cosTheta) != Math.abs(cosOfApproximatelyZeroRadians)) {
+        double sinOfApproximatelyZeroRadians = Math.sin(approximatelyZeroRadians);
+        if (Math.abs(sinTheta) != Math.abs(sinOfApproximatelyZeroRadians)) {
             if (cosTheta < 0) {
                 double rFromLeft = (knot.getX() - xL) / -cosTheta;
                 rMax = Math.min(rMax, rFromLeft);
@@ -366,8 +372,8 @@ public class HullBuilderController implements Initializable {
                 rMax = Math.min(rMax, rFromRight);
             }
         }
-        double sinOfApproximatelyZeroRadians = Math.sin(approximatelyZeroRadians);
-        if (Math.abs(sinTheta) != Math.abs(sinOfApproximatelyZeroRadians)) {
+        double cosOfApproximatelyZeroRadians = Math.cos(approximatelyZeroRadians);
+        if (Math.abs(cosTheta) != Math.abs(cosOfApproximatelyZeroRadians)) {
             if (sinTheta < 0) {
                 double rFromBottom = (hullHeight - knot.getY()) / sinTheta;
                 rMax = Math.min(rMax, rFromBottom);
@@ -378,7 +384,7 @@ public class HullBuilderController implements Initializable {
         }
 
         // Add small buffer on the upper bound to numerically create an open interval, preventing boundary issues
-        return Math.max(0, rMax - OPEN_INTERVAL_TOLERANCE);
+        return Math.max(0, rMax);
     }
 
     /**
@@ -405,9 +411,13 @@ public class HullBuilderController implements Initializable {
         double maxTheta = rawThetaBounds[1];
 
         if (boundWithAdjacentSections) {
-            double[] additionalThetaConstraints = calculateAdjacentSectionThetaBounds(knot, isLeft, currTheta);
-            minTheta = Math.max(minTheta, additionalThetaConstraints[0]);
-            maxTheta = Math.min(maxTheta, additionalThetaConstraints[1]);
+            double[] additionalThetaBounds = calculateAdjacentSectionThetaBounds(knot, isLeft, currTheta);
+            minTheta = additionalThetaBounds != null
+                    ? Math.max(minTheta, additionalThetaBounds[0])
+                    : minTheta;
+            maxTheta = additionalThetaBounds != null
+                    ? Math.min(maxTheta, additionalThetaBounds[1])
+                    : maxTheta;
             if (maxTheta < minTheta) maxTheta = minTheta;
         }
 
@@ -499,12 +509,13 @@ public class HullBuilderController implements Initializable {
         double distance = lineVal - knot1;
         double sq = r * r - distance * distance;
 
+        // Required condition for intersection angles
         if (sq >= 0) {
             double tolerance = 1e-8 * r * r;
-            if (Math.abs(sq) < tolerance) { // Numerical tangency
+            if (Math.abs(sq) < tolerance) { // Numerical tangency, only one intersection point
                 double angle = CalculusUtils.toPolar(isX ? new Point2D(lineVal, knot2) : new Point2D(knot2, lineVal), knot).getY();
                 angles.add(angle);
-            } else {
+            } else { // There must be exactly 2 intersection points
                 double root = Math.sqrt(sq);
                 double intersect1 = knot2 + root;
                 double intersect2 = knot2 - root;
@@ -550,7 +561,7 @@ public class HullBuilderController implements Initializable {
      * @param knot the knot point which acts as the origin
      * @param isLeft whether the control point belongs to the left knot or right knot
      * @param currTheta, the current theta value before the updated geometry, of the original section (NOT the adjacent section)
-     * @return [additionalMinTheta, additionalMaxTheta]
+     * @return [additionalMinTheta, additionalMaxTheta], or null for an edge knot (the first and last knot with no adjacent sections they are shared with)
      */
     private double[] calculateAdjacentSectionThetaBounds(Point2D knot, boolean isLeft, double currTheta) {
         double thetaMin = isLeft ? 180 : 0;
@@ -571,12 +582,9 @@ public class HullBuilderController implements Initializable {
 
             thetaMin = Math.max(thetaMin, (thetaBounds[0] + 180) % 360);
             thetaMax = Math.min(thetaMax, (thetaBounds[1] + 180) % 360);
+            return new double[] {thetaMin, thetaMax};
         }
-
-        // thetaMax = CalculusUtils.roundXDecimalDigits(thetaMax, 2);
-        // thetaMin = CalculusUtils.roundXDecimalDigits(thetaMin, 2);
-
-        return new double[] {thetaMin, thetaMax};
+        else return null;
     }
 
     /**
