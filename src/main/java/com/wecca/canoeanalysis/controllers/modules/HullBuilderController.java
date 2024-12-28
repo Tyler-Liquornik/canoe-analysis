@@ -66,6 +66,9 @@ public class HullBuilderController implements Initializable {
     private boolean sectionPropertiesSelected;
     private int graphicsViewingState;
 
+    // Numerical 'dx'
+    private final double OPEN_INTERVAL_TOLERANCE = 1e-3;
+
     /**
      * Clears the toolbar of buttons from other modules and adds ones from this module
      */
@@ -85,7 +88,7 @@ public class HullBuilderController implements Initializable {
     }
 
     public void dummyOnClick(MouseEvent event) {
-        System.out.println(knobs.get(2).getMax());
+        mainController.showSnackbar("WIP");
     }
 
     /**
@@ -242,7 +245,7 @@ public class HullBuilderController implements Initializable {
      * Thus, if we update r, we must adjust the θ bounds, and vice versa.
      */
     @Traceable
-    private void setSiblingKnobBounds(int knobIndex) {
+    private void setSiblingKnobBounds(int knobIndex, double currTheta) {
         int siblingIndex = switch (knobIndex) {
             case 0 -> 1; // rL -> θL
             case 1 -> 0; // θL -> rL
@@ -260,17 +263,30 @@ public class HullBuilderController implements Initializable {
         CubicBezierFunction bezier = (CubicBezierFunction) selectedHullSection.getSideProfileCurve();
         Point2D knot = (knobIndex < 2) ? bezier.getKnotPoints().getFirst() : bezier.getKnotPoints().getLast();
 
-        System.out.println("knobIndex = " + knobIndex);
         // Update bounds for the sibling knob
         if (knobIndex % 2 == 0) { // Updating r, adjust θ bounds
-            double[] thetaBounds = calculateThetaBounds(knot, r, knobIndex == 0, false);
-            double[] additionalThetaBounds = calculateAdjacentSectionThetaBounds(knot, knobIndex == 0);
-            double minTheta = Math.max(thetaBounds[0], additionalThetaBounds[0]);
-            double maxTheta = Math.max(Math.min(thetaBounds[1], additionalThetaBounds[1]), minTheta);
-            siblingKnob.setKnobMin(minTheta);
-            siblingKnob.setKnobMax(maxTheta);
+            double[] thetaBounds = calculateThetaBounds(knot, r, currTheta, knobIndex == 0, false, selectedHullSectionIndex);
+
+            // Apply adjacent section theta bounds if applicable (returns null if the knot is an edge knot)
+            double[] additionalThetaBounds = calculateAdjacentSectionThetaBounds(knot, knobIndex == 0, currTheta);
+            double minTheta = additionalThetaBounds != null
+                    ? Math.max(thetaBounds[0], additionalThetaBounds[0])
+                    : thetaBounds[0];
+            double maxTheta = additionalThetaBounds != null
+                    ? Math.max(Math.min(thetaBounds[1], additionalThetaBounds[1]), minTheta)
+                    : Math.max(thetaBounds[1], minTheta);
+
+            // This prevents the user the ignore the bounds if they hold down the plus/minus knob button
+            // Essentially clipping the last 0.5 of a degree off the bounds as a buffer
+            // This is needed because we clip the point when increasing r to 1e-3 less than the max
+            // This leaves some wiggle room on the theta bounds which we want to remove to prevent increasing past the bounds
+            double adjustedMinTheta = Math.abs(minTheta - currTheta) < 0.5 ? currTheta : minTheta;
+            double adjustedMaxTheta = Math.abs(maxTheta - currTheta) < 0.5 ? currTheta : maxTheta;
+
+            siblingKnob.setKnobMin(adjustedMinTheta);
+            siblingKnob.setKnobMax(adjustedMaxTheta);
         } else { // Updating θ, adjust r bounds
-            double rMax = calculateMaxR(knot, theta);
+            double rMax = calculateMaxR(knot, theta, selectedHullSectionIndex);
             siblingKnob.setKnobMax(rMax);
         }
     }
@@ -281,7 +297,6 @@ public class HullBuilderController implements Initializable {
      * The height h comes from the front view and corresponds to the lowest y-value of the knot point.
      *
      * MUST BE DONE AFTER SETTING KNOB VALUES WHEN SWITCHING SECTIONS
-     *
      */
     private void setAllKnobBounds() {
         // Validation
@@ -303,12 +318,12 @@ public class HullBuilderController implements Initializable {
 
         // Calculate r and theta bounds for the control point to stay in the rectangle
         double rMin = 0.001;
-        double rLMax = calculateMaxR(lKnot, thetaL);
-        double rRMax = calculateMaxR(rKnot, thetaR);
-        double[] thetaLBounds = calculateThetaBounds(lKnot, rL, true, true);
+        double rLMax = calculateMaxR(lKnot, thetaL, selectedHullSectionIndex);
+        double rRMax = calculateMaxR(rKnot, thetaR, selectedHullSectionIndex);
+        double[] thetaLBounds = calculateThetaBounds(lKnot, rL, thetaL, true, true, selectedHullSectionIndex);
         double thetaLMin = thetaLBounds[0];
         double thetaLMax = thetaLBounds[1];
-        double[] thetaRBounds = calculateThetaBounds(rKnot, rR, false, true);
+        double[] thetaRBounds = calculateThetaBounds(rKnot, rR, thetaR, false, true, selectedHullSectionIndex);
         double thetaRMin = thetaRBounds[0];
         double thetaRMax = thetaRBounds[1];
 
@@ -329,79 +344,185 @@ public class HullBuilderController implements Initializable {
      *
      * @param knot the knot point which acts as the origin
      * @param thetaKnown the known angle in degrees (relative to the origin) at which the point lies.
+     * @param hullSectionIndex the index of the hullSection in the hull in which to bound the radius
      * @return The maximum radius (r) such that the point stays within the bounds.
      */
-    public double calculateMaxR(Point2D knot, double thetaKnown) {
+    public double calculateMaxR(Point2D knot, double thetaKnown, int hullSectionIndex) {
+        HullSection hullSection = hull.getHullSections().get(hullSectionIndex);
+        double hullHeight = -hull.getMaxHeight();
+        CubicBezierFunction bezier = (CubicBezierFunction) hullSection.getSideProfileCurve();
+        double xL = bezier.getX1();
+        double xR = bezier.getX2();
+
         double rMax = Double.MAX_VALUE;
         double thetaRad = Math.toRadians((thetaKnown + 90) % 360);
         double cosTheta =  Math.cos(thetaRad);
         double sinTheta = Math.sin(thetaRad);
+        double approximatelyZeroRadians = Math.toRadians(OPEN_INTERVAL_TOLERANCE);
 
-        // Check quadrant of R^2 using CAST rule to determine which bounds of the rectangle to check
-        // Only need to check the two outer edges of the quadrant
-        if (cosTheta < 0) {
-            double rFromLeft = -knot.getX() / cosTheta;
-            rMax = Math.min(rMax, rFromLeft);
-        } else if (cosTheta > 0) {
-            double rFromRight = (hull.getLength() - knot.getX()) / cosTheta;
-            rMax = Math.min(rMax, rFromRight);
+        // Use CAST rule to determine which rectangle boundaries to calculate rMax
+        // Edge cases of 0/90/180/270/330 handled appropriately
+        double sinOfApproximatelyZeroRadians = Math.sin(approximatelyZeroRadians);
+        if (Math.abs(sinTheta) != Math.abs(sinOfApproximatelyZeroRadians)) {
+            if (cosTheta < 0) {
+                double rFromLeft = (knot.getX() - xL) / -cosTheta;
+                rMax = Math.min(rMax, rFromLeft);
+            } else if (cosTheta > 0) {
+                double rFromRight = (xR - knot.getX()) / cosTheta;
+                rMax = Math.min(rMax, rFromRight);
+            }
         }
-        if (sinTheta < 0) {
-            double rFromBottom = (-hull.getMaxHeight() - knot.getY()) / sinTheta;
-            rMax = Math.min(rMax, rFromBottom);
-        } else if (sinTheta > 0) {
-            double rFromTop = -knot.getY() / sinTheta;
-            rMax = Math.min(rMax, rFromTop);
+        double cosOfApproximatelyZeroRadians = Math.cos(approximatelyZeroRadians);
+        if (Math.abs(cosTheta) != Math.abs(cosOfApproximatelyZeroRadians)) {
+            if (sinTheta < 0) {
+                double rFromBottom = (hullHeight - knot.getY()) / sinTheta;
+                rMax = Math.min(rMax, rFromBottom);
+            } else if (sinTheta > 0) {
+                double rFromTop = -knot.getY() / sinTheta;
+                rMax = Math.min(rMax, rFromTop);
+            }
         }
 
+        // Add small buffer on the upper bound to numerically create an open interval, preventing boundary issues
         return Math.max(0, rMax);
     }
 
     /**
-     * Calculates the minimum and maximum angles (theta) such that the control point at (rKnown, theta) relative to a knot
-     * remains within the rectangular bounds defined by x = 0, x = L, y = 0, y = -h.
+     * Returns the allowable angular range for a control point on a circle within a bounding rectangle.
+     * Merges constraints from adjacent hull sections if needed, and applies a small tolerance so the range
+     * does not collapse. If it does collapse, the range is set to a single value.
      *
-     * @param knot the knot point which acts as the origin
-     * @param rKnown the known radius of the control point relative to the knot
-     * @param isLeft whether the control point belongs to the left knot or right knot
-     * @param boundWithAdjacentSections prevents stack overflow since
-     *                                  calculateThetaBounds and calculateAdjacentSectionThetaBounds call each other.
-     * @return [minTheta, maxTheta]
+     * @param knot The reference point for polar coordinates
+     * @param rKnown The radial distance from the knot to the control point
+     * @param currTheta The current angle (in degrees)
+     * @param isLeft True if the control point is on the left side (180–360 degrees), false otherwise (0–180)
+     * @param boundWithAdjacentSections True if the range should account for constraints from adjacent sections
+     * @param hullSectionIndex The index of the hull section to process for bounding
+     * @return A two-element array containing the minimum and maximum valid theta values
      */
-    public double[] calculateThetaBounds(Point2D knot, double rKnown, boolean isLeft, boolean boundWithAdjacentSections) {
-        double minTheta = isLeft ? 180 : 0;
-        double maxTheta = isLeft ? 360 : 180;
-        double l = hull.getLength();
+    public double[] calculateThetaBounds(Point2D knot, double rKnown, double currTheta, boolean isLeft, boolean boundWithAdjacentSections, int hullSectionIndex) {
+        HullSection hullSection = hull.getHullSections().get(hullSectionIndex);
+        double l = hullSection.getLength();
         double h = -hull.getMaxHeight();
+        Rectangle boundingRect = new Rectangle(hullSection.getX(), 0.0, l, h);
 
-        // Binary search for minTheta
-        double start = minTheta;
-        double end = minTheta + 180;
-        while (end - start > 1e-3) {
-            double thetaGuess = (start + end) / 2;
-            if (isPointInBounds(rKnown, thetaGuess, knot, l, h)) end = thetaGuess;
-            else start = thetaGuess;
-        }
-        minTheta = start;
+        double[] rawThetaBounds = calculateRawThetaBounds(boundingRect, knot, rKnown, isLeft, currTheta);
+        double minTheta = rawThetaBounds[0];
+        double maxTheta = rawThetaBounds[1];
 
-        // Binary search for maxTheta
-        start = maxTheta - 180;
-        end = maxTheta;
-        while (end - start > 1e-3) {
-            double thetaGuess = (start + end) / 2;
-            if (isPointInBounds(rKnown, thetaGuess, knot, l, h)) start = thetaGuess;
-            else end = thetaGuess;
-        }
-        maxTheta = start;
-
-        // Incorporate additional bounds from adjacent sections
         if (boundWithAdjacentSections) {
-            double[] additionalThetaBounds = calculateAdjacentSectionThetaBounds(knot, isLeft);
-            minTheta = Math.max(minTheta, additionalThetaBounds[0]);
-            maxTheta = Math.max(Math.min(maxTheta, additionalThetaBounds[1]), minTheta);
+            double[] additionalThetaBounds = calculateAdjacentSectionThetaBounds(knot, isLeft, currTheta);
+            minTheta = additionalThetaBounds != null
+                    ? Math.max(minTheta, additionalThetaBounds[0])
+                    : minTheta;
+            maxTheta = additionalThetaBounds != null
+                    ? Math.min(maxTheta, additionalThetaBounds[1])
+                    : maxTheta;
+            if (maxTheta < minTheta) maxTheta = minTheta;
         }
 
+        if (Math.abs(minTheta - maxTheta) < 1e-2) {
+            double avg = 0.5 * (minTheta + maxTheta);
+            return new double[] {avg, avg};
+        }
+
+        if (Math.abs(minTheta - currTheta) <= OPEN_INTERVAL_TOLERANCE) minTheta = currTheta;
+        else minTheta += OPEN_INTERVAL_TOLERANCE;
+        if (Math.abs(maxTheta - currTheta) <= OPEN_INTERVAL_TOLERANCE) maxTheta = currTheta;
+        else maxTheta -= OPEN_INTERVAL_TOLERANCE;
         return new double[] {minTheta, maxTheta};
+    }
+
+    /**
+     * Finds the valid range of angles where a control point on a circle stays within the specified rectangle.
+     * Determines the domain based on whether it's the left side (180–360) or the right side (0–180),
+     * then solves circle-rectangle intersections and selects the smallest segment containing currTheta.
+     *
+     * @param boundingRect The rectangle bounding the control point
+     * @param center The circle's center
+     * @param radius The circle's radius
+     * @param isLeft True if searching 180–360, false if 0–180
+     * @param currTheta The current angle (in degrees) for which to constrain the range
+     * @return An array with [minTheta, maxTheta] that confines the control point within the rectangle
+     */
+    private double[] calculateRawThetaBounds(Rectangle boundingRect, Point2D center, double radius, boolean isLeft, double currTheta) {
+        // Initialize the search domain
+        double thetaMin = isLeft ? 180 : 0;
+        double thetaMax = isLeft ? 360 : 180;
+
+        // Rectangle Bounds
+        double xMin = boundingRect.getX();
+        double xMax = xMin + boundingRect.getWidth();
+        double yMax = boundingRect.getY();
+        double yMin = yMax + boundingRect.getHeight(); // negative height
+
+        // Build candidate angle bounds list alpha_i as POIs of the rectangle and circular arc
+        // Circle formed by sweeping the search domain at the given radius
+        List<Double> angles = new ArrayList<>();
+        addIntersectionAngles(angles, center, radius, xMin, true);
+        addIntersectionAngles(angles, center, radius, xMax, true);
+        addIntersectionAngles(angles, center, radius, yMin, false);
+        addIntersectionAngles(angles, center, radius, yMax, false);
+        angles = angles.stream().map(x -> ((x % 360) + 360) % 360).filter(x -> (x > thetaMin && x < thetaMax)).sorted().toList();
+
+
+        // Handle cases for number of POIs alpha_i
+        int n = angles.size();
+        if (n == 0) return new double[] {thetaMin, thetaMax};
+        if (n == 2) return new double[] {angles.getFirst(), angles.getLast()};
+        else if (n == 1) {
+            double alpha = angles.getFirst();
+            if (currTheta < alpha) {
+                double mid = 0.5 * (thetaMin + alpha);
+                if (isPointInBounds(radius, mid, center, boundingRect)) return new double[] {thetaMin, alpha};
+                else return new double[] {alpha, thetaMax};
+            } else {
+                double mid = 0.5 * (alpha + thetaMax);
+                if (isPointInBounds(radius, mid, center, boundingRect)) return new double[] {alpha, thetaMax};
+                else return new double[] {thetaMin, alpha};
+            }
+        }
+        // > 2 POIs found, find the range containing currTheta
+        else {
+            for (int i = 0; i < n - 1; i++) {
+                double start = angles.get(i);
+                double end = angles.get(i + 1);
+                if (currTheta >= start && currTheta <= end) return new double[] {start, end};
+            }
+            return new double[] {thetaMin, thetaMax};
+        }
+    }
+
+    /**
+     * Finds intersection angles for a circle and a vertical (x=val) or horizontal (y=val) line.
+     * The angles are calculated using the calculus convention where the 0-degree reference is shifted 90 degrees forward.
+     *
+     * @param angles List to store the calculated angles.
+     * @param knot The center of the circle.
+     * @param r The radius of the circle.
+     * @param lineVal The value of the vertical or horizontal line (x or y).
+     * @param isX True for vertical line (x=val), false for horizontal line (y=val).
+     */
+    private void addIntersectionAngles(List<Double> angles, Point2D knot, double r, double lineVal, boolean isX) {
+        double knot1 = isX ? knot.getX() : knot.getY();
+        double knot2 = isX ? knot.getY() : knot.getX();
+        double distance = lineVal - knot1;
+        double sq = r * r - distance * distance;
+
+        // Required condition for intersection angles
+        if (sq >= 0) {
+            double tolerance = 1e-8 * r * r;
+            if (Math.abs(sq) < tolerance) { // Numerical tangency, only one intersection point
+                double angle = CalculusUtils.toPolar(isX ? new Point2D(lineVal, knot2) : new Point2D(knot2, lineVal), knot).getY();
+                angles.add(angle);
+            } else { // There must be exactly 2 intersection points
+                double root = Math.sqrt(sq);
+                double intersect1 = knot2 + root;
+                double intersect2 = knot2 - root;
+                angles.add(CalculusUtils.toPolar(isX ? new Point2D(lineVal, intersect1) : new Point2D(intersect1, lineVal), knot).getY());
+                angles.add(CalculusUtils.toPolar(isX ? new Point2D(lineVal, intersect2) : new Point2D(intersect2, lineVal), knot).getY());
+            }
+        }
     }
 
     /**
@@ -409,24 +530,29 @@ public class HullBuilderController implements Initializable {
      * @param rKnown The radius of the control point in polar coordinates.
      * @param thetaGuess The angle (in radians) of the control point in polar coordinates.
      * @param knot The knot point (reference point) to which the polar coordinates are relative.
-     * @param l the length of the rectangle stretching rightward from 0
-     * @param h the height, should be inputted as negative to signify stretching downward from 0
      * @return True if the control point lies within the bounds of the rectangle;
      */
-    private boolean isPointInBounds(double rKnown, double thetaGuess, Point2D knot, double l, double h) {
-        // Get control point position
+    private boolean isPointInBounds(double rKnown, double thetaGuess, Point2D knot, Rectangle boundingRect) {
+        // Convert polar to Cartesian
         Point2D cartesianControl = CalculusUtils.toCartesian(new Point2D(rKnown, thetaGuess), knot);
         double xControl = cartesianControl.getX();
         double yControl = cartesianControl.getY();
 
-        // Fix floating point error
-        if (Math.abs(yControl - 0) < 1e-6) yControl = 0;
-        if (Math.abs(yControl - h) < 1e-6) yControl = h;
-        if (Math.abs(xControl - 0) < 1e-6) xControl = 0;
-        if (Math.abs(xControl - l) < 1e-6) xControl = l;
+        // Rectangle bounds
+        double xMin = boundingRect.getX();
+        double xMax = xMin + boundingRect.getWidth();
+        double yMax = boundingRect.getY();
+        double yMin = yMax + boundingRect.getHeight(); // negative height
 
-        // Check rectangle bounds
-        return xControl >= 0 && xControl <= l && yControl <= 0 && yControl >= h;
+        // Fix floating point proximity
+        if (Math.abs(xControl - xMin) < 1e-6) xControl = xMin;
+        if (Math.abs(xControl - xMax) < 1e-6) xControl = xMax;
+        if (Math.abs(yControl - yMin) < 1e-6) yControl = yMin;
+        if (Math.abs(yControl - yMax) < 1e-6) yControl = yMax;
+
+        // Check standard rectangle inclusion
+        return (xControl >= xMin && xControl <= xMax &&
+                yControl >= yMin && yControl <= yMax);
     }
 
     /**
@@ -434,33 +560,31 @@ public class HullBuilderController implements Initializable {
      *
      * @param knot the knot point which acts as the origin
      * @param isLeft whether the control point belongs to the left knot or right knot
-     * @return [additionalMinTheta, additionalMaxTheta]
+     * @param currTheta, the current theta value before the updated geometry, of the original section (NOT the adjacent section)
+     * @return [additionalMinTheta, additionalMaxTheta], or null for an edge knot (the first and last knot with no adjacent sections they are shared with)
      */
-    private double[] calculateAdjacentSectionThetaBounds(Point2D knot, boolean isLeft) {
-        double additionalMinTheta = isLeft ? 180 : 0;
-        double additionalMaxTheta = isLeft ? 360 : 180;
+    private double[] calculateAdjacentSectionThetaBounds(Point2D knot, boolean isLeft, double currTheta) {
+        double thetaMin = isLeft ? 180 : 0;
+        double thetaMax = isLeft ? 360 : 180;
 
-        // Handle left adjacent section
-        if (isLeft && selectedHullSectionIndex > 0) {
-            HullSection leftAdjacentHullSection = hull.getHullSections().get(selectedHullSectionIndex - 1);
-            Point2D siblingPoint = ((CubicBezierFunction) leftAdjacentHullSection.getSideProfileCurve()).getControlPoints().getLast();
+        int adjacentHullSectionIndex = selectedHullSectionIndex + (isLeft ? -1 : 1);
+        boolean hasAdjacentSection = isLeft
+                ? selectedHullSectionIndex > 0
+                : selectedHullSectionIndex < hull.getHullSections().size() - 1;
+
+        if (hasAdjacentSection) {
+            HullSection adjacentHullSection = hull.getHullSections().get(adjacentHullSectionIndex);
+            Point2D siblingPoint = isLeft
+                    ? ((CubicBezierFunction) adjacentHullSection.getSideProfileCurve()).getControlPoints().getLast()
+                    : ((CubicBezierFunction) adjacentHullSection.getSideProfileCurve()).getControlPoints().getFirst();
             double siblingPointR = CalculusUtils.toPolar(siblingPoint, knot).getX();
-            double[] thetaBounds = calculateThetaBounds(knot, siblingPointR, false, false);
-            additionalMinTheta = Math.max(additionalMinTheta, (thetaBounds[0] + 180) % 360);
-            additionalMaxTheta = Math.min(additionalMaxTheta, (thetaBounds[1] + 180) % 360);
-        }
+            double[] thetaBounds = calculateThetaBounds(knot, siblingPointR, (currTheta + 180) % 360, !isLeft, false, adjacentHullSectionIndex);
 
-        // Handle right adjacent section
-        if (!isLeft && selectedHullSectionIndex < hull.getHullSections().size() - 1) {
-            HullSection rightAdjacentHullSection = hull.getHullSections().get(selectedHullSectionIndex + 1);
-            Point2D siblingPoint = ((CubicBezierFunction) rightAdjacentHullSection.getSideProfileCurve()).getControlPoints().getFirst();
-            double siblingPointR = CalculusUtils.toPolar(siblingPoint, knot).getX();
-            double[] thetaBounds = calculateThetaBounds(knot, siblingPointR, true, false);
-            additionalMinTheta = Math.max(additionalMinTheta, (thetaBounds[0] - 180) % 360);
-            additionalMaxTheta = Math.min(additionalMaxTheta, (thetaBounds[1] - 180) % 360);
+            thetaMin = Math.max(thetaMin, (thetaBounds[0] + 180) % 360);
+            thetaMax = Math.min(thetaMax, (thetaBounds[1] + 180) % 360);
+            return new double[] {thetaMin, thetaMax};
         }
-
-        return new double[] {additionalMinTheta, additionalMaxTheta};
+        else return null;
     }
 
     /**
@@ -476,13 +600,13 @@ public class HullBuilderController implements Initializable {
 
     /**
      * Set bounds for r and theta back to minimum and maximum possible in the whole rectangle bounding the model
-     * Used before setting the knob values to prevent setting the knob value sout of bounds
+     * Used before setting the knob values to prevent setting the knob values out of bounds
      */
     public void unboundKnobs() {
-        double minR = 0.001;
+        double minR = OPEN_INTERVAL_TOLERANCE;
         double maxPossibleR = hull.getLength();
-        double minPossibleTheta = 0;
-        double maxPossibleTheta = 360;
+        double minPossibleTheta = OPEN_INTERVAL_TOLERANCE;
+        double maxPossibleTheta = 360 - OPEN_INTERVAL_TOLERANCE;
 
         for (int i = 0; i < knobs.size(); i++) {
             knobs.get(i).valueProperty().removeListener(knobListeners.get(i));
@@ -576,7 +700,7 @@ public class HullBuilderController implements Initializable {
             int adjacentHullSectionIndex = selectedHullSectionIndex + (adjustingLeftAdjacentSection ? -1 : 1);
             HullSection adjacentHullSection = hull.getHullSections().get(adjacentHullSectionIndex);
             Point2D selectedKnot = adjustingLeftAdjacentSection ? selectedLKnot : selectedRKnot;
-            Point2D deltas = computeAdjacentControlDeltas(adjacentHullSection, adjustingLeftAdjacentSection, newROrThetaVal, selectedKnot);
+            Point2D deltas = calculateAdjacentControlDeltas(adjacentHullSection, adjustingLeftAdjacentSection, newROrThetaVal, selectedKnot);
             double deltaX = deltas.getX();
             double deltaY = deltas.getY();
 
@@ -590,7 +714,9 @@ public class HullBuilderController implements Initializable {
         hullGraphicPane.getChildren().clear();
         setSideViewHullGraphic(hull);
         recalculateAndDisplayHullProperties();
-        setSiblingKnobBounds(knobIndex);
+
+        double currTheta = (knobIndex == 0 || knobIndex == 1) ? selectedThetaL : selectedThetaR;
+        setSiblingKnobBounds(knobIndex, currTheta);
     }
 
     /**
@@ -630,7 +756,7 @@ public class HullBuilderController implements Initializable {
      *         index 0 contains the deltaX,
      *         index 1 contains the deltaY.
      */
-    private Point2D computeAdjacentControlDeltas(HullSection adjacentHullSection, boolean isLeftAdjacentSection, double newThetaVal, Point2D selectedKnot) {
+    private Point2D calculateAdjacentControlDeltas(HullSection adjacentHullSection, boolean isLeftAdjacentSection, double newThetaVal, Point2D selectedKnot) {
         // Determine old control point and polar radius (r)
         Point2D adjacentSectionOldControl;
         double adjacentSectionRadius;
