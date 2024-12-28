@@ -24,14 +24,12 @@ public class Knob extends Slider {
     private String name;
     private boolean locked;
 
-    public Knob(String name, double value, double min, double max, double layoutX, double layoutY, double size) {
+    public Knob(String name, double value, double min, double max, double layoutX, double layoutY, double size, double holdButtonSpeed) {
         this.name = name;
         this.locked = false;
         setLayoutX(layoutX);
         setLayoutY(layoutY);
-        setMin(min);
-        setMax(max);
-        setSkin(new KnobSkin(value, size));
+        setSkin(new KnobSkin(value, min, max, size, holdButtonSpeed));
     }
 
     @Getter @Setter
@@ -64,7 +62,7 @@ public class Knob extends Slider {
         private final double knobBorderWidth;
         private final double arcWidth;
 
-        public KnobSkin(double value, double size) {
+        public KnobSkin(double value, double min, double max, double size, double holdButtonSpeedMultiplier) {
             super(Knob.this);
 
             knobHandleSizeRadius = size / 10.0;
@@ -121,11 +119,8 @@ public class Knob extends Slider {
             // A timer that is called in each frame after starting, will check if the button clicked or held, and react accordingly
             animationTimer = new AnimationTimer() {
                 @Override
-                public void handle(long l) {
-                    if (!isLocked()) {
-                        if (itsAPlusHold && (System.currentTimeMillis() - currentTime) > 200) changeValue(0.5 * 0.01 * (getMax() - getMin()));
-                        if (itsAMinusHold && (System.currentTimeMillis() - currentTime) > 200) changeValue(-0.5 * 0.01 * (getMax() - getMin()));
-                    }
+                public void handle(long now) {
+                    changeKnobValueOnHoldButton(holdButtonSpeedMultiplier, max - min);
                 }
             };
 
@@ -149,10 +144,27 @@ public class Knob extends Slider {
             });
 
             // Set the initial knob value
+            setKnobMin(min);
+            setKnobMax(max);
             setKnobValue(value);
 
             // Bind the value label x position to value to ensure it's always centered
             valueLabel.layoutXProperty().bind(valueLabel.widthProperty().divide(-2).add(knobCenterLayoutOffset));
+        }
+
+        /**
+         * @param holdButtonSpeedMultiplier the factor by which to boost or slow speed by compared to the base speed
+         * @param range the range of the allowed knob values
+         */
+        private void changeKnobValueOnHoldButton(double holdButtonSpeedMultiplier, double range) {
+            if (!isLocked()) {
+                double millisecondsRequiredForAHold = 200;
+                double baseSpeed = 0.005;
+                if (itsAPlusHold && (System.currentTimeMillis() - currentTime) > millisecondsRequiredForAHold)
+                    changeValue(baseSpeed * holdButtonSpeedMultiplier * range);
+                if (itsAMinusHold && (System.currentTimeMillis() - currentTime) > millisecondsRequiredForAHold)
+                    changeValue(-baseSpeed * holdButtonSpeedMultiplier * range);
+            }
         }
 
         /**
@@ -283,10 +295,8 @@ public class Knob extends Slider {
                         : Math.max(newValue, currentValue - maxChange);
 
                 // Prevent setting past min or max
-                if (clampedValue < getMin())
-                    clampedValue = getMin();
-                if (clampedValue > getMax())
-                    clampedValue = getMax();
+                if (clampedValue < getMin()) clampedValue = getMin();
+                if (clampedValue > getMax()) clampedValue = getMax();
 
                 setKnobValue(clampedValue);
             }
@@ -301,6 +311,48 @@ public class Knob extends Slider {
                 Knob.super.setValue(value);
                 valueLabel.setText(String.format("%s: %.2f", getName(), value));
             } else valueLabel.setText("-");
+        }
+
+        /**
+         * Set the knob's maximum value unless disabled. Automatically adjust min if needed.
+         * @param value to set as the maximum on the knob
+         */
+        public void setKnobMax(double value) {
+            if (!isLocked()) {
+                // Prevents the knob from thinking it can change value if the amount it changes by
+                // from min to max is not visible (1e-3 or smaller) since we only display %.2f
+                double min = getMin();
+                if (Math.abs(value - min) < 1e-3) {
+                    double roundedValue = Math.round(value * 100.0) / 100.0;
+                    Knob.super.setMax(roundedValue);
+                    Knob.super.setMin(roundedValue);
+                } else {
+                    Knob.super.setMax(value);
+                }
+                updateKnobHandle();
+                valueArc.setLength(getValueArcLength());
+            }
+        }
+
+        /**
+         * Set the knob's minimum value unless disabled. Automatically adjust max if needed.
+         * @param value to set as the minimum on the knob
+         */
+        public void setKnobMin(double value) {
+            if (!isLocked()) {
+                // Prevents the knob from thinking it can change value if the amount it changes by
+                // from min to max is not visible (1e-3 or smaller) since we only display %.2f
+                double max = getMax();
+                if (Math.abs(max - value) < 1e-3) {
+                    double roundedValue = Math.round(value * 100.0) / 100.0;
+                    Knob.super.setMin(roundedValue);
+                    Knob.super.setMax(roundedValue);
+                } else {
+                    Knob.super.setMin(value);
+                }
+                updateKnobHandle();
+                valueArc.setLength(getValueArcLength());
+            }
         }
 
         /**
@@ -328,10 +380,6 @@ public class Knob extends Slider {
     // TODO: Really need to refactor Knob, this is bad duplicated code
     // Issue had without Skin extending class where it would go back to a slider
 
-    /**
-     * Lock control of the knob
-     * @param lock whether to lock or unlock the knob
-     */
     public void setLocked(boolean lock) {
         KnobSkin skin = (KnobSkin) getSkin();
         this.locked = lock;
@@ -341,5 +389,15 @@ public class Knob extends Slider {
     public void setKnobValue(double value) {
         KnobSkin skin = (KnobSkin) getSkin();
         skin.setKnobValue(value);
+    }
+
+    public void setKnobMax(double value) {
+        KnobSkin skin = (KnobSkin) getSkin();
+        skin.setKnobMax(value);
+    }
+
+    public void setKnobMin(double value) {
+        KnobSkin skin = (KnobSkin) getSkin();
+        skin.setKnobMin(value);
     }
 }

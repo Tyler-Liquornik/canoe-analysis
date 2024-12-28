@@ -19,7 +19,10 @@ public enum IconGlyphType {
     SCISSORS("CUT"),
     CHAIN("CHAIN"),
     DOWNLOAD("ARROW_CIRCLE_O_DOWN"),
-    UPLOAD("ARROW_CIRCLE_O_UP");
+    UPLOAD("ARROW_CIRCLE_O_UP"),
+    CIRCLE("CIRCLE"),
+    HALF_FILLED_CIRCLE("ADJUST"),
+    RING("CIRCLE_ALT");
 
     private final String glyphName;
 }

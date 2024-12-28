@@ -1,30 +1,36 @@
 package com.wecca.canoeanalysis.components.graphics.hull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.graphics.Graphic;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
+
 /**
- * A graphical component for displaying the slope at Bézier spline join points.
- * Can highlight only one half of the slope within either the left or right section.
+ * A graphical component for displaying the slope at Bézier spline join points as a handle.
+ * Can highlight only one half of the handle within either the left or right section.
  */
 @Getter @Setter
-public class BezierHullTangentGraphic extends Group implements Graphic {
+public class BezierHandleGraphic extends Group implements Graphic {
 
-    private Point2D centerPoint;
     private Point2D lControlPoint;
+    private Point2D centerPoint;
     private Point2D rControlPoint;
 
-    private BezierHullPointGraphic tangentPointGraphic;
-    private BezierHullPointGraphic lControlPointGraphic;
-    private BezierHullPointGraphic rControlPointGraphic;
+    private PointGraphic lControlPointGraphic;
+    private PointGraphic tangentPointGraphic;
+    private PointGraphic rControlPointGraphic;
 
     private Line lineToLControl;
     private Line lineToRControl;
@@ -33,14 +39,14 @@ public class BezierHullTangentGraphic extends Group implements Graphic {
     private boolean isRightColored;
 
     /**
-     * @param centerPoint The main point representing the center of the slope.
      * @param lControlPoint The left control point (can be null).
+     * @param centerPoint The main point representing the center of the handle.
      * @param rControlPoint The right control point (can be null).
      * Note that lControlPoint and rControlPoint cannot both be null.
      */
-    public BezierHullTangentGraphic(Point2D centerPoint, Point2D lControlPoint, Point2D rControlPoint) {
-        this.centerPoint = centerPoint;
+    public BezierHandleGraphic(Point2D lControlPoint, Point2D centerPoint, Point2D rControlPoint) {
         this.lControlPoint = lControlPoint;
+        this.centerPoint = centerPoint;
         this.rControlPoint = rControlPoint;
         this.isLeftColored = false;
         this.isRightColored = false;
@@ -48,7 +54,9 @@ public class BezierHullTangentGraphic extends Group implements Graphic {
         // Validation
         if (lControlPoint == null && rControlPoint == null)
             throw new IllegalArgumentException("At least one of the left or right control points must be specified.");
-        validateSlope();
+
+        // Commented out to speed up rendering, but should be enforced, use this to test!
+        // validateSlope();
 
         ColorManagerService.registerInColorPalette(this);
         draw();
@@ -57,8 +65,9 @@ public class BezierHullTangentGraphic extends Group implements Graphic {
     /**
      * Validates that the slopes from the main point to the left and right control points (if present) are equal.
      * This is a requirement for C1 smoothness in the model and the graphic should reflect that.
-     * Note that if only one control point is present, it's valid by default.
+     * Note that if only one control point is present, it's valid by default (these are the edge sections, S_0 and S_n).
      */
+    @Traceable
     private void validateSlope() {
         if (lControlPoint != null && rControlPoint != null) {
             double leftSlope = (lControlPoint.getY() - centerPoint.getY()) / (lControlPoint.getX() - centerPoint.getX());
@@ -72,29 +81,28 @@ public class BezierHullTangentGraphic extends Group implements Graphic {
     @Override
     public void draw() {
         // Create the center point circle
-        tangentPointGraphic = new BezierHullPointGraphic(centerPoint.getX(), centerPoint.getY(), 4);
+        tangentPointGraphic = new PointGraphic(centerPoint.getX(), centerPoint.getY(), 4);
 
         // Create the lines to the control points for whichever exist
-        // +1 shifts graphics misalignment from points getY
+        // + 1 shift so that a handle tangent to a horizontal peeks out below instead of overlapping to be seen easier
         if (lControlPoint != null) {
-            lineToLControl = new Line(centerPoint.getX(), centerPoint.getY() + 1, lControlPoint.getX(), lControlPoint.getY() + 1);
+            lineToLControl = new Line(centerPoint.getX(), centerPoint.getY()  + 1, lControlPoint.getX(), lControlPoint.getY() + 1);
             lineToLControl.setStroke(ColorPaletteService.getColor("white"));
             lineToLControl.setStrokeWidth(2);
             lineToLControl.getStrokeDashArray().addAll(3.0, 3.0);
-            lControlPointGraphic = new BezierHullPointGraphic(lControlPoint.getX(), lControlPoint.getY(), 3);
+            lControlPointGraphic = new PointGraphic(lControlPoint.getX(), lControlPoint.getY(), 3);
             this.getChildren().addAll(lineToLControl, lControlPointGraphic);
         }
 
         if (rControlPoint != null) {
-            lineToRControl = new Line(centerPoint.getX(), centerPoint.getY() + 1, rControlPoint.getX(), rControlPoint.getY() + 1);
+            lineToRControl = new Line(centerPoint.getX(), centerPoint.getY()  + 1, rControlPoint.getX(), rControlPoint.getY() + 1);
             lineToRControl.setStroke(ColorPaletteService.getColor("white"));
             lineToRControl.setStrokeWidth(2);
             lineToRControl.getStrokeDashArray().addAll(3.0, 3.0);
-            rControlPointGraphic = new BezierHullPointGraphic(rControlPoint.getX(), rControlPoint.getY(), 3);
+            rControlPointGraphic = new PointGraphic(rControlPoint.getX(), rControlPoint.getY(), 3);
             this.getChildren().addAll(lineToRControl, rControlPointGraphic);
         }
 
-        // Add the main slope point to the graphic
         this.getChildren().add(tangentPointGraphic);
     }
 
@@ -148,5 +156,10 @@ public class BezierHullTangentGraphic extends Group implements Graphic {
     @Override
     public boolean isColored() {
         return isLeftColored || isRightColored;
+    }
+
+    @JsonIgnore
+    public List<Node> getAllGraphicsButCenterPoint() {
+        return Stream.of(lControlPointGraphic,rControlPointGraphic, lineToLControl, lineToRControl).filter(Objects::nonNull).toList();
     }
 }

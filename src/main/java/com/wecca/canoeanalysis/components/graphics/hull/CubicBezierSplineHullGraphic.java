@@ -16,10 +16,10 @@ import java.util.List;
  * Includes graphically showing control points to demonstrate the geometrical construction of the spline.
  */
 @Getter @Setter
-public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
+public class CubicBezierSplineHullGraphic extends HullGraphic {
 
     private List<CubicBezierFunction> beziers;
-    private List<BezierHullTangentGraphic> slopeGraphics;
+    private List<BezierHandleGraphic> slopeGraphics;
     private int coloredSectionIndex;
 
     /**
@@ -32,7 +32,7 @@ public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
         super(CalculusUtils.createBezierSplineFunctionShiftedPositive(beziers), new Section(beziers.getFirst().getX(), beziers.getLast().getRx()), encasingRectangle);
         this.beziers = beziers;
         this.slopeGraphics = new ArrayList<>();
-        this.encasingRectangle = encasingRectangle;
+        this.getCurvedGraphic().setEncasingRectangle(encasingRectangle);
         this.coloredSectionIndex = -1;
         draw(beziers);
     }
@@ -47,7 +47,7 @@ public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
         double functionMinY = allBezierCurveConstructionPoints.stream().mapToDouble(Point2D::getY).min().orElse(0);
         double functionMaxY = allBezierCurveConstructionPoints.stream().mapToDouble(Point2D::getY).max().orElse(0);
         Rectangle functionSpace = new Rectangle(functionMinX, functionMinY, functionMaxX - functionMinX, functionMaxY - functionMinY);
-        Rectangle graphicSpace = encasingRectangle;
+        Rectangle graphicSpace = getCurvedGraphic().getEncasingRectangle();
 
         // Loop through the control points and create slope graphics for each join point
         for (int i = 0; i < allBezierCurveConstructionPoints.size(); i += 3) {
@@ -61,7 +61,7 @@ public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
             Point2D mappedRControlPoint = rControlPoint != null ? GraphicsUtils.mapToGraphicSpace(rControlPoint, functionSpace, graphicSpace) : null;
 
             // Create the slope graphic with the mapped points
-            BezierHullTangentGraphic slopeGraphic = new BezierHullTangentGraphic(mappedKnotPoint, mappedLControlPoint, mappedRControlPoint);
+            BezierHandleGraphic slopeGraphic = new BezierHandleGraphic(mappedLControlPoint, mappedKnotPoint, mappedRControlPoint);
             slopeGraphics.add(slopeGraphic);
             this.getChildren().add(slopeGraphic.getNode());
         }
@@ -103,13 +103,13 @@ public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
         coloredSectionIndex = sectionIndex;
 
         // Uncolor everything first
-        for (BezierHullTangentGraphic tangentGraphic : slopeGraphics) {
+        for (BezierHandleGraphic tangentGraphic : slopeGraphics) {
             tangentGraphic.recolor(false);
         }
 
         // Recolor the right side of the first tangent and the left side of the second tangent
-        BezierHullTangentGraphic firstTangent = slopeGraphics.get(sectionIndex);
-        BezierHullTangentGraphic secondTangent = slopeGraphics.get(sectionIndex + 1);
+        BezierHandleGraphic firstTangent = slopeGraphics.get(sectionIndex);
+        BezierHandleGraphic secondTangent = slopeGraphics.get(sectionIndex + 1);
         firstTangent.recolorRight(setColored);
         secondTangent.recolorLeft(setColored);
     }
@@ -135,12 +135,12 @@ public class CubicBezierSplineHullGraphic extends CurvedHullGraphic {
 
     @Override
     public boolean isColored() {
-        return slopeGraphics.stream().anyMatch(BezierHullTangentGraphic::isColored);
+        return slopeGraphics.stream().anyMatch(BezierHandleGraphic::isColored);
     }
 
     @Override
     public Section getSection() {
-        return new Section(encasingRectangle.getX(), encasingRectangle.getX() + encasingRectangle.getWidth());
+        return new Section(getCurvedGraphic().getEncasingRectangle().getX(), getCurvedGraphic().getEncasingRectangle().getX() + getCurvedGraphic().getEncasingRectangle().getWidth());
     }
 
     @Override
