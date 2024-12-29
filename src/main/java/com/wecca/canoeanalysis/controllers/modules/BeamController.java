@@ -762,8 +762,8 @@ public class BeamController implements Initializable {
     public void generateDiagram() {
         List<Point2D> sfdPoints = DiagramService.generateSfdPoints(canoe);
         List<Point2D> bmdPoints = DiagramService.generateBmdPoints(canoe);
-        WindowManagerService.openDiagramWindow("Shear Force Diagram", canoe, sfdPoints, "Force [kN]");
-        WindowManagerService.openDiagramWindow("Bending Moment Diagram", canoe, bmdPoints, "Moment [kN·m]");
+        WindowManagerService.openDiagramWindow("Shear Force Diagram", canoe, sfdPoints, "kN", "Force");
+        WindowManagerService.openDiagramWindow("Bending Moment Diagram", canoe, bmdPoints, "kN·m", "Moment");
     }
 
     /**
