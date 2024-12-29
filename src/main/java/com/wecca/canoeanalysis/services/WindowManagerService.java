@@ -32,9 +32,10 @@ public class WindowManagerService {
      * @param title  the title of the diagram.
      * @param canoe  to work with
      * @param points the points to render on the diagram.
-     * @param yUnits the units of the y-axis on the diagram.
+     * @param yUnits the unit of the y value (i.e. N or kN·m)
+     * @param yValName the name representing the y val (i.e. Force or Moment)
      */
-    public static void openDiagramWindow(String title, Canoe canoe, List<Point2D> points, String yUnits) {
+    public static void openDiagramWindow(String title, Canoe canoe, List<Point2D> points, String yUnits, String yValName) {
         // Initializing the stage and main pane
         Stage popupStage = new Stage();
         popupStage.setTitle(title);
@@ -47,7 +48,7 @@ public class WindowManagerService {
         popupStage.getIcons().add(icon);
 
         // Setting up the diagram specifics
-        AreaChart<Number, Number> chart = DiagramService.setupChart(canoe, points, yUnits);
+        AreaChart<Number, Number> chart = DiagramService.setupChart(canoe, points, yUnits, yValName);
         chartPane.getChildren().add(chart);
 
         // Setting up the window with a decorator
