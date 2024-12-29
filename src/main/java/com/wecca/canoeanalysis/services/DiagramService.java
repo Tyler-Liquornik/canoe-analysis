@@ -133,8 +133,9 @@ public class DiagramService {
             Point2D current = points.get(i);
             Point2D previous = points.get(i - 1);
 
-            // Check for exact 1e-3 gaps and same y-value
-            if (Math.abs(current.getX() - previous.getX() - 1e-3) < 1e-9)
+            // Check for exact 1e-3 or 1e-2 gaps and same y-value
+            if (Math.abs(current.getX() - previous.getX() - 1e-3) < 1e-9 ||
+                    Math.abs(current.getX() - previous.getX() - 1e-2) < 1e-9)
                 currentGroup.add(current);
             else {
                 // Check if current point is within 1e-3 of min/max but not consecutive
