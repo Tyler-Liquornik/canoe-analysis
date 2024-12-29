@@ -1,6 +1,5 @@
 package com.wecca.canoeanalysis.services;
 
-import com.jfoenix.controls.JFXTooltip;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.DiagramInterval;
@@ -8,37 +7,38 @@ import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
+import javafx.animation.PauseTransition;
 import javafx.geometry.Point2D;
 import javafx.scene.chart.*;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.util.Duration;
-
 import java.util.*;
 import java.util.List;
 
 public class DiagramService {
 
-    /**
-     * Sets up the chart for the diagram window.
-     *
-     * @param canoe  the canoe object containing section end points and length
-     * @param points the list of diagram points to be plotted
-     * @param yUnits the label for the Y-axis units
-     * @return the configured AreaChart
-     */
-    private static boolean isHoveringOverCircle = false;
-    private static double lastTooltipX = -1;
-    private static double lastTooltipY = -1;
+    // State (of multiple diagram chart windows open at once, mapping chart to state value)
+    private static final Map<AreaChart<Number, Number>, Boolean> isHoveringOverCircleMap = new HashMap<>();
+    private static final Map<AreaChart<Number, Number>, Double> lastTooltipXMap = new HashMap<>();
+    private static final Map<AreaChart<Number, Number>, Double> lastTooltipYMap = new HashMap<>();
+    private static final Map<AreaChart<Number, Number>, MouseEvent> latestMouseEventMap = new HashMap<>();
     private static final double TOOLTIP_UPDATE_THRESHOLD = 0.1;
 
-    public static AreaChart<Number, Number> setupChart(Canoe canoe, List<Point2D> points, String yUnits) {
+    /**
+     * Sets up the chart for the diagram window.
+     * @param canoe  the canoe object containing section end points and length
+     * @param points the list of diagram points to be plotted
+     * @param yUnits the unit of the y value (i.e. N or kN·m)
+     * @param yValName the name representing the y val (i.e. Force or Moment)
+     * @return the configured AreaChart
+     */
+    public static AreaChart<Number, Number> setupChart(Canoe canoe, List<Point2D> points, String yUnits, String yValName) {
         // Setting up the axes
-        NumberAxis yAxis = setupYAxis(yUnits);
+        NumberAxis yAxis = setupYAxis(yUnits, yValName);
         FixedTicksNumberAxis xAxis = setupXAxis(canoe);
 
         // Creating and styling the chart
@@ -48,110 +48,193 @@ public class DiagramService {
         chart.setLegendVisible(false);
 
         // Adding data to chart
-        addSeriesToChart(canoe, points, yUnits, chart);
-        showMousePositionAsTooltip(chart);
+        addSeriesToChart(canoe, points, yUnits, yValName, chart);
+        showMousePositionAsTooltip(chart, yUnits, yValName);
 
         return chart;
     }
-    private static List<Point2D> filterMaxMinPoints(List<Point2D> points) {
+
+    /**
+     * Filters the list of points for those with the largest absolute magnitude
+     * @param points the list of data points to filter
+     * @return a sorted set containing the filtered maximum and/or minimum points, or an empty list if all Y-values are zero
+     */
+    private static TreeSet<Point2D> filterForAbsoluteMaximums(List<Point2D> points) {
+
+        // Flags & Results
+        boolean hasPositive = false;
+        boolean hasNegative = false;
+        double maxY = Double.NEGATIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
         List<Point2D> maxPoints = new ArrayList<>();
         List<Point2D> minPoints = new ArrayList<>();
 
+        // Single pass through all points
         for (Point2D point : points) {
-            if (point.getY() == 0) {
-                continue; // Skip points with a Y-value of 0
+            double y = point.getY();
+
+            // Update flags based on Y-value
+            double tolerance = 1e-3;
+            if (y > tolerance) hasPositive = true;
+            else if (y < -tolerance) hasNegative = true;
+
+            // Update maximum Y and corresponding points
+            if (y > maxY) {
+                maxY = y;
+                maxPoints.clear();
+                maxPoints.add(point);
             }
-            findMaxPoints(maxPoints, point); // Identify and store maximum points
-            findMinPoints(minPoints, point); // Identify and store minimum points
+            else if (y >= maxY - Math.abs(maxY * 1e-4)) maxPoints.add(point);
+
+            // Update minimum Y and corresponding points
+            if (y < minY) {
+                minY = y;
+                minPoints.clear();
+                minPoints.add(point);
+            } else if (y <= minY + Math.abs(minY * 1e-4)) minPoints.add(point);
         }
 
-        maxPoints.addAll(minPoints); // Combine max and min points
-        return maxPoints;
+        maxPoints = combineClosePoints(maxPoints);
+        minPoints = combineClosePoints(minPoints);
+
+        // Determine which points to include based on the function's behavior
+        List<Point2D> filteredPoints = new ArrayList<>();
+        if (hasPositive && hasNegative) {
+            filteredPoints.addAll(maxPoints);
+            filteredPoints.addAll(minPoints);
+        }
+        else if (hasPositive) filteredPoints.addAll(maxPoints);
+        else if (hasNegative) {filteredPoints.addAll(minPoints);}
+        else return new TreeSet<>(Collections.emptyList());
+
+        // Package and return
+        TreeSet<Point2D> ts = new TreeSet<>(Comparator.comparingDouble(Point2D::getX).thenComparing(Point2D::getY));
+        ts.addAll(filteredPoints);
+        return ts;
     }
 
     /**
-     * Updates the list of maximum points.
-     *
-     * @param points the list of current maximum points
-     * @param point  the point to evaluate
+     * Combine points with close x values into one point, preserving original order.
+     * Combines only groups with exact x-value increments of 1e-3 and the same y-value.
+     * Selects the point closest to the middle of the group (median point).
+     * @param points the list of points to process
+     * @return the list of points with groups reduced to their median points
      */
-    private static void findMaxPoints(List<Point2D> points, Point2D point) {
-        if (points.isEmpty() || point.getY() > points.get(0).getY()) {
-            points.clear(); // Clear the list if a new maximum is found
-            points.add(point);
-        } else if (point.getY() == points.get(0).getY()) {
-            points.add(point); // Add the point if it matches the current maximum
+    private static List<Point2D> combineClosePoints(List<Point2D> points) {
+        if (points.isEmpty()) return points;
+
+        List<Point2D> combinedPoints = new ArrayList<>();
+        List<Point2D> currentGroup = new ArrayList<>();
+        double yValue = points.getFirst().getY();
+
+        currentGroup.add(points.getFirst());
+
+        for (int i = 1; i < points.size(); i++) {
+            Point2D current = points.get(i);
+            Point2D previous = points.get(i - 1);
+
+            // Check for exact 1e-3 gaps and same y-value
+            if (Math.abs(current.getX() - previous.getX() - 1e-3) < 1e-9)
+                currentGroup.add(current);
+            else {
+                // Check if current point is within 1e-3 of min/max but not consecutive
+                if (currentGroup.size() == 1 && Math.abs(currentGroup.getFirst().getY() - yValue) <= 1e-3)
+                    combinedPoints.add(currentGroup.getFirst());
+                else
+                    combinedPoints.add(getMedianPoint(currentGroup));
+                currentGroup.clear();
+                currentGroup.add(current);
+            }
         }
+
+        // Add the last group or isolated point
+        if (currentGroup.size() == 1 && Math.abs(currentGroup.getFirst().getY() - yValue) <= 1e-3)
+            combinedPoints.add(currentGroup.getFirst());
+        else
+            combinedPoints.add(getMedianPoint(currentGroup));
+
+        return combinedPoints;
     }
 
-    /**
-     * Updates the list of minimum points.
-     *
-     * @param points the list of current minimum points
-     * @param point  the point to evaluate
-     */
-    private static void findMinPoints(List<Point2D> points, Point2D point) {
-        if (points.isEmpty() || point.getY() < points.get(0).getY()) {
-            points.clear(); // Clear the list if a new minimum is found
-            points.add(point);
-        } else if (point.getY() == points.get(0).getY()) {
-            points.add(point); // Add the point if it matches the current minimum
-        }
-    }
 
     /**
-     * Displays a tooltip on the chart to show mouse position values.
-     *
-     * @param chart the AreaChart to add tooltips to
+     * @param group the group of points
+     * @return the median point by x
      */
-    public static void showMousePositionAsTooltip(AreaChart<Number, Number> chart) {
+    private static Point2D getMedianPoint(List<Point2D> group) {
+        group.sort(Comparator.comparingDouble(Point2D::getX));
+        return group.get(group.size() / 2); // Middle element (choose left middle if two middle elements)
+    }
+
+    public static void showMousePositionAsTooltip(AreaChart<Number, Number> chart, String yUnits, String yValName) {
         Tooltip tooltip = new Tooltip(); // Initialize tooltip
         tooltip.setShowDelay(Duration.millis(0));
         tooltip.setHideDelay(Duration.millis(0));
         tooltip.setAutoHide(false);
 
-        chart.setOnMouseMoved(event -> {
-            tooltip.hide(); // Hide tooltip when the mouse moves
-            if (!isHoveringOverCircle) {
-                updateTooltip(event, chart, tooltip); // Update tooltip with the new position
+        // Initialize PauseTransition for the chart
+        PauseTransition tooltipDelay = new PauseTransition(Duration.millis(300));
+        tooltipDelay.setOnFinished(event -> {
+            if (!isHoveringOverCircleMap.getOrDefault(chart, false) &&
+                    latestMouseEventMap.containsKey(chart)) {
+                updateTooltip(latestMouseEventMap.get(chart), chart, tooltip, yUnits, yValName);
             }
         });
 
+        chart.setOnMouseMoved(event -> {
+            latestMouseEventMap.put(chart, event); // Store the latest mouse event
+            tooltip.hide(); // Hide tooltip immediately when mouse moves
+            tooltipDelay.playFromStart(); // Restart the delay timer
+        });
+
+        chart.setOnMouseExited(event -> {
+            tooltip.hide(); // Hide tooltip when mouse exits the chart
+            tooltipDelay.stop(); // Stop any ongoing delay
+        });
+
         Tooltip.install(chart, tooltip); // Attach the tooltip to the chart
+
+        // Initialize state maps
+        isHoveringOverCircleMap.put(chart, false);
+        lastTooltipXMap.put(chart, -1.0);
+        lastTooltipYMap.put(chart, -1.0);
     }
 
     /**
      * Updates the tooltip content and position based on mouse movement.
      *
-     * @param event   the mouse event
-     * @param chart   the chart where the tooltip is displayed
-     * @param tooltip the tooltip to update
+     * @param event        the mouse event
+     * @param chart        the chart where the tooltip is displayed
+     * @param tooltip      the tooltip to update
+     * @param yUnits       the unit of the y value (i.e. N or kN·m)
+     * @param yValName    the name representing the y val (i.e. Force or Moment)
      */
-    private static void updateTooltip(MouseEvent event, AreaChart<Number, Number> chart, Tooltip tooltip) {
+    private static void updateTooltip(MouseEvent event, AreaChart<Number, Number> chart, Tooltip tooltip, String yUnits, String yValName) {
         double mouseX = event.getX() - chart.getXAxis().getLayoutX();
         double mouseY = event.getY() - chart.getYAxis().getLayoutY();
         Axis<Number> xAxis = chart.getXAxis();
         Axis<Number> yAxis = chart.getYAxis();
 
-        if (xAxis instanceof ValueAxis && yAxis instanceof ValueAxis) {
-            ValueAxis<Number> xValueAxis = (ValueAxis<Number>) xAxis;
-            ValueAxis<Number> yValueAxis = (ValueAxis<Number>) yAxis;
-
+        if (xAxis instanceof ValueAxis<Number> xValueAxis && yAxis instanceof ValueAxis<Number> yValueAxis) {
             if (mouseX >= 0 && mouseX <= xValueAxis.getWidth() && mouseY >= 0 && mouseY <= yValueAxis.getHeight()) {
                 double xValue = xValueAxis.getValueForDisplay(mouseX).doubleValue();
                 double yValue = yValueAxis.getValueForDisplay(mouseY).doubleValue();
+
+                double lastTooltipX = lastTooltipXMap.getOrDefault(chart, -1.0);
+                double lastTooltipY = lastTooltipYMap.getOrDefault(chart, -1.0);
 
                 // Update tooltip only if the mouse has moved significantly
                 if (Math.abs(mouseX - lastTooltipX) > TOOLTIP_UPDATE_THRESHOLD ||
                         Math.abs(mouseY - lastTooltipY) > TOOLTIP_UPDATE_THRESHOLD) {
 
-                    tooltip.setText(String.format("Distance: %.4f, Moment: %.4f", xValue, yValue));
+                    String tooltipText = String.format("Distance: %.4f m, %s: %.4f %s", xValue, yValName, yValue, yUnits);
+                    tooltip.setText(tooltipText);
                     tooltip.setX(event.getScreenX() + 10);
                     tooltip.setY(event.getScreenY() + 10);
                     tooltip.show(chart, event.getScreenX() + 10, event.getScreenY() + 10);
 
-                    lastTooltipX = mouseX; // Update the last X position
-                    lastTooltipY = mouseY; // Update the last Y position
+                    lastTooltipXMap.put(chart, mouseX); // Update the last X position
+                    lastTooltipYMap.put(chart, mouseY); // Update the last Y position
                 }
             } else {
                 tooltip.hide(); // Hide tooltip if mouse is out of bounds
@@ -159,61 +242,69 @@ public class DiagramService {
         }
     }
 
+
     /**
-     * Adds circles with tooltips to specific data points in the chart.
-     *
+     * Adds circles with bolded text tooltips to specific data points in the chart.
      * @param data            the chart data point to annotate
      * @param filteredPoints  the list of filtered points to annotate
+     * @param yUnits          the unit of the y value (i.e. N or kN·m)
+     * @param yValName        the name representing the y value (i.e. Force or Moment)
+     * @param chart           the chart to which this point belongs
      */
-    private static void addCircleToPoint(XYChart.Data<Number, Number> data, List<Point2D> filteredPoints) {
+    private static void emphasizePoint(XYChart.Data<Number, Number> data, Set<Point2D> filteredPoints, String yUnits, String yValName, AreaChart<Number, Number> chart) {
         double dataX = data.getXValue().doubleValue();
         double dataY = data.getYValue().doubleValue();
 
         for (Point2D point : filteredPoints) {
-            if (point.getY() != dataY || point.getX() != dataX) {
-                continue; // Skip if the point does not match
-            }
+            // Skip if the point does not match
+            if (point.getY() != dataY || point.getX() != dataX) continue;
 
             Circle circle = new Circle(5, ColorPaletteService.getColor("primary")); // Create a circle for the point
             data.setNode(circle);
 
-            Tooltip tooltip = new Tooltip(String.format("Distance: %.4f, Moment: %.4f", point.getX(), point.getY()));
+            // Tooltip text with "Critical" prefix
+            String tooltipText = String.format("Critical Distance: %.4f m, Critical %s: %.4f %s", point.getX(), yValName, point.getY(), yUnits);
+            Tooltip tooltip = new Tooltip(tooltipText);
             Tooltip.install(circle, tooltip); // Attach a tooltip to the circle
 
+            // Ensure state maps are initialized for this chart
+            isHoveringOverCircleMap.putIfAbsent(chart, false);
+
             circle.setOnMouseEntered(event -> {
-                isHoveringOverCircle = true;
+                isHoveringOverCircleMap.put(chart, true); // Set state for hovering
+                tooltip.setStyle("-fx-font-weight: bold;"); // Set tooltip text to bold
                 tooltip.show(circle, event.getScreenX() + 10, event.getScreenY() + 10); // Show tooltip on hover
                 circle.setRadius(7); // Highlight the circle
                 circle.setFill(ColorPaletteService.getColor("primary-light"));
             });
 
             circle.setOnMouseExited(event -> {
-                isHoveringOverCircle = false;
+                isHoveringOverCircleMap.put(chart, false); // Reset state for hovering
                 tooltip.hide(); // Hide tooltip when mouse exits
+                tooltip.setStyle("-fx-font-weight: normal;"); // Reset tooltip text to normal
                 circle.setRadius(5); // Reset circle size
                 circle.setFill(ColorPaletteService.getColor("primary"));
             });
-            return;
+
+            return; // Only emphasize the first matching point
         }
     }
 
 
-
     /**
      * Sets up the Y-axis for the chart.
-     *
-     * @param yUnits the label for the Y-axis units
+     * @param yUnits the unit of the y value (i.e. N or kN·m)
+     * @param yValName the name representing the y val (i.e. Force or Moment)
      * @return the configured NumberAxis
      */
-    private static NumberAxis setupYAxis(String yUnits) {
+    private static NumberAxis setupYAxis(String yUnits, String yValName) {
         NumberAxis yAxis = new NumberAxis();
-        yAxis.setLabel(yUnits);
+        yAxis.setLabel(String.format("%s [%s]", yValName, yUnits));
         return yAxis;
     }
 
     /**
      * Sets up the X-axis for the chart using critical points from the canoe.
-     *
      * @param canoe the canoe object containing section end points and length
      * @return the configured FixedTicksNumberAxis
      */
@@ -229,27 +320,39 @@ public class DiagramService {
         return xAxis;
     }
 
-    public static void addSeriesToChart(Canoe canoe, List<Point2D> points, String yUnits, AreaChart<Number, Number> chart) {
+    /**
+     * Adds one or more data series to the chart.
+     * Partitions points with the canoe's critical endpoints
+     * Creates and labels XYChart.Series with yValName and yUnits
+     * @param canoe Canoe object with section endpoints
+     * @param points Data points to plot
+     * @param yUnits Y-axis units
+     * @param yValName Y-values label
+     * @param chart AreaChart to add the series to
+     */
+    public static void addSeriesToChart(Canoe canoe, List<Point2D> points, String yUnits, String yValName, AreaChart<Number, Number> chart) {
 
         TreeSet<Double> criticalPoints = canoe.getSectionEndpoints();
-        List<Point2D> filteredPoints = filterMaxMinPoints(points);
+        TreeSet<Point2D> absoluteMaximumPoints = filterForAbsoluteMaximums(points);
 
         // Adding the sections of the pseudo piecewise function separately
         boolean set = false; // only need to set the name of the series once since its really one piecewise function
-        List<List<Point2D>> intervals = partitionPoints(canoe, points, criticalPoints);
+        List<List<Point2D>> intervals = partitionPoints(points, criticalPoints);
         for (List<Point2D> interval : intervals) {
             XYChart.Series<Number, Number> series = new XYChart.Series<>();
             for (Point2D point : interval) {
                 XYChart.Data<Number, Number> data = new XYChart.Data<>(point.getX(), point.getY());
-                addCircleToPoint(data, filteredPoints);
+                Point2D dataPoint = new Point2D(data.getXValue().doubleValue(), data.getYValue().doubleValue());
+                if (absoluteMaximumPoints.contains(dataPoint))
+                    emphasizePoint(data, absoluteMaximumPoints, yUnits, yValName, chart);
                 series.getData().add(data);
             }
 
             if (!set) {
-                series.setName(yUnits);
+                series.setName(String.format("%s [%s]", yValName, yUnits));
                 set = true;
             }
-            series.setName(yUnits);
+            series.setName(String.format("%s [%s]", yValName, yUnits));
             chart.getData().add(series);
         }
     }
@@ -258,12 +361,11 @@ public class DiagramService {
      * Consider the list of points is a "pseudo piecewise function"
      * This method breaks it into a set of "pseudo functions"
      * Pseudo because it's just a set of points rather with no clear partitions by their definition only
-     * @param canoe to work with
      * @param points act together as a piecewise function
      * @param partitions the locations where the form of the piecewise changes
      * @return a list containing each section of the piecewise pseudo functions with unique form
      */
-    private static List<List<Point2D>> partitionPoints(Canoe canoe, List<Point2D> points, TreeSet<Double> partitions) {
+    private static List<List<Point2D>> partitionPoints(List<Point2D> points, TreeSet<Double> partitions) {
         // Initializing lists
         List<List<Point2D>> partitionedIntervals = new ArrayList<>();
         List<Double> partitionsList = new ArrayList<>(partitions);
@@ -543,8 +645,6 @@ public class DiagramService {
         intervals.sort(Comparator.comparingDouble(DiagramInterval::getX));
         Map<String, Point2D> diagramPoints = getDiagramPointMap(intervals, canoe.getHull().getLength());
         ArrayList<Point2D> sfdPoints = new ArrayList<>(diagramPoints.values());
-
-        LoggerService.logPoints(sfdPoints);
 
         // Return the generated points
         return new ArrayList<>(sfdPoints);
