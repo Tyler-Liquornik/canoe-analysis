@@ -12,10 +12,8 @@ import com.wecca.canoeanalysis.services.YamlMarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
-import com.wecca.canoeanalysis.utils.ControlUtils;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.animation.*;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -48,18 +46,19 @@ public class MainController implements Initializable {
     @FXML
     private AnchorPane root, moduleInjectionRoot, toolBarPane;
 
+    // Stage state management
     private Scene primaryScene;
     private Stage primaryStage;
-    private double stageXOffset = 0;
-    private double stageYOffset = 0;
+    private double stageXOffset;
+    private double stageYOffset;
 
     // Drawer state management
-    private boolean isDrawerOpen = false;
+    private boolean isDrawerOpen;
     private AnimationTimer drawerTimer;
-    private double drawerTargetX; // Target X position for the drawer
+    private double drawerTargetX;
 
     // Each module will have a set of custom toolbar buttons on top of the minimize and close window buttons
-    private static List<Button> moduleToolBarButtons = new ArrayList<>();
+    private List<Button> moduleToolBarButtons = new ArrayList<>();
 
     /**
      * Mouse clicked event to set the current location of the window
@@ -215,10 +214,16 @@ public class MainController implements Initializable {
             Button button = IconButton.getToolbarButton(entry.getKey(), entry.getValue());
             buttons.add(button);
         }
-        setToolBarButtons(buttons);
+        addOrSetToolBarButtons(buttons);
     }
 
-    public void setToolBarButtons(List<Button> buttons) {
+    /**
+     * When the toolbar only has the hamburger in it, add all the icons
+     * The next time this is called, the size of the buttons list must match the current amount of module tool bar buttons
+     * Module toolbar buttons are those except the hamburger, close, and minimize buttons
+     * @param buttons the buttons to add or set
+     */
+    public void addOrSetToolBarButtons(List<Button> buttons) {
         double buttonWidth = buttons.getFirst().prefWidth(-1);
 
         // Account for space taken up by minimize and close window buttons and padding
@@ -233,8 +238,16 @@ public class MainController implements Initializable {
             button.setLayoutY(buttonY);
         }
 
-        // Extra index skips the hamburger which is always first
-        toolBarPane.getChildren().addAll(1, moduleToolBarButtons);
+        // No module toolbar buttons have been added yet, only 3 buttons are the menu, close, and minimize
+        if (toolBarPane.getChildren().size() == 3) {
+            // Extra index skips the hamburger which is always first
+            toolBarPane.getChildren().addAll(1, moduleToolBarButtons);
+        }
+        else {
+            for (int i = 1; i <= moduleToolBarButtons.size(); i++) {
+                toolBarPane.getChildren().set(i, moduleToolBarButtons.get(i - 1));
+            }
+        }
     }
 
     /**
@@ -315,6 +328,11 @@ public class MainController implements Initializable {
         initializeHamburger();
         initializeDrawer();
         initializeSnackbar();
+
+        // State init
+        stageXOffset = 0;
+        stageYOffset = 0;
+        isDrawerOpen = false;
 
         // Pass references to services that require it
         YamlMarshallingService.setMainController(this);

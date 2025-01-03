@@ -16,6 +16,7 @@ import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
@@ -65,6 +66,7 @@ public class HullBuilderController implements Initializable {
     private int selectedHullSectionIndex;
     private boolean sectionPropertiesSelected;
     private int graphicsViewingState;
+    private boolean addOrDeleteKnotsModeActive;
 
     // Numerical 'dx'
     private final double OPEN_INTERVAL_TOLERANCE = 1e-3;
@@ -77,8 +79,7 @@ public class HullBuilderController implements Initializable {
         // TODO: add functions to buttons
         iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> dummy());
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> dummy());
-        iconGlyphToFunctionMap.put(IconGlyphType.SCISSORS, e -> dummy());
-        iconGlyphToFunctionMap.put(IconGlyphType.CHAIN, e -> dummy());
+        iconGlyphToFunctionMap.put(IconGlyphType.PENCIL, this::toggleSectionEditorMode);
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
     }
@@ -89,6 +90,27 @@ public class HullBuilderController implements Initializable {
 
     public void dummyOnClick(MouseEvent event) {
         mainController.showSnackbar("WIP");
+    }
+
+    /**
+     * Handler for the pencil button which enables the ability to add or delete knots
+     * This effectively is controlling the amount of hull sections in the canoe
+     * @param event the click event
+     */
+    private void toggleSectionEditorMode(MouseEvent event) {
+        List<Button> toolBarButtons = mainController.getModuleToolBarButtons();
+        Button changedIconButton;
+        if (!addOrDeleteKnotsModeActive)
+            changedIconButton = IconButton.getToolbarButton(IconGlyphType.X__PENCIL, this::toggleSectionEditorMode);
+        else
+            changedIconButton = IconButton.getToolbarButton(IconGlyphType.PENCIL, this::toggleSectionEditorMode);
+        toolBarButtons.set(2, changedIconButton);
+        mainController.addOrSetToolBarButtons(toolBarButtons);
+        addOrDeleteKnotsModeActive = !addOrDeleteKnotsModeActive;
+
+        mainController.showSnackbar(addOrDeleteKnotsModeActive
+                ? "Sections Editor Enabled"
+                : "Sections Editor Disabled");
     }
 
     /**
@@ -361,7 +383,7 @@ public class HullBuilderController implements Initializable {
         double approximatelyZeroRadians = Math.toRadians(OPEN_INTERVAL_TOLERANCE);
 
         // Use CAST rule to determine which rectangle boundaries to calculate rMax
-        // Edge cases of 0/90/180/270/330 handled appropriately
+        // Edge cases of 0/90/180/270/360 handled appropriately
         double sinOfApproximatelyZeroRadians = Math.sin(approximatelyZeroRadians);
         if (Math.abs(sinTheta) != Math.abs(sinOfApproximatelyZeroRadians)) {
             if (cosTheta < 0) {
@@ -383,8 +405,7 @@ public class HullBuilderController implements Initializable {
             }
         }
 
-        // Add small buffer on the upper bound to numerically create an open interval, preventing boundary issues
-        return Math.max(0, rMax);
+       return Math.max(0, rMax);
     }
 
     /**
