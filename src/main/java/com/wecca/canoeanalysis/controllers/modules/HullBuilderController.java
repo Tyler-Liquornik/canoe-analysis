@@ -22,6 +22,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import lombok.Getter;
@@ -54,14 +55,19 @@ public class HullBuilderController implements Initializable {
 
     @Setter
     private static MainController mainController;
+
+    // Refs
     @Getter
     private Hull hull;
-    @Getter @Setter
-    private CubicBezierSplineHullGraphic hullGraphic;
-    private AnchorPane hullGraphicPane;
     private List<Knob> knobs;
     private List<ChangeListener<Number>> knobListeners;
+
+    // UI & Graphics
+    @Getter @Setter
+    private AnchorPane hullGraphicPane;
+    private CubicBezierSplineHullGraphic hullGraphic;
     private Line mouseXTrackerLine;
+    private Circle intersectionPoint;
 
     // State
     private boolean previousPressedBefore;
@@ -72,7 +78,7 @@ public class HullBuilderController implements Initializable {
     private int graphicsViewingState;
     private boolean sectionEditorEnabled;
 
-    // Numerical 'dx'
+    // Numerical 'dx' used at bounds to prevent unpredictable boundary behaviour
     private final double OPEN_INTERVAL_TOLERANCE = 1e-3;
 
     /**
@@ -116,6 +122,10 @@ public class HullBuilderController implements Initializable {
         hullViewAnchorPane.setOnMouseEntered(sectionEditorEnabled ? e -> hullViewAnchorPane.setCursor(Cursor.CROSSHAIR) : null);
         hullViewAnchorPane.setOnMouseExited(sectionEditorEnabled ? e -> hullViewAnchorPane.setCursor(Cursor.DEFAULT) : null);
         hullViewAnchorPane.setOnMouseMoved(sectionEditorEnabled ? this::handleMouseMovedHullViewPane : null);
+        if (!sectionEditorEnabled) {
+            intersectionPoint.setOpacity(0);
+            intersectionPoint = null;
+        }
         if (selectedHullSection != null) hullGraphic.recolor(!sectionEditorEnabled);
         hullGraphic.setColoredSectionIndex(-1);
 
@@ -137,6 +147,7 @@ public class HullBuilderController implements Initializable {
                 for (int i = 0; i < knobs.size(); i++) {
                     knobs.get(i).valueProperty().addListener(knobListeners.get(i));
                 }
+                if (intersectionPoint != null) intersectionPoint.setOpacity(0);
             }
         }
 
@@ -148,6 +159,7 @@ public class HullBuilderController implements Initializable {
             mouseXTrackerLine.getStrokeDashArray().setAll(5.0, 9.0);
             mouseXTrackerLine.setStartX(hullViewAnchorPane.getWidth() / 2);
             mouseXTrackerLine.setEndX(hullViewAnchorPane.getWidth() / 2);
+            updateMouseLinePoint(new Point2D(hullGraphicPane.getWidth() / 2, hullGraphicPane.getHeight()));
             mouseXTrackerLine.setStartY(0);
             mouseXTrackerLine.setEndY(hullViewAnchorPane.getHeight());
         }
@@ -156,6 +168,25 @@ public class HullBuilderController implements Initializable {
         mainController.showSnackbar(sectionEditorEnabled
                 ? "Sections Editor Enabled"
                 : "Sections Editor Disabled");
+    }
+
+    /**
+     * Displays the intersection point on the hull view pane.
+     *
+     * @param position The position of the intersection point in the hull view pane's local coordinate space.
+     */
+    private void updateMouseLinePoint(Point2D position) {
+        // Initialize the intersection point if it doesn't exist
+        if (!hullGraphicPane.getChildren().contains(intersectionPoint)) {
+            intersectionPoint = new Circle(5);
+            intersectionPoint.setFill(ColorPaletteService.getColor("white"));
+            hullGraphicPane.getChildren().add(intersectionPoint);
+        }
+
+        // Update the position and make it visible
+        intersectionPoint.setCenterX(position.getX());
+        intersectionPoint.setCenterY(position.getY());
+        intersectionPoint.setOpacity(1.0);
     }
 
     /**
@@ -966,27 +997,49 @@ public class HullBuilderController implements Initializable {
     }
 
     /**
-     * Handles mouse movement within the hull view pane. Updates the vertical tracker line and checks for hull intersection.
+     * Handles mouse movement within the hull view pane.
+     * Updates the vertical tracker line and checks for hull intersection to display the POI.
      */
     private void handleMouseMovedHullViewPane(MouseEvent event) {
-        double mouseX = event.getX();
-        double paneHeight = hullViewAnchorPane.getHeight();
+        // Only perform computations if the sections editor is enabled
+        if (!sectionEditorEnabled) {
+            if (intersectionPoint != null) intersectionPoint.setOpacity(0);
+            return;
+        }
 
         // Update the vertical line's position
+        double mouseX = event.getX();
+        double paneHeight = hullViewAnchorPane.getHeight();
         mouseXTrackerLine.setStartX(mouseX);
         mouseXTrackerLine.setEndX(mouseX);
         mouseXTrackerLine.setStartY(0);
-        mouseXTrackerLine.setEndY(paneHeight - 1); // weird out of panel bounds bug without -1px
+        mouseXTrackerLine.setEndY(paneHeight - 1);
 
-        // TODO
-        // Check for intersection with the hull
-//            Point2D hullIntersection = findHullIntersection(mouseX);
-//            if (hullIntersection != null) {
-//                // Show the intersection point on the hull
-//                hullGraphic.displayIntersectionPoint(hullIntersection);
-//            } else {
-//                hullGraphic.hideIntersectionPoint();
-//            }
+        updateHullIntersectionPoint(mouseX);
+    }
+
+    /**
+     * Render or un-render the point of intersection between the line x = mouseX and the hull curve graphic
+     * @param mouseX the x position of the mouse at which the vertical line is at
+     */
+    private void updateHullIntersectionPoint(double mouseX) {
+        // Find the X coordinate in the hull view graphic pane on the hull curve
+        if (mouseX >= hullGraphicPane.getLayoutX() && mouseX <= hullGraphicPane.getLayoutX() + hullGraphicPane.getWidth()) {
+            double poiX = mouseX - hullGraphicPane.getLayoutX();
+            double functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
+            HullSection section = hull.getHullSections().stream()
+                    .filter(s -> s.getX() <= functionSpaceX && s.getRx() >= functionSpaceX)
+                    .findFirst().orElseThrow(() -> new RuntimeException("Cannot place intersection point, out of bounds"));
+            CubicBezierFunction bezier = (CubicBezierFunction) section.getSideProfileCurve();
+            double functionSpaceY = bezier.value(functionSpaceX);
+            double poiY = (functionSpaceY / hull.getLength()) * hullGraphicPane.getWidth();
+            Point2D poi = new Point2D(poiX, -poiY);
+            updateMouseLinePoint(poi);
+        }
+        else if (intersectionPoint != null) {
+            intersectionPoint.setOpacity(0);
+            intersectionPoint = null;
+        }
     }
 
     @Override
