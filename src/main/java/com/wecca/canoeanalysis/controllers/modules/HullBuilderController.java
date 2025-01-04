@@ -11,15 +11,18 @@ import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
+import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import lombok.Getter;
 import lombok.Setter;
@@ -58,6 +61,7 @@ public class HullBuilderController implements Initializable {
     private AnchorPane hullGraphicPane;
     private List<Knob> knobs;
     private List<ChangeListener<Number>> knobListeners;
+    private Line mouseXTrackerLine;
 
     // State
     private boolean previousPressedBefore;
@@ -66,7 +70,7 @@ public class HullBuilderController implements Initializable {
     private int selectedHullSectionIndex;
     private boolean sectionPropertiesSelected;
     private int graphicsViewingState;
-    private boolean addOrDeleteKnotsModeActive;
+    private boolean sectionEditorEnabled;
 
     // Numerical 'dx'
     private final double OPEN_INTERVAL_TOLERANCE = 1e-3;
@@ -79,7 +83,7 @@ public class HullBuilderController implements Initializable {
         // TODO: add functions to buttons
         iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> dummy());
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> dummy());
-        iconGlyphToFunctionMap.put(IconGlyphType.PENCIL, this::toggleSectionEditorMode);
+        iconGlyphToFunctionMap.put(IconGlyphType.PENCIL, this::toggleSectionsEditorMode);
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
     }
@@ -93,29 +97,69 @@ public class HullBuilderController implements Initializable {
     }
 
     /**
-     * Handler for the pencil button which enables the ability to add or delete knots
-     * This effectively is controlling the amount of hull sections in the canoe
+     * Handler for the pencil button which enables the ability to add or delete knots.
+     * The logic here is responsible for immediate UI/state changes
+     *
      * @param event the click event
      */
-    private void toggleSectionEditorMode(MouseEvent event) {
-        List<Button> toolBarButtons = mainController.getModuleToolBarButtons();
-        Button changedIconButton;
-        if (!addOrDeleteKnotsModeActive)
-            changedIconButton = IconButton.getToolbarButton(IconGlyphType.X__PENCIL, this::toggleSectionEditorMode);
-        else
-            changedIconButton = IconButton.getToolbarButton(IconGlyphType.PENCIL, this::toggleSectionEditorMode);
-        toolBarButtons.set(2, changedIconButton);
-        mainController.addOrSetToolBarButtons(toolBarButtons);
-        addOrDeleteKnotsModeActive = !addOrDeleteKnotsModeActive;
+    private void toggleSectionsEditorMode(MouseEvent event) {
+        sectionEditorEnabled = !sectionEditorEnabled;
+        nextPressedBefore = false;
+        previousPressedBefore = false;
+        selectedHullSectionIndex = -1;
 
-        mainController.showSnackbar(addOrDeleteKnotsModeActive
+        List<Button> toolBarButtons = mainController.getModuleToolBarButtons();
+        Button toggledIconButton = IconButton.getToolbarButton(sectionEditorEnabled ? IconGlyphType.X__PENCIL : IconGlyphType.PENCIL, this::toggleSectionsEditorMode);
+        toolBarButtons.set(2, toggledIconButton);
+        mainController.addOrSetToolBarButtons(toolBarButtons);
+        hullViewAnchorPane.setCursor(sectionEditorEnabled ? Cursor.CROSSHAIR : Cursor.DEFAULT);
+        hullViewAnchorPane.setOnMouseEntered(sectionEditorEnabled ? e -> hullViewAnchorPane.setCursor(Cursor.CROSSHAIR) : null);
+        hullViewAnchorPane.setOnMouseExited(sectionEditorEnabled ? e -> hullViewAnchorPane.setCursor(Cursor.DEFAULT) : null);
+        hullViewAnchorPane.setOnMouseMoved(sectionEditorEnabled ? this::handleMouseMovedHullViewPane : null);
+        if (selectedHullSection != null) hullGraphic.recolor(!sectionEditorEnabled);
+        hullGraphic.setColoredSectionIndex(-1);
+
+        List<Button> topLeftButtons = hullViewAnchorPane.getChildren().stream().filter(node -> (node instanceof Button)).map(node -> (Button) node).toList();
+        List<Button> sectionSelectorButtons = Arrays.asList(topLeftButtons.get(0), topLeftButtons.get(1));
+        sectionSelectorButtons.forEach(button -> button.setDisable(sectionEditorEnabled));
+        sectionSelectorButtons.forEach(button -> button.setOpacity(1));
+
+        for (int i = 0; i < knobs.size(); i++) {knobs.get(i).valueProperty().removeListener(knobListeners.get(i));}
+        if (selectedHullSection != null) {
+            if (sectionEditorEnabled) {
+                selectedHullSection = null;
+                setBlankSectionProperties();
+                unboundKnobs();
+                knobs.forEach(knobs -> knobs.setKnobValue(0));
+            }
+            knobs.forEach(knob -> knob.setLocked(sectionEditorEnabled));
+            if (!sectionEditorEnabled) {
+                for (int i = 0; i < knobs.size(); i++) {
+                    knobs.get(i).valueProperty().addListener(knobListeners.get(i));
+                }
+            }
+        }
+
+        // Update mouse X tracker line visibility and style
+        mouseXTrackerLine.setVisible(sectionEditorEnabled);
+        if (sectionEditorEnabled) {
+            mouseXTrackerLine.setStroke(ColorPaletteService.getColor("white"));
+            mouseXTrackerLine.setOpacity(0.7);
+            mouseXTrackerLine.getStrokeDashArray().setAll(5.0, 9.0);
+            mouseXTrackerLine.setStartX(hullViewAnchorPane.getWidth() / 2);
+            mouseXTrackerLine.setEndX(hullViewAnchorPane.getWidth() / 2);
+            mouseXTrackerLine.setStartY(0);
+            mouseXTrackerLine.setEndY(hullViewAnchorPane.getHeight());
+        }
+
+        // Notify the user
+        mainController.showSnackbar(sectionEditorEnabled
                 ? "Sections Editor Enabled"
                 : "Sections Editor Disabled");
     }
 
     /**
      * Set the side view hull to build
-     *
      * @param hull to set from
      */
     public void setSideViewHullGraphic(Hull hull) {
@@ -192,7 +236,7 @@ public class HullBuilderController implements Initializable {
         previousPressedBefore = true;
         unboundKnobs();
         setKnobValues();
-        setAllKnobBounds();
+        setKnobBounds();
     }
 
     /**
@@ -216,7 +260,7 @@ public class HullBuilderController implements Initializable {
         nextPressedBefore = true;
         unboundKnobs();
         setKnobValues();
-        setAllKnobBounds();
+        setKnobBounds();
     }
 
     /**
@@ -320,7 +364,7 @@ public class HullBuilderController implements Initializable {
      *
      * MUST BE DONE AFTER SETTING KNOB VALUES WHEN SWITCHING SECTIONS
      */
-    private void setAllKnobBounds() {
+    private void setKnobBounds() {
         // Validation
         if (!(selectedHullSection.getSideProfileCurve() instanceof CubicBezierFunction bezier))
             throw new IllegalArgumentException("Cannot work with non-bezier hull curve");
@@ -882,7 +926,6 @@ public class HullBuilderController implements Initializable {
 
 
     /**
-     * TODO: button on hull view panel: eye -> transparent eye -> closed eye for viewing graphics on hull
      * Add and position blue buttons to corners of panels
      */
     private void layoutPanelButtons() {
@@ -922,6 +965,30 @@ public class HullBuilderController implements Initializable {
         AnchorPane.setRightAnchor(canoePropertiesPlusButton, marginToPanel);
     }
 
+    /**
+     * Handles mouse movement within the hull view pane. Updates the vertical tracker line and checks for hull intersection.
+     */
+    private void handleMouseMovedHullViewPane(MouseEvent event) {
+        double mouseX = event.getX();
+        double paneHeight = hullViewAnchorPane.getHeight();
+
+        // Update the vertical line's position
+        mouseXTrackerLine.setStartX(mouseX);
+        mouseXTrackerLine.setEndX(mouseX);
+        mouseXTrackerLine.setStartY(0);
+        mouseXTrackerLine.setEndY(paneHeight - 1); // weird out of panel bounds bug without -1px
+
+        // TODO
+        // Check for intersection with the hull
+//            Point2D hullIntersection = findHullIntersection(mouseX);
+//            if (hullIntersection != null) {
+//                // Show the intersection point on the hull
+//                hullGraphic.displayIntersectionPoint(hullIntersection);
+//            } else {
+//                hullGraphic.hideIntersectionPoint();
+//            }
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         // Set the local instance of the main controller
@@ -945,5 +1012,10 @@ public class HullBuilderController implements Initializable {
         selectedHullSectionIndex = -1;
         sectionPropertiesSelected = true;
         graphicsViewingState = 0;
+
+        // Mouse tracker line
+        mouseXTrackerLine = new Line();
+        mouseXTrackerLine.setVisible(false);
+        hullViewAnchorPane.getChildren().addLast(mouseXTrackerLine);
     }
 }

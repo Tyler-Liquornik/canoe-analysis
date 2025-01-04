@@ -76,7 +76,7 @@ public class IconButton extends Button {
         // Double underscore in the icon glyph name creates a badge with the icon glyph name of the chars before the double underscore
         IconGlyphType badgeGlyph = null;
         String glyphName = iconGlyphName.getGlyphName();
-        int splitIndex = 0;
+        int splitIndex;
         if (glyphName.contains("__")) {
             splitIndex = glyphName.indexOf("__");
             badgeGlyph = IconGlyphType.valueOf(glyphName.substring(0, splitIndex));
