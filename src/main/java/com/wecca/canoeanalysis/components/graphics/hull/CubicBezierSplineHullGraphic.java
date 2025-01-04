@@ -108,10 +108,12 @@ public class CubicBezierSplineHullGraphic extends HullGraphic {
         }
 
         // Recolor the right side of the first tangent and the left side of the second tangent
-        BezierHandleGraphic firstTangent = slopeGraphics.get(sectionIndex);
-        BezierHandleGraphic secondTangent = slopeGraphics.get(sectionIndex + 1);
-        firstTangent.recolorRight(setColored);
-        secondTangent.recolorLeft(setColored);
+        if (setColored) {
+            BezierHandleGraphic firstTangent = slopeGraphics.get(sectionIndex);
+            BezierHandleGraphic secondTangent = slopeGraphics.get(sectionIndex + 1);
+            firstTangent.recolorRight(true);
+            secondTangent.recolorLeft(true);
+        }
     }
 
     /**

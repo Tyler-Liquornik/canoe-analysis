@@ -128,9 +128,9 @@ public class HullBuilderController implements Initializable {
         if (selectedHullSection != null) {
             if (sectionEditorEnabled) {
                 selectedHullSection = null;
-                setBlankSectionProperties();
                 unboundKnobs();
                 knobs.forEach(knobs -> knobs.setKnobValue(0));
+                if (sectionPropertiesSelected) setBlankSectionProperties();
             }
             knobs.forEach(knob -> knob.setLocked(sectionEditorEnabled));
             if (!sectionEditorEnabled) {
@@ -223,6 +223,7 @@ public class HullBuilderController implements Initializable {
         unlockKnobsOnFirstSectionSelect();
 
         // Use modulo to wrap index
+        if (selectedHullSectionIndex == -1) selectedHullSectionIndex++;
         selectedHullSectionIndex = (selectedHullSectionIndex - 1 + hull.getHullSections().size()) % hull.getHullSections().size();
         selectedHullSection = hull.getHullSections().get(selectedHullSectionIndex);
 
@@ -278,13 +279,13 @@ public class HullBuilderController implements Initializable {
      * Display section properties with corresponding attributes
      */
     public void setSectionProperties(double height, double volume, double mass, double x, double rx) {
-        String heightInfo = String.format("%.4f m",height);
+        String heightInfo = String.format("%.4f m", height);
         this.heightLabel.setText(heightInfo);
-        String interval = "("+x+" m, "+rx+" m)";
+        String interval = "(" + x + " m, " + rx + " m)";
         this.intervalLabel.setText(interval);
-        String volumeFormated = String.format("%.4f m^3",volume);
+        String volumeFormated = String.format("%.4f m^3", volume);
         this.volumeLabel.setText(volumeFormated);
-        String massFormated = String.format("%.4f kg",mass);
+        String massFormated = String.format("%.4f kg", mass);
         this.massLabel.setText(massFormated);
     }
 
@@ -344,7 +345,6 @@ public class HullBuilderController implements Initializable {
 
             // This prevents the user the ignore the bounds if they hold down the plus/minus knob button
             // Essentially clipping the last 0.5 of a degree off the bounds as a buffer
-            // This is needed because we clip the point when increasing r to 1e-3 less than the max
             // This leaves some wiggle room on the theta bounds which we want to remove to prevent increasing past the bounds
             double adjustedMinTheta = Math.abs(minTheta - currTheta) < 0.5 ? currTheta : minTheta;
             double adjustedMaxTheta = Math.abs(maxTheta - currTheta) < 0.5 ? currTheta : maxTheta;
