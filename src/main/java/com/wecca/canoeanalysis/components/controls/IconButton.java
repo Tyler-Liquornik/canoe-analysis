@@ -5,8 +5,11 @@ import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.scene.control.Button;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.StackPane;
 import lombok.Getter;
 import lombok.Setter;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -18,6 +21,7 @@ import java.util.function.Consumer;
 public class IconButton extends Button {
 
     private FontAwesomeIcon icon;
+    private FontAwesomeIcon badge;
     private double iconSize;
 
     /**
@@ -31,9 +35,10 @@ public class IconButton extends Button {
      * @param iconSize The size of the icon
      */
     private IconButton(IconGlyphType iconGlyphName,
+                       @Nullable IconGlyphType badgeGlyphName,
                        Consumer<MouseEvent> onClickFunction,
-                       Consumer<MouseEvent> onReleaseFunction,
-                       List<String> cssClasses, double iconSize) {
+                       @Nullable Consumer<MouseEvent> onReleaseFunction,
+                       @Nullable List<String> cssClasses, double iconSize) {
         FontAwesomeIcon icon = createIcon(iconGlyphName, iconSize);
         this.icon = icon;
         this.iconSize = iconSize;
@@ -46,6 +51,8 @@ public class IconButton extends Button {
         }
         if (cssClasses != null && !cssClasses.isEmpty())
             this.getStyleClass().addAll(cssClasses);
+        if (badgeGlyphName != null)
+            this.setBadgeIcon(badgeGlyphName, List.of("panel-button-badge"));
     }
 
     /**
@@ -65,7 +72,18 @@ public class IconButton extends Button {
      * Factory method to get a toolbar button (upload download, wrench, close button...)
      */
     public static IconButton getToolbarButton(IconGlyphType iconGlyphName, Consumer<MouseEvent> onClickFunction) {
-        IconButton button = new IconButton(iconGlyphName, onClickFunction, null,
+
+        // Double underscore in the icon glyph name creates a badge with the icon glyph name of the chars before the double underscore
+        IconGlyphType badgeGlyph = null;
+        String glyphName = iconGlyphName.getGlyphName();
+        int splitIndex;
+        if (glyphName.contains("__")) {
+            splitIndex = glyphName.indexOf("__");
+            badgeGlyph = IconGlyphType.valueOf(glyphName.substring(0, splitIndex));
+            iconGlyphName = IconGlyphType.valueOf(glyphName.substring(splitIndex + 2));
+        }
+
+        IconButton button = new IconButton(iconGlyphName, badgeGlyph, onClickFunction, null,
                 List.of("transparent-until-hover-button"), 25);
 
         // 1px difference is on purpose so the hover fill doesn't stick out of the toolbar
@@ -86,7 +104,7 @@ public class IconButton extends Button {
      */
     public static IconButton getKnobPlusOrMinusButton(boolean getPlus, Consumer<MouseEvent> onPressFunction, Consumer<MouseEvent> onReleaseFunction, double iconSize) {
         IconGlyphType iconGlyphType = getPlus ? IconGlyphType.PLUS : IconGlyphType.MINUS;
-        return new IconButton(iconGlyphType, onPressFunction, onReleaseFunction,
+        return new IconButton(iconGlyphType, null, onPressFunction, onReleaseFunction,
                 List.of("transparent-until-hover-button", "transparent-on-hover-button"), iconSize);
     }
 
@@ -94,7 +112,7 @@ public class IconButton extends Button {
      * Factory method for the panel buttons (plus, switch panel) in hull builder
      */
     public static IconButton getPanelButton(IconGlyphType iconGlyphName, Consumer<MouseEvent> onClickFunction, double iconSize) {
-        IconButton button = new IconButton(iconGlyphName, onClickFunction, null,
+        IconButton button = new IconButton(iconGlyphName, null, onClickFunction, null,
                 List.of("panel-button"), iconSize);
 
         // 1px difference is on purpose so the hover fill doesn't stick out of the toolbar
@@ -110,10 +128,27 @@ public class IconButton extends Button {
     }
 
     /**
-     * Set the icon from a glyph name
+     * Set the icon
      */
     public void setIcon(IconGlyphType iconGlyphName) {
         this.icon = createIcon(iconGlyphName, iconSize);
         this.setGraphic(icon);
+    }
+
+    /**
+     * Set a badge, a small extra icon in the top-left corner of the main icon
+     * @param badgeGlyphType the icon type
+     * @param cssClasses styles if needed
+     */
+    public void setBadgeIcon(IconGlyphType badgeGlyphType, @Nullable List<String> cssClasses) {
+        FontAwesomeIcon badgeIcon = createIcon(badgeGlyphType, this.iconSize / 2);
+        badgeIcon.setGlyphName(badgeGlyphType.getGlyphName());
+        badgeIcon.setFill(ColorPaletteService.getColor("white"));
+        if (cssClasses != null && !cssClasses.isEmpty()) badgeIcon.getStyleClass().addAll(cssClasses);
+
+        // Position the badge icon (top-left corner) and group it with the main icon
+        badgeIcon.setTranslateX(-this.iconSize / 3);
+        badgeIcon.setTranslateY(-this.iconSize / 3);
+        this.setGraphic(new StackPane(this.icon, badgeIcon));
     }
 }

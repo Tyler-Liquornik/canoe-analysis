@@ -11,14 +11,19 @@ import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
+import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Cursor;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import lombok.Getter;
 import lombok.Setter;
@@ -46,17 +51,23 @@ public class HullBuilderController implements Initializable {
     private AnchorPane hullViewAnchorPane, curveParameterizationAnchorPane, propertiesAnchorPane;
 
     @FXML
-    private Label intervalLabel, heightLabel, volumeLabel, massLabel, propertiesPanelTitleLabel;
+    private Label intervalLabel, heightLabel, volumeLabel, massLabel, propertiesPanelTitleLabel, poiTitleLabel, poiDataLabel;
 
     @Setter
     private static MainController mainController;
+
+    // Refs
     @Getter
     private Hull hull;
-    @Getter @Setter
-    private CubicBezierSplineHullGraphic hullGraphic;
-    private AnchorPane hullGraphicPane;
     private List<Knob> knobs;
     private List<ChangeListener<Number>> knobListeners;
+
+    // UI & Graphics
+    @Getter @Setter
+    private AnchorPane hullGraphicPane;
+    private CubicBezierSplineHullGraphic hullGraphic;
+    private Line mouseXTrackerLine;
+    private Circle intersectionPoint;
 
     // State
     private boolean previousPressedBefore;
@@ -65,8 +76,9 @@ public class HullBuilderController implements Initializable {
     private int selectedHullSectionIndex;
     private boolean sectionPropertiesSelected;
     private int graphicsViewingState;
+    private boolean sectionEditorEnabled;
 
-    // Numerical 'dx'
+    // Numerical 'dx' used at bounds to prevent unpredictable boundary behaviour
     private final double OPEN_INTERVAL_TOLERANCE = 1e-3;
 
     /**
@@ -77,8 +89,7 @@ public class HullBuilderController implements Initializable {
         // TODO: add functions to buttons
         iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> dummy());
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> dummy());
-        iconGlyphToFunctionMap.put(IconGlyphType.SCISSORS, e -> dummy());
-        iconGlyphToFunctionMap.put(IconGlyphType.CHAIN, e -> dummy());
+        iconGlyphToFunctionMap.put(IconGlyphType.PENCIL, this::toggleSectionsEditorMode);
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
     }
@@ -92,8 +103,100 @@ public class HullBuilderController implements Initializable {
     }
 
     /**
-     * Set the side view hull to build
+     * Handler for the pencil button which enables the ability to add or delete knots.
+     * The logic here is responsible for immediate UI/state changes
      *
+     * @param event the click event
+     */
+    private void toggleSectionsEditorMode(MouseEvent event) {
+        sectionEditorEnabled = !sectionEditorEnabled;
+        nextPressedBefore = false;
+        previousPressedBefore = false;
+        selectedHullSectionIndex = -1;
+
+        List<Button> toolBarButtons = mainController.getModuleToolBarButtons();
+        Button toggledIconButton = IconButton.getToolbarButton(sectionEditorEnabled ? IconGlyphType.X__PENCIL : IconGlyphType.PENCIL, this::toggleSectionsEditorMode);
+        toolBarButtons.set(2, toggledIconButton);
+        mainController.addOrSetToolBarButtons(toolBarButtons);
+        hullViewAnchorPane.setCursor(sectionEditorEnabled ? Cursor.CROSSHAIR : Cursor.DEFAULT);
+        hullViewAnchorPane.setOnMouseEntered(sectionEditorEnabled ? e -> hullViewAnchorPane.setCursor(Cursor.CROSSHAIR) : null);
+        hullViewAnchorPane.setOnMouseExited(sectionEditorEnabled ? e -> hullViewAnchorPane.setCursor(Cursor.DEFAULT) : null);
+        hullViewAnchorPane.setOnMouseMoved(sectionEditorEnabled ? this::handleMouseMovedHullViewPane : null);
+        if (!sectionEditorEnabled) {
+            intersectionPoint.setOpacity(0);
+            intersectionPoint = null;
+            poiTitleLabel.setText("");
+            poiDataLabel.setText("");
+        }
+        else {
+            updateHullIntersectionPointDisplay(hull.getLength() / 2, hull.getMaxHeight());
+            poiTitleLabel.setText("Adding Knot Point");
+        }
+        if (selectedHullSection != null) hullGraphic.recolor(!sectionEditorEnabled);
+        hullGraphic.setColoredSectionIndex(-1);
+
+        List<Button> topLeftButtons = hullViewAnchorPane.getChildren().stream().filter(node -> (node instanceof Button)).map(node -> (Button) node).toList();
+        List<Button> sectionSelectorButtons = Arrays.asList(topLeftButtons.get(0), topLeftButtons.get(1));
+        sectionSelectorButtons.forEach(button -> button.setDisable(sectionEditorEnabled));
+        sectionSelectorButtons.forEach(button -> button.setOpacity(1));
+
+        for (int i = 0; i < knobs.size(); i++) {knobs.get(i).valueProperty().removeListener(knobListeners.get(i));}
+        if (selectedHullSection != null) {
+            if (sectionEditorEnabled) {
+                selectedHullSection = null;
+                unboundKnobs();
+                knobs.forEach(knobs -> knobs.setKnobValue(0));
+                if (sectionPropertiesSelected) setBlankSectionProperties();
+            }
+            knobs.forEach(knob -> knob.setLocked(sectionEditorEnabled));
+            if (!sectionEditorEnabled) {
+                for (int i = 0; i < knobs.size(); i++) {
+                    knobs.get(i).valueProperty().addListener(knobListeners.get(i));
+                }
+                if (intersectionPoint != null) intersectionPoint.setOpacity(0);
+            }
+        }
+
+        // Update mouse X tracker line visibility and style
+        mouseXTrackerLine.setVisible(sectionEditorEnabled);
+        if (sectionEditorEnabled) {
+            mouseXTrackerLine.setStroke(ColorPaletteService.getColor("white"));
+            mouseXTrackerLine.setOpacity(0.7);
+            mouseXTrackerLine.getStrokeDashArray().setAll(5.0, 9.0);
+            mouseXTrackerLine.setStartX(hullViewAnchorPane.getWidth() / 2);
+            mouseXTrackerLine.setEndX(hullViewAnchorPane.getWidth() / 2);
+            updateMouseLinePoint(new Point2D(hullGraphicPane.getWidth() / 2, hullGraphicPane.getHeight()));
+            mouseXTrackerLine.setStartY(0);
+            mouseXTrackerLine.setEndY(hullViewAnchorPane.getHeight());
+        }
+
+        // Notify the user
+        mainController.showSnackbar(sectionEditorEnabled
+                ? "Sections Editor Enabled"
+                : "Sections Editor Disabled");
+    }
+
+    /**
+     * Displays the intersection point on the hull view pane.
+     *
+     * @param position The position of the intersection point in the hull view pane's local coordinate space.
+     */
+    private void updateMouseLinePoint(Point2D position) {
+        // Initialize the intersection point if it doesn't exist
+        if (!hullGraphicPane.getChildren().contains(intersectionPoint)) {
+            intersectionPoint = new Circle(5);
+            intersectionPoint.setFill(ColorPaletteService.getColor("white"));
+            hullGraphicPane.getChildren().add(intersectionPoint);
+        }
+
+        // Update the position and make it visible
+        intersectionPoint.setCenterX(position.getX());
+        intersectionPoint.setCenterY(position.getY());
+        intersectionPoint.setOpacity(1.0);
+    }
+
+    /**
+     * Set the side view hull to build
      * @param hull to set from
      */
     public void setSideViewHullGraphic(Hull hull) {
@@ -157,6 +260,7 @@ public class HullBuilderController implements Initializable {
         unlockKnobsOnFirstSectionSelect();
 
         // Use modulo to wrap index
+        if (selectedHullSectionIndex == -1) selectedHullSectionIndex++;
         selectedHullSectionIndex = (selectedHullSectionIndex - 1 + hull.getHullSections().size()) % hull.getHullSections().size();
         selectedHullSection = hull.getHullSections().get(selectedHullSectionIndex);
 
@@ -170,7 +274,7 @@ public class HullBuilderController implements Initializable {
         previousPressedBefore = true;
         unboundKnobs();
         setKnobValues();
-        setAllKnobBounds();
+        setKnobBounds();
     }
 
     /**
@@ -194,7 +298,7 @@ public class HullBuilderController implements Initializable {
         nextPressedBefore = true;
         unboundKnobs();
         setKnobValues();
-        setAllKnobBounds();
+        setKnobBounds();
     }
 
     /**
@@ -212,13 +316,13 @@ public class HullBuilderController implements Initializable {
      * Display section properties with corresponding attributes
      */
     public void setSectionProperties(double height, double volume, double mass, double x, double rx) {
-        String heightInfo = String.format("%.4f m",height);
+        String heightInfo = String.format("%.4f m", height);
         this.heightLabel.setText(heightInfo);
-        String interval = "("+x+" m, "+rx+" m)";
+        String interval = "(" + x + " m, " + rx + " m)";
         this.intervalLabel.setText(interval);
-        String volumeFormated = String.format("%.4f m^3",volume);
+        String volumeFormated = String.format("%.4f m^3", volume);
         this.volumeLabel.setText(volumeFormated);
-        String massFormated = String.format("%.4f kg",mass);
+        String massFormated = String.format("%.4f kg", mass);
         this.massLabel.setText(massFormated);
     }
 
@@ -278,7 +382,6 @@ public class HullBuilderController implements Initializable {
 
             // This prevents the user the ignore the bounds if they hold down the plus/minus knob button
             // Essentially clipping the last 0.5 of a degree off the bounds as a buffer
-            // This is needed because we clip the point when increasing r to 1e-3 less than the max
             // This leaves some wiggle room on the theta bounds which we want to remove to prevent increasing past the bounds
             double adjustedMinTheta = Math.abs(minTheta - currTheta) < 0.5 ? currTheta : minTheta;
             double adjustedMaxTheta = Math.abs(maxTheta - currTheta) < 0.5 ? currTheta : maxTheta;
@@ -298,7 +401,7 @@ public class HullBuilderController implements Initializable {
      *
      * MUST BE DONE AFTER SETTING KNOB VALUES WHEN SWITCHING SECTIONS
      */
-    private void setAllKnobBounds() {
+    private void setKnobBounds() {
         // Validation
         if (!(selectedHullSection.getSideProfileCurve() instanceof CubicBezierFunction bezier))
             throw new IllegalArgumentException("Cannot work with non-bezier hull curve");
@@ -361,7 +464,7 @@ public class HullBuilderController implements Initializable {
         double approximatelyZeroRadians = Math.toRadians(OPEN_INTERVAL_TOLERANCE);
 
         // Use CAST rule to determine which rectangle boundaries to calculate rMax
-        // Edge cases of 0/90/180/270/330 handled appropriately
+        // Edge cases of 0/90/180/270/360 handled appropriately
         double sinOfApproximatelyZeroRadians = Math.sin(approximatelyZeroRadians);
         if (Math.abs(sinTheta) != Math.abs(sinOfApproximatelyZeroRadians)) {
             if (cosTheta < 0) {
@@ -383,8 +486,7 @@ public class HullBuilderController implements Initializable {
             }
         }
 
-        // Add small buffer on the upper bound to numerically create an open interval, preventing boundary issues
-        return Math.max(0, rMax);
+       return Math.max(0, rMax);
     }
 
     /**
@@ -861,7 +963,6 @@ public class HullBuilderController implements Initializable {
 
 
     /**
-     * TODO: button on hull view panel: eye -> transparent eye -> closed eye for viewing graphics on hull
      * Add and position blue buttons to corners of panels
      */
     private void layoutPanelButtons() {
@@ -901,6 +1002,72 @@ public class HullBuilderController implements Initializable {
         AnchorPane.setRightAnchor(canoePropertiesPlusButton, marginToPanel);
     }
 
+    /**
+     * Handles mouse movement within the hull view pane.
+     * Updates the vertical tracker line and checks for hull intersection to display the POI.
+     */
+    private void handleMouseMovedHullViewPane(MouseEvent event) {
+        // Only perform computations if the sections editor is enabled
+        if (!sectionEditorEnabled) {
+            if (intersectionPoint != null) intersectionPoint.setOpacity(0);
+            return;
+        }
+
+        // Update the vertical line's position
+        double mouseX = event.getX();
+        double paneHeight = hullViewAnchorPane.getHeight();
+        mouseXTrackerLine.setStartX(mouseX);
+        mouseXTrackerLine.setEndX(mouseX);
+        mouseXTrackerLine.setStartY(0);
+        mouseXTrackerLine.setEndY(paneHeight - 1);
+        updateHullIntersectionPoint(mouseX);
+    }
+
+    /**
+     * Render or un-render the point of intersection between the line x = mouseX and the hull curve graphic
+     * @param mouseX the x position of the mouse at which the vertical line is at
+     */
+    private void updateHullIntersectionPoint(double mouseX) {
+        Double functionSpaceX;
+        Double functionSpaceY;
+        if (mouseX >= hullGraphicPane.getLayoutX() && mouseX <= hullGraphicPane.getLayoutX() + hullGraphicPane.getWidth()) {
+            double poiX = mouseX - hullGraphicPane.getLayoutX();
+            functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
+            HullSection section = hull.getHullSections().stream()
+                    .filter(s -> s.getX() <= functionSpaceX && s.getRx() >= functionSpaceX)
+                    .findFirst().orElseThrow(() -> new RuntimeException("Cannot place intersection point, out of bounds"));
+            CubicBezierFunction bezier = (CubicBezierFunction) section.getSideProfileCurve();
+            functionSpaceY = bezier.value(functionSpaceX);
+            double poiY = (functionSpaceY / hull.getLength()) * hullGraphicPane.getWidth();
+            Point2D poi = new Point2D(poiX, -poiY);
+            updateMouseLinePoint(poi);
+        }
+        else {
+            functionSpaceX = null;
+            functionSpaceY = null;
+            if (intersectionPoint != null) {
+                intersectionPoint.setOpacity(0);
+                intersectionPoint = null;
+            }
+        }
+        updateHullIntersectionPointDisplay(functionSpaceX, functionSpaceY);
+    }
+
+    /**
+     * Update the display for adding and deleting knot points to show where the point will be added or deleted
+     * @param functionSpaceX the x coordinate of the point, in function space (not graphics space)
+     * @param functionSpaceY the y coordinate of the point, in function space (not graphics space)
+     */
+    private void updateHullIntersectionPointDisplay(Double functionSpaceX, Double functionSpaceY) {
+        String functionSpaceXString = functionSpaceX == null ? "N/A"
+                : String.format("%.3f", CalculusUtils.roundXDecimalDigits(functionSpaceX, 3));
+        String functionSpaceYString = functionSpaceY == null ? "N/A"
+                : String.format("%.3f", CalculusUtils.roundXDecimalDigits(functionSpaceY, 3));   String pointData = String.format("(x: %s, y: %s)", functionSpaceXString, functionSpaceYString);
+        poiDataLabel.setText(pointData);
+        double centerX = (poiTitleLabel.getWidth() / 2) + poiTitleLabel.getLayoutX();
+        double poiDataLabelX = centerX - (poiDataLabel.getWidth() / 2);
+        poiDataLabel.setLayoutX(poiDataLabelX);    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         // Set the local instance of the main controller
@@ -924,5 +1091,13 @@ public class HullBuilderController implements Initializable {
         selectedHullSectionIndex = -1;
         sectionPropertiesSelected = true;
         graphicsViewingState = 0;
+        sectionEditorEnabled = false;
+
+        // Sections Editor
+        mouseXTrackerLine = new Line();
+        mouseXTrackerLine.setVisible(false);
+        hullViewAnchorPane.getChildren().addLast(mouseXTrackerLine);
+        poiTitleLabel.setText("");
+        poiDataLabel.setText("");
     }
 }
