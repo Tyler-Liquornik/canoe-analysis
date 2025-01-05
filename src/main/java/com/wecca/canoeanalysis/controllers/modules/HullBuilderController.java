@@ -51,7 +51,7 @@ public class HullBuilderController implements Initializable {
     private AnchorPane hullViewAnchorPane, curveParameterizationAnchorPane, propertiesAnchorPane;
 
     @FXML
-    private Label intervalLabel, heightLabel, volumeLabel, massLabel, propertiesPanelTitleLabel;
+    private Label intervalLabel, heightLabel, volumeLabel, massLabel, propertiesPanelTitleLabel, poiTitleLabel, poiDataLabel;
 
     @Setter
     private static MainController mainController;
@@ -125,6 +125,12 @@ public class HullBuilderController implements Initializable {
         if (!sectionEditorEnabled) {
             intersectionPoint.setOpacity(0);
             intersectionPoint = null;
+            poiTitleLabel.setText("");
+            poiDataLabel.setText("");
+        }
+        else {
+            updateHullIntersectionPointDisplay(hull.getLength() / 2, hull.getMaxHeight());
+            poiTitleLabel.setText("Adding Knot Point");
         }
         if (selectedHullSection != null) hullGraphic.recolor(!sectionEditorEnabled);
         hullGraphic.setColoredSectionIndex(-1);
@@ -1014,7 +1020,6 @@ public class HullBuilderController implements Initializable {
         mouseXTrackerLine.setEndX(mouseX);
         mouseXTrackerLine.setStartY(0);
         mouseXTrackerLine.setEndY(paneHeight - 1);
-
         updateHullIntersectionPoint(mouseX);
     }
 
@@ -1023,24 +1028,45 @@ public class HullBuilderController implements Initializable {
      * @param mouseX the x position of the mouse at which the vertical line is at
      */
     private void updateHullIntersectionPoint(double mouseX) {
-        // Find the X coordinate in the hull view graphic pane on the hull curve
+        Double functionSpaceX;
+        Double functionSpaceY;
         if (mouseX >= hullGraphicPane.getLayoutX() && mouseX <= hullGraphicPane.getLayoutX() + hullGraphicPane.getWidth()) {
             double poiX = mouseX - hullGraphicPane.getLayoutX();
-            double functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
+            functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
             HullSection section = hull.getHullSections().stream()
                     .filter(s -> s.getX() <= functionSpaceX && s.getRx() >= functionSpaceX)
                     .findFirst().orElseThrow(() -> new RuntimeException("Cannot place intersection point, out of bounds"));
             CubicBezierFunction bezier = (CubicBezierFunction) section.getSideProfileCurve();
-            double functionSpaceY = bezier.value(functionSpaceX);
+            functionSpaceY = bezier.value(functionSpaceX);
             double poiY = (functionSpaceY / hull.getLength()) * hullGraphicPane.getWidth();
             Point2D poi = new Point2D(poiX, -poiY);
             updateMouseLinePoint(poi);
         }
-        else if (intersectionPoint != null) {
-            intersectionPoint.setOpacity(0);
-            intersectionPoint = null;
+        else {
+            functionSpaceX = null;
+            functionSpaceY = null;
+            if (intersectionPoint != null) {
+                intersectionPoint.setOpacity(0);
+                intersectionPoint = null;
+            }
         }
+        updateHullIntersectionPointDisplay(functionSpaceX, functionSpaceY);
     }
+
+    /**
+     * Update the display for adding and deleting knot points to show where the point will be added or deleted
+     * @param functionSpaceX the x coordinate of the point, in function space (not graphics space)
+     * @param functionSpaceY the y coordinate of the point, in function space (not graphics space)
+     */
+    private void updateHullIntersectionPointDisplay(Double functionSpaceX, Double functionSpaceY) {
+        String functionSpaceXString = functionSpaceX == null ? "N/A"
+                : String.format("%.3f", CalculusUtils.roundXDecimalDigits(functionSpaceX, 3));
+        String functionSpaceYString = functionSpaceY == null ? "N/A"
+                : String.format("%.3f", CalculusUtils.roundXDecimalDigits(functionSpaceY, 3));   String pointData = String.format("(x: %s, y: %s)", functionSpaceXString, functionSpaceYString);
+        poiDataLabel.setText(pointData);
+        double centerX = (poiTitleLabel.getWidth() / 2) + poiTitleLabel.getLayoutX();
+        double poiDataLabelX = centerX - (poiDataLabel.getWidth() / 2);
+        poiDataLabel.setLayoutX(poiDataLabelX);    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -1065,10 +1091,13 @@ public class HullBuilderController implements Initializable {
         selectedHullSectionIndex = -1;
         sectionPropertiesSelected = true;
         graphicsViewingState = 0;
+        sectionEditorEnabled = false;
 
-        // Mouse tracker line
+        // Sections Editor
         mouseXTrackerLine = new Line();
         mouseXTrackerLine.setVisible(false);
         hullViewAnchorPane.getChildren().addLast(mouseXTrackerLine);
+        poiTitleLabel.setText("");
+        poiDataLabel.setText("");
     }
 }

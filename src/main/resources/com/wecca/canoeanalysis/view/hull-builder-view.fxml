@@ -8,7 +8,9 @@
       <AnchorPane fx:id="hullViewAnchorPane" layoutX="40.0" layoutY="18.0" prefHeight="300.0" prefWidth="870.0" styleClass="surface" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">
          <children>
             <Label styleClass="title" text="Hull View" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="19.0" />
-            <Label layoutX="610.0" styleClass="subtitle" text="Select Section: " AnchorPane.rightAnchor="85.0" AnchorPane.topAnchor="19.0" />
+            <Label layoutX="653.0" layoutY="19.0" styleClass="subtitle" text="Select Section:" />
+            <Label fx:id="poiDataLabel" layoutX="749.0" layoutY="269.0" text="(x = N/A, y = N/A)" />
+            <Label fx:id="poiTitleLabel" layoutX="751.0" layoutY="250.0" text="Add Knot Point" />
          </children></AnchorPane>
       <AnchorPane fx:id="curveParameterizationAnchorPane" layoutX="84.0" layoutY="193.0" prefHeight="220.0" prefWidth="545.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="15.0">
          <children>
