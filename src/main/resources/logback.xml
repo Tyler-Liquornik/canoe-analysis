@@ -1,16 +1,30 @@
+<!-- For help on this file: https://logback.qos.ch/manual/configuration.html -->
 <configuration>
-
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <define name="logPath" class="com.wecca.canoeanalysis.services.LoggerService$LogPathPropertyDefiner" />
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>
-                %d{HH:mm:ss.SSS} [%highlight(%level)] %msg%n
-            </pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%highlight(%level)] %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
-    <root level="INFO">
-        <appender-ref ref="STDOUT" />
-    </root>
-
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${logPath}</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%level] %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    <if condition='property("logPath").isEmpty()'>
+        <then>
+            <root level="INFO">
+                <appender-ref ref="CONSOLE" />
+            </root>
+        </then>
+        <else>
+            <root level="INFO">
+                <appender-ref ref="FILE" />
+            </root>
+        </else>
+    </if>
 </configuration>

@@ -36,6 +36,16 @@
     -fx-font-size: 16px;
 }
 
+.subtitle {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.bold {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
 .about-body {
     -fx-font-size: 12px;
 }
@@ -111,7 +121,16 @@
 .jfx-text-field > .input-line,
 .jfx-decorator > .jfx-decorator-buttons-container {
     -fx-background-color: -fx-primary;
+    -fx-fill: -fx-primary;
     -fx-stroke: -fx-primary;
+}
+
+.invalid-input > .input-focused-line{
+    -fx-background-color: #D10647; /* For invalid input */
+}
+
+.invalid-input > .input-line{
+    -fx-background-color: #D10647; /* For invalid input */
 }
 
 .jfx-decorator > .jfx-decorator-buttons-container > .jfx-button:hover {
@@ -142,17 +161,32 @@
     -fx-font-weight: bold;
 }
 
-.transparent-button,
-.transparent-button:disabled {
+.transparent-until-hover-button,
+.transparent-until-hover-button:disabled {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
     -fx-border-width: 0;
     -fx-border-radius: 0;
     -fx-opacity: 1.0;
+    -fx-cursor: hand;
 }
 
-.transparent-button:hover {
+.transparent-until-hover-button:hover {
     -fx-background-color: -fx-primary-light;
+}
+
+.transparent-on-hover-button:hover {
+    -fx-background-color: transparent;
+}
+
+.panel-button {
+    -fx-background-color: -fx-primary;
+    -fx-background-radius: 50%;
+    -fx-cursor: hand;
+}
+
+.panel-button-badge {
+    -fx-background-color: transparent;
 }
 
 .close-window-button:hover {
@@ -233,4 +267,24 @@ jfx-toggle-button,
 
 .jfx-toggle-button:selected .jfx-rippler {
     -jfx-rippler-fill: -fx-primary-light;
+}
+
+.pass {
+    -fx-text-fill: #A0B55F;
+}
+
+.fail {
+    -fx-text-fill: #F03030;
+}
+
+.round-corners {
+    -fx-background-radius: 15;
+    -fx-border-radius: 15;
+}
+
+.rectangle {
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+    -fx-fill: -fx-background;
+    -fx-text-fill: -fx-danger;
 }

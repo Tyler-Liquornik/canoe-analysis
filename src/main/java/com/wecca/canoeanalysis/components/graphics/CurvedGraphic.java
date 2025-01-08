@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
@@ -15,7 +16,6 @@ import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.math3.analysis.UnivariateFunction;
 
 import java.util.List;
 
@@ -23,8 +23,8 @@ import java.util.List;
  * Icon used for piecewise continuous load distributions
  * A curve with shaded area between the curve and the y-axis
  */
-@Getter
-public class Curve extends Group implements CurvedProfile {
+@Getter @Setter
+public class CurvedGraphic extends Group implements FunctionGraphic {
 
     protected BoundedUnivariateFunction function;
     protected Section section;
@@ -34,7 +34,14 @@ public class Curve extends Group implements CurvedProfile {
     protected boolean isColored;
     private final double maxSignedValue;
 
-    public Curve(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
+    /**
+     * Deals with mapping between function space and graphic space
+     * @param function the function definition in function space
+     * @param section the interval of the function in function space
+     * @param encasingRectangle the smallest region in function space that encloses all points in the function
+     *                          is mapped to this rectangle in graphics space
+     */
+    public CurvedGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
         super();
         this.function = function;
         this.section = section;
@@ -42,7 +49,9 @@ public class Curve extends Group implements CurvedProfile {
         this.maxSignedValue = function.getMaxSignedValue(section); // precalculated to save time fetching
         this.isColored = false;
 
-        CalculusUtils.validatePiecewiseAsUpOrDown(List.of(function), List.of(section));
+        // Commented out to improve rendering speed, but should be enforced... be careful lol
+        // CalculusUtils.validatePiecewiseAsUpOrDown(List.of(function), List.of(section));
+
         draw();
         JFXDepthManager.setDepth(this, 4);
         ColorManagerService.registerInColorPalette(this);
@@ -50,7 +59,7 @@ public class Curve extends Group implements CurvedProfile {
 
     public void draw() {
         // Partition the section
-        int numSamples = 1000;
+        int numSamples = 200;
         double step = (section.getRx() - section.getX()) / numSamples;
         double currentX = section.getX();
 
@@ -81,6 +90,7 @@ public class Curve extends Group implements CurvedProfile {
         area.getPoints().addAll(encasingRectangle.getX(), initialPathY);
         area.setFill(ColorPaletteService.getColor("above-surface"));
         linePath.setStroke(ColorPaletteService.getColor("white"));
+        linePath.setStrokeWidth(1.5);
 
         // Group the elements
         getChildren().addAll(area, linePath);
@@ -89,6 +99,11 @@ public class Curve extends Group implements CurvedProfile {
     @Override
     public double getX() {
         return encasingRectangle.getX();
+    }
+
+    @Override
+    public double getY() {
+        return encasingRectangle.getY();
     }
 
     @Override
@@ -131,11 +146,6 @@ public class Curve extends Group implements CurvedProfile {
     @Override
     public Section getSection() {
         return section;
-    }
-
-    @Override
-    public BoundedUnivariateFunction getFunction() {
-        return function;
     }
 
     @Override

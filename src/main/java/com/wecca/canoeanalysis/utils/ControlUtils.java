@@ -1,9 +1,17 @@
 package com.wecca.canoeanalysis.utils;
 
+import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
+import com.wecca.canoeanalysis.services.color.ColorPaletteService;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.collections.FXCollections;
+import javafx.event.Event;
+import javafx.event.EventType;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
+
+import java.util.function.Consumer;
 
 public class ControlUtils {
     /**
@@ -13,12 +21,10 @@ public class ControlUtils {
      * @param buttons the radio buttons to add to the group
      * @param selectedIndex the index in buttons to be selected on initialization
      */
-    public static void addAllRadioButtonsToToggleGroup(ToggleGroup group, RadioButton[] buttons, int selectedIndex)
-    {
+    public static void addAllRadioButtonsToToggleGroup(ToggleGroup group, RadioButton[] buttons, int selectedIndex) {
         for (RadioButton b : buttons) {
             b.setToggleGroup(group);
         }
-
         buttons[selectedIndex].setSelected(true);
     }
 

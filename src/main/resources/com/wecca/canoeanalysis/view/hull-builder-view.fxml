@@ -1,14 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import com.jfoenix.controls.JFXButton?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="200.0" prefWidth="350.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.popups.HullBuilderController">
+<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.HullBuilderController">
    <children>
-      <JFXButton layoutX="220.0" layoutY="213.0" maxWidth="80.0" minWidth="80.0" onAction="#closeWindow" prefWidth="80.0" styleClass="action-object" text="Cancel" AnchorPane.bottomAnchor="20.0" AnchorPane.rightAnchor="120.0" />
-      <JFXButton layoutX="450.0" layoutY="238.0" maxWidth="80.0" minWidth="80.0" onAction="#setHullScaledSharkBait" prefWidth="80.0" styleClass="action-object" text="Accept" AnchorPane.bottomAnchor="20.0" AnchorPane.rightAnchor="20.0" />
-      <Label layoutX="27.0" layoutY="27.0" styleClass="title" text="Set Hull to Shark Bait?" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0" />
-      <Label alignment="TOP_CENTER" graphicTextGap="5.0" layoutX="20.0" layoutY="60.0" prefHeight="81.0" prefWidth="310.0" style="-fx-line-spacing: 5px;" text="The Hull Builder submodule is not yet available. For now, you can set the hull to a scaled version of 2024's Shark Bait. This will match any realistic hull close enough for a high quality analysis." wrapText="true" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" />
+      <AnchorPane fx:id="hullViewAnchorPane" layoutX="40.0" layoutY="18.0" prefHeight="300.0" prefWidth="870.0" styleClass="surface" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">
+         <children>
+            <Label styleClass="title" text="Hull View" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="19.0" />
+            <Label layoutX="653.0" layoutY="19.0" styleClass="subtitle" text="Select Section:" />
+            <Label fx:id="poiDataLabel" layoutX="749.0" layoutY="269.0" text="(x = N/A, y = N/A)" />
+            <Label fx:id="poiTitleLabel" layoutX="751.0" layoutY="250.0" text="Add Knot Point" />
+         </children></AnchorPane>
+      <AnchorPane fx:id="curveParameterizationAnchorPane" layoutX="84.0" layoutY="193.0" prefHeight="220.0" prefWidth="545.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="15.0">
+         <children>
+            <Label styleClass="title" text="Curve Parameterization" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="19.0" />
+         </children>
+      </AnchorPane>
+      <AnchorPane fx:id="propertiesAnchorPane" layoutX="169.0" layoutY="291.0" prefHeight="220.0" prefWidth="310.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.rightAnchor="15.0">
+         <children>
+            <Label fx:id="propertiesPanelTitleLabel" layoutX="15.0" layoutY="15.0" styleClass="title" text="Section Properties" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="19.0" />
+            <Label layoutX="25.0" layoutY="54.0" styleClass="subtitle" text="Interval:" />
+            <Label layoutX="24.0" layoutY="94.0" styleClass="subtitle" text="Height:" />
+            <Label layoutX="25.0" layoutY="134.0" styleClass="subtitle" text="Volume:" />
+            <Label layoutX="26.0" layoutY="174.0" styleClass="subtitle" text="Mass:" />
+            <Label fx:id="intervalLabel" layoutX="83.0" layoutY="54.0" />
+            <Label fx:id="heightLabel" layoutX="83.0" layoutY="94.0" />
+            <Label fx:id="volumeLabel" layoutX="83.0" layoutY="135.0" />
+            <Label fx:id="massLabel" layoutX="83.0" layoutY="175.0" />
+         </children>
+      </AnchorPane>
    </children>
 </AnchorPane>

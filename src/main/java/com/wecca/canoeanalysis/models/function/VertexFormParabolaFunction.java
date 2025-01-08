@@ -3,7 +3,6 @@ package com.wecca.canoeanalysis.models.function;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,10 +15,10 @@ import java.util.function.Function;
  * The function modelled is a(x - h)^2 + k
  */
 @Getter @Setter @EqualsAndHashCode
-public class VertexFormParabola implements ParameterizedUnivariateFunction {
+public class VertexFormParabolaFunction implements ParameterizedBoundedUnivariateFunction {
 
     @JsonIgnore @Getter
-    private final UnivariateFunctionType type = UnivariateFunctionType.VERTEX_FORM_PARABOLA;
+    private final FunctionType type = FunctionType.VERTEX_FORM_PARABOLA;
     @JsonProperty("a")
     private double a;
     @JsonProperty("h")
@@ -28,7 +27,7 @@ public class VertexFormParabola implements ParameterizedUnivariateFunction {
     private double k;
 
     @JsonCreator
-    public VertexFormParabola(@JsonProperty("a") double a, @JsonProperty("h") double h, @JsonProperty("k") double k) {
+    public VertexFormParabolaFunction(@JsonProperty("a") double a, @JsonProperty("h") double h, @JsonProperty("k") double k) {
         initialize(a, h, k);
     }
 

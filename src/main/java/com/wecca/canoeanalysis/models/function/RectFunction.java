@@ -12,10 +12,10 @@ import lombok.Setter;
  * H(x) = 0 if x is outside (b, c), a if x is within (b, c)
  */
 @Getter @Setter @EqualsAndHashCode
-public class RectFunction implements ParameterizedUnivariateFunction {
+public class RectFunction implements ParameterizedBoundedUnivariateFunction {
 
     @JsonIgnore @Getter
-    private final UnivariateFunctionType type = UnivariateFunctionType.RECT_FUNCTION;
+    private final FunctionType type = FunctionType.RECT_FUNCTION;
 
     @JsonProperty("a")
     private double a;

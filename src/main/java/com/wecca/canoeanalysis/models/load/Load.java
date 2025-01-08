@@ -18,6 +18,8 @@ public abstract class Load {
     @JsonIgnore
     public abstract double getMaxSignedValue();
     @JsonIgnore
+    public abstract double getMoment(double rotationX);
+    @JsonIgnore
     public abstract double getForce();
     @JsonIgnore
     public abstract double getX();

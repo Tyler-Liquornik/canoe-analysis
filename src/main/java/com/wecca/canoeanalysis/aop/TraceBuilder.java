@@ -3,6 +3,9 @@ package com.wecca.canoeanalysis.aop;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +16,7 @@ import org.aspectj.lang.reflect.MethodSignature;
 public class TraceBuilder {
 
     private final ObjectMapper mapper;
+    private final Deque<Long> startTimeStack = new ArrayDeque<>();
 
     public TraceBuilder() {
         this.mapper = new ObjectMapper();
@@ -31,10 +35,24 @@ public class TraceBuilder {
         String className = joinPoint.getSignature().getDeclaringTypeName();
         String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
         inputMap.put("simpleClassName", simpleClassName);
-        try {
-            String inputs = mapper.writeValueAsString(joinPoint.getArgs());
-            inputMap.put("inputs", inputs);
-        } catch (JsonProcessingException ignored) {}
+
+        String[] parameterNames = methodSignature.getParameterNames();
+        Object[] parameterValues = joinPoint.getArgs();
+
+        StringBuilder parameters = new StringBuilder();
+        if (parameterNames != null && parameterValues != null) {
+            for (int i = 0; i < parameterNames.length; i++) {
+                if (i > 0) parameters.append(", ");
+                parameters.append(parameterNames[i]).append(": ");
+                try {
+                    parameters.append(mapper.writeValueAsString(parameterValues[i]));
+                } catch (JsonProcessingException e) {
+                    parameters.append("null");
+                }
+            }
+        }
+
+        inputMap.put("parameters", parameters.toString());
         return inputMap;
     }
 
@@ -43,15 +61,14 @@ public class TraceBuilder {
      * @param joinPoint the execution point at which to introspect details of the running thread
      */
     public void beforeAdvice(JoinPoint joinPoint) {
+        startTimeStack.push(System.nanoTime());
         Map<String, String> inputMap = buildLogForAspect(joinPoint);
-        String inputs = inputMap.get("inputs");
+        String parameters = inputMap.get("parameters");
         log.info(String.format("%sInvoking %s::%s %s",
                 getLogPrefix(joinPoint),
                 inputMap.get("simpleClassName"),
                 inputMap.get("methodName"),
-                inputs == null || inputs.equals("\"[[]]\"") || inputs.equals("\"[]\"") || inputs.equals("[]") || inputs.equals("[{}]")
-                        ? ""
-                        : "with inputs as " + inputs));
+                parameters.isEmpty() ? "" : "with inputs [" + parameters + "]"));
     }
 
     /**
@@ -60,15 +77,26 @@ public class TraceBuilder {
      * @param result the object returned from the advised method
      */
     public void afterAdvice(JoinPoint joinPoint, Object result) {
+        long durationNs = System.nanoTime() - startTimeStack.pop();
+
         String logPrefix = getLogPrefix(joinPoint);
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         String className = signature.getDeclaringType().getSimpleName();
         String methodName = signature.getName();
         String returnType = signature.getReturnType().getSimpleName();
 
+        // Determine the optimal unit for duration formatting
+        String timeInfo;
+        if (durationNs >= 1_000_000)
+            timeInfo = String.format("(%d ms)", durationNs / 1_000_000);
+        else if (durationNs >= 1_000)
+            timeInfo = String.format("(%d μs)", durationNs / 1_000);
+        else
+            timeInfo = String.format("(%d ns)", durationNs);
+
         String message = returnType.equals("void")
-                ? String.format("%sExiting %s::%s with no response", logPrefix, className, methodName)
-                : String.format("%sExiting %s::%s with response %s", logPrefix, className, methodName, serializeResult(result));
+                ? String.format("%s%s Exiting %s::%s with no response", logPrefix, timeInfo,  className, methodName)
+                : String.format("%s%s Exiting %s::%s with response %s", logPrefix, timeInfo, className, methodName, serializeResult(result));
 
         log.info(message);
     }

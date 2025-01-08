@@ -24,15 +24,14 @@ public class LoadUtils {
                 return Integer.compare(order1, order2);
 
             // If both are PointLoad, compare by isSupport
-            if (l1 instanceof PointLoad && l2 instanceof PointLoad) {
-                boolean isSupport1 = ((PointLoad) l1).isSupport();
-                boolean isSupport2 = ((PointLoad) l2).isSupport();
-                if (isSupport1 != isSupport2) {
-                    return Boolean.compare(isSupport2, isSupport1); // true (isSupport) comes first
-                }
+            if (l1 instanceof PointLoad p1 && l2 instanceof PointLoad p2) {
+                boolean isSupport1 = p1.isSupport();
+                boolean isSupport2 = p2.isSupport();
+                if (isSupport1 != isSupport2)
+                    return Boolean.compare(isSupport2, isSupport1); // support load comes first
             }
 
-            // Equal order
+            // Equal order precedence, i.e. l1 = l2 for sorting purposes
             return 0;
         });
 
@@ -117,6 +116,7 @@ public class LoadUtils {
     }
 
     /**
+     * @deprecated by new floating solver algorithm which can solve asymmetrical load cases so we no longer need to check for symmetry
      * Flips a list of loads across a hull's length
      * Used in the process of checking for symmetrical loading
      * @param rightHalf the list of loads on the right half of the canoe
@@ -128,10 +128,10 @@ public class LoadUtils {
         for (int i = rightHalf.size() - 1; i >= 0; i--) {
             Load load = rightHalf.get(i);
             Load flippedLoad = switch (load) {
-                case PointLoad pLoad -> new PointLoad(pLoad.getForce(), roundToNearest(hullLength - pLoad.getX()), pLoad.isSupport());
+                case PointLoad pLoad -> new PointLoad(pLoad.getForce(), CalculusUtils.roundXDecimalDigits(hullLength - pLoad.getX(), 6), pLoad.isSupport());
                 case UniformLoadDistribution dLoad -> {
-                    double flippedX = roundToNearest(hullLength - dLoad.getX());
-                    double flippedRx = roundToNearest(hullLength - dLoad.getSection().getRx());
+                    double flippedX = CalculusUtils.roundXDecimalDigits(hullLength - dLoad.getX(), 6);
+                    double flippedRx = CalculusUtils.roundXDecimalDigits(hullLength - dLoad.getSection().getRx(),6 );
                     yield new UniformLoadDistribution(dLoad.getMagnitude(), flippedRx, flippedX);
                 }
                 default -> throw new IllegalArgumentException("Cannot process load of type: " + load.getClass());
@@ -139,16 +139,6 @@ public class LoadUtils {
             flippedRightHalf.add(flippedLoad);
         }
         return flippedRightHalf;
-    }
-
-    /**
-     * Rounds a value to 6 decimal places
-     * @param value the value to round
-     * @return the rounded value
-     */
-    private static double roundToNearest(double value) {
-        double precision = 1e-6;
-        return Math.round(value / precision) * precision;
     }
 
     /**

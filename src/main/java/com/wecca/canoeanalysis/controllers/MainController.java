@@ -5,6 +5,7 @@ import com.jfoenix.controls.JFXSnackbar;
 import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.jfoenix.controls.JFXSnackbarLayout;
+import com.wecca.canoeanalysis.components.controls.IconButton;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.services.ResourceManagerService;
 import com.wecca.canoeanalysis.services.YamlMarshallingService;
@@ -13,7 +14,6 @@ import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.animation.*;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -46,18 +46,19 @@ public class MainController implements Initializable {
     @FXML
     private AnchorPane root, moduleInjectionRoot, toolBarPane;
 
+    // Stage state management
     private Scene primaryScene;
     private Stage primaryStage;
-    private double stageXOffset = 0;
-    private double stageYOffset = 0;
+    private double stageXOffset;
+    private double stageYOffset;
 
     // Drawer state management
-    private boolean isDrawerOpen = false;
+    private boolean isDrawerOpen;
     private AnimationTimer drawerTimer;
-    private double drawerTargetX; // Target X position for the drawer
+    private double drawerTargetX;
 
     // Each module will have a set of custom toolbar buttons on top of the minimize and close window buttons
-    private static List<Button> moduleToolBarButtons = new ArrayList<>();
+    private List<Button> moduleToolBarButtons = new ArrayList<>();
 
     /**
      * Mouse clicked event to set the current location of the window
@@ -141,7 +142,7 @@ public class MainController implements Initializable {
         initializeSnackbar(); // Reinitialization is required to fix visual bugs
         JFXSnackbarLayout snackbarLayout = new JFXSnackbarLayout(message, "DISMISS", event -> closeSnackBar(snackbar));
         snackbarLayout.setPrefHeight(50);
-        JFXSnackbar.SnackbarEvent snackbarEvent = new JFXSnackbar.SnackbarEvent(snackbarLayout, Duration.seconds(5));
+        JFXSnackbar.SnackbarEvent snackbarEvent = new JFXSnackbar.SnackbarEvent(snackbarLayout, Duration.seconds(5), null);
         snackbar.fireEvent(snackbarEvent);
     }
 
@@ -207,53 +208,46 @@ public class MainController implements Initializable {
      * Set the toolbar buttons based on the glyphs (icon) and respective and onClick functions
      * @param iconGlyphToFunctionMap a map of <Button Icon : Button function>
      */
-    public void setIconToolBarButtons(LinkedHashMap<IconGlyphType, Consumer<ActionEvent>> iconGlyphToFunctionMap) {
+    public void setIconToolBarButtons(LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> iconGlyphToFunctionMap) {
         List<Button> buttons = new ArrayList<>();
-        for (Map.Entry<IconGlyphType, Consumer<ActionEvent>> entry : iconGlyphToFunctionMap.entrySet()) {
-            Button button = getIconButton(entry.getKey(), entry.getValue());
+        for (Map.Entry<IconGlyphType, Consumer<MouseEvent>> entry : iconGlyphToFunctionMap.entrySet()) {
+            Button button = IconButton.getToolbarButton(entry.getKey(), entry.getValue());
             buttons.add(button);
         }
-        setToolBarButtons(buttons);
+        addOrSetToolBarButtons(buttons);
     }
 
-    public Button getIconButton(IconGlyphType iconGlyphName, Consumer<ActionEvent> onClick) {
-        Button button = new Button();
-        button.getStyleClass().add("transparent-button");
-        button.setOnAction(onClick::accept);
-        FontAwesomeIcon icon = new FontAwesomeIcon();
-        icon.setFill(ColorPaletteService.getColor("white"));
-        icon.setGlyphName(iconGlyphName.getGlyphName());
-        icon.setSize("25");
-        button.setGraphic(icon);
-        return button;
-    }
-
-    public void setToolBarButtons(List<Button> buttons) {
-        double buttonHeight = 34.0; // 1px difference is on purpose so the hover fill doesn't stick out of the toolbar
-        double buttonWidth = 35.0;
+    /**
+     * When the toolbar only has the hamburger in it, add all the icons
+     * The next time this is called, the size of the buttons list must match the current amount of module tool bar buttons
+     * Module toolbar buttons are those except the hamburger, close, and minimize buttons
+     * @param buttons the buttons to add or set
+     */
+    public void addOrSetToolBarButtons(List<Button> buttons) {
+        double buttonWidth = buttons.getFirst().prefWidth(-1);
 
         // Account for space taken up by minimize and close window buttons and padding
-        double buttonX = toolBarPane.getWidth() - buttonWidth * 2 - AnchorPane.getRightAnchor(toolBarPane.getChildren().getLast());
+        double buttonX = toolBarPane.getWidth() - buttonWidth * 2 -
+                AnchorPane.getRightAnchor(toolBarPane.getChildren().getLast());
         double buttonY = 0.0;
 
         moduleToolBarButtons = buttons;
-
         for (Button button : moduleToolBarButtons) {
             buttonX = buttonX - buttonWidth;
-
-            button.getStyleClass().add("primary");
-            button.setPrefHeight(buttonHeight);
-            button.setPrefWidth(buttonWidth);
-            button.setMaxHeight(buttonHeight);
-            button.setMaxWidth(buttonWidth);
-            button.setMinHeight(buttonHeight);
-            button.setMinWidth(buttonWidth);
             button.setLayoutX(buttonX);
             button.setLayoutY(buttonY);
         }
 
-        // Extra index skips the hamburger which is always first
-        toolBarPane.getChildren().addAll(1, moduleToolBarButtons);
+        // No module toolbar buttons have been added yet, only 3 buttons are the menu, close, and minimize
+        if (toolBarPane.getChildren().size() == 3) {
+            // Extra index skips the hamburger which is always first
+            toolBarPane.getChildren().addAll(1, moduleToolBarButtons);
+        }
+        else {
+            for (int i = 1; i <= moduleToolBarButtons.size(); i++) {
+                toolBarPane.getChildren().set(i, moduleToolBarButtons.get(i - 1));
+            }
+        }
     }
 
     /**
@@ -272,15 +266,17 @@ public class MainController implements Initializable {
      * Disable all module toolbar buttons (doesn't include the hamburger, minus, or X buttons)
      * @param b choose whether to enable or disable
      */
-    public void disableAllModuleToolbarButton(boolean b) {
+    public void disableAllModuleToolbarButtons(boolean b) {
         for (int i = 0; i < moduleToolBarButtons.size(); i++) {
             disableModuleToolBarButton(b, i);
         }
     }
 
+    /**
+     * Remove all toolbar buttons
+     */
     public void resetToolBarButtons() {
-        if (!moduleToolBarButtons.isEmpty())
-        {
+        if (!moduleToolBarButtons.isEmpty()) {
             // Extra index skips the hamburger which is always first
             toolBarPane.getChildren().remove(1, 1 + moduleToolBarButtons.size());
             moduleToolBarButtons.clear();
@@ -332,6 +328,11 @@ public class MainController implements Initializable {
         initializeHamburger();
         initializeDrawer();
         initializeSnackbar();
+
+        // State init
+        stageXOffset = 0;
+        stageYOffset = 0;
+        isDrawerOpen = false;
 
         // Pass references to services that require it
         YamlMarshallingService.setMainController(this);

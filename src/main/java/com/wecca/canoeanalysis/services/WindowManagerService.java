@@ -2,8 +2,6 @@ package com.wecca.canoeanalysis.services;
 
 import com.jfoenix.controls.JFXDecorator;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
-import com.wecca.canoeanalysis.aop.TraceIgnore;
-import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import javafx.fxml.FXMLLoader;
@@ -34,10 +32,10 @@ public class WindowManagerService {
      * @param title  the title of the diagram.
      * @param canoe  to work with
      * @param points the points to render on the diagram.
-     * @param yUnits the units of the y-axis on the diagram.
+     * @param yUnits the unit of the y value (i.e. N or kN·m)
+     * @param yValName the name representing the y val (i.e. Force or Moment)
      */
-    public static void openDiagramWindow(String title, Canoe canoe, List<Point2D> points, String yUnits)
-    {
+    public static void openDiagramWindow(String title, Canoe canoe, List<Point2D> points, String yUnits, String yValName) {
         // Initializing the stage and main pane
         Stage popupStage = new Stage();
         popupStage.setTitle(title);
@@ -50,7 +48,7 @@ public class WindowManagerService {
         popupStage.getIcons().add(icon);
 
         // Setting up the diagram specifics
-        AreaChart<Number, Number> chart = DiagramService.setupChart(canoe, points, yUnits);
+        AreaChart<Number, Number> chart = DiagramService.setupChart(canoe, points, yUnits, yValName);
         chartPane.getChildren().add(chart);
 
         // Setting up the window with a decorator
@@ -67,6 +65,10 @@ public class WindowManagerService {
 
     /**
      * @param title the title of the window
+     * @param fxmlPath the path to the FXML file in from the resources folder (i.e. view/dummy-view.fxml)
+     * @param windowWidth the width of the utility window to open
+     * @param windowHeight the height of the utility window to open
+     * Note: the window width and height should match the dimensions of the root container (typically an anchor pane) in the FXML
      */
     public static void openUtilityWindow(String title, String fxmlPath, int windowWidth, int windowHeight) {
         try {
@@ -98,15 +100,35 @@ public class WindowManagerService {
         ColorManagerService.registerForRecoloringFromStylesheet(scene, path);
     }
 
+    /**
+     * Close a stage
+     * @param stage to close
+     */
     public static void closeWindow(Stage stage) {stage.close();}
 
+    /**
+     * Minimize a window to the toolbar
+     * @param stage to
+     */
     public static void minimizeWindow(Stage stage) {stage.setIconified(true);}
 
+    /**
+     * Sets the initial offsets of the stage based on the mouse event's coordinates within the scene.
+     * This method is typically used when a drag operation starts, storing the offsets between
+     * the mouse position and the top-left corner of the stage.
+     * @param event contains the current position of the mouse within the scene.
+     */
     public static void setStageOffsets(MouseEvent event) {
         stageXOffset = event.getSceneX();
         stageYOffset = event.getSceneY();
     }
 
+    /**
+     * Moves the given stage to a new position based on the current mouse position on the screen.
+     * Called during a drag operation to reposition the stage as the user drags it.
+     * @param event contains g the current screen coordinates of the mouse.
+     * @param stage to be moved
+     */
     public static void moveStage(MouseEvent event, Stage stage) {
         if (stage != null) {
             stage.setX(event.getScreenX() - stageXOffset);

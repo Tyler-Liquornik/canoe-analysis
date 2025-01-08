@@ -23,8 +23,13 @@ The hull geometry and material properties of Shark Bait are precisely modeled in
 
 The engineer working on the canoe can also download the canoe model as a YAML file. This file can be saved for later, or shared easily between engineers during the design and analysis process.
 
+### The Hull Builder Module
+
+### The Punching Shear Module
+
+### The Percent Open Area Module
+
 ### Summer '24 Development Overview:
-- Fully customizable canoe hull geometry and material properties
 - Mathematical models with calculus and structural engineering methodologies of the canoe
 - Two Finished Scenarios to solve for the canoe's equilibrium
     - Stands Case: balance the canoe on stands at x = 0 & x = L with vertical reaction forces
@@ -36,11 +41,21 @@ The engineer working on the canoe can also download the canoe model as a YAML fi
 - Infrastructure to include other modules
 - Deploy to Mac and PC (.exe / .app), downloadable at [https://wecca.org/](https://wecca.org/)
 
-### Long Term Goals:
+### Short - Medium Term Goals:
 - Grow to include club general members as casual contributors in the '24-'25 school year
 - Develop the other 5 planned structural/concrete design modules with other contributors
 - Implement more program wide settings and features for convenience across modules
 - More R&D into more advanced structural analysis methods to expand modelling capabilities
+
+### Fall / Winter '24 - '25 Development Overview:
+- Percent Open Area Module Developed which uses image processing algorithms to assess the compeition validity of our reinforcement mesh. This allows us to optimize its propertieis while meeting rules and standards.
+- Punching SHear Module developed which organizes a set of simple equations and constants to ensure the canoe can withstand the forces it experiences from the paddlers
+- Hull Builder Module developed to allow the user to easily customize the hull's geometry with simple UI and flexible UX.
+
+### Long Term Goals
+- Explore the ability to create a mesh from the 3 canoe views once the user can fully customize each of them
+- Use the mesh for dynamic analysis, including vector field and differential equation modelling
+
 
 ## Setting up the Development Environment
 
@@ -82,7 +97,16 @@ The engineer working on the canoe can also download the canoe model as a YAML fi
 
 5.  <b>Add VM options</b><br/>
     You need to add VM options in order to run PADDL in IntelliJ. <br/>
-    `--add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=com.jfoenix  --add-exports javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix`
+    ```
+    --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+    --add-opens=java.base/java.lang=ALL-UNNAMED
+    --add-opens=java.base/java.lang.reflect=com.jfoenix  
+    --add-exports=javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix
+    --add-exports=javafx.graphics/com.sun.javafx.stage=com.jfoenix
+    --add-exports=javafx.base/com.sun.javafx.event=com.jfoenix
+    --add-exports=javafx.base/com.sun.javafx.binding=com.jfoenix
+    --add-exports=javafx.controls/com.sun.javafx.scene.control=com.jfoenix
+    ```
 
     <div style="display: flex; flex-direction: column; width: 80%; align-items: center; justify-content: center; padding: 10px 0 10px 0">
       <img src="images/run-config.png" alt="run-config" /> <br/>

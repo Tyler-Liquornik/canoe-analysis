@@ -1,12 +1,13 @@
 package com.wecca.canoeanalysis.utils;
 
+import com.wecca.canoeanalysis.controllers.modules.PunchingShearController;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 
 import java.util.List;
 import java.util.Objects;
 
-public class InputParsingUtil {
+public class InputParsingUtils {
 
     /**
      * Convert the distance in the text field to m from the unit selected in the combo box
@@ -63,6 +64,21 @@ public class InputParsingUtil {
     }
 
     /**
+     * Checks if a string is a valid percentage between 0 and 100
+     * @param s the string to check
+     * @return tru if the string can be parsed, false otherwise
+     */
+    public static boolean validateTextAsPercent(String s) {
+        boolean isDouble = validateTextAsDouble(s);
+        if (!isDouble)
+            return false;
+        else {
+            double d = Double.parseDouble(s);
+            return (d >= 0 && d <= 100);
+        }
+    }
+
+    /**
      * Check if a list of text fields all contain double values.
      * @param fields list of text fields to check.
      * @return whether each text field contains a double value.
@@ -73,6 +89,4 @@ public class InputParsingUtil {
         }
         return true;
     }
-
-
 }

@@ -5,12 +5,13 @@ import com.wecca.canoeanalysis.models.function.Section;
 import javafx.scene.shape.Rectangle;
 
 /**
- * Parent interface for Beam & ClosedCurve, used to display the canoe hull
+ * A graphic with a curve defined by some function
  */
-public interface CurvedProfile extends Graphic {
+public interface FunctionGraphic extends Graphic {
     Section getSection();
     BoundedUnivariateFunction getFunction();
     double getEndX();
+    double getY();
     double getEndY();
     Rectangle getEncasingRectangle();
     double getHeight(double functionX);
