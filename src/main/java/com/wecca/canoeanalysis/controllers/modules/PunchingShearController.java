@@ -51,6 +51,10 @@ public class PunchingShearController implements Initializable {
     private double hullWidth;
     private double compressiveStrength;
 
+    public void maxShearToVf(){
+        oneWayVfTextField.setText(maxShearTextField.getText());
+    }
+
     /**
      * Performs safety check for one-way shear.
      * Compares the calculated shear value to the maximum allowed shear and updates the UI to show
@@ -98,19 +102,6 @@ public class PunchingShearController implements Initializable {
     }
 
     /**
-     * Populates the one-way shear force field with the value entered for the max shear text field.
-     * Shows an error message if the max shear field is empty.
-     */
-    public void uploadShear() {
-        if (!maxShearTextField.getText().isEmpty()) {
-            oneWayVfTextField.setText(maxShearTextField.getText());
-        } else {
-            oneWayVfTextField.setText("");
-            mainController.showSnackbar("Please input a value for max shear");
-        }
-    }
-
-    /**
      * Calculates the one-way shear capacity (Vc) based on the input hull thickness, width, and compressive strength.
      * Displays the calculated value in the UI.
      */
@@ -121,6 +112,7 @@ public class PunchingShearController implements Initializable {
             compressiveStrength = Double.parseDouble(compressiveStrengthTextField.getText());
             double vc = concrete * lowDensityConcrete * squareColumn * Math.sqrt(compressiveStrength) * hullWidth * canoeThickness;
             oneWayVcTextField.setText(String.format("%.2f", vc));
+            safetyTest1();
         }
         else
             mainController.showSnackbar("Please fill all the fields with valid numeric values.");
@@ -158,6 +150,7 @@ public class PunchingShearController implements Initializable {
             double vc3 = 0.38 * lowDensityConcrete * concrete * Math.sqrt(compressiveStrength);
             twoWayVc3TextField.setText(String.format("%.4f", vc3));
             vcMinTextField.setText(String.format("%.4f", Math.min(vc1, Math.min(vc2, vc3))));
+            safetyTest2();
         }
         else
             mainController.showSnackbar("Please fill all the fields with valid numeric values.");
@@ -197,6 +190,8 @@ public class PunchingShearController implements Initializable {
         LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
         //iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
+        //iconGlyphToFunctionMap.put(IconGlyphType.BOOK, e -> openGlossary());
+        iconGlyphToFunctionMap.put(IconGlyphType.RESET, e -> reset());
 
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
