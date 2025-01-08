@@ -5,18 +5,26 @@ import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
+import com.wecca.canoeanalysis.services.DiagramService;
+import com.wecca.canoeanalysis.services.ResourceManagerService;
+import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.services.YamlMarshallingService;
 import com.wecca.canoeanalysis.utils.InputParsingUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Point2D;
+import javafx.scene.chart.AreaChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Pane;
 import lombok.Setter;
 
 import java.net.URL;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
@@ -34,6 +42,8 @@ public class PunchingShearController implements Initializable {
             twoWayVc3TextField, vcMinTextField;
     @FXML
     private Label oneWaySafeLabel, oneWayUnsafeLabel, twoWaySafeLabel, twoWayUnsafeLabel;
+    @FXML
+    private AnchorPane chartContainer;
 
     @Setter
     private static MainController mainController;
@@ -234,5 +244,30 @@ public class PunchingShearController implements Initializable {
         hullThicknessTextField.setText(String.format("%.2f",canoe.getMaxThickness()*1000));
         hullWidthTextField.setText(String.format("%.2f",canoe.getMaxWidth()*1000));
 
+
+        displayChart(canoe);
+
+    }
+
+    /**
+     *
+     * @param canoe
+     * this method calls on the diagram manager service and uses it to set up the chart and display it in module
+     * this is displaying the chart of the canoe uploaded with the max absolute shear
+     */
+    public void displayChart(Canoe canoe ) {
+        List<Point2D> points = DiagramService.generateSfdPoints(canoe);
+        AreaChart<Number, Number> chart = DiagramService.setupChart(canoe, points, "kN", "Force");
+
+        // Set size of chart to match anchor pane
+        AnchorPane.setTopAnchor(chart, 0.0);
+        AnchorPane.setRightAnchor(chart, 0.0);
+        AnchorPane.setBottomAnchor(chart, 0.0);
+        AnchorPane.setLeftAnchor(chart, 0.0);
+
+        chart.getStylesheets().add(ResourceManagerService.getResourceFilePathString("css/chart.css", false));
+
+        // Add the chart to the container
+        chartContainer.getChildren().add(chart);
     }
 }
