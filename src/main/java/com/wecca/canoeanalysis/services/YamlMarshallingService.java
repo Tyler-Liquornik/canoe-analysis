@@ -11,6 +11,7 @@ import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.data.DevConfig;
 import com.wecca.canoeanalysis.models.data.Settings;
 import com.wecca.canoeanalysis.models.load.Load;
+import javafx.geometry.Point2D;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Setter;
@@ -18,6 +19,8 @@ import lombok.Setter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 
@@ -110,7 +113,7 @@ public class YamlMarshallingService {
             for (Load load : adjustedCanoe.getLoads())
                 adjustedCanoe.addLoad(load);
             beamController.setCanoe(adjustedCanoe);
-        });
+        },false);
     }
 
     /**
@@ -123,50 +126,97 @@ public class YamlMarshallingService {
         uploadAndProcessCanoe(stage, adjustedCanoe -> {
 
             punchingShearController.setValues(adjustedCanoe);
-        });
+        },true);
     }
 
     /**
-     * Handles the common logic for uploading and processing a canoe YAML file.
+     * Handles the common logic for uploading and processing one to many canoe YAML file(s).
      * Allows custom processing logic to be applied to the parsed and adjusted Canoe object.
      *
      * @param stage          the stage to display the FileChooser dialog
      * @param canoeProcessor a Consumer function to process the adjusted Canoe object
      */
-    private static void uploadAndProcessCanoe(Stage stage, Consumer<Canoe> canoeProcessor) {
+    private static void uploadAndProcessCanoe(Stage stage, Consumer<Canoe> canoeProcessor, boolean allowMultipleFiles) {
         // Create a file chooser
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Upload Canoe");
+
 
         // Set extension filter for YAML files
         FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("YAML files (*.yaml, *.yml)", "*.yaml", "*.yml");
         fileChooser.getExtensionFilters().add(extFilter);
 
         // Show open file dialog
-        File fileToUpload = fileChooser.showOpenDialog(stage);
+        if(!allowMultipleFiles){
+            fileChooser.setTitle("Upload Canoe");
+            File fileToUpload = fileChooser.showOpenDialog(stage);
 
-        if (fileToUpload != null) {
-            try {
-                Canoe canoe = yamlMapper.readValue(fileToUpload, Canoe.class);
+            if (fileToUpload != null) {
+                try {
+                    Canoe canoe = yamlMapper.readValue(fileToUpload, Canoe.class);
 
-                // Rebuild the canoe to trigger validations and data restructuring
-                Canoe adjustedCanoe = new Canoe();
-                if(canoe.getSessionMaxShear() > 0){
-                    adjustedCanoe.setSessionMaxShear(canoe.getSessionMaxShear());
+                    // Rebuild the canoe to trigger validations and data restructuring
+                    Canoe adjustedCanoe = new Canoe();
+                    if(canoe.getSessionMaxShear() > 0){
+                        adjustedCanoe.setSessionMaxShear(canoe.getSessionMaxShear());
+                    }
+
+                    adjustedCanoe.setHull(canoe.getHull());
+                    for (Load load : canoe.getLoads())
+                        adjustedCanoe.addLoad(load);
+
+                    // Apply the custom processing logic
+                    canoeProcessor.accept(adjustedCanoe);
+
+                    mainController.showSnackbar("Successfully uploaded " + fileToUpload.getName());
+                } catch (IOException ex) {
+                    mainController.showSnackbar("Could not parse \"" + fileToUpload.getName() + "\".");
                 }
-
-                adjustedCanoe.setHull(canoe.getHull());
-                for (Load load : canoe.getLoads())
-                    adjustedCanoe.addLoad(load);
-
-                // Apply the custom processing logic
-                canoeProcessor.accept(adjustedCanoe);
-
-                mainController.showSnackbar("Successfully uploaded " + fileToUpload.getName());
-            } catch (IOException ex) {
-                mainController.showSnackbar("Could not parse \"" + fileToUpload.getName() + "\".");
             }
         }
+        else{
+            fileChooser.setTitle("Upload one or more Canoes");
+            List<File> filesToUpload = fileChooser.showOpenMultipleDialog(stage);
+
+            if (filesToUpload != null) {
+                try {
+
+                    double maxSessionShear = Double.MIN_VALUE;
+                    String fileName = null;
+                    for(File fileToUpload : filesToUpload){
+
+                        Canoe canoe = yamlMapper.readValue(fileToUpload, Canoe.class);
+
+                        // Rebuild the canoe to trigger validations and data restructuring
+                        Canoe adjustedCanoe = new Canoe();
+                        if(canoe.getSessionMaxShear() > 0){
+                            adjustedCanoe.setSessionMaxShear(canoe.getSessionMaxShear());
+                            fileName = fileToUpload.getName();
+                        }
+
+                        adjustedCanoe.setHull(canoe.getHull());
+                        for (Load load : canoe.getLoads())
+                            adjustedCanoe.addLoad(load);
+
+                        // Apply the custom processing logic
+
+
+                        if (adjustedCanoe.getSessionMaxShear() > maxSessionShear) {
+                            maxSessionShear = adjustedCanoe.getSessionMaxShear();
+
+                            canoeProcessor.accept(adjustedCanoe);
+                        }
+                    }
+
+
+                    mainController.showSnackbar(String.format("Success. File with name \"%s\" has max absolute shear of %.2f N.", fileName, maxSessionShear * 1000));
+
+
+                } catch (IOException ex) {
+                    mainController.showSnackbar("Could not parse files.");
+                }
+            }
+        }
+
     }
 
 
