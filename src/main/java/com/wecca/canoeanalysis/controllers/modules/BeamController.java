@@ -167,7 +167,8 @@ public class BeamController implements Initializable {
         deleteLoadButton.setDisable(true);
         clearLoadsButton.setDisable(true);
         disableLoadingControls(true);
-        mainController.disableModuleToolBarButton(true, 2);
+        //mainController.disableModuleToolBarButton(true, 2);
+        mainController.disableAllModuleToolbarButtons(true);
         setCanoeLengthButton.setText("Set Length");
         setCanoeLengthButton.setOnAction(e -> setLength());
     }
@@ -198,6 +199,7 @@ public class BeamController implements Initializable {
                 lengthLabel.setDisable(true);
                 deleteLoadButton.setDisable(true);
                 clearLoadsButton.setDisable(true);
+                mainController.disableAllModuleToolbarButtons(false);
 
                 // Set length button will now function as a reset length button
                 setCanoeLengthButton.setText("Reset Canoe");
@@ -584,6 +586,7 @@ public class BeamController implements Initializable {
         deleteLoadButton.setDisable(true);
         clearLoadsButton.setDisable(true);
         mainController.disableModuleToolBarButton(true, 1);
+        mainController.disableModuleToolBarButton(true, 2);
 
 
         addMaxShearToCanoe();
@@ -1008,6 +1011,7 @@ public class BeamController implements Initializable {
         iconGlyphToFunctionMap.put(IconGlyphType.WRENCH, e -> openHullBuilderPopup());
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
+        mainController.disableAllModuleToolbarButtons(true);
     }
 
     /**
