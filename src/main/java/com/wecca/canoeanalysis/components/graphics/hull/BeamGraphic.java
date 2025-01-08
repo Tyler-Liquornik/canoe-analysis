@@ -15,10 +15,9 @@ import lombok.Setter;
 
 /**
  * Icon used for an unset/simplified canoe hull
- * Technically a "curve" that it just flat (the function is y = c for some constant c)
  */
 @Getter @Setter
-public class BeamHullGraphic extends Group implements FunctionGraphic {
+public class BeamGraphic extends Group implements FunctionGraphic {
 
     private Rectangle encasingRectangle;
     private Line topBorder;
@@ -32,7 +31,7 @@ public class BeamHullGraphic extends Group implements FunctionGraphic {
      * @param rectangle the graphics space coordinates of the beam rectangle
      * Note that the border extensions do stick out of this region
      */
-    public BeamHullGraphic(Rectangle rectangle) {
+    public BeamGraphic(Rectangle rectangle) {
         super();
         this.encasingRectangle = rectangle;
         this.isColored = false;

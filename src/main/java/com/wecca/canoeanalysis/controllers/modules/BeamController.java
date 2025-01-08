@@ -6,8 +6,8 @@ import com.jfoenix.effects.JFXDepthManager;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
 import com.wecca.canoeanalysis.components.graphics.*;
-import com.wecca.canoeanalysis.components.graphics.hull.BeamHullGraphic;
-import com.wecca.canoeanalysis.components.graphics.hull.CurvedHullGraphic;
+import com.wecca.canoeanalysis.components.graphics.hull.BeamGraphic;
+import com.wecca.canoeanalysis.components.graphics.hull.HullGraphic;
 import com.wecca.canoeanalysis.components.graphics.load.ArrowBoundCurvedGraphic;
 import com.wecca.canoeanalysis.components.graphics.load.ArrowGraphic;
 import com.wecca.canoeanalysis.components.graphics.load.TriangleStandGraphic;
@@ -780,9 +780,9 @@ public class BeamController implements Initializable {
      */
     public void generateDiagram() {
         List<Point2D> sfdPoints = DiagramService.generateSfdPoints(canoe);
-        List<Point2D> bmdPoints = DiagramService.generateBmdPoints(canoe, sfdPoints);
-        WindowManagerService.openDiagramWindow("Shear Force Diagram", canoe, sfdPoints, "Force [kN]");
-        WindowManagerService.openDiagramWindow("Bending Moment Diagram", canoe, bmdPoints, "Moment [kN·m]");
+        List<Point2D> bmdPoints = DiagramService.generateBmdPoints(canoe);
+        WindowManagerService.openDiagramWindow("Shear Force Diagram", canoe, sfdPoints, "kN", "Force");
+        WindowManagerService.openDiagramWindow("Bending Moment Diagram", canoe, bmdPoints, "kN·m", "Moment");
     }
 
     /**
@@ -876,7 +876,7 @@ public class BeamController implements Initializable {
      */
     public void resetHullGraphic() {
         Rectangle rect = new Rectangle(0, 84, beamContainer.getPrefWidth(), 25);
-        setHullGraphic(new BeamHullGraphic(rect));
+        setHullGraphic(new BeamGraphic(rect));
         beamContainer.getChildren().clear();
         beamContainer.getChildren().add((Node) hullGraphic);
     }
@@ -971,7 +971,7 @@ public class BeamController implements Initializable {
     public void setHullGraphicFromHull(Hull hull) {
         Rectangle rect = hullGraphic.getEncasingRectangle();
         rect.setHeight(35);
-        setHullGraphic(new CurvedHullGraphic(
+        setHullGraphic(new HullGraphic(
                 hull.getPiecedSideProfileCurveShiftedAboveYAxis(), hull.getSection(), rect));
         beamContainer.getChildren().clear();
         beamContainer.getChildren().add((Node) hullGraphic);

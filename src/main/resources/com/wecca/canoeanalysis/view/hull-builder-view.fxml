@@ -8,7 +8,9 @@
       <AnchorPane fx:id="hullViewAnchorPane" layoutX="40.0" layoutY="18.0" prefHeight="300.0" prefWidth="870.0" styleClass="surface" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">
          <children>
             <Label styleClass="title" text="Hull View" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="19.0" />
-            <Label layoutX="610.0" styleClass="subtitle" text="Select Section: " AnchorPane.rightAnchor="85.0" AnchorPane.topAnchor="19.0" />
+            <Label layoutX="653.0" layoutY="19.0" styleClass="subtitle" text="Select Section:" />
+            <Label fx:id="poiDataLabel" layoutX="749.0" layoutY="269.0" text="(x = N/A, y = N/A)" />
+            <Label fx:id="poiTitleLabel" layoutX="751.0" layoutY="250.0" text="Add Knot Point" />
          </children></AnchorPane>
       <AnchorPane fx:id="curveParameterizationAnchorPane" layoutX="84.0" layoutY="193.0" prefHeight="220.0" prefWidth="545.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="15.0">
          <children>
@@ -17,15 +19,15 @@
       </AnchorPane>
       <AnchorPane fx:id="propertiesAnchorPane" layoutX="169.0" layoutY="291.0" prefHeight="220.0" prefWidth="310.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.rightAnchor="15.0">
          <children>
-            <Label fx:id="PropertiesType" layoutX="15.0" layoutY="15.0" styleClass="title" text="Section Properties" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="19.0" />
-            <Label layoutX="15.0" layoutY="54.0" text="Interval:" />
-            <Label layoutX="19.0" layoutY="94.0" text="Height:" />
-            <Label layoutX="15.0" layoutY="134.0" text="Volume:" />
-            <Label layoutX="26.0" layoutY="174.0" text="Mass:" />
-            <Label fx:id="inter" layoutX="73.0" layoutY="54.0" />
-            <Label fx:id="height" layoutX="73.0" layoutY="94.0" />
-            <Label fx:id="volume" layoutX="73.0" layoutY="135.0" />
-            <Label fx:id="mass" layoutX="73.0" layoutY="175.0" />
+            <Label fx:id="propertiesPanelTitleLabel" layoutX="15.0" layoutY="15.0" styleClass="title" text="Section Properties" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="19.0" />
+            <Label layoutX="25.0" layoutY="54.0" styleClass="subtitle" text="Interval:" />
+            <Label layoutX="24.0" layoutY="94.0" styleClass="subtitle" text="Height:" />
+            <Label layoutX="25.0" layoutY="134.0" styleClass="subtitle" text="Volume:" />
+            <Label layoutX="26.0" layoutY="174.0" styleClass="subtitle" text="Mass:" />
+            <Label fx:id="intervalLabel" layoutX="83.0" layoutY="54.0" />
+            <Label fx:id="heightLabel" layoutX="83.0" layoutY="94.0" />
+            <Label fx:id="volumeLabel" layoutX="83.0" layoutY="135.0" />
+            <Label fx:id="massLabel" layoutX="83.0" layoutY="175.0" />
          </children>
       </AnchorPane>
    </children>

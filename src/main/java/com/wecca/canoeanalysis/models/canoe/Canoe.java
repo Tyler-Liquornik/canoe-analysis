@@ -45,7 +45,7 @@ public class Canoe
     }
 
     /**
-     * Add a load to the canoe, combining pLoads and dLoads where their x/rx match up (wLoads added with no extra logic)
+     * Add a load to the canoe, combining pLoads and dLoads where their x/rx match up (complex distributions added with no extra logic)
      * @param load the load to add
      * @return the result of adding the load (ADDED | REMOVED | COMBINED)
      */
@@ -53,10 +53,9 @@ public class Canoe
         if (!isLoadWithinCanoeLength(load))
             throw new IllegalArgumentException("Load must be contained inside the canoe's length");
 
-        // Combine pLoads and the same x value
+        // Combine pLoads of the same x value
         if (load instanceof PointLoad pLoad) {
-            // Do not add the load if it is zero valued unless if is a support
-            // Zero-valued supports are still added as markers for the model and ListView
+            // Do not add the load if it is zero valued unless it's a support (we don't want to ignore zero-valued solutions)
             if (pLoad.getMaxSignedValue() == 0)
                 if (!pLoad.isSupport())
                     return AddLoadResult.ADDED;

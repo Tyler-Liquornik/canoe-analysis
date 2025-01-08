@@ -299,9 +299,4 @@ public class HullSection extends Section
         else if (!positive && maxValue > 0)
             throw new IllegalArgumentException("Hull shape function must be non-positive on its domain [start, end]");
     }
-
-    @Override
-    public String toString() {
-        return "We In";
-    }
 }

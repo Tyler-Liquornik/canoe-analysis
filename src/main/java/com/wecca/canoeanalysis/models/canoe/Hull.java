@@ -114,7 +114,10 @@ public class Hull {
                 canoeHeight = sectionHeight;
             }
         }
-        return -canoeHeight; // canoe height is distance down from 0, so it must be negated
+
+        // canoe height is distance down from 0, so it must be negated
+        // rounding addresses a floating point error in HullBuildController::getThetaBounds
+        return CalculusUtils.roundXDecimalDigits(-canoeHeight, 10);
     }
 
     /**
@@ -122,7 +125,7 @@ public class Hull {
      * Note: two separate getMaxHeight methods are provided for a specific reason
      * one for internal validation purposes (hence, private) one for public use
      */
-    @JsonIgnore @Traceable
+    @JsonIgnore
     public double getMaxHeight() {
         return getMaxHeight(this.hullSections);
     }

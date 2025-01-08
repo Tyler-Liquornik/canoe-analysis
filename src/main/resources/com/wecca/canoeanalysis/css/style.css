@@ -185,6 +185,10 @@
     -fx-cursor: hand;
 }
 
+.panel-button-badge {
+    -fx-background-color: transparent;
+}
+
 .close-window-button:hover {
     -fx-background-color: -fx-danger;
 }

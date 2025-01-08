@@ -19,7 +19,7 @@ public class SharkBaitHullLibrary {
 
     /**
      * Note: THIS IS THE NEW MODEL
-     * Does not scale (for now) WIP
+     * Does not scale (for now) <-- TODO
      * Generate the hull for 2024's Shark Bait canoe scaled to the specified length
      * This serves as a placeholder for the user defining their own hull in the hull builder until that is developed
      * @return the hull
@@ -31,6 +31,7 @@ public class SharkBaitHullLibrary {
         scalingFactor = length / SHARK_BAIT_LENGTH;
 
         // Side view Curve Construction Bezier Spline
+        // Redundant lines are for readability, and for synchronization with desmos model
         double top = 0.00;
         double knot0 = 0.00;
         double knot1 = 0.50 * scalingFactor;
@@ -42,8 +43,8 @@ public class SharkBaitHullLibrary {
         double leftY1 = top;
         double leftControlX1 = 0.07 * scalingFactor;
         double leftControlY1 = -0.21 * scalingFactor;
-        double leftControlX2 = 0.27 * scalingFactor;
-        double leftControlY2 = -0.28 * scalingFactor;
+        double leftControlX2 = 0.29 * scalingFactor;
+        double leftControlY2 = -0.29 * scalingFactor;
         double leftX2 = knot1;
         double midLeftY1 = -0.32 * scalingFactor;
         double leftY2 = midLeftY1;
@@ -53,7 +54,7 @@ public class SharkBaitHullLibrary {
         double midLeftSlope1 = leftSlope2;
         double midLeftControlX1 = 0.76 * scalingFactor;
         double midLeftControlY1 = midLeftSlope1 * (midLeftControlX1 - midLeftX1) + midLeftY1;
-        double midLeftControlX2 = 2.62 * scalingFactor;
+        double midLeftControlX2 = 1.40 * scalingFactor;
         double midLeftControlY2 = -0.39 * scalingFactor;
         double midLeftX2 = knot2;
         double midRightY1 = -0.39 * scalingFactor;
@@ -65,7 +66,7 @@ public class SharkBaitHullLibrary {
         double midRightControlX1 = 3.31 * scalingFactor;
         double midRightControlY1 = midRightSlope1 * (midRightControlX1 - midRightX1) + midRightY1;
         double midRightControlX2 = 5.18 * scalingFactor;
-        double midRightControlY2 = -0.40 * scalingFactor;
+        double midRightControlY2 = -0.39 * scalingFactor;
         double midRightX2 = knot3;
         double rightY1 = -0.34 * scalingFactor;
         double midRightY2 = rightY1;
@@ -75,7 +76,7 @@ public class SharkBaitHullLibrary {
         double rightSlope1 = midRightSlope2;
         double rightControlX1 = 5.77 * scalingFactor;
         double rightControlY1 = rightSlope1 * (rightControlX1 - rightX1) + rightY1;
-        double rightControlX2 = 5.88 * scalingFactor;
+        double rightControlX2 = 5.86 * scalingFactor;
         double rightControlY2 = -0.19 * scalingFactor;
         double rightX2 = scaledLength;
         double rightY2 = top;
@@ -112,7 +113,7 @@ public class SharkBaitHullLibrary {
      */
     public static Hull generateSharkBaitHullScaledFromParabolasC1Smooth(double length) {
 
-        // The two systems solved for parameters:
+        // The two systems solved for parameters (paste into ChatGPT, just type "render"):
         // \frac{1}{67t}\left(\frac{1}{2}t-3t\right)^2-0.4t=a\left(\frac{1}{2}t-ht\right)^2-kt,\:\frac{2}{67t}\left(\frac{1}{2}t-3t\right)=2a\left(\frac{1}{2}t-ht\right),\:ah^2t^2-kt=0
         // \frac{1}{67t}\left(\frac{11}{2}t-3t\right)^2-0.4t=a\left(\frac{11}{2}t-ht\right)^2-kt,\:\frac{2}{67t}\left(\frac{11}{2}t-3t\right)=2a\left(\frac{11}{2}t-ht\right),\:a\left(6t-ht\right)^2-kt=0
 

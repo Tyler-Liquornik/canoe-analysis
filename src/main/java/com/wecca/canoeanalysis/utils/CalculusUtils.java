@@ -6,6 +6,7 @@ import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.function.Section;
+import javafx.geometry.Point2D;
 import org.apache.commons.math3.analysis.BivariateFunction;
 import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
@@ -45,6 +46,40 @@ public class CalculusUtils
     }
 
     /**
+     * Converts polar coordinates to Cartesian coordinates with respect to a given origin.
+     * @param polarPoint the point in polar form where x represents the radius (r) and y represents the angle (theta) in degrees
+     * @param origin the reference point to use as the origin
+     * @return a Point2D in Cartesian form (x, y) relative to the origin
+     */
+    public static Point2D toCartesian(Point2D polarPoint, Point2D origin) {
+        double r = polarPoint.getX();
+        double theta = Math.toRadians(polarPoint.getY() + 90);
+        double x = r * Math.cos(theta) + origin.getX();
+        double y = r * Math.sin(theta) + origin.getY();
+        return new Point2D(x, y);
+    }
+
+    /**
+     * Converts Cartesian coordinates to polar coordinates with respect to a given origin.
+     * Note: the zero degree line shifted ninety degrees to the vertical upward ray from y = 0 to y = inf
+     * This is because control points which use the polar system are either bounded to the left or right half-plane around their knot
+     * Otherwise, the right half would be theta in {[0, 90] U [270, 360]} which cannot go on a knob as multiple joined intervals
+     * @param cartesianPoint the point in Cartesian form (x, y)
+     * @param origin the reference point to use as the origin
+     * @return a Point2D where x represents the radius (r) and y represents the angle (theta) in degrees (0 <= theta < 360)
+     */
+    public static Point2D toPolar(Point2D cartesianPoint, Point2D origin) {
+        double x = cartesianPoint.getX() - origin.getX();
+        double y = cartesianPoint.getY() - origin.getY();
+        double r = Math.sqrt(x * x + y * y);
+        double theta = Math.toDegrees(Math.atan2(y, x)) - 90;
+
+        // Normalize theta to a 360 degree range
+        return new Point2D(r, theta > 0 ? theta : theta + 360);
+    }
+
+    /**
+     * @deprecated by new floating solver algorithm which can solve asymmetrical load cases so we no longer need to check for symmetry
      * @param piecewise the function to check for symmetry on its section
      * @return if the function is symmetrical or not
      */
@@ -117,10 +152,9 @@ public class CalculusUtils
      * @param pieces the pieces to validate
      * @param sections the sections of the pieces
      */
-    @Traceable
     public static void validatePiecewiseAsUpOrDown(List<BoundedUnivariateFunction> pieces, List<Section> sections) {
         UnivariateSolver solver = new BrentSolver(1e-10, 1e-14);
-        int numSamples = 1000;
+        int numSamples = 100;
 
         boolean allNonNegative = true;
         boolean allNonPositive = true;

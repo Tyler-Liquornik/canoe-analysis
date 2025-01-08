@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.utils;
 
 import com.wecca.canoeanalysis.components.graphics.*;
-import com.wecca.canoeanalysis.components.graphics.hull.BeamHullGraphic;
+import com.wecca.canoeanalysis.components.graphics.hull.BeamGraphic;
 import com.wecca.canoeanalysis.components.graphics.load.ArrowBoundCurvedGraphic;
 import com.wecca.canoeanalysis.components.graphics.load.ArrowGraphic;
 import com.wecca.canoeanalysis.components.graphics.load.TriangleStandGraphic;
@@ -40,7 +40,7 @@ public class GraphicsUtils {
         classOrder.put(TriangleStandGraphic.class, 1);
         classOrder.put(ArrowGraphic.class, 2);
         classOrder.put(ArrowBoundCurvedGraphic.class, 3);
-        classOrder.put(BeamHullGraphic.class, 4);
+        classOrder.put(BeamGraphic.class, 4);
 
         // Sort by type, and then by position
         graphics.sort(Comparator.comparingInt(l -> classOrder.getOrDefault(l.getClass(), -1)));
