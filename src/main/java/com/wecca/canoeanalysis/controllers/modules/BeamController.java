@@ -1,6 +1,5 @@
 package com.wecca.canoeanalysis.controllers.modules;
 
-import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXTreeView;
 import com.jfoenix.effects.JFXDepthManager;
@@ -26,8 +25,6 @@ import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.*;
 import javafx.animation.*;
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.control.*;
@@ -586,9 +583,27 @@ public class BeamController implements Initializable {
         checkAndSetEmptyLoadTreeSettings();
         deleteLoadButton.setDisable(true);
         clearLoadsButton.setDisable(true);
-        mainController.disableModuleToolBarButton(true, 2);
+        mainController.disableModuleToolBarButton(true, 1);
+
+
+        addMaxShearToCanoe();
+
         updateViewOrder();
     }
+    /**
+     *Used to add max shear to canoe
+     * max shear needed for punching shear
+     *
+     */
+    private void addMaxShearToCanoe(){
+        List<Point2D> sfdPoints = DiagramService.generateSfdPoints(canoe);
+        canoe.setSessionMaxShear(sfdPoints.stream()
+                .mapToDouble(point -> Math.abs(point.getY()))
+                .max()
+                .orElseThrow(() -> new IllegalArgumentException("List of points is empty")));
+
+    }
+
 
     /**
      * Solve and display the result of the "stand" system load case.
@@ -721,6 +736,7 @@ public class BeamController implements Initializable {
         disableLoadingControls(false);
         boolean isHullPresent = canoe.getHull().getWeight() != 0;
         mainController.disableModuleToolBarButton(isHullPresent, 2);
+        mainController.disableModuleToolBarButton(false, 1);
         checkAndSetEmptyLoadTreeSettings();
         waterlineLabel.setText("");
         tiltAngleLabel.setText("");
@@ -746,7 +762,7 @@ public class BeamController implements Initializable {
         for (Control control : controls) {
             control.setDisable(b);
         }
-        mainController.disableAllModuleToolbarButtons(b);
+        //mainController.disableAllModuleToolbarButtons(b);
 
         // Only enable the hull builder if a custom hull hasn't yet been set
         if (canoe.getHull() != null) {

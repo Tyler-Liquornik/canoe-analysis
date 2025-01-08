@@ -254,6 +254,7 @@ public class HullSection extends Section
         return 2 * optimizer.optimize(MaxEval.unlimited(), objectiveFunction, searchInterval).getValue();
     }
 
+    @JsonIgnore
     public double getHeight()
     {
         // Find the sections minimum
