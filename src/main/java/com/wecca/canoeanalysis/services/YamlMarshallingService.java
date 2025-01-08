@@ -6,6 +6,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.controllers.modules.BeamController;
 import com.wecca.canoeanalysis.controllers.MainController;
+import com.wecca.canoeanalysis.controllers.modules.PunchingShearController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.data.DevConfig;
 import com.wecca.canoeanalysis.models.data.Settings;
@@ -13,9 +14,12 @@ import com.wecca.canoeanalysis.models.load.Load;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Setter;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.function.Consumer;
+
 
 /**
  * Marshalling and unmarshalling of POJO models in YAML for state management
@@ -28,6 +32,8 @@ public class YamlMarshallingService {
     private static MainController mainController;
     @Setter
     private static BeamController beamController;
+    @Setter
+    private static PunchingShearController punchingShearController;
     private static final ObjectMapper yamlMapper;
     public static final String SETTINGS_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/settings.yaml", true);
     public static final String DEV_CONFIG_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/dev-config.yaml", true);
@@ -87,11 +93,47 @@ public class YamlMarshallingService {
         return fileToDownload;
     }
 
+
+
+
+
     /**
-     * Prompts the user the upload a YAML file representing a new canoe model to upload
-     * @param stage the stage to have the FileChooser model popup onto
+     * Prompts the user to upload a YAML file representing a new canoe model and processes it.
+     * The uploaded canoe is used for general beam control operations.
+     *
+     * @param stage the stage to display the FileChooser dialog
      */
     public static void importCanoeFromYAML(Stage stage) {
+        uploadAndProcessCanoe(stage, adjustedCanoe -> {
+            // Custom processing for the general canoe import
+            adjustedCanoe.setHull(adjustedCanoe.getHull());
+            for (Load load : adjustedCanoe.getLoads())
+                adjustedCanoe.addLoad(load);
+            beamController.setCanoe(adjustedCanoe);
+        });
+    }
+
+    /**
+     * Prompts the user to upload a YAML file representing a canoe model specifically for
+     * punching shear operations and processes it.
+     *
+     * @param stage the stage to display the FileChooser dialog
+     */
+    public static void punchingShearImportCanoeFromYAML(Stage stage) {
+        uploadAndProcessCanoe(stage, adjustedCanoe -> {
+
+            punchingShearController.setValues(adjustedCanoe);
+        });
+    }
+
+    /**
+     * Handles the common logic for uploading and processing a canoe YAML file.
+     * Allows custom processing logic to be applied to the parsed and adjusted Canoe object.
+     *
+     * @param stage          the stage to display the FileChooser dialog
+     * @param canoeProcessor a Consumer function to process the adjusted Canoe object
+     */
+    private static void uploadAndProcessCanoe(Stage stage, Consumer<Canoe> canoeProcessor) {
         // Create a file chooser
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Upload Canoe");
@@ -107,18 +149,30 @@ public class YamlMarshallingService {
             try {
                 Canoe canoe = yamlMapper.readValue(fileToUpload, Canoe.class);
 
-                // Rebuild the canoe trigger validations and data restructuring
+                // Rebuild the canoe to trigger validations and data restructuring
                 Canoe adjustedCanoe = new Canoe();
+                if(canoe.getSessionMaxShear() > 0){
+                    adjustedCanoe.setSessionMaxShear(canoe.getSessionMaxShear());
+                }
+
                 adjustedCanoe.setHull(canoe.getHull());
                 for (Load load : canoe.getLoads())
                     adjustedCanoe.addLoad(load);
-                beamController.setCanoe(adjustedCanoe);
+
+                // Apply the custom processing logic
+                canoeProcessor.accept(adjustedCanoe);
+
                 mainController.showSnackbar("Successfully uploaded " + fileToUpload.getName());
             } catch (IOException ex) {
                 mainController.showSnackbar("Could not parse \"" + fileToUpload.getName() + "\".");
             }
         }
     }
+
+
+
+
+
 
     /**
      * Write the current state of settings to a file

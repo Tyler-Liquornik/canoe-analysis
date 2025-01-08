@@ -2,17 +2,23 @@ package com.wecca.canoeanalysis.controllers.modules;
 
 import com.jfoenix.controls.JFXTextField;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.controllers.MainController;
+import com.wecca.canoeanalysis.models.canoe.Canoe;
+import com.wecca.canoeanalysis.services.YamlMarshallingService;
 import com.wecca.canoeanalysis.utils.InputParsingUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseEvent;
 import lombok.Setter;
 
 import java.net.URL;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
 /**
  * Controller class for Punching Shear calculations in the Canoe Analysis Application.
@@ -183,10 +189,50 @@ public class PunchingShearController implements Initializable {
         clearOneWay();
         clearTwoWay();
     }
+    /**
+     * Clears the toolbar of buttons from other modules and adds ones from this module
+     * Currently, this provides buttons to download and upload the Canoe object as JSON
+     */
+    public void initModuleToolBarButtons() {
+        LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
+        //iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadCanoe());
+        iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
+
+        mainController.resetToolBarButtons();
+        mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setMainController(CanoeAnalysisApplication.getMainController());
-        mainController.resetToolBarButtons();
+
+        initModuleToolBarButtons();
+    }
+    /**
+     * Upload a YAML file representing the Canoe object model
+     * This populates the list view and beam graphic with the new model
+     */
+    public void uploadCanoe() {
+        YamlMarshallingService.setPunchingShearController(this);
+
+        YamlMarshallingService.punchingShearImportCanoeFromYAML(mainController.getPrimaryStage());
+
+    }
+
+    /**
+     *
+     * @param canoe
+     * This method sets the values in the punching shear module necessary to test
+     * session max shear is given in kN so must be converted to N
+     * thickenss and width are given in m and must be converted to mm
+     */
+    public void setValues(Canoe canoe){
+
+
+        maxShearTextField.setText(String.format("%.2f",canoe.getSessionMaxShear()*1000));
+        oneWayVfTextField.setText(String.format("%.2f",canoe.getSessionMaxShear()*1000));
+        hullThicknessTextField.setText(String.format("%.2f",canoe.getMaxThickness()*1000));
+        hullWidthTextField.setText(String.format("%.2f",canoe.getMaxWidth()*1000));
+
     }
 }
