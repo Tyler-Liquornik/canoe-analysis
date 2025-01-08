@@ -36,7 +36,9 @@ public class Hull {
     public Hull(@JsonProperty("concreteDensity") double concreteDensity,
                 @JsonProperty("bulkheadDensity") double bulkheadDensity,
                 @JsonProperty("hullSections") List<HullSection> hullSections) {
+
         hullSections.sort(Comparator.comparingDouble(Section::getX));
+        validateBasicValues(concreteDensity, bulkheadDensity, hullSections);
         validateNoSectionGaps(hullSections);
         validateFloorThickness(hullSections);
         validateWallThickness(hullSections);
@@ -49,6 +51,15 @@ public class Hull {
         this.concreteDensity = concreteDensity;
         this.bulkheadDensity = bulkheadDensity;
         this.hullSections = hullSections;
+    }
+
+    private void validateBasicValues(double concreteDensity, double bulkheadDensity, List<HullSection> hullSections) {
+        if (concreteDensity <= 0)
+            throw new IllegalArgumentException("concreteDensity must be greater than zero");
+        if (bulkheadDensity <= 0)
+            throw new IllegalArgumentException("bulkheadDensity must be greater than zero");
+        if (hullSections.isEmpty())
+            throw new IllegalArgumentException("At least one hull section required");
     }
 
     /**
