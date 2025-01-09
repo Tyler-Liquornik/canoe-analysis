@@ -189,6 +189,7 @@ public class PunchingShearController implements Initializable {
         hullWidthTextField.clear();
         compressiveStrengthTextField.clear();
         maxShearTextField.clear();
+        chartContainer.getChildren().clear();
         clearOneWay();
         clearTwoWay();
     }

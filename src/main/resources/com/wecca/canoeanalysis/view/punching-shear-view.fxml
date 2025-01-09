@@ -4,13 +4,13 @@
 <?import com.jfoenix.controls.JFXTextField?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.shape.Rectangle?>
 <?import javafx.scene.text.Font?>
 
 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="565.0" prefWidth="900.0" styleClass="background" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.PunchingShearController">
    <AnchorPane layoutX="15.0" layoutY="15.0" maxHeight="380.0" minHeight="161.0" prefHeight="320.0" prefWidth="420.0" styleClass="surface">
+      <AnchorPane fx:id="chartContainer" layoutX="19.0" layoutY="52.0" prefHeight="215.0" prefWidth="378.0" />
       <Label layoutX="141.25" layoutY="14.0" text="Shear Diagram">
          <font>
             <Font size="18.0" />
@@ -23,8 +23,6 @@
       </JFXTextField>
       <Label layoutX="111.0" layoutY="291.0" text="Max shear (Vf)  = " />
       <Label layoutX="284.0" layoutY="291.0" text=" N" />
-      <ImageView fitHeight="174.0" fitWidth="200.0" layoutX="103.0" layoutY="75.0" pickOnBounds="true" preserveRatio="true" />
-      <Label layoutX="108.0" layoutY="145.0" text="Shear Diagram is not implemented yet" textFill="RED" />
    </AnchorPane>
    <AnchorPane layoutX="450.0" layoutY="15.0" maxHeight="531.0" minHeight="133.0" prefHeight="160.0" prefWidth="435.0" styleClass="surface">
       <Label layoutX="169.0" layoutY="14.0" text="1-way Shear">
