@@ -14,7 +14,7 @@ import java.util.List;
  */
 public class SharkBaitHullLibrary {
 
-    public static final double SHARK_BAIT_LENGTH = 6.0;
+    public static final double SHARK_BAIT_LENGTH = 5.0;
     public static double scalingFactor = 1.0;
 
     /**
