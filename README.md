@@ -43,7 +43,10 @@ Current work is on an intuitive glossary to lay out the equations behind the mod
 
 This is a relatively simple module, developed as an internal tool to solve a regulatory problem enforced by the competition that WECCA competes in, the Canadian National Concrete Canoe Competition (CNCCC). Regulations are imposed by the CNCCC on our reinforcement mesh, as different types of mesh may provide an unfair advantage depending on the mesh geometry/properties as defined by the competition.
 
-<img src="images/percent-open-area.png" alt = "percent-open-area" style="width: 66%;" />
+<div style="display: flex; flex-direction: row;">
+    <img src="images/percent-open-area-blank.png" alt = "percent-open-area-blank" style="width: 49%;" />
+    <img src="images/percent-open-area-analyzed.png" alt = "percent-open-area-analyzed" style="width: 66%;" />
+</div>
 
 This module is used by simply uploading a photo of the mesh, and then our image analysis API does the bulk of the work to determine if the mesh meets open area regulations.
 
