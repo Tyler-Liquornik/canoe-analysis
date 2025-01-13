@@ -3,31 +3,49 @@
 ## About
 PADDL, Precision Analysis & Design for Dynamic Loading, is a JavaFx desktop app built to simplify technical civil engineering design and analysis. The primary goal of the project is to implement effective UI/UX design to lower the barrier of technical knowledge required to make informed, analytical civil engineering decisions in less time.
 
-PADDL is built as a custom software solution for [WECCA](https://wecca.org/), the Western Engineering Concrete Canoe Association, as a candidate for our 2025 EFA (Enhanced Focus Area). PADDL's modules are designed specifically as solutions to aid civil engineering processes specifically centered around WECCA's concrete canoe.
+PADDL is built as a custom software solution for [WECCA](https://wecca.org/), the Western Engineering Concrete Canoe Association, as our 2025 EFA (Enhanced Focus Area). PADDL's modules are designed specifically as solutions to aid civil engineering processes specifically centered around WECCA's concrete canoe.
 
 ### The Beam Module
 
-Currently, the program has one module to solve for the canoe's internal shear force and bending moment distributions. There are intentions for the project to grow in size over the next couple of years, with plans for 4 other modules.
+The beam module solves for the canoe's internal shear force and bending moment distributions. This is a key factor in analyzing the structural integrity of the canoe, and validating our design choices in both construction and materials design.
 
 <div style="display: flex; flex-direction: row;">
-    <img src="images/ui.png" alt="ui" style="width: 49%;" />
-    <img src="images/side-menu.png" alt="side menu" style="width: 49%;" />
+    <img src="images/beam-unsolved.png" alt="beam-unsolved" style="width: 49%;" />
+    <img src="images/beam-solved.png" alt="beam-solved" style="width: 49%;" />
     <br>
-    <img src="images/sfd.png" alt = "sfd" style="width: 49%;" />
-    <img src="images/bmd.png" alt = "bmd" style="width: 49%;" />
+    <img src="images/beam-sfd.png" alt = "sfd" style="width: 49%;" />
+    <img src="images/beam-bmd.png" alt = "bmd" style="width: 49%;" />
 </div>
 
-Here we can see the process of solving a load case for 2024's canoe "Shark Bait". The user has added some external loads (first image), and then solves for equilibrium of the floating canoe to get an upward facing buoyancy reaction force such that the canoe is floating in static equilibrium. From there, the user can generate corresponding Shear Force and Bending Moment diagrams (third and fourth image) which provide valuable information into the internal forces of the canoe as it floats.
-
-The hull geometry and material properties of Shark Bait are precisely modeled in the program, allowing for precise static analysis calculations with realistic assumptions. This allows PADDL to produce results that match real world results within only a small margin of error. 
-
-The engineer working on the canoe can also download the canoe model as a YAML file. This file can be saved for later, or shared easily between engineers during the design and analysis process.
+Here we can see the process of solving a load case for 2024's canoe "Shark Bait". The user has added some external loads (first image), and then solves for equilibrium of the floating canoe to get an upward facing buoyancy reaction force such that the canoe is floating in static equilibrium. Picture when you step into the back of a canoe, and it both sinks down and tilt's up at the front since nobody is sitting there. This is what is meant by the canoe finding static equilibrium: the position where it's forces and moments all cancel out. From equilibrium, the user can generate corresponding Shear Force and Bending Moment diagrams (third and fourth image) which provide valuable information into the internal forces of the canoe as it floats.
 
 ### The Hull Builder Module
 
+The origin of this module was to address concerns that a model for 2024's Shark Bait, which was originally used to develop PADDL, would lose precision in 2025 and beyond as we gradually change the hull design over the years. It seeks to solve this problem by making it simple to modify the geometry of the canoe in each of its three isometric views. At the moment, the first view (the side view) continues to be worked on, along with a suite of tools to ensure that the canoe's geometry can be easily and flexibly designed and data to show numerical implications of design choices.
+
+<div style="display: flex; flex-direction: row;">
+    <img src="images/hull-builder-knobs.png" alt = "turning-knobs" style="width: 49%;" />
+    <img src="images/hull-builder-editor.png" alt = "adding-knot" style="width: 49%;" />
+</div>
+
+
+In the first photo, we can see the user using the knob to pull on the "handles" (points that determine the construction of the hull's curve). In the second, we see them adding points to the construction of the hull's curvature for further customization.
+
 ### The Punching Shear Module
 
+We model punching shear forces on our canoe as the force it experiences when a paddler's knee presses down on the bottom of the hull wall where they sit. It is important that our concrete can withstand these forces for structural integrity. The punching shear module acts as an intuitive calculator for this, making it easy to work with different load cases to find the critical case, ensuring the canoe will have structural integrity in all possible races and load cases.
+
+<img src="images/punching-shear.png" alt = "punching-shear" style="width: 66%;" />
+
+Current work is on an intuitive glossary to lay out the equations behind the module to make its usage and purpose more clear.
+
 ### The Percent Open Area Module
+
+This is a relatively simple module, developed as an internal tool to solve a regulatory problem enforced by the competition that WECCA competes in, the Canadian National Concrete Canoe Competition (CNCCC). Regulations are imposed by the CNCCC on our reinforcement mesh, as different types of mesh may provide an unfair advantage depending on the mesh geometry/properties as defined by the competition.
+
+<img src="images/percent-open-area.png" alt = "percent-open-area" style="width: 66%;" />
+
+This module is used by simply uploading a photo of the mesh, and then our image analysis API does the bulk of the work to determine if the mesh meets open area regulations.
 
 ### Summer '24 Development Overview:
 - Mathematical models with calculus and structural engineering methodologies of the canoe
@@ -75,7 +93,7 @@ The engineer working on the canoe can also download the canoe model as a YAML fi
    ```
     @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
    ```
-   If you have chocolate already, skip to the installation step here
+   If you have chocolatey already, skip to the installation step here
    ```
    choco install scenebuilder --version=15.0.1
    ```
@@ -112,40 +130,6 @@ The engineer working on the canoe can also download the canoe model as a YAML fi
       <img src="images/run-config.png" alt="run-config" /> <br/>
       <img src="images/vm-options.png" alt="vm-options" />
     </div>
-
-## Summer '24 Feature Development Roadmap
-
-- [X] Implement material design look and feel
-- [X] Side Menu Drawer
-    - [X] Template links to other modules
-    - [X] Settings utility window
-    - [X] About Page
-- [X] Animated error popups
-- [X] Import/Export the canoe object to a from/to a file
-- [X] Unification of color system between Java and CSS code
-  - [X] Customizable colors in settings
-  - [X] Persist color settings across sessions in a properties file
-- [X] Solve the case of a floating canoe [Epic]
-  - [X] Implement an improved model for breaking the canoe hull up into sections
-    - [X] Define a set of curves for hull geometry
-    - [X] Create new graphics for complex load distributions
-    - [X] Create new graphics for the hull geometry
-    - [X] Display the canoe model in a collapsable TreeView
-  - [X] Iteratively solve for the waterline of a floating hull in equilibrium to get a buoyancy distribution
-  - [X] Solve for a buoyancy load distribution based on the self-weight distribution of the hull
-  - [X] Solve for a buoyancy load distribution including the hull and external loads
-  - [X] Ensure the canoe does not tip or sink
-- [X] Deployment!
-  - [X] Update [https://wecca.org/](https://wecca.org/) homepage responsive CSS for mobile view
-  - [X] Bash script for macOS deployment by .dmg installer
-  - [X] Batchfile for PC deployment by .msi installer
-     
-<!-- CONTRIBUTING -->
-## Contributing
-Starting in September for the 2024-2025 school year, any WECCA members involved on the software team can contribute to PADDL!
-
-Please ensure you connect with a Software Lead before starting any work. You can connect over our [Slack channel](https://join.slack.com/t/wecca2023-24/shared_invite/zt-21o0f5jn9-al9lZLzSOjTrxhflOeR3eQ) in the `#software` channel. </br>
-We are open to discussing any bugfixes or features suggested, and encourage club members to participate in the development process.
 
 <!-- CONTACT -->
 ## Contact
