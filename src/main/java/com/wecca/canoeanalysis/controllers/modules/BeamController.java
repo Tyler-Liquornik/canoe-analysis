@@ -619,6 +619,7 @@ public class BeamController implements Initializable {
             renderSupportGraphic(supportLoad.getX());
         }
         checkAndSetEmptyLoadTreeSettings();
+        canoe.setSolveType("Stands");
     }
 
     /**
@@ -627,6 +628,7 @@ public class BeamController implements Initializable {
     private void undoStandsSolve() {
         undoSolveUpdateUI();
         clearLoadsOfType(LoadType.POINT_LOAD_SUPPORT);
+        canoe.setSolveType("Unsolved");
     }
 
     /**
@@ -683,6 +685,7 @@ public class BeamController implements Initializable {
         }
         generateGraphsButton.setDisable(solution.isTippedOver());
 
+        canoe.setSolveType("Floating");
         return true;
     }
 
@@ -707,6 +710,7 @@ public class BeamController implements Initializable {
         clearLoadsOfType(LoadType.BUOYANCY);
         setCanoe(canoe);
         undoSolveUpdateUI();
+        canoe.setSolveType("Unsolved");
     }
 
     /**

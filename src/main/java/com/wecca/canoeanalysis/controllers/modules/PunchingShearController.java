@@ -5,10 +5,9 @@ import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
-import com.wecca.canoeanalysis.services.DiagramService;
-import com.wecca.canoeanalysis.services.ResourceManagerService;
-import com.wecca.canoeanalysis.services.WindowManagerService;
-import com.wecca.canoeanalysis.services.YamlMarshallingService;
+import com.wecca.canoeanalysis.models.canoe.FloatingSolution;
+import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
+import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.utils.InputParsingUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -240,7 +239,18 @@ public class PunchingShearController implements Initializable {
         hullThicknessTextField.setText(String.format("%.2f",canoe.getMaxThickness()*1000));
         hullWidthTextField.setText(String.format("%.2f",canoe.getMaxWidth()*1000));
 
+        // need to account for floating
+        if(canoe.getSolveType().equals("Floating")){
+            FloatingSolution solution = BeamSolverService.solveFloatingSystem(canoe);
+            if (solution == null) {
+                mainController.showSnackbar("Error, buoyancy solver could not converge to a solution");
 
+            }
+
+            // Proceed with floating system solve if no tipping or sinking is detected
+            PiecewiseContinuousLoadDistribution buoyancy = solution.getSolvedBuoyancy();
+            if (buoyancy.getForce() != 0) canoe.addLoad(buoyancy);
+        }
         displayChart(canoe);
 
     }
@@ -266,4 +276,5 @@ public class PunchingShearController implements Initializable {
         // Add the chart to the container
         chartContainer.getChildren().add(chart);
     }
+
 }

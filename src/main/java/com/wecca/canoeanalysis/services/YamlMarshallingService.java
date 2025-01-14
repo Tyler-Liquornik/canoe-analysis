@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.wecca.canoeanalysis.aop.Traceable;
@@ -78,6 +79,14 @@ public class YamlMarshallingService {
         if (fileToDownload != null) {
             try {
                 // Serialize the object to a YAML string
+
+                for (int i = 0; i < canoe.getLoads().size(); i++) {
+                    if (canoe.getLoads().get(i).getType().name().equals("BUOYANCY")) {
+                        canoe.getLoads().remove(i);
+                        i--;  // Adjust index since the list has shrunk
+                    }
+                }
+
                 String yamlString = yamlMapper.writeValueAsString(canoe);
 
                 // Add a comment to the top of the YAML string
@@ -160,6 +169,7 @@ public class YamlMarshallingService {
                         adjustedCanoe.setSessionMaxShear(canoe.getSessionMaxShear());
                     }
 
+                    adjustedCanoe.setSolveType(canoe.getSolveType());
                     adjustedCanoe.setHull(canoe.getHull());
                     for (Load load : canoe.getLoads())
                         adjustedCanoe.addLoad(load);
@@ -190,9 +200,9 @@ public class YamlMarshallingService {
                         Canoe adjustedCanoe = new Canoe();
                         if(canoe.getSessionMaxShear() > 0){
                             adjustedCanoe.setSessionMaxShear(canoe.getSessionMaxShear());
-                            fileName = fileToUpload.getName();
-                        }
 
+                        }
+                        adjustedCanoe.setSolveType(canoe.getSolveType());
                         adjustedCanoe.setHull(canoe.getHull());
                         for (Load load : canoe.getLoads())
                             adjustedCanoe.addLoad(load);
@@ -202,6 +212,7 @@ public class YamlMarshallingService {
 
                         if (adjustedCanoe.getSessionMaxShear() > maxSessionShear) {
                             maxSessionShear = adjustedCanoe.getSessionMaxShear();
+                            fileName = fileToUpload.getName();
 
                             canoeProcessor.accept(adjustedCanoe);
                         }
