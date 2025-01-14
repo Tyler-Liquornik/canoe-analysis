@@ -45,7 +45,7 @@ This is a relatively simple module, developed as an internal tool to solve a reg
 
 <div style="display: flex; flex-direction: row;">
     <img src="images/percent-open-area-blank.png" alt = "percent-open-area-blank" style="width: 49%;" />
-    <img src="images/percent-open-area-analyzed.png" alt = "percent-open-area-analyzed" style="width: 66%;" />
+    <img src="images/percent-open-area-analyzed.png" alt = "percent-open-area-analyzed" style="width: 49%;" />
 </div>
 
 This module is used by simply uploading a photo of the mesh, and then our image analysis API does the bulk of the work to determine if the mesh meets open area regulations.
