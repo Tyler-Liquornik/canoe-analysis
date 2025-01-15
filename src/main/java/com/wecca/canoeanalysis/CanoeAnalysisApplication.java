@@ -60,7 +60,7 @@ public class CanoeAnalysisApplication extends Application {
 
         // Load the color from the previous session or the default orange "#F96C37" on first load
         ColorManagerService.putColorPalette("primary", YamlMarshallingService
-                        .loadYamlData(Settings.class, new Settings("#F96C37"), YamlMarshallingService.SETTINGS_FILE_PATH)
+                        .loadYamlData(Settings.class, new Settings("#F96C37", false), YamlMarshallingService.SETTINGS_FILE_PATH)
                         .getPrimaryColor());
     }
 

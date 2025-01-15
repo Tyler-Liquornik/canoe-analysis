@@ -45,6 +45,8 @@ public class MainController implements Initializable {
     private JFXSnackbar snackbar;
     @FXML
     private AnchorPane root, moduleInjectionRoot, toolBarPane;
+    @Getter
+    private boolean isImperialUnitsEnabled;
 
     // Stage state management
     private Scene primaryScene;

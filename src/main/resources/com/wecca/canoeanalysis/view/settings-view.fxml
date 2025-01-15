@@ -21,16 +21,16 @@
             <Insets left="1.0" />
          </padding>
       </JFXToggleButton>
-      <JFXToggleButton layoutX="175.0" layoutY="95.0" maxHeight="30.0" maxWidth="50.0" minHeight="30.0" minWidth="50.0" prefHeight="30.0" prefWidth="161.0" text=".">
+      <JFXToggleButton fx:id="imperialUnitsToggleButton" layoutX="175.0" layoutY="95.0" maxHeight="30.0" maxWidth="50.0" minHeight="30.0" minWidth="50.0" prefHeight="30.0" prefWidth="161.0" text=".">
          <padding>
             <Insets left="1.0" />
          </padding>
       </JFXToggleButton>
-      <JFXButton buttonType="RAISED" layoutX="308.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #BB86FC;"/>
-      <JFXButton buttonType="RAISED" layoutX="278.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #4169E1;"/>
-      <JFXButton buttonType="RAISED" layoutX="248.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #3CC6F8;"/>
-      <JFXButton buttonType="RAISED" layoutX="218.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #009688;"/>
-      <JFXButton buttonType="RAISED" layoutX="188.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setPrimaryColor" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #F96C37;"/>
+      <JFXButton buttonType="RAISED" layoutX="308.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setSettings" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #BB86FC;"/>
+      <JFXButton buttonType="RAISED" layoutX="278.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setSettings" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #4169E1;"/>
+      <JFXButton buttonType="RAISED" layoutX="248.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setSettings" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #3CC6F8;"/>
+      <JFXButton buttonType="RAISED" layoutX="218.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setSettings" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #009688;"/>
+      <JFXButton buttonType="RAISED" layoutX="188.0" layoutY="56.0" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" onAction="#setSettings" prefHeight="25.0" prefWidth="25.0" style="-fx-background-color: #F96C37;"/>
       <Label layoutX="20.0" layoutY="195.0" prefHeight="18.0" prefWidth="314.0" styleClass="setting-info" text="This feature is coming soon" wrapText="true" />
       <Label layoutX="20.0" layoutY="116.0" prefHeight="18.0" prefWidth="314.0" styleClass="setting-info" text="This feature is coming soon" wrapText="true" />
    </children>

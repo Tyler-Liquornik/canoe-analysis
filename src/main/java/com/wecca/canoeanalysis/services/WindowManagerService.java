@@ -48,8 +48,8 @@ public class WindowManagerService {
         popupStage.getIcons().add(icon);
 
         // Setting up the diagram specifics
-        AreaChart<Number, Number> chart = DiagramService.setupChart(canoe, points, yUnits, yValName);
-        chartPane.getChildren().add(chart);
+        AreaChart<Number, Number> chart = DiagramService.setupChart(canoe, points, yUnits, yValName, chartPane);
+
 
         // Setting up the window with a decorator
         JFXDecorator decorator = getDraggableJFXDecorator(popupStage, chartPane);

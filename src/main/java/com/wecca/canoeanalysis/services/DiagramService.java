@@ -3,18 +3,27 @@ package com.wecca.canoeanalysis.services;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.DiagramInterval;
+import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
+import javafx.geometry.Bounds;
+import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
+import org.apache.commons.math3.fitting.PolynomialCurveFitter;
+import org.apache.commons.math3.fitting.WeightedObservedPoint;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import javafx.animation.PauseTransition;
 import javafx.geometry.Point2D;
+import javafx.scene.Group;
 import javafx.scene.chart.*;
+import javafx.util.Pair;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.util.Duration;
 import java.util.*;
 import java.util.List;
@@ -27,6 +36,7 @@ public class DiagramService {
     private static final Map<AreaChart<Number, Number>, Double> lastTooltipYMap = new HashMap<>();
     private static final Map<AreaChart<Number, Number>, MouseEvent> latestMouseEventMap = new HashMap<>();
     private static final double TOOLTIP_UPDATE_THRESHOLD = 0.1;
+    static double yValue = 0;
 
     /**
      * Sets up the chart for the diagram window.
@@ -36,22 +46,154 @@ public class DiagramService {
      * @param yValName the name representing the y val (i.e. Force or Moment)
      * @return the configured AreaChart
      */
-    public static AreaChart<Number, Number> setupChart(Canoe canoe, List<Point2D> points, String yUnits, String yValName) {
+    public static AreaChart<Number, Number> setupChart(Canoe canoe, List<Point2D> points, String yUnits, String yValName, Pane chartPane) {
         // Setting up the axes
         NumberAxis yAxis = setupYAxis(yUnits, yValName);
         FixedTicksNumberAxis xAxis = setupXAxis(canoe);
 
         // Creating and styling the chart
         AreaChart<Number, Number> chart = new AreaChart<>(xAxis, yAxis);
-
+        chartPane.getChildren().add(chart);
         chart.setPrefSize(1125, 750);
         chart.setLegendVisible(false);
 
+
+
         // Adding data to chart
         addSeriesToChart(canoe, points, yUnits, yValName, chart);
-        showMousePositionAsTooltip(chart, yUnits, yValName);
+        Map<Pair<Double, Double>, PolynomialFunction> pieceWiseFunction = createPieceWiseFunction(chart);
+        showMousePositionAsTooltip(chart, yUnits, yValName, chartPane, pieceWiseFunction);
+
+
 
         return chart;
+    }
+
+    /**
+     * Creates a piecewise polynomial function for the given chart data.
+     * Each series in the chart represents an interval for which a polynomial function is created.
+     *
+     * @param chart The AreaChart containing the data series to process.
+     * @return A map where each key is an interval (pair of x-values), and the value is the corresponding polynomial function.
+     */
+    private static Map<Pair<Double, Double>, PolynomialFunction> createPieceWiseFunction(AreaChart<Number, Number> chart) {
+        Map<Pair<Double, Double>, PolynomialFunction> pieceWiseFunction = new HashMap<>();
+
+        for (XYChart.Series<Number, Number> series : chart.getData()) {
+
+            // Create the interval for which the function is defined
+            double firstX = series.getData().getFirst().getXValue().doubleValue();
+            double lastX = series.getData().getLast().getXValue().doubleValue();
+            List<Point2D> points = new ArrayList<>();
+            Pair<Double, Double> interval = new Pair<>(firstX, lastX);
+
+            // Fill the list with points for polynomial fitting
+            for (XYChart.Data<Number, Number> data : series.getData()) {
+                double x = data.getXValue().doubleValue();
+                double y = data.getYValue().doubleValue();
+                points.add(new Point2D(x, y));
+            }
+
+            // Determine the degree of the polynomial and create the function
+            int degree = getDegree(points); // Assume a default max degree of 30
+            PolynomialFunction polynomial;
+            if (degree == 1)
+                polynomial = createLine(points);
+            else {
+                polynomial = fitCurve(points, degree);
+            }
+
+            // Add the interval and polynomial function to the map
+            pieceWiseFunction.put(interval, polynomial);
+        }
+        return pieceWiseFunction;
+    }
+    /**
+     * Creates a linear polynomial function (degree 1) that passes through two given points.
+     *
+     * @param points The list of two points to define the line.
+     * @return A PolynomialFunction representing the line in the form c + m * x.
+     */
+    private static PolynomialFunction createLine(List<Point2D> points) {
+        double x1 = points.getFirst().getX();
+        double y1 = points.getFirst().getY();
+        double x2 = points.getLast().getX();
+        double y2 = points.getLast().getY();
+
+        // Calculate the slope (m)
+        double m = (y2 - y1) / (x2 - x1);
+
+        // Calculate the y-intercept (c)
+        double c = y1 - m * x1;
+
+        // Return the PolynomialFunction with coefficients [c, m] (c + m * x)
+        return new PolynomialFunction(new double[]{c, m});
+    }
+
+    /**
+     * Computes the Mean Squared Error (MSE) between the predicted values of a polynomial function
+     * and the actual values of a given set of points.
+     *
+     * @param function The PolynomialFunction to evaluate.
+     * @param points The list of points to compare against the function.
+     * @return The calculated Mean Squared Error (MSE).
+     */
+    private static double computeMSE(PolynomialFunction function, List<Point2D> points) {
+        double mse = 0.0;
+        for (Point2D point : points) {
+            double predictedY = function.value(point.getX());
+            mse += Math.pow(predictedY - point.getY(), 2);
+        }
+        return mse / points.size();
+    }
+
+    /**
+     * Determines the optimal polynomial degree for a given set of points by minimizing the Mean Squared Error (MSE).
+     * Iterates through polynomial degrees from 1 to the specified maximum degree and selects the one with the lowest MSE.
+     *
+     * @param points The list of points to evaluate.
+     * @return The optimal polynomial degree with the lowest MSE.
+     */
+    private static int getDegree(List<Point2D> points) {
+        int optimalDegree = 1;
+        double minMSE = Double.MAX_VALUE;
+        int maxDegree = 30;
+        if(points.size()==2) return  1;
+
+        for (int degree = 1; degree <= maxDegree; degree++) {
+            PolynomialFunction function = fitCurve(points, degree);
+            double mse = computeMSE(function, points);
+            System.out.println("Degree: " + degree + ", MSE: " + mse);
+            if (mse < minMSE) {
+                minMSE = mse;
+                optimalDegree = degree;
+            }
+        }
+
+        return optimalDegree;
+    }
+    /**
+     * Fits a polynomial curve to a given set of points using the specified degree.
+     * The method uses weighted observed points for fitting and returns the resulting polynomial function.
+     *
+     * @param points The list of points to fit the polynomial curve to.
+     * @param degree The degree of the polynomial to fit.
+     * @return The fitted PolynomialFunction representing the curve.
+     */
+    private static PolynomialFunction fitCurve(List<Point2D> points, int degree) {
+        // Prepare the data for fitting
+        List<WeightedObservedPoint> observedPoints = new ArrayList<>();
+        for (Point2D point : points) {
+            observedPoints.add(new WeightedObservedPoint(1.0, point.getX(), point.getY()));
+        }
+
+        // Fit the polynomial curve
+        PolynomialCurveFitter fitter = PolynomialCurveFitter.create(degree);
+
+        double[] coefficients = fitter.fit(observedPoints);
+
+        // Create and return the polynomial function
+        return new PolynomialFunction(coefficients);
     }
 
     /**
@@ -121,6 +263,7 @@ public class DiagramService {
      * @return the list of points with groups reduced to their median points
      */
     private static List<Point2D> combineClosePoints(List<Point2D> points) {
+
         if (points.isEmpty()) return points;
 
         List<Point2D> combinedPoints = new ArrayList<>();
@@ -167,11 +310,24 @@ public class DiagramService {
         return group.get(group.size() / 2); // Middle element (choose left middle if two middle elements)
     }
 
-    public static void showMousePositionAsTooltip(AreaChart<Number, Number> chart, String yUnits, String yValName) {
+    private static void showMousePositionAsTooltip(AreaChart<Number, Number> chart, String yUnits, String yValName, Pane chartPane, Map<Pair<Double, Double>, PolynomialFunction> pieceWiseFunction) {
         Tooltip tooltip = new Tooltip(); // Initialize tooltip
         tooltip.setShowDelay(Duration.millis(0));
         tooltip.setHideDelay(Duration.millis(0));
         tooltip.setAutoHide(false);
+        Line verticalLine = new Line();
+        Circle circle = new Circle(5, ColorPaletteService.getColor("primary"));
+
+
+        verticalLine.setStroke(ColorPaletteService.getColor("primary"));
+        verticalLine.setStrokeWidth(1.0);
+        verticalLine.getStrokeDashArray().addAll(5.0, 5.0);
+        verticalLine.setMouseTransparent(true);
+
+        // Add the line to the chartPane
+        chartPane.getChildren().add(verticalLine);
+        chartPane.getChildren().add(circle);
+
 
         // Initialize PauseTransition for the chart
         PauseTransition tooltipDelay = new PauseTransition(Duration.millis(300));
@@ -183,18 +339,67 @@ public class DiagramService {
         });
 
         chart.setOnMouseMoved(event -> {
-            latestMouseEventMap.put(chart, event); // Store the latest mouse event
-            tooltip.hide(); // Hide tooltip immediately when mouse moves
-            tooltipDelay.playFromStart(); // Restart the delay timer
+            latestMouseEventMap.put(chart, event);
+            // Hide tooltip immediately when mouse moves
+            tooltip.hide();
+            tooltipDelay.playFromStart();
+
+            double mouseX = event.getX() - chart.getXAxis().getLayoutX();
+            Axis<Number> xAxis = chart.getXAxis();
+            double xValue = xAxis.getValueForDisplay(mouseX).doubleValue();
+
+            Bounds xAxisBoundsInParent = xAxis.localToParent(xAxis.getBoundsInLocal());
+            double xAxisWidthInParent = xAxisBoundsInParent.getMaxX();
+
+            double verticalLineX = mouseX + xAxis.localToScene(0, 0).getX();
+            if(verticalLineX<= xAxis.localToScene(0, 0).getX()) verticalLineX = xAxis.localToScene(0, 0).getX();
+            if(verticalLineX >= xAxisWidthInParent) verticalLineX = xAxisWidthInParent;
+
+            // Update the vertical line's X position
+            verticalLine.setStartX(verticalLineX);
+            verticalLine.setEndX(verticalLineX);
+
+            // Update the Y position based on the mouse's location
+            NumberAxis yAxis = (NumberAxis) chart.getYAxis();
+            double chartTopSceneX = yAxis.localToScene(0, 0).getX();
+            double chartTopSceneY = yAxis.localToScene(0, 0).getY();
+            double chartBottomSceneX = yAxis.localToScene(0, yAxis.getHeight()).getX();
+            double chartBottomSceneY = yAxis.localToScene(0, yAxis.getHeight()).getY();
+
+            // Convert both X and Y to local coordinates
+            double bottomBound = chartPane.sceneToLocal(chartBottomSceneX, chartBottomSceneY).getY();
+            double topBound = chartPane.sceneToLocal(chartTopSceneX, chartTopSceneY).getY();
+
+           for(Map.Entry<Pair<Double, Double>, PolynomialFunction> entry : pieceWiseFunction.entrySet()){
+               Pair<Double, Double> interval = entry.getKey();
+               PolynomialFunction function = entry.getValue();
+               double x1 = interval.getKey();
+               double x2 = interval.getValue();
+               if(xValue<=x2 && xValue>=x1){
+                   yValue = function.value(xValue);
+                   break;
+               }
+           }
+
+            double circleY = chart.getYAxis().getDisplayPosition(yValue);
+            Bounds yAxisBoundsInParent = chart.getYAxis().localToParent(chart.getYAxis().getBoundsInLocal());
+            double adjustedDynamicLineLength =  circleY + yAxisBoundsInParent.getMinY()*3 + 1.5 ;
+
+            circle.setCenterX(verticalLineX);
+            circle.setCenterY(adjustedDynamicLineLength);
+
+            verticalLine.setStartY(bottomBound);
+
+            verticalLine.setEndY(topBound);
         });
 
         chart.setOnMouseExited(event -> {
-            tooltip.hide(); // Hide tooltip when mouse exits the chart
+             // Hide tooltip when mouse exits the chart
+            tooltip.hide();
             tooltipDelay.stop(); // Stop any ongoing delay
+
         });
-
         Tooltip.install(chart, tooltip); // Attach the tooltip to the chart
-
         // Initialize state maps
         isHoveringOverCircleMap.put(chart, false);
         lastTooltipXMap.put(chart, -1.0);
@@ -219,7 +424,6 @@ public class DiagramService {
         if (xAxis instanceof ValueAxis<Number> xValueAxis && yAxis instanceof ValueAxis<Number> yValueAxis) {
             if (mouseX >= 0 && mouseX <= xValueAxis.getWidth() && mouseY >= 0 && mouseY <= yValueAxis.getHeight()) {
                 double xValue = xValueAxis.getValueForDisplay(mouseX).doubleValue();
-                double yValue = yValueAxis.getValueForDisplay(mouseY).doubleValue();
 
                 double lastTooltipX = lastTooltipXMap.getOrDefault(chart, -1.0);
                 double lastTooltipY = lastTooltipYMap.getOrDefault(chart, -1.0);
@@ -260,7 +464,8 @@ public class DiagramService {
             // Skip if the point does not match
             if (point.getY() != dataY || point.getX() != dataX) continue;
 
-            Circle circle = new Circle(5, ColorPaletteService.getColor("primary")); // Create a circle for the point
+            Circle circle = new Circle(5, ColorPaletteService.getColor("primary"));
+            // Create a circle for the point
             data.setNode(circle);
 
             // Tooltip text with "Critical" prefix

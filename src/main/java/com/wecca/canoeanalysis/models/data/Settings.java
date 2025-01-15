@@ -8,9 +8,11 @@ import lombok.Data;
 public class Settings {
     @JsonProperty("primaryColor")
     private String primaryColor;
-
+    @JsonProperty("isImperialUnits")
+    private boolean isImperialUnits ;
     @JsonCreator
-    public Settings(@JsonProperty("primaryColor") String primaryColor) {
+    public Settings(@JsonProperty("primaryColor") String primaryColor, @JsonProperty("isImperialUnits") boolean isImperialUnits) {
         this.primaryColor = primaryColor;
+        this.isImperialUnits = isImperialUnits;
     }
 }
