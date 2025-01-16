@@ -32,7 +32,7 @@ public class HullGraphic extends Group implements FunctionGraphic {
      */
     public HullGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
         this.closingTopLine = new Line(encasingRectangle.getX(), encasingRectangle.getY(), encasingRectangle.getX() + encasingRectangle.getWidth(), encasingRectangle.getY());
-        this.curvedGraphic = new CurvedGraphic(function, section, encasingRectangle);
+        this.curvedGraphic = new CurvedGraphic(function, section, encasingRectangle, true);
         draw();
     }
 

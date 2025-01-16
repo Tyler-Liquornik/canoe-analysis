@@ -4,6 +4,7 @@ import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.controls.IconButton;
 import com.wecca.canoeanalysis.components.controls.Knob;
+import com.wecca.canoeanalysis.components.graphics.CurvedGraphic;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.components.graphics.hull.CubicBezierSplineHullGraphic;
 import com.wecca.canoeanalysis.controllers.MainController;
@@ -11,6 +12,7 @@ import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
+import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
@@ -21,7 +23,7 @@ import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.*;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
@@ -68,6 +70,8 @@ public class HullBuilderController implements Initializable {
     private CubicBezierSplineHullGraphic hullGraphic;
     private Line mouseXTrackerLine;
     private Circle intersectionPoint;
+    private AnchorPane overlayPane;
+    private AnchorPane intersectionPointPane;
 
     // State
     private boolean previousPressedBefore;
@@ -166,9 +170,11 @@ public class HullBuilderController implements Initializable {
             mouseXTrackerLine.setStartX(hullViewAnchorPane.getWidth() / 2);
             mouseXTrackerLine.setEndX(hullViewAnchorPane.getWidth() / 2);
             updateMouseLinePoint(new Point2D(hullGraphicPane.getWidth() / 2, hullGraphicPane.getHeight()));
-            mouseXTrackerLine.setStartY(0);
-            mouseXTrackerLine.setEndY(hullViewAnchorPane.getHeight());
+            mouseXTrackerLine.setStartY(1);
+            mouseXTrackerLine.setEndY(hullViewAnchorPane.getHeight() - 1);
         }
+
+        updateSectionsEditorHullCurveOverlay();
 
         // Notify the user
         mainController.showSnackbar(sectionEditorEnabled
@@ -177,16 +183,52 @@ public class HullBuilderController implements Initializable {
     }
 
     /**
+     * Updates the hull curve overlay to show regions between control points in each section.
+     * The overlays are added to a dedicated `overlayPane` above the `hullGraphicPane`.
+     */
+    private void updateSectionsEditorHullCurveOverlay() {
+        boolean enableOverlays = overlayPane.getChildren().isEmpty();
+        overlayPane.getChildren().clear();
+        if (enableOverlays) {
+            // Each section is a candidate for an overlay if there's room
+            for (HullSection section : hull.getHullSections()) {
+                if (!(section.getSideProfileCurve() instanceof CubicBezierFunction bezier))
+                    throw new IllegalArgumentException("Can only work with Bezier Hulls");
+
+                // Determine the x-range between the control points, which acts as the free section to place a knot point
+                double lControlX = bezier.getControlX1();
+                double rControlX = bezier.getControlX2();
+                Section freeSection = new Section(lControlX, rControlX);
+                if (freeSection.getLength() <= 1e-2) continue;
+                double maxY = bezier.getMaxValue(freeSection);
+                double minY = bezier.getMinValue(freeSection);
+
+                // Create a CurvedGraphic overlay
+                // Map the overlay rectangle to the corresponding portion of the graphics pane
+                Rectangle validAddKnotRectangle = new Rectangle(
+                        (lControlX / hull.getLength()) * overlayPane.getWidth(),
+                        (minY / -hull.getMaxHeight()) * overlayPane.getHeight(),
+                        ((rControlX - lControlX) / hull.getLength()) * overlayPane.getWidth(),
+                        ((Math.abs(maxY - minY)) / -hull.getMaxHeight()) * overlayPane.getHeight()
+                );
+                CurvedGraphic overlay = new CurvedGraphic(bezier, new Section(lControlX, rControlX), validAddKnotRectangle, false);
+                overlay.getLinePath().setStrokeWidth(2.0);
+                overlay.recolor(true);
+                overlayPane.getChildren().add(overlay);
+            }
+        }
+    }
+
+    /**
      * Displays the intersection point on the hull view pane.
-     *
      * @param position The position of the intersection point in the hull view pane's local coordinate space.
      */
     private void updateMouseLinePoint(Point2D position) {
         // Initialize the intersection point if it doesn't exist
-        if (!hullGraphicPane.getChildren().contains(intersectionPoint)) {
+        if (!intersectionPointPane.getChildren().contains(intersectionPoint)) {
             intersectionPoint = new Circle(5);
             intersectionPoint.setFill(ColorPaletteService.getColor("white"));
-            hullGraphicPane.getChildren().add(intersectionPoint);
+            intersectionPointPane.getChildren().add(intersectionPoint);
         }
 
         // Update the position and make it visible
@@ -1066,7 +1108,26 @@ public class HullBuilderController implements Initializable {
         poiDataLabel.setText(pointData);
         double centerX = (poiTitleLabel.getWidth() / 2) + poiTitleLabel.getLayoutX();
         double poiDataLabelX = centerX - (poiDataLabel.getWidth() / 2);
-        poiDataLabel.setLayoutX(poiDataLabelX);    }
+        poiDataLabel.setLayoutX(poiDataLabelX);
+    }
+
+    /**
+     * Copies the fields of the source pane for position and dimension into a new pane
+     * @param sourcePane the pane to clone the fields from
+     * @return the new pane which overlays the original if in the same parent (assuming no styles interfere)
+     */
+    private AnchorPane getOverlayPane(AnchorPane sourcePane) {
+        AnchorPane overlayPane = new AnchorPane();
+        overlayPane.setLayoutX(sourcePane.getLayoutX());
+        overlayPane.setLayoutY(sourcePane.getLayoutY());
+        overlayPane.setPrefWidth(sourcePane.getPrefWidth());
+        overlayPane.setPrefHeight(sourcePane.getPrefHeight());
+        overlayPane.setMinWidth(sourcePane.getMinWidth());
+        overlayPane.setMinHeight(sourcePane.getMinHeight());
+        overlayPane.setMaxWidth(sourcePane.getMaxWidth());
+        overlayPane.setMaxHeight(sourcePane.getMaxHeight());
+        return overlayPane;
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -1084,6 +1145,21 @@ public class HullBuilderController implements Initializable {
         setSideViewHullGraphic(hull);
         setBlankSectionProperties();
 
+        // Sections Editor
+        mouseXTrackerLine = new Line();
+        mouseXTrackerLine.setVisible(false);
+        hullViewAnchorPane.getChildren().addLast(mouseXTrackerLine);
+        poiTitleLabel.setText("");
+        poiDataLabel.setText("");
+        overlayPane = new AnchorPane();
+        intersectionPointPane = new AnchorPane();
+        overlayPane.setPickOnBounds(false);
+        intersectionPointPane.setPickOnBounds(false);
+        overlayPane = getOverlayPane(hullGraphicPane);
+        intersectionPointPane = getOverlayPane(hullGraphicPane);
+        hullViewAnchorPane.getChildren().add(overlayPane);
+        hullViewAnchorPane.getChildren().add(intersectionPointPane);
+
         // Initialize state
         previousPressedBefore = false;
         nextPressedBefore = false;
@@ -1092,12 +1168,5 @@ public class HullBuilderController implements Initializable {
         sectionPropertiesSelected = true;
         graphicsViewingState = 0;
         sectionEditorEnabled = false;
-
-        // Sections Editor
-        mouseXTrackerLine = new Line();
-        mouseXTrackerLine.setVisible(false);
-        hullViewAnchorPane.getChildren().addLast(mouseXTrackerLine);
-        poiTitleLabel.setText("");
-        poiDataLabel.setText("");
     }
 }

@@ -519,7 +519,7 @@ public class BeamController implements Initializable {
                                             ? piecewiseValue // Adjust the distribution graphic by adding the hull curve
                                             : piecewiseValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), loadMax / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
                                 };
-                                rescaledGraphics.add(new CurvedGraphic(f, piecewise.getSection(), rect));
+                                rescaledGraphics.add(new CurvedGraphic(f, piecewise.getSection(), rect, true));
                             }
                         }
                         default -> throw new IllegalStateException("Invalid load type");
