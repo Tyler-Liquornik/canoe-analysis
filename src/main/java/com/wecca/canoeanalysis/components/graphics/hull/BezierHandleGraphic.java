@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis.components.graphics.hull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.graphics.Graphic;
+import com.wecca.canoeanalysis.components.graphics.PointGraphic;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.geometry.Point2D;

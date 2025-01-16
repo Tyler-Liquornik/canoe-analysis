@@ -3,9 +3,11 @@ package com.wecca.canoeanalysis.services;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.diagrams.FixedTicksNumberAxis;
 import com.wecca.canoeanalysis.components.diagrams.DiagramInterval;
-import com.wecca.canoeanalysis.services.color.ColorManagerService;
+import com.wecca.canoeanalysis.components.graphics.PointGraphic;
+import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.geometry.Bounds;
+import lombok.Setter;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.fitting.PolynomialCurveFitter;
 import org.apache.commons.math3.fitting.WeightedObservedPoint;
@@ -14,9 +16,7 @@ import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import javafx.animation.PauseTransition;
 import javafx.geometry.Point2D;
-import javafx.scene.Group;
 import javafx.scene.chart.*;
-import javafx.util.Pair;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import javafx.scene.control.Tooltip;
@@ -36,7 +36,7 @@ public class DiagramService {
     private static final Map<AreaChart<Number, Number>, Double> lastTooltipYMap = new HashMap<>();
     private static final Map<AreaChart<Number, Number>, MouseEvent> latestMouseEventMap = new HashMap<>();
     private static final double TOOLTIP_UPDATE_THRESHOLD = 0.1;
-    static double yValue = 0;
+    private static double mouseLinePoiYValue = 0;
 
     /**
      * Sets up the chart for the diagram window.
@@ -57,14 +57,10 @@ public class DiagramService {
         chart.setPrefSize(1125, 750);
         chart.setLegendVisible(false);
 
-
-
         // Adding data to chart
         addSeriesToChart(canoe, points, yUnits, yValName, chart);
-        Map<Pair<Double, Double>, PolynomialFunction> pieceWiseFunction = createPieceWiseFunction(chart);
+        Map<Section, PolynomialFunction> pieceWiseFunction = createPieceWiseFunction(chart);
         showMousePositionAsTooltip(chart, yUnits, yValName, chartPane, pieceWiseFunction);
-
-
 
         return chart;
     }
@@ -76,8 +72,8 @@ public class DiagramService {
      * @param chart The AreaChart containing the data series to process.
      * @return A map where each key is an interval (pair of x-values), and the value is the corresponding polynomial function.
      */
-    private static Map<Pair<Double, Double>, PolynomialFunction> createPieceWiseFunction(AreaChart<Number, Number> chart) {
-        Map<Pair<Double, Double>, PolynomialFunction> pieceWiseFunction = new HashMap<>();
+    private static Map<Section, PolynomialFunction> createPieceWiseFunction(AreaChart<Number, Number> chart) {
+        Map<Section, PolynomialFunction> pieceWiseFunction = new HashMap<>();
 
         for (XYChart.Series<Number, Number> series : chart.getData()) {
 
@@ -85,7 +81,7 @@ public class DiagramService {
             double firstX = series.getData().getFirst().getXValue().doubleValue();
             double lastX = series.getData().getLast().getXValue().doubleValue();
             List<Point2D> points = new ArrayList<>();
-            Pair<Double, Double> interval = new Pair<>(firstX, lastX);
+            Section interval = new Section(firstX, lastX);
 
             // Fill the list with points for polynomial fitting
             for (XYChart.Data<Number, Number> data : series.getData()) {
@@ -310,26 +306,23 @@ public class DiagramService {
         return group.get(group.size() / 2); // Middle element (choose left middle if two middle elements)
     }
 
-    private static void showMousePositionAsTooltip(AreaChart<Number, Number> chart, String yUnits, String yValName, Pane chartPane, Map<Pair<Double, Double>, PolynomialFunction> pieceWiseFunction) {
+    private static void showMousePositionAsTooltip(AreaChart<Number, Number> chart, String yUnits, String yValName, Pane chartPane, Map<Section, PolynomialFunction> piecewisePolynomialApproximation) {
         Tooltip tooltip = new Tooltip(); // Initialize tooltip
         tooltip.setShowDelay(Duration.millis(0));
         tooltip.setHideDelay(Duration.millis(0));
         tooltip.setAutoHide(false);
+
         Line verticalLine = new Line();
-        Circle circle = new Circle(5, ColorPaletteService.getColor("primary"));
-
-
-        verticalLine.setStroke(ColorPaletteService.getColor("primary"));
+        verticalLine.setStroke(ColorPaletteService.getColor("white"));
         verticalLine.setStrokeWidth(1.0);
         verticalLine.getStrokeDashArray().addAll(5.0, 5.0);
         verticalLine.setMouseTransparent(true);
 
-        // Add the line to the chartPane
-        chartPane.getChildren().add(verticalLine);
-        chartPane.getChildren().add(circle);
 
 
-        // Initialize PauseTransition for the chart
+        // Reference to the current PointGraphic (one element array is a workaround for null safety in a lambda)
+        final PointGraphic[] currentPointGraphic = {null};
+
         PauseTransition tooltipDelay = new PauseTransition(Duration.millis(300));
         tooltipDelay.setOnFinished(event -> {
             if (!isHoveringOverCircleMap.getOrDefault(chart, false) &&
@@ -339,8 +332,9 @@ public class DiagramService {
         });
 
         chart.setOnMouseMoved(event -> {
+            if (!chartPane.getChildren().contains(verticalLine)) chartPane.getChildren().add(verticalLine);
+
             latestMouseEventMap.put(chart, event);
-            // Hide tooltip immediately when mouse moves
             tooltip.hide();
             tooltipDelay.playFromStart();
 
@@ -352,59 +346,70 @@ public class DiagramService {
             double xAxisWidthInParent = xAxisBoundsInParent.getMaxX();
 
             double verticalLineX = mouseX + xAxis.localToScene(0, 0).getX();
-            if(verticalLineX<= xAxis.localToScene(0, 0).getX()) verticalLineX = xAxis.localToScene(0, 0).getX();
-            if(verticalLineX >= xAxisWidthInParent) verticalLineX = xAxisWidthInParent;
+            if (verticalLineX <= xAxis.localToScene(0, 0).getX()) verticalLineX = xAxis.localToScene(0, 0).getX();
+            if (verticalLineX >= xAxisWidthInParent) verticalLineX = xAxisWidthInParent;
 
-            // Update the vertical line's X position
             verticalLine.setStartX(verticalLineX);
             verticalLine.setEndX(verticalLineX);
 
-            // Update the Y position based on the mouse's location
             NumberAxis yAxis = (NumberAxis) chart.getYAxis();
             double chartTopSceneX = yAxis.localToScene(0, 0).getX();
             double chartTopSceneY = yAxis.localToScene(0, 0).getY();
             double chartBottomSceneX = yAxis.localToScene(0, yAxis.getHeight()).getX();
             double chartBottomSceneY = yAxis.localToScene(0, yAxis.getHeight()).getY();
 
-            // Convert both X and Y to local coordinates
             double bottomBound = chartPane.sceneToLocal(chartBottomSceneX, chartBottomSceneY).getY();
             double topBound = chartPane.sceneToLocal(chartTopSceneX, chartTopSceneY).getY();
 
-           for(Map.Entry<Pair<Double, Double>, PolynomialFunction> entry : pieceWiseFunction.entrySet()){
-               Pair<Double, Double> interval = entry.getKey();
-               PolynomialFunction function = entry.getValue();
-               double x1 = interval.getKey();
-               double x2 = interval.getValue();
-               if(xValue<=x2 && xValue>=x1){
-                   yValue = function.value(xValue);
-                   break;
-               }
-           }
+            for (Map.Entry<Section, PolynomialFunction> entry : piecewisePolynomialApproximation.entrySet()) {
+                Section interval = entry.getKey();
+                PolynomialFunction function = entry.getValue();
+                double x1 = interval.getX();
+                double x2 = interval.getRx();
+                if (xValue <= x2 && xValue >= x1) {
+                    mouseLinePoiYValue = function.value(xValue);
+                    break;
+                }
+            }
 
-            double circleY = chart.getYAxis().getDisplayPosition(yValue);
+            double circleY = chart.getYAxis().getDisplayPosition(mouseLinePoiYValue);
             Bounds yAxisBoundsInParent = chart.getYAxis().localToParent(chart.getYAxis().getBoundsInLocal());
-            double adjustedDynamicLineLength =  circleY + yAxisBoundsInParent.getMinY()*3 + 1.5 ;
+            double adjustedDynamicLineLength = circleY + yAxisBoundsInParent.getMinY() * 3 + 1.5;
 
-            circle.setCenterX(verticalLineX);
-            circle.setCenterY(adjustedDynamicLineLength);
+            // Remove previous PointGraphic if it exists
+            if (currentPointGraphic[0] != null) chartPane.getChildren().remove(currentPointGraphic[0]);
+
+            // Create and add a new PointGraphic
+            PointGraphic pointGraphic = new PointGraphic(verticalLineX, adjustedDynamicLineLength, 5);
+            pointGraphic.recolor(true);
+            chartPane.getChildren().add(pointGraphic);
+
+            // Update the current PointGraphic reference
+            currentPointGraphic[0] = pointGraphic;
 
             verticalLine.setStartY(bottomBound);
-
             verticalLine.setEndY(topBound);
         });
 
         chart.setOnMouseExited(event -> {
-             // Hide tooltip when mouse exits the chart
             tooltip.hide();
-            tooltipDelay.stop(); // Stop any ongoing delay
+            tooltipDelay.stop();
 
+            // Remove the mouse tracker when the mouse exits
+            if (currentPointGraphic[0] != null) {
+                chartPane.getChildren().remove(currentPointGraphic[0]);
+                currentPointGraphic[0] = null;
+            }
+            chartPane.getChildren().remove(verticalLine);
         });
-        Tooltip.install(chart, tooltip); // Attach the tooltip to the chart
-        // Initialize state maps
+
+        Tooltip.install(chart, tooltip);
+
         isHoveringOverCircleMap.put(chart, false);
         lastTooltipXMap.put(chart, -1.0);
         lastTooltipYMap.put(chart, -1.0);
     }
+
 
     /**
      * Updates the tooltip content and position based on mouse movement.
@@ -432,7 +437,7 @@ public class DiagramService {
                 if (Math.abs(mouseX - lastTooltipX) > TOOLTIP_UPDATE_THRESHOLD ||
                         Math.abs(mouseY - lastTooltipY) > TOOLTIP_UPDATE_THRESHOLD) {
 
-                    String tooltipText = String.format("Distance: %.4f m, %s: %.4f %s", xValue, yValName, yValue, yUnits);
+                    String tooltipText = String.format("Distance: %.4f m, %s: %.4f %s", xValue, yValName, mouseLinePoiYValue, yUnits);
                     tooltip.setText(tooltipText);
                     tooltip.setX(event.getScreenX() + 10);
                     tooltip.setY(event.getScreenY() + 10);
@@ -461,38 +466,50 @@ public class DiagramService {
         double dataY = data.getYValue().doubleValue();
 
         for (Point2D point : filteredPoints) {
+
             // Skip if the point does not match
             if (point.getY() != dataY || point.getX() != dataX) continue;
 
-            Circle circle = new Circle(5, ColorPaletteService.getColor("primary"));
             // Create a circle for the point
-            data.setNode(circle);
+            PointGraphic pointGraphic = new PointGraphic(dataX, dataY, 5);
+            pointGraphic.recolor(true);
 
             // Tooltip text with "Critical" prefix
             String tooltipText = String.format("Critical Distance: %.4f m, Critical %s: %.4f %s", point.getX(), yValName, point.getY(), yUnits);
             Tooltip tooltip = new Tooltip(tooltipText);
-            Tooltip.install(circle, tooltip); // Attach a tooltip to the circle
+            Tooltip.install(pointGraphic, tooltip); // Attach a tooltip to the circle
 
             // Ensure state maps are initialized for this chart
             isHoveringOverCircleMap.putIfAbsent(chart, false);
 
-            circle.setOnMouseEntered(event -> {
+            double highlightedPointGrowthFactor = 0.2;
+
+            pointGraphic.setOnMouseEntered(event -> {
                 isHoveringOverCircleMap.put(chart, true); // Set state for hovering
                 tooltip.setStyle("-fx-font-weight: bold;"); // Set tooltip text to bold
-                tooltip.show(circle, event.getScreenX() + 10, event.getScreenY() + 10); // Show tooltip on hover
-                circle.setRadius(7); // Highlight the circle
-                circle.setFill(ColorPaletteService.getColor("primary-light"));
+                tooltip.show(pointGraphic, event.getScreenX() + 10, event.getScreenY() + 10); // Show tooltip on hover
+
+                // Highlight the point
+                Circle innerCircle = pointGraphic.getInnerCircle();
+                Circle outerCircle = pointGraphic.getOuterCircle();
+                innerCircle.setRadius(innerCircle.getRadius() * (1 + highlightedPointGrowthFactor));
+                outerCircle.setRadius(outerCircle.getRadius() * (1 + highlightedPointGrowthFactor));
+                innerCircle.setFill(ColorPaletteService.getColor("primary-light"));
             });
 
-            circle.setOnMouseExited(event -> {
+            pointGraphic.setOnMouseExited(event -> {
                 isHoveringOverCircleMap.put(chart, false); // Reset state for hovering
                 tooltip.hide(); // Hide tooltip when mouse exits
                 tooltip.setStyle("-fx-font-weight: normal;"); // Reset tooltip text to normal
-                circle.setRadius(5); // Reset circle size
-                circle.setFill(ColorPaletteService.getColor("primary"));
+                Circle innerCircle = pointGraphic.getInnerCircle();
+                Circle outerCircle = pointGraphic.getOuterCircle();
+                innerCircle.setRadius(innerCircle.getRadius() / (1 + highlightedPointGrowthFactor));
+                outerCircle.setRadius(outerCircle.getRadius() / (1 + highlightedPointGrowthFactor));
+                innerCircle.setFill(ColorPaletteService.getColor("primary"));
             });
 
-            return; // Only emphasize the first matching point
+            data.setNode(pointGraphic);
+            return;
         }
     }
 

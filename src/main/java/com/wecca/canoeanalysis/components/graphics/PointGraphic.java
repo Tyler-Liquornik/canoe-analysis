@@ -1,7 +1,6 @@
-package com.wecca.canoeanalysis.components.graphics.hull;
+package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
-import com.wecca.canoeanalysis.components.graphics.Graphic;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import javafx.scene.Group;
@@ -19,10 +18,10 @@ public class PointGraphic extends Group implements Graphic {
     private Circle outerCircle;
     private Circle innerCircle;
     private boolean isColored;
-    private static final double OUTER_RING_PERCENTAGE = 0.3;
+    private double outerRingPercentage = 0.25;
 
     /**
-     * Constructs a point with an inside circle and a constant outer ring (20%).
+     * Constructs a point as with two circles, to give the point a "border" with differently colored circles
      *
      * @param radius   The total radius of the outer circle.
      * @param x             The x-coordinate for the center of the circles.
@@ -30,7 +29,7 @@ public class PointGraphic extends Group implements Graphic {
      */
     public PointGraphic(double x, double y, double radius) {
         // Calculate the radii of the inner and outer circles
-        double innerCircleRadius = radius * (1 - OUTER_RING_PERCENTAGE);
+        double innerCircleRadius = radius * (1 - outerRingPercentage);
 
         // Note: +1 shifts graphics misalignment
         outerCircle = new Circle(x, y + 1, radius);
