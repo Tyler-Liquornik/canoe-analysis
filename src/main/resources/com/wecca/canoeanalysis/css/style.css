@@ -289,39 +289,54 @@ jfx-toggle-button,
     -fx-text-fill: -fx-danger;
 }
 
-
-.table-view {
-    -fx-background-color: black;
-    -fx-border-color: black;
-}
-
-
-.table-view .column-header-background {
-    -fx-background-color: #202020;
-}
-
-.table-view .column-header, .table-view .column-header-background {
-    -fx-text-fill: white;
-}
-
-
-.table-row-cell {
-    -fx-background-color: black;
-    -fx-text-fill: white;
-}
-
-
-.table-row-cell:selected {
+/* AnchorPane Background */
+.anchor-pane {
     -fx-background-color: #303030;
-    -fx-text-fill: white;
 }
 
+/* Safe and Unsafe Label Colors */
+.label[text="Safe"] {
+    -fx-text-fill: #A0B55F; /* Green shade */
+}
 
+.label[text="Unsafe"] {
+    -fx-text-fill: #F03030; /* Red shade */
+}
+
+/* Table Header Background Matches Even Row Color */
+.table-view .column-header-background {
+    -fx-background-color: #303030; /* Match even row color */
+    -fx-border-width: 0;
+}
+
+/* Column Header Text Styling */
+.table-view .column-header .label {
+    -fx-text-fill: white; /* White text for visibility */
+    -fx-font-size: 14px; /* Optional: Adjust font size for headers */
+}
+
+/* Table Row Alternate Coloring */
+.table-view .table-row-cell:odd {
+    -fx-background-color: #303030;
+}
+
+.table-view .table-row-cell:even {
+    -fx-background-color: black;
+}
+
+/* Remove Borders Between Rows */
 .table-view .table-row-cell {
-    -fx-border-color: gray;
+    -fx-border-width: 0;
 }
 
-
-.table-cell {
+/* Selected Row */
+.table-row-cell:selected {
+    -fx-background-color: #505050;
     -fx-text-fill: white;
 }
+
+
+
+
+
+

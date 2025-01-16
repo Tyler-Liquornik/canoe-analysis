@@ -4,34 +4,59 @@
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
-
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="603.0" prefWidth="600.0" stylesheets="@/com/wecca/canoeanalysis/css/style.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane
+        maxHeight="-Infinity"
+        maxWidth="-Infinity"
+        minHeight="-Infinity"
+        minWidth="-Infinity"
+        prefHeight="603.0"
+        prefWidth="600.0"
+        stylesheets="/com/wecca/canoeanalysis/css/style.css"
+        xmlns="http://javafx.com/javafx/15.0.1"
+        xmlns:fx="http://javafx.com/fxml/1"
+        fx:controller="com.wecca.canoeanalysis.controllers.popups.ShearEquationsController"
+        style="-fx-background-color: #303030;">
    <children>
-      <Label layoutX="92.0" layoutY="51.0" text="Shear Equations">
+      <Label layoutX="92.0" layoutY="20.0" text="Shear Equations" style="-fx-text-fill: white;">
          <font>
             <Font name="System Bold" size="18.0" />
          </font>
       </Label>
-      <Label layoutX="394.0" layoutY="51.0" text="Safe" textFill="#1eeb3a">
-         <font>
-            <Font size="18.0" />
-         </font>
-      </Label>
-      <Label layoutX="488.0" layoutY="51.0" text="Unsafe" textFill="#e80e0e">
-         <font>
-            <Font size="18.0" />
-         </font>
-      </Label>
-      <Circle fill="#09ee3b" layoutX="381.0" layoutY="63.0" radius="4.0" stroke="BLACK" strokeType="INSIDE" />
-      <Circle fill="#e43c1f" layoutX="475.0" layoutY="63.0" radius="4.0" stroke="BLACK" strokeType="INSIDE" />
-      <TableView layoutX="31.0" layoutY="93.0" prefHeight="510.0" prefWidth="541.0" style="-fx-border-color: black; -fx-border-width: 1px;">
-        <columns>
-          <TableColumn prefWidth="150.0" text="Parameter" />
-          <TableColumn prefWidth="400.0" text="Description" />
-        </columns>
+      <!-- Black box encapsulating the Safe and Unsafe labels and circles -->
+      <StackPane layoutX="370.0" layoutY="12.0" prefWidth="175.0" prefHeight="40.0" style="-fx-background-color: black; -fx-border-color: black; -fx-border-width: 1;">
+         <children>
+            <AnchorPane>
+               <children>
+                  <Label layoutX="24.0" layoutY="5.0" text="Safe" style="-fx-text-fill: #6a854d;">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
+                  <Label layoutX="118.0" layoutY="5.0" text="Unsafe" style="-fx-text-fill: #7f3a3a;">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
+                  <Circle fill="#6a854d" layoutX="14.0" layoutY="16.0" radius="4.0" stroke="BLACK" strokeType="INSIDE" />
+                  <Circle fill="#7f3a3a" layoutX="108.0" layoutY="16.0" radius="4.0" stroke="BLACK" strokeType="INSIDE" />
+               </children>
+            </AnchorPane>
+         </children>
+      </StackPane>
+      <TableView fx:id="dataTable" layoutX="31.0" layoutY="60.0" prefHeight="500.0" prefWidth="541.0">
+         <columns>
+            <TableColumn fx:id="parameterColumn" prefWidth="150.0" text="Parameter"/>
+            <TableColumn fx:id="descriptionColumn" prefWidth="400.0" text="Description" />
+         </columns>
       </TableView>
    </children>
 </AnchorPane>
+
+
+
+
+
