@@ -6,6 +6,7 @@ import com.wecca.canoeanalysis.components.controls.IconButton;
 import com.wecca.canoeanalysis.components.controls.Knob;
 import com.wecca.canoeanalysis.components.graphics.CurvedGraphic;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
+import com.wecca.canoeanalysis.components.graphics.hull.BezierHandleGraphic;
 import com.wecca.canoeanalysis.components.graphics.hull.CubicBezierSplineHullGraphic;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Hull;
@@ -35,6 +36,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 /**
  * To whoever is coding here:
@@ -70,7 +72,6 @@ public class HullBuilderController implements Initializable {
     private CubicBezierSplineHullGraphic hullGraphic;
     private Line mouseXTrackerLine;
     private Circle intersectionPoint;
-    private AnchorPane overlayPane;
     private AnchorPane intersectionPointPane;
 
     // State
@@ -187,10 +188,17 @@ public class HullBuilderController implements Initializable {
      * The overlays are added to a dedicated `overlayPane` above the `hullGraphicPane`.
      */
     private void updateSectionsEditorHullCurveOverlay() {
-        boolean enableOverlays = overlayPane.getChildren().isEmpty();
-        overlayPane.getChildren().clear();
-        if (enableOverlays) {
+        boolean enableOverlays = !(hullGraphic.getChildren().getLast() instanceof CurvedGraphic);
+        // Remove all CurvedGraphic overlays by iterating backwards through hullGraphic's children
+        if (!enableOverlays) {
+            for (int i = hullGraphic.getChildren().size() - 1; i >= 0; i--) {
+                if (hullGraphic.getChildren().get(i) instanceof CurvedGraphic) hullGraphic.getChildren().remove(i);
+                else break;
+            }
+        }
+        else {
             // Each section is a candidate for an overlay if there's room
+            List<CurvedGraphic> overlayCurves = new ArrayList<>();
             for (HullSection section : hull.getHullSections()) {
                 if (!(section.getSideProfileCurve() instanceof CubicBezierFunction bezier))
                     throw new IllegalArgumentException("Can only work with Bezier Hulls");
@@ -206,16 +214,20 @@ public class HullBuilderController implements Initializable {
                 // Create a CurvedGraphic overlay
                 // Map the overlay rectangle to the corresponding portion of the graphics pane
                 Rectangle validAddKnotRectangle = new Rectangle(
-                        (lControlX / hull.getLength()) * overlayPane.getWidth(),
-                        (minY / -hull.getMaxHeight()) * overlayPane.getHeight(),
-                        ((rControlX - lControlX) / hull.getLength()) * overlayPane.getWidth(),
-                        ((Math.abs(maxY - minY)) / -hull.getMaxHeight()) * overlayPane.getHeight()
+                        (lControlX / hull.getLength()) * hullGraphicPane.getWidth(),
+                        (minY / -hull.getMaxHeight()) * hullGraphicPane.getHeight(),
+                        ((rControlX - lControlX) / hull.getLength()) * hullGraphicPane.getWidth(),
+                        ((Math.abs(maxY - minY)) / -hull.getMaxHeight()) * hullGraphicPane.getHeight()
                 );
-                CurvedGraphic overlay = new CurvedGraphic(bezier, new Section(lControlX, rControlX), validAddKnotRectangle, false);
-                overlay.getLinePath().setStrokeWidth(2.0);
-                overlay.recolor(true);
-                overlayPane.getChildren().add(overlay);
+                CurvedGraphic overlayCurve = new CurvedGraphic(bezier, new Section(lControlX, rControlX), validAddKnotRectangle, false);
+                overlayCurve.getLinePath().setStrokeWidth(2.0);
+                overlayCurve.recolor(true);
+                overlayCurves.add(overlayCurve);
             }
+            overlayCurves.forEach(overlay -> overlay.setViewOrder(0));
+            IntStream.range(0, 2).forEach(i -> hullGraphic.getChildren().get(i).setViewOrder(1));
+            IntStream.range(2, hullGraphic.getChildren().size()).forEach(i -> hullGraphic.getChildren().get(i).setViewOrder(-1));
+            overlayCurves.forEach(hullGraphic.getChildren()::add);
         }
     }
 
@@ -1151,13 +1163,9 @@ public class HullBuilderController implements Initializable {
         hullViewAnchorPane.getChildren().addLast(mouseXTrackerLine);
         poiTitleLabel.setText("");
         poiDataLabel.setText("");
-        overlayPane = new AnchorPane();
         intersectionPointPane = new AnchorPane();
-        overlayPane.setPickOnBounds(false);
         intersectionPointPane.setPickOnBounds(false);
-        overlayPane = getOverlayPane(hullGraphicPane);
         intersectionPointPane = getOverlayPane(hullGraphicPane);
-        hullViewAnchorPane.getChildren().add(overlayPane);
         hullViewAnchorPane.getChildren().add(intersectionPointPane);
 
         // Initialize state
