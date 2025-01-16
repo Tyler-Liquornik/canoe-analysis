@@ -6,7 +6,6 @@ import com.wecca.canoeanalysis.components.controls.IconButton;
 import com.wecca.canoeanalysis.components.controls.Knob;
 import com.wecca.canoeanalysis.components.graphics.CurvedGraphic;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
-import com.wecca.canoeanalysis.components.graphics.hull.BezierHandleGraphic;
 import com.wecca.canoeanalysis.components.graphics.hull.CubicBezierSplineHullGraphic;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Hull;
@@ -73,6 +72,7 @@ public class HullBuilderController implements Initializable {
     private Line mouseXTrackerLine;
     private Circle intersectionPoint;
     private AnchorPane intersectionPointPane;
+    private List<Section> overlaySections;
 
     // State
     private boolean previousPressedBefore;
@@ -119,6 +119,9 @@ public class HullBuilderController implements Initializable {
         previousPressedBefore = false;
         selectedHullSectionIndex = -1;
 
+        overlaySections = updateSectionsEditorHullCurveOverlay();
+        updateAddingKnotTitleLabel(isInAddingKnotPointRange(mouseXTrackerLine.getStartX()));
+
         List<Button> toolBarButtons = mainController.getModuleToolBarButtons();
         Button toggledIconButton = IconButton.getToolbarButton(sectionEditorEnabled ? IconGlyphType.X__PENCIL : IconGlyphType.PENCIL, this::toggleSectionsEditorMode);
         toolBarButtons.set(2, toggledIconButton);
@@ -135,7 +138,6 @@ public class HullBuilderController implements Initializable {
         }
         else {
             updateHullIntersectionPointDisplay(hull.getLength() / 2, hull.getMaxHeight());
-            poiTitleLabel.setText("Adding Knot Point");
         }
         if (selectedHullSection != null) hullGraphic.recolor(!sectionEditorEnabled);
         hullGraphic.setColoredSectionIndex(-1);
@@ -175,8 +177,6 @@ public class HullBuilderController implements Initializable {
             mouseXTrackerLine.setEndY(hullViewAnchorPane.getHeight() - 1);
         }
 
-        updateSectionsEditorHullCurveOverlay();
-
         // Notify the user
         mainController.showSnackbar(sectionEditorEnabled
                 ? "Sections Editor Enabled"
@@ -186,8 +186,10 @@ public class HullBuilderController implements Initializable {
     /**
      * Updates the hull curve overlay to show regions between control points in each section.
      * The overlays are added to a dedicated `overlayPane` above the `hullGraphicPane`.
+     * @return a list of x-intervals where the overlays were added (in function space, NOT graphic space)
      */
-    private void updateSectionsEditorHullCurveOverlay() {
+    private List<Section> updateSectionsEditorHullCurveOverlay() {
+        List<Section> overlaySections = new ArrayList<>();
         boolean enableOverlays = !(hullGraphic.getChildren().getLast() instanceof CurvedGraphic);
         // Remove all CurvedGraphic overlays by iterating backwards through hullGraphic's children
         if (!enableOverlays) {
@@ -208,6 +210,7 @@ public class HullBuilderController implements Initializable {
                 double rControlX = bezier.getControlX2();
                 Section freeSection = new Section(lControlX, rControlX);
                 if (freeSection.getLength() <= 1e-2) continue;
+                overlaySections.add(freeSection);
                 double maxY = bezier.getMaxValue(freeSection);
                 double minY = bezier.getMinValue(freeSection);
 
@@ -229,6 +232,7 @@ public class HullBuilderController implements Initializable {
             IntStream.range(2, hullGraphic.getChildren().size()).forEach(i -> hullGraphic.getChildren().get(i).setViewOrder(-1));
             overlayCurves.forEach(hullGraphic.getChildren()::add);
         }
+        return overlaySections;
     }
 
     /**
@@ -247,6 +251,32 @@ public class HullBuilderController implements Initializable {
         intersectionPoint.setCenterX(position.getX());
         intersectionPoint.setCenterY(position.getY());
         intersectionPoint.setOpacity(1.0);
+    }
+
+    /**
+     * Display if the user is hovering their mouse in a section to add or delete a knot point
+     * @param adding whether or knot the user is in a region where
+     */
+    private void updateAddingKnotTitleLabel(boolean adding) {
+        if (!sectionEditorEnabled) return; // Cannot be adding/deleting a knot if not in section editor
+        String addingOrDeleting = adding ? "Adding" : "Deleting";
+        poiTitleLabel.setLayoutX(adding ? 751 : 748);
+        poiTitleLabel.setText(String.format("%s Knot Point", addingOrDeleting));
+    }
+
+    /**
+     * Check if we are in a position to add, or delete a knot point in section editor mode
+     * @param mouseX the x position of the mouse
+     */
+    private boolean isInAddingKnotPointRange(double mouseX) {
+        if (!sectionEditorEnabled) return false;
+        if (mouseX >= hullGraphicPane.getLayoutX() && mouseX <= hullGraphicPane.getLayoutX() + hullGraphicPane.getWidth()) {
+            double poiX = mouseX - hullGraphicPane.getLayoutX();
+            double functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
+            return overlaySections.stream()
+                    .anyMatch(section -> functionSpaceX >= section.getX() && functionSpaceX <= section.getRx());
+        }
+        else return false;
     }
 
     /**
@@ -1075,6 +1105,7 @@ public class HullBuilderController implements Initializable {
         mouseXTrackerLine.setStartY(0);
         mouseXTrackerLine.setEndY(paneHeight - 1);
         updateHullIntersectionPoint(mouseX);
+        updateAddingKnotTitleLabel(isInAddingKnotPointRange(mouseX));
     }
 
     /**
@@ -1113,15 +1144,69 @@ public class HullBuilderController implements Initializable {
      * @param functionSpaceY the y coordinate of the point, in function space (not graphics space)
      */
     private void updateHullIntersectionPointDisplay(Double functionSpaceX, Double functionSpaceY) {
-        String functionSpaceXString = functionSpaceX == null ? "N/A"
-                : String.format("%.3f", CalculusUtils.roundXDecimalDigits(functionSpaceX, 3));
-        String functionSpaceYString = functionSpaceY == null ? "N/A"
-                : String.format("%.3f", CalculusUtils.roundXDecimalDigits(functionSpaceY, 3));   String pointData = String.format("(x: %s, y: %s)", functionSpaceXString, functionSpaceYString);
+        String pointData;
+
+        String nullPointString = "(x: N/A, y: N/A)";
+        if (functionSpaceX != null && sectionEditorEnabled) {
+            // Convert functionSpaceX back to mouseX
+            double poiX = (functionSpaceX / hull.getLength()) * hullGraphicPane.getWidth();
+            double mouseX = poiX + hullGraphicPane.getLayoutX();
+
+            // Determine if in adding or deleting mode and display the appropriate point to add or delete
+            if (!isInAddingKnotPointRange(mouseX)) {
+                Point2D deletableKnotPoint = getDeletableKnotPoint(functionSpaceX);
+                if (deletableKnotPoint == null) pointData = nullPointString;
+                else pointData = String.format("(x: %.3f, y: %.3f)", deletableKnotPoint.getX(), deletableKnotPoint.getY());
+            } else {
+                String functionSpaceXString = String.format("%.3f", CalculusUtils.roundXDecimalDigits(functionSpaceX, 3));
+                String functionSpaceYString = functionSpaceY == null ? "N/A"
+                        : String.format("%.3f", CalculusUtils.roundXDecimalDigits(functionSpaceY, 3));
+                pointData = String.format("(x: %s, y: %s)", functionSpaceXString, functionSpaceYString);
+            }
+        }
+        else pointData = nullPointString;
+
+        // Adjust position of the data label to keep it centered
         poiDataLabel.setText(pointData);
         double centerX = (poiTitleLabel.getWidth() / 2) + poiTitleLabel.getLayoutX();
         double poiDataLabelX = centerX - (poiDataLabel.getWidth() / 2);
         poiDataLabel.setLayoutX(poiDataLabelX);
     }
+
+    /**
+     * Finds the deletable knot point for the given function space X-coordinate.
+     * @param functionSpaceX the x coordinate of the point, in function space (not graphics space)
+     * @return a Point2D containing the x and y coordinates of the deletable knot point
+     * @throws RuntimeException if no valid knot point is found
+     */
+    private Point2D getDeletableKnotPoint(double functionSpaceX) {
+        // Iterate through the overlay sections to construct the "deleting section"
+        for (int i = 1; i < overlaySections.size(); i++) { // Start at 1 to access the previous section
+            Section prevSection = overlaySections.get(i - 1);
+            Section currSection = overlaySections.get(i);
+
+            // Create the deleting section using the rx of the previous and x of the current section
+            Section deletingSection = new Section(prevSection.getRx(), currSection.getX());
+
+            // Check if functionSpaceX falls within this section
+            if (deletingSection.getX() <= functionSpaceX && deletingSection.getRx() >= functionSpaceX) {
+                // Find the knot point corresponding to deletingSection's rx
+                double knotX = hullGraphic.getAllKnotPoints(hullGraphic.getBeziers()).stream()
+                        .mapToDouble(Point2D::getX)
+                        .filter(x -> x >= deletingSection.getX() && x <= deletingSection.getRx())
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Cannot find knot point in the section"));
+
+                // Get the y-coordinate of the knot point from the corresponding Bezier curve
+                double knotY = hull.getHullSections().get(i - 1).getSideProfileCurve().value(knotX);
+
+                return new Point2D(knotX, knotY);
+            }
+        }
+        return null;
+    }
+
+
 
     /**
      * Copies the fields of the source pane for position and dimension into a new pane

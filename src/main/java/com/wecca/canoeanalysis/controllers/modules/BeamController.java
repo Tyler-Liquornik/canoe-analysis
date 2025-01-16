@@ -96,7 +96,6 @@ public class BeamController implements Initializable {
 
     /**
      * Updates the view order (z-axis rendering) property of all graphics for rendering
-     * Supports are above point loads which are above distributed loads as the preferred order
      */
     public void updateViewOrder() {
         // Create the list of current load graphics

@@ -71,7 +71,18 @@ public class CubicBezierSplineHullGraphic extends HullGraphic {
      * @param beziers the curves that make up a spline
      * @return all the construction points of the bezier in L to R order ([knot, control, control, knot] order for each bezier)
      */
-    private List<Point2D> getAllKnotAndControlPoints(List<CubicBezierFunction> beziers) {
+    public List<Point2D> getAllKnotPoints(List<CubicBezierFunction> beziers) {
+        return beziers.stream()
+                .flatMap(bezier -> bezier.getKnotPoints().stream())
+                .distinct()
+                .toList();
+    }
+
+    /**
+     * @param beziers the curves that make up a spline
+     * @return all the construction points of the bezier in L to R order ([knot, control, control, knot] order for each bezier)
+     */
+    public List<Point2D> getAllKnotAndControlPoints(List<CubicBezierFunction> beziers) {
         return beziers.stream()
                 .flatMap(bezier -> bezier.getKnotAndControlPoints().stream())
                 .distinct()
