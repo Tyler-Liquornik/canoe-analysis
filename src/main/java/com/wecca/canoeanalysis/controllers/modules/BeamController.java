@@ -96,7 +96,6 @@ public class BeamController implements Initializable {
 
     /**
      * Updates the view order (z-axis rendering) property of all graphics for rendering
-     * Supports are above point loads which are above distributed loads as the preferred order
      */
     public void updateViewOrder() {
         // Create the list of current load graphics
@@ -521,7 +520,7 @@ public class BeamController implements Initializable {
                                             ? piecewiseValue // Adjust the distribution graphic by adding the hull curve
                                             : piecewiseValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), loadMax / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
                                 };
-                                rescaledGraphics.add(new CurvedGraphic(f, piecewise.getSection(), rect));
+                                rescaledGraphics.add(new CurvedGraphic(f, piecewise.getSection(), rect, true));
                             }
                         }
                         default -> throw new IllegalStateException("Invalid load type");
