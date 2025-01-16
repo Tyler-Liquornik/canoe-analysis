@@ -288,3 +288,40 @@ jfx-toggle-button,
     -fx-fill: -fx-background;
     -fx-text-fill: -fx-danger;
 }
+
+
+.table-view {
+    -fx-background-color: black;
+    -fx-border-color: black;
+}
+
+
+.table-view .column-header-background {
+    -fx-background-color: #202020;
+}
+
+.table-view .column-header, .table-view .column-header-background {
+    -fx-text-fill: white;
+}
+
+
+.table-row-cell {
+    -fx-background-color: black;
+    -fx-text-fill: white;
+}
+
+
+.table-row-cell:selected {
+    -fx-background-color: #303030;
+    -fx-text-fill: white;
+}
+
+
+.table-view .table-row-cell {
+    -fx-border-color: gray;
+}
+
+
+.table-cell {
+    -fx-text-fill: white;
+}

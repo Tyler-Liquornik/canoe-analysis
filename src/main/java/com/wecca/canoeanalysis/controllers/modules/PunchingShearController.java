@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
+import static com.wecca.canoeanalysis.services.WindowManagerService.openUtilityWindow;
+
 /**
  * Controller class for Punching Shear calculations in the Canoe Analysis Application.
  * This class handles the logic for calculating one-way and two-way shear safety and provides methods
@@ -200,7 +202,7 @@ public class PunchingShearController implements Initializable {
         LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
         //iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
-        //iconGlyphToFunctionMap.put(IconGlyphType.BOOK, e -> openGlossary());
+        iconGlyphToFunctionMap.put(IconGlyphType.BOOK, e -> openGlossary());
         iconGlyphToFunctionMap.put(IconGlyphType.RESET, e -> reset());
 
         mainController.resetToolBarButtons();
@@ -275,6 +277,10 @@ public class PunchingShearController implements Initializable {
 
         // Add the chart to the container
         chartContainer.getChildren().add(chart);
+    }
+
+    public void openGlossary() {
+        openUtilityWindow("Glossary", "src/main/resources/com/wecca/canoeanalysis/view/shear-equations-view.fxml", 600, 400);
     }
 
 }
