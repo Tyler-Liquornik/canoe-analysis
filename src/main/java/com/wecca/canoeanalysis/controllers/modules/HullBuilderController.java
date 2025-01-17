@@ -20,6 +20,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Cursor;
+import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
@@ -71,6 +72,7 @@ public class HullBuilderController implements Initializable {
     private CubicBezierSplineHullGraphic hullGraphic;
     private Line mouseXTrackerLine;
     private Circle intersectionPoint;
+    private Group intersectionXMark;
     private AnchorPane intersectionPointPane;
     private List<Section> overlaySections;
 
@@ -110,7 +112,6 @@ public class HullBuilderController implements Initializable {
     /**
      * Handler for the pencil button which enables the ability to add or delete knots.
      * The logic here is responsible for immediate UI/state changes
-     *
      * @param event the click event
      */
     private void toggleSectionsEditorMode(MouseEvent event) {
@@ -132,6 +133,7 @@ public class HullBuilderController implements Initializable {
         hullViewAnchorPane.setOnMouseMoved(sectionEditorEnabled ? this::handleMouseMovedHullViewPane : null);
         if (!sectionEditorEnabled) {
             intersectionPoint.setOpacity(0);
+            intersectionXMark.setOpacity(0);
             intersectionPoint = null;
             poiTitleLabel.setText("");
             poiDataLabel.setText("");
@@ -161,6 +163,7 @@ public class HullBuilderController implements Initializable {
                     knobs.get(i).valueProperty().addListener(knobListeners.get(i));
                 }
                 if (intersectionPoint != null) intersectionPoint.setOpacity(0);
+                if (intersectionXMark != null) intersectionXMark.setOpacity(0);
             }
         }
 
@@ -170,9 +173,10 @@ public class HullBuilderController implements Initializable {
             mouseXTrackerLine.setStroke(ColorPaletteService.getColor("white"));
             mouseXTrackerLine.setOpacity(0.7);
             mouseXTrackerLine.getStrokeDashArray().setAll(5.0, 9.0);
-            mouseXTrackerLine.setStartX(hullViewAnchorPane.getWidth() / 2);
-            mouseXTrackerLine.setEndX(hullViewAnchorPane.getWidth() / 2);
-            updateMouseLinePoint(new Point2D(hullGraphicPane.getWidth() / 2, hullGraphicPane.getHeight()));
+            double halfWidth = hullViewAnchorPane.getWidth() / 2;
+            mouseXTrackerLine.setStartX(halfWidth);
+            mouseXTrackerLine.setEndX(halfWidth);
+            updateMouseLinePoint(new Point2D(hullGraphicPane.getWidth() / 2, hullGraphicPane.getHeight()), isInAddingKnotPointRange(halfWidth));
             mouseXTrackerLine.setStartY(1);
             mouseXTrackerLine.setEndY(hullViewAnchorPane.getHeight() - 1);
         }
@@ -239,19 +243,26 @@ public class HullBuilderController implements Initializable {
      * Displays the intersection point on the hull view pane.
      * @param position The position of the intersection point in the hull view pane's local coordinate space.
      */
-    private void updateMouseLinePoint(Point2D position) {
-        // Initialize the intersection point if it doesn't exist
+    private void updateMouseLinePoint(Point2D position, boolean pointElseXMark) {
         if (!intersectionPointPane.getChildren().contains(intersectionPoint)) {
             intersectionPoint = new Circle(5);
             intersectionPoint.setFill(ColorPaletteService.getColor("white"));
             intersectionPointPane.getChildren().add(intersectionPoint);
         }
-
-        // Update the position and make it visible
-        intersectionPoint.setCenterX(position.getX());
-        intersectionPoint.setCenterY(position.getY());
-        intersectionPoint.setOpacity(1.0);
+        if (pointElseXMark) {
+            intersectionXMark.setOpacity(0);
+            intersectionPoint.setCenterX(position.getX());
+            intersectionPoint.setCenterY(position.getY());
+            intersectionPoint.setOpacity(1.0);
+        }
+        else {
+            intersectionPoint.setOpacity(0);
+            intersectionXMark.setLayoutX(position.getX());
+            intersectionXMark.setLayoutY(position.getY());
+            intersectionXMark.setOpacity(1.0);
+        }
     }
+
 
     /**
      * Display if the user is hovering their mouse in a section to add or delete a knot point
@@ -1094,6 +1105,7 @@ public class HullBuilderController implements Initializable {
         // Only perform computations if the sections editor is enabled
         if (!sectionEditorEnabled) {
             if (intersectionPoint != null) intersectionPoint.setOpacity(0);
+            if (intersectionXMark != null) intersectionXMark.setOpacity(0);
             return;
         }
 
@@ -1125,7 +1137,7 @@ public class HullBuilderController implements Initializable {
             functionSpaceY = bezier.value(functionSpaceX);
             double poiY = (functionSpaceY / hull.getLength()) * hullGraphicPane.getWidth();
             Point2D poi = new Point2D(poiX, -poiY);
-            updateMouseLinePoint(poi);
+            updateMouseLinePoint(poi, isInAddingKnotPointRange(mouseX));
         }
         else {
             functionSpaceX = null;
@@ -1134,6 +1146,7 @@ public class HullBuilderController implements Initializable {
                 intersectionPoint.setOpacity(0);
                 intersectionPoint = null;
             }
+            if (intersectionXMark != null) intersectionXMark.setOpacity(0);
         }
         updateHullIntersectionPointDisplay(functionSpaceX, functionSpaceY);
     }
@@ -1206,8 +1219,6 @@ public class HullBuilderController implements Initializable {
         return null;
     }
 
-
-
     /**
      * Copies the fields of the source pane for position and dimension into a new pane
      * @param sourcePane the pane to clone the fields from
@@ -1243,15 +1254,27 @@ public class HullBuilderController implements Initializable {
         setBlankSectionProperties();
 
         // Sections Editor
-        mouseXTrackerLine = new Line();
-        mouseXTrackerLine.setVisible(false);
-        hullViewAnchorPane.getChildren().addLast(mouseXTrackerLine);
-        poiTitleLabel.setText("");
-        poiDataLabel.setText("");
         intersectionPointPane = new AnchorPane();
         intersectionPointPane.setPickOnBounds(false);
         intersectionPointPane = getOverlayPane(hullGraphicPane);
         hullViewAnchorPane.getChildren().add(intersectionPointPane);
+
+        Line xLine1 = new Line(-5, -5, 5, 5);
+        Line xLine2 = new Line(-5, 5, 5, -5);
+        xLine1.setStroke(ColorPaletteService.getColor("white"));
+        xLine2.setStroke(ColorPaletteService.getColor("white"));
+        xLine1.setStrokeWidth(2);
+        xLine2.setStrokeWidth(2);
+        intersectionXMark = new Group(xLine1, xLine2);
+        intersectionXMark.setOpacity(0);
+        intersectionPointPane.getChildren().add(intersectionXMark);
+
+        mouseXTrackerLine = new Line();
+        mouseXTrackerLine.setVisible(false);
+        hullViewAnchorPane.getChildren().addLast(mouseXTrackerLine);
+
+        poiTitleLabel.setText("");
+        poiDataLabel.setText("");
 
         // Initialize state
         previousPressedBefore = false;
