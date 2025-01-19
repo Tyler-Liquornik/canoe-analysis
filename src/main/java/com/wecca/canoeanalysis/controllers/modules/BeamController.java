@@ -73,7 +73,7 @@ public class BeamController implements Initializable {
     @Getter
     private Canoe canoe;
     @Getter @Setter
-    private FunctionGraphic hullGraphic;
+    private FunctionGraphic hullGraphic; // TODO: change to CubicBezierSplineHullGraphic
 
     /**
      * Toggles settings for empty tree view if it's considered empty (placeholder doesn't count)
