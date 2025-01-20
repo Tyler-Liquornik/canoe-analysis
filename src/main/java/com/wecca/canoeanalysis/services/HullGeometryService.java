@@ -5,6 +5,8 @@ import com.wecca.canoeanalysis.controllers.modules.HullBuilderController;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
+import com.wecca.canoeanalysis.models.function.Range;
+import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import javafx.geometry.Point2D;
 import javafx.scene.shape.Rectangle;
@@ -519,5 +521,69 @@ public class HullGeometryService {
             adjustAdjacentSectionControlPoint(adjacentSection, adjustingLeft, deltas.getX(), deltas.getY());
             hull.getHullSections().set(adjacentIndex, adjacentSection);
         }
+    }
+
+    public static Point2D getDeletableKnotPoint(double functionSpaceX) {
+        Hull hull = getHull();
+        List<Range> overlaySections = hullBuilderController.getOverlaySections();
+
+        // Iterate through overlay sections to find where functionSpaceX falls
+        for (int i = 0; i < overlaySections.size(); i++) {
+            Range currOverlay = overlaySections.get(i);
+
+            // "Deleting Sections" are between control points
+            Range nextOverlay;
+            double deletingSectionRx;
+            Section deletingSection;
+            if (i != overlaySections.size() - 1) {
+                nextOverlay = overlaySections.get(i + 1);
+                double deletingSectionX = currOverlay.getX() < currOverlay.getRx() ? currOverlay.getRx() : currOverlay.getX();
+                deletingSectionRx = nextOverlay.getX() < nextOverlay.getRx() ? nextOverlay.getX() : nextOverlay.getRx();
+                deletingSection = new Section(deletingSectionX, deletingSectionRx);
+            } else deletingSection = null;
+
+
+            // Left control point further to the right than the right support point
+            // Split deletable zone between the left and right knot point about the midpoint of the overlapping range
+            HullSection hullSection = hull.getHullSections().get(i);
+            CubicBezierFunction bezier = (CubicBezierFunction) hullSection.getSideProfileCurve();
+            double lKnotX = bezier.getX1();
+            double rKnotX = bezier.getX2();
+            if (currOverlay.getX() > currOverlay.getRx() && lKnotX <= functionSpaceX && functionSpaceX <= rKnotX) {
+                // Midpoint determines in which zones each knot point is deletable
+                double lControlX = bezier.getControlX1();
+                double rControlX = bezier.getControlX2();
+                double midpoint = rControlX + ((lControlX - rControlX) / 2);
+                if (functionSpaceX < midpoint) {
+                    if (i == 0) return null;
+                    double knotY = bezier.value(lKnotX);
+                    return new Point2D(lKnotX, knotY);
+                } else {
+                    if (i == overlaySections.size() - 1) return null;
+                    HullSection nextHullSection = hull.getHullSections().get(i + 1);
+                    CubicBezierFunction nextBezier = (CubicBezierFunction) nextHullSection.getSideProfileCurve();
+                    double knotY = nextBezier.value(rKnotX);
+                    return new Point2D(rKnotX, knotY);
+                }
+            }
+            else if (deletingSection != null && deletingSection.getX() <= functionSpaceX && deletingSection.getRx() >= functionSpaceX) {
+                // Find the knot point corresponding to deletingSection's rx
+                double knotX = hull.getHullSections().stream()
+                        .flatMap(hs -> ((CubicBezierFunction) hs.getSideProfileCurve()).getKnotPoints().stream())
+                        .mapToDouble(Point2D::getX)
+                        .distinct()
+                        .filter(x -> x >= deletingSection.getX() && x <= deletingSection.getRx())
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Cannot find knot point in the section"));
+
+                // Get the y-coordinate of the knot point from the corresponding Bezier curve
+                double knotY = hull.getHullSections().get(i).getSideProfileCurve().value(knotX);
+
+                return new Point2D(knotX, knotY);
+            }
+        }
+
+        // No matching section found
+        return null;
     }
 }
