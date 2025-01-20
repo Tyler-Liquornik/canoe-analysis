@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.services;
 
+import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.controllers.modules.HullBuilderController;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
@@ -20,6 +21,7 @@ import java.util.List;
  * (one central theme for "reasonable" geometry is C1 continuity between adjacent hull sections).
  * This ultimately operates as a bridge between the data model (hull and sections) and the UI
  */
+@Traceable
 public class HullGeometryService {
 
     @Setter
@@ -290,13 +292,14 @@ public class HullGeometryService {
 
     /**
      * Adjusts the control points of the adjacent hull sections to maintain C1 continuity.
-     * @param adjacentSection the adjacent section (either on the left or right) to adjust
-     *                        the correct section must be passed in, this logic is not in the method
+     *
+     * @param adjacentSection      the adjacent section (either on the left or right) to adjust
+     *                             the correct section must be passed in, this logic is not in the method
      * @param adjustLeftOfSelected whether to adjust the adjacent left section (otherwise right)
-     * @param deltaX the amount by which to adjust the control point x in the adjacent section
-     * @param deltaY the amount by which to adjust the control point y in the adjacent section
+     * @param deltaX               the amount by which to adjust the control point x in the adjacent section
+     * @param deltaY               the amount by which to adjust the control point y in the adjacent section
      */
-    public static HullSection adjustAdjacentSectionControlPoint(HullSection adjacentSection, boolean adjustLeftOfSelected, double deltaX, double deltaY) {
+    public static void adjustAdjacentSectionControlPoint(HullSection adjacentSection, boolean adjustLeftOfSelected, double deltaX, double deltaY) {
         CubicBezierFunction adjacentBezier = (CubicBezierFunction) adjacentSection.getSideProfileCurve();
 
         // Adjust the control point by the delta
@@ -310,7 +313,6 @@ public class HullGeometryService {
 
         // Update the section's side profile curve
         adjacentSection.setSideProfileCurve(adjacentBezier);
-        return adjacentSection;
     }
 
     /**

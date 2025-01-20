@@ -12,6 +12,7 @@ import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
+import com.wecca.canoeanalysis.models.function.Range;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.HullGeometryService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
@@ -75,7 +76,7 @@ public class HullBuilderController implements Initializable {
     private Circle intersectionPoint;
     private Group intersectionXMark;
     private AnchorPane intersectionPointPane;
-    private List<Section> overlaySections;
+    private List<Range> overlaySections;
 
     // State
     @Getter @Setter
@@ -137,15 +138,16 @@ public class HullBuilderController implements Initializable {
         hullViewAnchorPane.setOnMouseExited(sectionEditorEnabled ? e -> hullViewAnchorPane.setCursor(Cursor.DEFAULT) : null);
         hullViewAnchorPane.setOnMouseMoved(sectionEditorEnabled ? this::handleMouseMovedHullViewPane : null);
         if (!sectionEditorEnabled) {
-            intersectionPoint.setOpacity(0);
+            if (intersectionPoint != null) {
+                intersectionPoint.setOpacity(0);
+                intersectionPoint = null;
+            }
             intersectionXMark.setOpacity(0);
-            intersectionPoint = null;
             poiTitleLabel.setText("");
             poiDataLabel.setText("");
         }
-        else {
-            updateHullIntersectionPointDisplay(hull.getLength() / 2, hull.getMaxHeight());
-        }
+        else updateHullIntersectionPointDisplay(hull.getLength() / 2, hull.getMaxHeight());
+
         if (selectedHullSection != null) hullGraphic.recolor(!sectionEditorEnabled);
         hullGraphic.setColoredSectionIndex(-1);
 
@@ -197,8 +199,8 @@ public class HullBuilderController implements Initializable {
      * The overlays are added to a dedicated `overlayPane` above the `hullGraphicPane`.
      * @return a list of x-intervals where the overlays were added (in function space, NOT graphic space)
      */
-    private List<Section> updateSectionsEditorHullCurveOverlay() {
-        List<Section> overlaySections = new ArrayList<>();
+    private List<Range> updateSectionsEditorHullCurveOverlay() {
+        List<Range> overlaySections = new ArrayList<>();
         boolean enableOverlays = !(hullGraphic.getChildren().getLast() instanceof CurvedGraphic);
         // Remove all CurvedGraphic overlays by iterating backwards through hullGraphic's children
         if (!enableOverlays) {
@@ -215,26 +217,32 @@ public class HullBuilderController implements Initializable {
                     throw new IllegalArgumentException("Can only work with Bezier Hulls");
 
                 // Determine the x-range between the control points, which acts as the free section to place a knot point
+                Range overlaySection;
                 double lControlX = bezier.getControlX1();
                 double rControlX = bezier.getControlX2();
-                Section freeSection = new Section(lControlX, rControlX);
-                if (freeSection.getLength() <= 1e-2) continue;
-                overlaySections.add(freeSection);
-                double maxY = bezier.getMaxValue(freeSection);
-                double minY = bezier.getMinValue(freeSection);
+                if (Math.abs(rControlX - lControlX) <= 1e-2)
+                    continue;
+                else if (rControlX - lControlX <= 1e-2)
+                    overlaySection = new Range(lControlX, rControlX);
+                else {
+                    overlaySection = new Range(lControlX, rControlX);
+                    double maxY = bezier.getMaxValue(new Section(lControlX, rControlX));
+                    double minY = bezier.getMinValue(new Section(lControlX, rControlX));
 
-                // Create a CurvedGraphic overlay
-                // Map the overlay rectangle to the corresponding portion of the graphics pane
-                Rectangle validAddKnotRectangle = new Rectangle(
-                        (lControlX / hull.getLength()) * hullGraphicPane.getWidth(),
-                        (minY / -hull.getMaxHeight()) * hullGraphicPane.getHeight(),
-                        ((rControlX - lControlX) / hull.getLength()) * hullGraphicPane.getWidth(),
-                        ((Math.abs(maxY - minY)) / -hull.getMaxHeight()) * hullGraphicPane.getHeight()
-                );
-                CurvedGraphic overlayCurve = new CurvedGraphic(bezier, new Section(lControlX, rControlX), validAddKnotRectangle, false);
-                overlayCurve.getLinePath().setStrokeWidth(2.0);
-                overlayCurve.recolor(true);
-                overlayCurves.add(overlayCurve);
+                    // Create a CurvedGraphic overlay
+                    // Map the overlay rectangle to the corresponding portion of the graphics pane
+                    Rectangle validAddKnotRectangle = new Rectangle(
+                            (lControlX / hull.getLength()) * hullGraphicPane.getWidth(),
+                            (minY / -hull.getMaxHeight()) * hullGraphicPane.getHeight(),
+                            ((rControlX - lControlX) / hull.getLength()) * hullGraphicPane.getWidth(),
+                            ((Math.abs(maxY - minY)) / -hull.getMaxHeight()) * hullGraphicPane.getHeight()
+                    );
+                    CurvedGraphic overlayCurve = new CurvedGraphic(bezier, new Section(lControlX, rControlX), validAddKnotRectangle, false);
+                    overlayCurve.getLinePath().setStrokeWidth(2.0);
+                    overlayCurve.recolor(true);
+                    overlayCurves.add(overlayCurve);
+                }
+                overlaySections.add(overlaySection);
             }
             overlayCurves.forEach(overlay -> overlay.setViewOrder(0));
             IntStream.range(0, 2).forEach(i -> hullGraphic.getChildren().get(i).setViewOrder(1));
@@ -788,23 +796,47 @@ public class HullBuilderController implements Initializable {
         poiDataLabel.setLayoutX(poiDataLabelX);
     }
 
-    /**
-     * Finds the deletable knot point for the given function space X-coordinate.
-     * @param functionSpaceX the x coordinate of the point, in function space (not graphics space)
-     * @return a Point2D containing the x and y coordinates of the deletable knot point
-     * @throws RuntimeException if no valid knot point is found
-     */
     private Point2D getDeletableKnotPoint(double functionSpaceX) {
-        // Iterate through the overlay sections to construct the "deleting section"
-        for (int i = 1; i < overlaySections.size(); i++) { // Start at 1 to access the previous section
-            Section prevSection = overlaySections.get(i - 1);
-            Section currSection = overlaySections.get(i);
+        // Iterate through overlay sections to find where functionSpaceX falls
+        for (int i = 0; i < overlaySections.size(); i++) {
+            Range currOverlay = overlaySections.get(i);
 
-            // Create the deleting section using the rx of the previous and x of the current section
-            Section deletingSection = new Section(prevSection.getRx(), currSection.getX());
+            // "Deleting Sections" are between control points
+            Range nextOverlay;
+            double deletingSectionRx;
+            Section deletingSection;
+            if (i != overlaySections.size() - 1) {
+                nextOverlay = overlaySections.get(i + 1);
+                double deletingSectionX = currOverlay.getX() < currOverlay.getRx() ? currOverlay.getRx() : currOverlay.getX();
+                deletingSectionRx = nextOverlay.getX() < nextOverlay.getRx() ? nextOverlay.getX() : nextOverlay.getRx();
+                deletingSection = new Section(deletingSectionX, deletingSectionRx);
+            } else deletingSection = null;
 
-            // Check if functionSpaceX falls within this section
-            if (deletingSection.getX() <= functionSpaceX && deletingSection.getRx() >= functionSpaceX) {
+
+            // Left control point further to the right than the right support point
+            // Split deletable zone between the left and right knot point about the midpoint of the overlapping range
+            HullSection hullSection = hull.getHullSections().get(i);
+            CubicBezierFunction bezier = (CubicBezierFunction) hullSection.getSideProfileCurve();
+            double lKnotX = bezier.getX1();
+            double rKnotX = bezier.getX2();
+            if (currOverlay.getX() > currOverlay.getRx() && lKnotX <= functionSpaceX && functionSpaceX <= rKnotX) {
+                // Midpoint determines in which zones each knot point is deletable
+                double lControlX = bezier.getControlX1();
+                double rControlX = bezier.getControlX2();
+                double midpoint = rControlX + ((lControlX - rControlX) / 2);
+                if (functionSpaceX < midpoint) {
+                    if (i == 0) return null;
+                    double knotY = bezier.value(lKnotX);
+                    return new Point2D(lKnotX, knotY);
+                } else {
+                    if (i == overlaySections.size() - 1) return null;
+                    HullSection nextHullSection = hull.getHullSections().get(i + 1);
+                    CubicBezierFunction nextBezier = (CubicBezierFunction) nextHullSection.getSideProfileCurve();
+                    double knotY = nextBezier.value(rKnotX);
+                    return new Point2D(rKnotX, knotY);
+                }
+            }
+            else if (deletingSection != null && deletingSection.getX() <= functionSpaceX && deletingSection.getRx() >= functionSpaceX) {
                 // Find the knot point corresponding to deletingSection's rx
                 double knotX = hullGraphic.getAllKnotPoints(hullGraphic.getBeziers()).stream()
                         .mapToDouble(Point2D::getX)
@@ -813,11 +845,13 @@ public class HullBuilderController implements Initializable {
                         .orElseThrow(() -> new RuntimeException("Cannot find knot point in the section"));
 
                 // Get the y-coordinate of the knot point from the corresponding Bezier curve
-                double knotY = hull.getHullSections().get(i - 1).getSideProfileCurve().value(knotX);
+                double knotY = hull.getHullSections().get(i).getSideProfileCurve().value(knotX);
 
                 return new Point2D(knotX, knotY);
             }
         }
+
+        // No matching section found
         return null;
     }
 
