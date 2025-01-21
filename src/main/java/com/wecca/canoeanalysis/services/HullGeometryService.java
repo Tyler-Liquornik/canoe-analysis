@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.services;
 
 import com.wecca.canoeanalysis.aop.Traceable;
+import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.controllers.modules.HullBuilderController;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
@@ -10,6 +11,7 @@ import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import javafx.geometry.Point2D;
 import javafx.scene.shape.Rectangle;
+import lombok.NonNull;
 import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +30,8 @@ public class HullGeometryService {
 
     @Setter
     private static HullBuilderController hullBuilderController;
+    @Setter
+    private static MainController mainController;
 
     // Numerical 'dx' used at bounds to prevent unpredictable boundary behaviour
     public static final double OPEN_INTERVAL_TOLERANCE = 1e-3;
@@ -585,5 +589,77 @@ public class HullGeometryService {
 
         // No matching section found
         return null;
+    }
+
+    /**
+     * @param knotPointToAdd the knot point to add to the hull model
+     */
+    public static void addKnotPoint(@NonNull Point2D knotPointToAdd) {
+
+    }
+
+    /**
+     * Deletes a knot point from the hull model.
+     * Merges adjacent sections around the knot point to maintain continuity.
+     * @param knotPointToDelete the knot point to delete from the hull model
+     * @return the updated Hull
+     */
+    public static Hull deleteKnotPoint(Point2D knotPointToDelete) {
+        Hull prevHull = getHull();
+        Hull hull = getHull();
+        // Hull hull = prevHull.cloneHull(); TODO
+        if (knotPointToDelete == null) {
+            mainController.showSnackbar("Cannot delete the first or last knot point");
+            return null;
+        }
+        for (int i = 0; i < hull.getHullSections().size(); i++) {
+            HullSection section = hull.getHullSections().get(i);
+            if (section.getSideProfileCurve() instanceof CubicBezierFunction bezier) {
+                if (bezier.getKnotPoints().contains(knotPointToDelete)) {
+                    // Merge the two sections adjacent to the point
+                    if (i > 0 && i < hull.getHullSections().size() - 1) {
+                        mainController.showSnackbar("Knot deleted successfully!");
+                        return mergeAdjacentSections(i - 1, i);
+                    } else {
+                        mainController.showSnackbar("Cannot delete the first or last knot point");
+                        return null;
+                    }
+                }
+            } else throw new IllegalArgumentException("Cannot work with non-bezier hull");
+        }
+        throw new RuntimeException("Failed to delete knot.");
+    }
+
+    /**
+     * Merges two adjacent hull sections to maintain continuity after a knot point is deleted.
+     * @param leftIndex the index of the left section
+     * @param rightIndex the index of the right section
+     * @return the updated Hull
+     */
+    // TODO: How to deal with the fact that cloning the canoe is broken for no reason? Want to return a new hull not
+    private static Hull mergeAdjacentSections(int leftIndex, int rightIndex) {
+        Hull hull = getHull();
+        HullSection leftSection = hull.getHullSections().get(leftIndex);
+        HullSection rightSection = hull.getHullSections().get(rightIndex);
+
+        if (leftSection.getSideProfileCurve() instanceof CubicBezierFunction leftBezier &&
+                rightSection.getSideProfileCurve() instanceof CubicBezierFunction rightBezier) {
+
+            // Update left section's right control point to match right section's left knot
+            Point2D rightKnot = rightBezier.getKnotPoints().getFirst();
+            leftBezier.setControlX2(rightKnot.getX());
+            leftBezier.setControlY2(rightKnot.getY());
+
+            // Adjust the intervals to eliminate the gap
+            leftSection.setRx(rightSection.getRx());
+
+            // Replace the updated left section and remove the right section
+            hull.getHullSections().set(leftIndex, leftSection);
+            hull.getHullSections().remove(rightIndex);
+        } else {
+            throw new IllegalArgumentException("Cannot work with non-bezier hull");
+        }
+
+        return hull;
     }
 }

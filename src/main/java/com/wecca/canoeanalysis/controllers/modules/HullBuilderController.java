@@ -143,11 +143,15 @@ public class HullBuilderController implements Initializable {
                 intersectionPoint.setOpacity(0);
                 intersectionPoint = null;
             }
+            hullViewAnchorPane.setOnMouseClicked(null);
             intersectionXMark.setOpacity(0);
             poiTitleLabel.setText("");
             poiDataLabel.setText("");
         }
-        else updateHullIntersectionPointDisplay(hull.getLength() / 2, hull.getMaxHeight());
+        else {
+            updateHullIntersectionPointDisplay(hull.getLength() / 2, hull.getMaxHeight());
+            hullViewAnchorPane.setOnMouseClicked(this::handleKnotEditingClick);
+        }
 
         if (selectedHullSection != null) hullGraphic.recolor(!sectionEditorEnabled);
         hullGraphic.setColoredSectionIndex(-1);
@@ -815,10 +819,36 @@ public class HullBuilderController implements Initializable {
         return overlayPane;
     }
 
+    private void handleKnotEditingClick(MouseEvent event) {
+        double mouseX = event.getX();
+
+        // Out of bounds
+        if (mouseX < hullGraphicPane.getLayoutX() || mouseX > hullGraphicPane.getLayoutX() + hullGraphicPane.getWidth())
+            return;
+
+        double functionSpaceX = (mouseX - hullGraphicPane.getLayoutX()) / hullGraphicPane.getWidth() * hull.getLength();
+        Point2D knotPointToDelete = HullGeometryService.getDeletableKnotPoint(functionSpaceX);
+
+        // Pass the Point2D knot to the service to delete the point
+        if (knotPointToDelete == null) {
+            // HullGeometryService.addKnotPoint(knotPointToAdd); // This method remains unchanged
+        } else {
+            Hull updatedHull = HullGeometryService.deleteKnotPoint(knotPointToDelete);
+            if (updatedHull != null) {
+                hull = updatedHull;
+                recalculateAndDisplayHullProperties();
+                setSideViewHullGraphic(hull);
+            }
+            else
+                mainController.showSnackbar("Cannot delete knot point: " + knotPointToDelete);
+        }
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         // Set controller instances
         setMainController(CanoeAnalysisApplication.getMainController());
+        HullGeometryService.setMainController(mainController);
         HullGeometryService.setHullBuilderController(this);
 
         // Layout
