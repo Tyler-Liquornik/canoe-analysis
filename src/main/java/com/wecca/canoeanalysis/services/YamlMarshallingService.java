@@ -93,10 +93,6 @@ public class YamlMarshallingService {
         return fileToDownload;
     }
 
-
-
-
-
     /**
      * Prompts the user to upload a YAML file representing a new canoe model and processes it.
      * The uploaded canoe is used for general beam control operations.
@@ -169,11 +165,6 @@ public class YamlMarshallingService {
         }
     }
 
-
-
-
-
-
     /**
      * Write the current state of settings to a file
      * @param settings the POJO containing all settings information
@@ -197,5 +188,23 @@ public class YamlMarshallingService {
        }
        catch (Exception ignored) {}
        return defaultData;
+    }
+
+    /**
+     * Note: type is checked, IDE is wrongly giving a warning which was suppressed
+     * Deep copies an object in-memory by marshalling and unmarshalling the object.
+     * @param <T>  The type of the object being copied.
+     * @param marshallableObject The object to deep copy which is integrated with Jackson for YAML marshalling.
+     * @return A deep copy of the object, or null if copying fails.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T deepCopy(T marshallableObject) {
+        if (marshallableObject == null) return null;
+        try {
+            String yamlString = yamlMapper.writeValueAsString(marshallableObject);
+            Object read = yamlMapper.readValue(yamlString, marshallableObject.getClass());
+            Class<?> classT = read.getClass();
+            return classT.isInstance(read) ? (T) read : null;
+        } catch (Exception e) {return null;}
     }
 }
