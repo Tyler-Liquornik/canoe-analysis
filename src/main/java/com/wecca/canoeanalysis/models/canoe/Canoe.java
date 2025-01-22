@@ -7,6 +7,7 @@ import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.LoadUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.*;
 import java.util.stream.IntStream;
@@ -23,13 +24,18 @@ import java.util.stream.IntStream;
 public class Canoe
 {
     @JsonProperty("loads")
-    private final ArrayList<Load> loads;
+    private ArrayList<Load> loads;
     @JsonProperty("hull")
     private Hull hull;
+
+    // Caching this for each access within each session
+    @Setter
+    private double sessionMaxShear;
 
     public Canoe() {
         this.hull = null;
         this.loads = new ArrayList<>();
+        sessionMaxShear = 0.0;
     }
 
     public void setHull(Hull hull) {
@@ -233,5 +239,21 @@ public class Canoe
                 throw new IllegalArgumentException("Cannot process loads of type: " + lLoad.getClass());
             return false;
         });
+    }
+
+    /**
+     * @return the maximum width of the hull
+     */
+    @JsonIgnore
+    public double getMaxWidth() {
+        return hull.getHullSections().stream().max(Comparator.comparing(HullSection::getMaxWidth)).get().getMaxWidth();
+    }
+
+    /**
+     * @return the maximum thickness of the canoe
+     */
+    @JsonIgnore
+    public double getMaxThickness() {
+        return hull.getHullSections().stream().max(Comparator.comparing(HullSection::getThickness)).get().getThickness();
     }
 }

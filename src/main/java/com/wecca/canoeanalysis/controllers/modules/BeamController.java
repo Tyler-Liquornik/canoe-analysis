@@ -166,7 +166,8 @@ public class BeamController implements Initializable {
         deleteLoadButton.setDisable(true);
         clearLoadsButton.setDisable(true);
         disableLoadingControls(true);
-        mainController.disableModuleToolBarButton(true, 2);
+        //mainController.disableModuleToolBarButton(true, 2);
+        mainController.disableAllModuleToolbarButtons(true);
         setCanoeLengthButton.setText("Set Length");
         setCanoeLengthButton.setOnAction(e -> setLength());
     }
@@ -197,6 +198,7 @@ public class BeamController implements Initializable {
                 lengthLabel.setDisable(true);
                 deleteLoadButton.setDisable(true);
                 clearLoadsButton.setDisable(true);
+                mainController.disableAllModuleToolbarButtons(false);
 
                 // Set length button will now function as a reset length button
                 setCanoeLengthButton.setText("Reset Canoe");
@@ -582,9 +584,28 @@ public class BeamController implements Initializable {
         checkAndSetEmptyLoadTreeSettings();
         deleteLoadButton.setDisable(true);
         clearLoadsButton.setDisable(true);
+        mainController.disableModuleToolBarButton(true, 1);
         mainController.disableModuleToolBarButton(true, 2);
+
+
+        addMaxShearToCanoe();
+
         updateViewOrder();
     }
+    /**
+     *Used to add max shear to canoe
+     * max shear needed for punching shear
+     *
+     */
+    private void addMaxShearToCanoe(){
+        List<Point2D> sfdPoints = DiagramService.generateSfdPoints(canoe);
+        canoe.setSessionMaxShear(sfdPoints.stream()
+                .mapToDouble(point -> Math.abs(point.getY()))
+                .max()
+                .orElseThrow(() -> new IllegalArgumentException("List of points is empty")));
+
+    }
+
 
     /**
      * Solve and display the result of the "stand" system load case.
@@ -717,6 +738,7 @@ public class BeamController implements Initializable {
         disableLoadingControls(false);
         boolean isHullPresent = canoe.getHull().getWeight() != 0;
         mainController.disableModuleToolBarButton(isHullPresent, 2);
+        mainController.disableModuleToolBarButton(false, 1);
         checkAndSetEmptyLoadTreeSettings();
         waterlineLabel.setText("");
         tiltAngleLabel.setText("");
@@ -742,7 +764,7 @@ public class BeamController implements Initializable {
         for (Control control : controls) {
             control.setDisable(b);
         }
-        mainController.disableAllModuleToolbarButtons(b);
+        //mainController.disableAllModuleToolbarButtons(b);
 
         // Only enable the hull builder if a custom hull hasn't yet been set
         if (canoe.getHull() != null) {
@@ -988,6 +1010,7 @@ public class BeamController implements Initializable {
         iconGlyphToFunctionMap.put(IconGlyphType.WRENCH, e -> openHullBuilderPopup());
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
+        mainController.disableAllModuleToolbarButtons(true);
     }
 
     /**

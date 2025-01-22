@@ -175,6 +175,7 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
     /**
      * @return a list of Point2D objects for each of the knot and control points
      */
+    @JsonIgnore
     public List<Point2D> getKnotAndControlPoints() {
         Point2D p1 = new Point2D(x1, y1);
         Point2D cp1 = new Point2D(controlX1, controlY1);
@@ -186,6 +187,7 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
     /**
      * @return a list of Point2D objects for each of the knot points
      */
+    @JsonIgnore
     public List<Point2D> getKnotPoints() {
         Point2D p1 = new Point2D(x1, y1);
         Point2D p2 = new Point2D(x2, y2);
@@ -195,6 +197,7 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
     /**
      * @return a list of Point2D objects for each of the control points
      */
+    @JsonIgnore
     public List<Point2D> getControlPoints() {
         Point2D p1 = new Point2D(controlX1, controlY1);
         Point2D p2 = new Point2D(controlX2, controlY2);
