@@ -24,25 +24,26 @@ import java.util.List;
  * and the bounds on what the user can do the keep the geometry reasonable for a hull
  * (one central theme for "reasonable" geometry is C1 continuity between adjacent hull sections).
  * This ultimately operates as a bridge between the data model (hull and sections) and the UI
+ *
  */
 @Traceable
 public class HullGeometryService {
 
     @Setter
     private static HullBuilderController hullBuilderController;
-    @Setter
-    private static MainController mainController;
 
     // Numerical 'dx' used at bounds to prevent unpredictable boundary behaviour
     public static final double OPEN_INTERVAL_TOLERANCE = 1e-3;
 
     /**
-     * @return a reference to the hull
+     * In this service, we will prefer to only process and return data for the hull model
+     * Setting the processed data to the hull model should occur instead at the controller level
+     * @return a new memory reference to the hull equivalent to the one in HullBuilderController state
      */
     private static Hull getHull() {
         if (hullBuilderController == null)
             throw new IllegalStateException("HullBuilderController is not set");
-        return hullBuilderController.getHull();
+        return YamlMarshallingService.deepCopy(hullBuilderController.getHull());
     }
 
     /**
@@ -479,13 +480,13 @@ public class HullGeometryService {
      * @param newParameterValue The new value for the parameter after user interaction.
      * @param parameterValues Array of current parameter values: [rL, θL, rR, θR]
      */
-    public static void updateHullParameter(int parameterIndex, double newParameterValue, double[] parameterValues) {
+    public static Hull updateHullParameter(int parameterIndex, double newParameterValue, double[] parameterValues) {
         if (parameterValues.length != 4)
             throw new IllegalArgumentException("parameterValues must have exactly 4 elements: [rL, θL, rR, θR]");
 
         Hull hull = getHull();
-        HullSection selectedHullSection = hullBuilderController.getSelectedHullSection();
         int selectedHullSectionIndex = hullBuilderController.getSelectedHullSectionIndex();
+        HullSection selectedHullSection = hull.getHullSections().get(selectedHullSectionIndex);
 
         if (!(selectedHullSection.getSideProfileCurve() instanceof CubicBezierFunction selectedBezier))
             throw new IllegalArgumentException("Cannot work with non-bezier hull curve");
@@ -525,6 +526,7 @@ public class HullGeometryService {
             adjustAdjacentSectionControlPoint(adjacentSection, adjustingLeft, deltas.getX(), deltas.getY());
             hull.getHullSections().set(adjacentIndex, adjacentSection);
         }
+        return hull;
     }
 
     public static Point2D getDeletableKnotPoint(double functionSpaceX) {
@@ -605,25 +607,17 @@ public class HullGeometryService {
      * @return the updated Hull
      */
     public static Hull deleteKnotPoint(Point2D knotPointToDelete) {
-        Hull prevHull = getHull();
         Hull hull = getHull();
-        // Hull hull = prevHull.cloneHull(); TODO
-        if (knotPointToDelete == null) {
-            mainController.showSnackbar("Cannot delete the first or last knot point");
-            return null;
-        }
+        if (knotPointToDelete == null) return null;
         for (int i = 0; i < hull.getHullSections().size(); i++) {
             HullSection section = hull.getHullSections().get(i);
             if (section.getSideProfileCurve() instanceof CubicBezierFunction bezier) {
-                if (bezier.getKnotPoints().contains(knotPointToDelete)) {
-                    // Merge the two sections adjacent to the point
-                    if (i > 0 && i < hull.getHullSections().size() - 1) {
-                        mainController.showSnackbar("Knot deleted successfully!");
-                        return mergeAdjacentSections(i - 1, i);
-                    } else {
-                        mainController.showSnackbar("Cannot delete the first or last knot point");
-                        return null;
-                    }
+                Point2D knotPoint = bezier.getKnotPoints().getFirst();
+                double knotX = knotPoint.getX();
+                double knotY = knotPoint.getY();
+                if (Math.abs(knotX - knotPointToDelete.getX()) < 1e-6 && Math.abs(knotY - knotPointToDelete.getY()) < 1e-6) {
+                    if (i > 0) return getHullWithMergedAdjacentSections(i);
+                    else return null;
                 }
             } else throw new IllegalArgumentException("Cannot work with non-bezier hull");
         }
@@ -632,33 +626,35 @@ public class HullGeometryService {
 
     /**
      * Merges two adjacent hull sections to maintain continuity after a knot point is deleted.
-     * @param leftIndex the index of the left section
-     * @param rightIndex the index of the right section
+     * @param rightIndex the index of the right section of the two adjacent hull sections
      * @return the updated Hull
      */
-    // TODO: How to deal with the fact that cloning the canoe is broken for no reason? Want to return a new hull not
-    private static Hull mergeAdjacentSections(int leftIndex, int rightIndex) {
-        Hull hull = getHull();
+     private static Hull getHullWithMergedAdjacentSections(int rightIndex) {
+        // Do not change the model from the service, pass the hull back up and set it in the controller
+        Hull currHull = getHull();
+        Hull hull = YamlMarshallingService.deepCopy(currHull);
+        if (hull == null) throw new RuntimeException("Marshalling error deep copying the hull");
+        if (rightIndex <= 0 ) throw new IllegalArgumentException("index must be at least 1");
+        int leftIndex = rightIndex - 1;
         HullSection leftSection = hull.getHullSections().get(leftIndex);
         HullSection rightSection = hull.getHullSections().get(rightIndex);
 
         if (leftSection.getSideProfileCurve() instanceof CubicBezierFunction leftBezier &&
                 rightSection.getSideProfileCurve() instanceof CubicBezierFunction rightBezier) {
 
-            // Update left section's right control point to match right section's left knot
-            Point2D rightKnot = rightBezier.getKnotPoints().getFirst();
-            leftBezier.setControlX2(rightKnot.getX());
-            leftBezier.setControlY2(rightKnot.getY());
-
-            // Adjust the intervals to eliminate the gap
+            // Get the updated hull model
+            Point2D rightKnot = rightBezier.getKnotPoints().getLast();
+            Point2D rightControl = rightBezier.getControlPoints().getLast();
+            leftBezier.setX2(rightKnot.getX());
+            leftBezier.setY2(rightKnot.getY());
+            leftBezier.setControlX2(rightControl.getX());
+            leftBezier.setControlY2(rightControl.getY());
             leftSection.setRx(rightSection.getRx());
 
             // Replace the updated left section and remove the right section
             hull.getHullSections().set(leftIndex, leftSection);
             hull.getHullSections().remove(rightIndex);
-        } else {
-            throw new IllegalArgumentException("Cannot work with non-bezier hull");
-        }
+        } else throw new IllegalArgumentException("Cannot work with non-bezier hull");
 
         return hull;
     }

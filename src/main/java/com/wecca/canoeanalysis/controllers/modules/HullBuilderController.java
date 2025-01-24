@@ -32,7 +32,6 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import lombok.Getter;
 import lombok.Setter;
-
 import javafx.geometry.Point2D;
 import java.net.URL;
 import java.util.*;
@@ -65,13 +64,14 @@ public class HullBuilderController implements Initializable {
     // Refs
     @Getter @Setter
     private Hull hull;
-    private List<Knob> knobs;
+    private final Hull sharkBaitHull = SharkBaitHullLibrary.generateSharkBaitHullScaledFromBezier(6);
     private List<ChangeListener<Number>> knobListeners;
 
     // UI & Graphics
     @Getter @Setter
     private AnchorPane hullGraphicPane;
     private CubicBezierSplineHullGraphic hullGraphic;
+    private List<Knob> knobs;
     private Line mouseXTrackerLine;
     private Circle intersectionPoint;
     private Group intersectionXMark;
@@ -127,7 +127,7 @@ public class HullBuilderController implements Initializable {
         previousPressedBefore = false;
         selectedHullSectionIndex = -1;
 
-        overlaySections = updateSectionsEditorHullCurveOverlay();
+        updateSectionsEditorHullCurveOverlay();
         updateAddingKnotTitleLabel(isMouseInAddingKnotPointZone(mouseXTrackerLine.getStartX()));
 
         List<Button> toolBarButtons = mainController.getModuleToolBarButtons();
@@ -202,9 +202,9 @@ public class HullBuilderController implements Initializable {
     /**
      * Updates the hull curve overlay to show regions between control points in each section.
      * The overlays are added to a dedicated `overlayPane` above the `hullGraphicPane`.
-     * @return a list of x-intervals where the overlays were added (in function space, NOT graphic space)
+     * a list of x-intervals where the overlays were added (in function space, NOT graphic space) is added to state
      */
-    private List<Range> updateSectionsEditorHullCurveOverlay() {
+    private void updateSectionsEditorHullCurveOverlay() {
         List<Range> overlaySections = new ArrayList<>();
         boolean enableOverlays = !(hullGraphic.getChildren().getLast() instanceof CurvedGraphic);
         // Remove all CurvedGraphic overlays by iterating backwards through hullGraphic's children
@@ -254,7 +254,7 @@ public class HullBuilderController implements Initializable {
             IntStream.range(2, hullGraphic.getChildren().size()).forEach(i -> hullGraphic.getChildren().get(i).setViewOrder(-1));
             overlayCurves.forEach(hullGraphic.getChildren()::add);
         }
-        return overlaySections;
+        this.overlaySections = overlaySections;
     }
 
     /**
@@ -578,7 +578,7 @@ public class HullBuilderController implements Initializable {
 
         // Update the model
         double[] knobValues = knobs.stream().mapToDouble(Knob::getValue).toArray();
-        HullGeometryService.updateHullParameter(knobIndex, newROrThetaVal, knobValues);
+        hull = HullGeometryService.updateHullParameter(knobIndex, newROrThetaVal, knobValues);
 
         // Update UI with new hull
         hullGraphicPane.getChildren().clear();
@@ -831,24 +831,41 @@ public class HullBuilderController implements Initializable {
 
         // Pass the Point2D knot to the service to delete the point
         if (knotPointToDelete == null) {
-            // HullGeometryService.addKnotPoint(knotPointToAdd); // This method remains unchanged
-        } else {
+            if (isMouseInAddingKnotPointZone(mouseX)) {
+                // HullGeometryService.addKnotPoint(knotPointToAdd); // This method remains unchanged
+            }
+        } else if (hull.getHullSections().size() > 2) {
             Hull updatedHull = HullGeometryService.deleteKnotPoint(knotPointToDelete);
             if (updatedHull != null) {
                 hull = updatedHull;
+                selectedHullSection = null;
+                selectedHullSectionIndex = -1;
+                nextPressedBefore = false;
+                previousPressedBefore = false;
                 recalculateAndDisplayHullProperties();
                 setSideViewHullGraphic(hull);
+                updateSectionsEditorHullCurveOverlay();
+                mainController.showSnackbar(String.format(
+                        "Knot point deleted successfully: (x = %.3f, y = %.3f)",
+                        knotPointToDelete.getX(),
+                        knotPointToDelete.getY()
+                ));
             }
-            else
-                mainController.showSnackbar("Cannot delete knot point: " + knotPointToDelete);
+            else {
+                mainController.showSnackbar(String.format(
+                        "Delete knot point error: (x = %.3f, y = %.3f)",
+                        knotPointToDelete.getX(),
+                        knotPointToDelete.getY()
+                ));
+            }
         }
+        else mainController.showSnackbar("Cannot delete knot point: too few sections");
     }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         // Set controller instances
         setMainController(CanoeAnalysisApplication.getMainController());
-        HullGeometryService.setMainController(mainController);
         HullGeometryService.setHullBuilderController(this);
 
         // Layout
@@ -858,7 +875,7 @@ public class HullBuilderController implements Initializable {
 
         // Set default hull
         hullGraphicPane = new AnchorPane();
-        hull = SharkBaitHullLibrary.generateSharkBaitHullScaledFromBezier(6);
+        hull = sharkBaitHull;
         setSideViewHullGraphic(hull);
         setBlankSectionProperties();
 

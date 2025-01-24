@@ -203,7 +203,7 @@ public class YamlMarshallingService {
         try {
             String yamlString = yamlMapper.writeValueAsString(marshallableObject);
             Object read = yamlMapper.readValue(yamlString, marshallableObject.getClass());
-            Class<?> classT = read.getClass();
+            Class<?> classT = marshallableObject.getClass();
             return classT.isInstance(read) ? (T) read : null;
         } catch (Exception e) {return null;}
     }

@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.models.function;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -27,6 +28,7 @@ public class Range {
     /**
      * @return the length of the interval regardless of the order of the pair: |rx - x|
      */
+    @JsonIgnore
     public double getLength() {
         return Math.abs(rx - x);
     }
