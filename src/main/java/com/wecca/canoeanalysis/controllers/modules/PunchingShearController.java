@@ -280,7 +280,7 @@ public class PunchingShearController implements Initializable {
     }
 
     public void openGlossary() {
-        openUtilityWindow("Glossary", "/com/wecca/canoeanalysis/view/shear-equations-view.fxml", 600, 450);
+        openUtilityWindow("Glossary", "/com/wecca/canoeanalysis/view/shear-equations-view.fxml", 800, 550);
     }
 
 }
