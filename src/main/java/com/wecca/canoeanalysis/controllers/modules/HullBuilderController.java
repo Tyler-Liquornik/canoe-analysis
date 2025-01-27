@@ -27,6 +27,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
@@ -94,6 +95,9 @@ public class HullBuilderController implements Initializable {
     private boolean sectionEditorEnabled;
     @Getter @Setter
     private List<Range> overlaySections;
+
+    // Constants
+    private final double sharkBaitSideViewPanelHeight = 45;
 
     /**
      * Clears the toolbar of buttons from other modules and adds ones from this module
@@ -233,14 +237,11 @@ public class HullBuilderController implements Initializable {
                     overlaySection = new Range(lControlX, rControlX);
                     double maxY = bezier.getMaxValue(new Section(lControlX, rControlX));
                     double minY = bezier.getMinValue(new Section(lControlX, rControlX));
-
-                    // Create a CurvedGraphic overlay
-                    // Map the overlay rectangle to the corresponding portion of the graphics pane
                     Rectangle validAddKnotRectangle = new Rectangle(
                             (lControlX / hull.getLength()) * hullGraphicPane.getWidth(),
-                            (minY / -hull.getMaxHeight()) * hullGraphicPane.getHeight(),
+                            (minY / -hull.getMaxHeight()) * (sharkBaitSideViewPanelHeight * (hull.getMaxHeight() / sharkBaitHull.getMaxHeight())),
                             ((rControlX - lControlX) / hull.getLength()) * hullGraphicPane.getWidth(),
-                            ((Math.abs(maxY - minY)) / -hull.getMaxHeight()) * hullGraphicPane.getHeight()
+                            ((Math.abs(maxY - minY)) / -hull.getMaxHeight()) * (sharkBaitSideViewPanelHeight * (hull.getMaxHeight() / sharkBaitHull.getMaxHeight()))
                     );
                     CurvedGraphic overlayCurve = new CurvedGraphic(bezier, new Section(lControlX, rControlX), validAddKnotRectangle, false);
                     overlayCurve.getLinePath().setStrokeWidth(2.0);
@@ -315,14 +316,19 @@ public class HullBuilderController implements Initializable {
     public void setSideViewHullGraphic(Hull hull) {
         // Set and layout parent pane
         double sideViewPanelWidth = 700;
-        double sideViewPanelHeight = 45;
+        double sideViewPanelHeight = sharkBaitSideViewPanelHeight * (hull.getMaxHeight() / sharkBaitHull.getMaxHeight());
         double paneX = hullViewAnchorPane.prefWidth(-1) / 2 - sideViewPanelWidth / 2;
-        double paneY = hullViewAnchorPane.prefHeight(-1) / 2 - sideViewPanelHeight / 2;
+        double paneY = hullViewAnchorPane.prefHeight(-1) / 2 - sharkBaitSideViewPanelHeight / 2;
         hullGraphicPane.setPrefSize(sideViewPanelWidth, sideViewPanelHeight);
         hullGraphicPane.setMaxSize(sideViewPanelWidth, sideViewPanelHeight);
         hullGraphicPane.setMinSize(sideViewPanelWidth, sideViewPanelHeight);
         hullGraphicPane.setLayoutX(paneX);
         hullGraphicPane.setLayoutY(paneY);
+        if (intersectionPointPane != null) {
+            intersectionPointPane.setPrefHeight(sideViewPanelHeight);
+            intersectionPointPane.setMaxHeight(sideViewPanelHeight);
+            intersectionPointPane.setMinHeight(sideViewPanelHeight);
+        }
 
         // Setup graphic
         Rectangle rect = new Rectangle(0, 0, sideViewPanelWidth, sideViewPanelHeight);
@@ -342,10 +348,8 @@ public class HullBuilderController implements Initializable {
         applyGraphicsViewingState();
 
         // Keep the selected hull section colored
-        if (selectedHullSection != null) {
-            int selectedIndex = hull.getHullSections().indexOf(selectedHullSection);
-            hullGraphic.colorBezierPointGroup(selectedIndex, true);
-        }
+        if (selectedHullSection != null && selectedHullSectionIndex != -1)
+            hullGraphic.colorBezierPointGroup(selectedHullSectionIndex, true);
     }
 
     /**
@@ -837,13 +841,13 @@ public class HullBuilderController implements Initializable {
         } else if (hull.getHullSections().size() > 2) {
             Hull updatedHull = HullGeometryService.deleteKnotPoint(knotPointToDelete);
             if (updatedHull != null) {
-                hull = updatedHull;
                 selectedHullSection = null;
                 selectedHullSectionIndex = -1;
                 nextPressedBefore = false;
                 previousPressedBefore = false;
                 recalculateAndDisplayHullProperties();
-                setSideViewHullGraphic(hull);
+                setSideViewHullGraphic(updatedHull);
+                hull = updatedHull;
                 updateSectionsEditorHullCurveOverlay();
                 mainController.showSnackbar(String.format(
                         "Knot point deleted successfully: (x = %.3f, y = %.3f)",

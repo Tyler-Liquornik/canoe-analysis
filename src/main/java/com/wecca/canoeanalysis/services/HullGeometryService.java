@@ -441,6 +441,7 @@ public class HullGeometryService {
      * @return The maximum r value that keeps the control point within bounds.
      */
     public static double calculateSiblingRMax(int thetaParameterIndex, double theta) {
+        if (!(thetaParameterIndex == 1 || thetaParameterIndex == 3)) throw new IllegalArgumentException("thetaParameterIndex must be 1 or 3");
         HullSection selectedHullSection = hullBuilderController.getSelectedHullSection();
         int hullSectionIndex = hullBuilderController.getSelectedHullSectionIndex();
         CubicBezierFunction bezier = (CubicBezierFunction) selectedHullSection.getSideProfileCurve();
@@ -654,6 +655,27 @@ public class HullGeometryService {
             // Replace the updated left section and remove the right section
             hull.getHullSections().set(leftIndex, leftSection);
             hull.getHullSections().remove(rightIndex);
+
+            // Clamp control points if they fall out of bounds
+            double bottomBoundary = -hull.getMaxHeight();
+            for (int i = 0; i < hull.getHullSections().size(); i++) {
+                HullSection prevSection = i > 0 ? hull.getHullSections().get(i - 1) : null;
+                HullSection section = hull.getHullSections().get(i);
+                HullSection nextSection = i < hull.getHullSections().size() - 1 ? hull.getHullSections().get(i + 1) : null;
+                if (!(section.getSideProfileCurve() instanceof CubicBezierFunction bezier)) continue;
+                if (prevSection != null && prevSection.getSideProfileCurve() instanceof CubicBezierFunction prevBezier) {
+                      if (bezier.getControlY1() < bottomBoundary || prevBezier.getControlY2() < bottomBoundary) {
+                        bezier.setControlY1(bottomBoundary);
+                        prevBezier.setControlY2(bottomBoundary);
+                    }
+                }
+                if (nextSection != null && nextSection.getSideProfileCurve() instanceof CubicBezierFunction nextBezier) {
+                     if (bezier.getControlY2() < bottomBoundary || nextBezier.getControlY1() < bottomBoundary) {
+                        bezier.setControlY2(bottomBoundary);
+                        nextBezier.setControlY1(bottomBoundary);
+                    }
+                }
+            }
         } else throw new IllegalArgumentException("Cannot work with non-bezier hull");
 
         return hull;
