@@ -130,7 +130,7 @@ public class BeamController implements Initializable {
      * Highlights the selected load in the UI
      * Called by the list view of loads when a load is selected
      */
-    public void highlightLoad() {
+    public void highlightLoad(MouseEvent event) {
         int selectedIndex = LoadTreeManagerService.getSelectedLoadId();
         updateViewOrder();
 
@@ -148,6 +148,23 @@ public class BeamController implements Initializable {
                 node.setViewOrder(-1);
             }
         }
+
+        if (event.getClickCount() == 2) {
+            editLoadVariable();
+        }
+    }
+
+    public void editLoadVariable() {
+        LoadTreeItem selectedItem = LoadTreeManagerService.getSelectedLoadTreeItem();
+        if (selectedItem == null || !selectedItem.isField()) {
+            System.out.println("Nothing to edit or not a field node.");
+            return;
+        }
+
+        LoadTreeManagerService.editNestedItem(
+                selectedItem.getLoadId(),
+                selectedItem.getFieldId()
+        );
     }
 
     /**
@@ -761,7 +778,7 @@ public class BeamController implements Initializable {
      */
     public void generateDiagram() {
         List<Point2D> sfdPoints = DiagramService.generateSfdPoints(canoe);
-        List<Point2D> bmdPoints = DiagramService.generateBmdPoints(canoe, sfdPoints);
+        List<Point2D> bmdPoints = DiagramService.generateBmdPoints(canoe);
         WindowManagerService.openDiagramWindow("Shear Force Diagram", canoe, sfdPoints, "Force [kN]");
         WindowManagerService.openDiagramWindow("Bending Moment Diagram", canoe, bmdPoints, "Moment [kN·m]");
     }

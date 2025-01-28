@@ -5,7 +5,13 @@ import com.wecca.canoeanalysis.components.controls.LoadTreeItem;
 import com.wecca.canoeanalysis.controllers.modules.BeamController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.load.*;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
+import javafx.scene.layout.HBox;
+import javafx.scene.text.Text;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -28,6 +34,107 @@ public class LoadTreeManagerService {
     public static void setLoadsTreeView(JFXTreeView<String> loadsTreeView) {
         LoadTreeManagerService.loadsTreeView = loadsTreeView;
         LoadTreeManagerService.loadsTreeView.setRoot(root);
+
+        loadsTreeView.setEditable(true);
+        loadsTreeView.setCellFactory(tv -> new TreeCell<String>() {
+            private TextField textField;
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    if (isEditing()) {
+                        setText(null);
+                        setGraphic(textField);
+                    } else {
+                        setText(item);
+                        setGraphic(null);
+                    }
+                }
+            }
+
+            @Override
+            public void startEdit() {
+                super.startEdit();
+                if (getItem() == null) {
+                    return;
+                }
+
+                String fullText = getItem();
+
+
+                int colonIndex = fullText.indexOf(':');
+                final String prefix;
+                String editablePart = fullText;
+
+                if (colonIndex >= 0) {
+                    prefix = fullText.substring(0, colonIndex + 1).trim(); // "Force:"
+                    editablePart = fullText.substring(colonIndex + 1).trim(); // "-1.00kN/m"
+                } else {
+                    prefix = "";
+                }
+
+
+                if (textField == null) {
+                    textField = new TextField();
+                    textField.setStyle("-fx-text-fill: black;");
+
+
+                    textField.setMaxWidth(calculateTextWidth(editablePart));
+
+                    textField.setOnAction(e -> {
+                        commitEdit(prefix + " " + textField.getText());
+                    });
+                    textField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+                        if (!isNowFocused) {
+                            commitEdit(prefix + " " + textField.getText());
+                        }
+                    });
+                }
+
+                textField.setText(editablePart);
+
+                Label prefixLabel = new Label(prefix);
+                HBox hbox = new HBox(5);
+                hbox.setAlignment(Pos.BASELINE_LEFT);
+                hbox.getChildren().addAll(prefixLabel, textField);
+
+                setText(null);
+                setGraphic(hbox);
+
+                textField.requestFocus();
+                textField.selectAll();
+            }
+
+            /**
+             * Calculate the width of the TextField based on the length of the editable part.
+             */
+            private double calculateTextWidth(String text) {
+                Text tempText = new Text(text);
+                return tempText.getLayoutBounds().getWidth() + 20;
+            }
+
+            @Override
+            public void cancelEdit() {
+                super.cancelEdit();
+                setText(getItem());
+                setGraphic(textField);
+            }
+
+            @Override
+            public void commitEdit(String newValue) {
+                super.commitEdit(newValue);
+                getTreeItem().setValue(newValue);
+                setText(newValue);
+                setGraphic(null);
+
+            }
+        });
+
     }
 
     /**
@@ -93,6 +200,35 @@ public class LoadTreeManagerService {
     public static int getNumberOfItemsInTreeView() {
         return root.getChildrenLoadItems().size();
     }
+
+    private static LoadTreeItem findChildByLoadAndField(LoadTreeItem parent, int loadId, int fieldId) {
+        for (TreeItem<String> child : parent.getChildren()) {
+            if (child instanceof LoadTreeItem lti) {
+                if (lti.getLoadId() == loadId && lti.getFieldId() == fieldId) {
+                    return lti;
+                }
+                LoadTreeItem found = findChildByLoadAndField(lti, loadId, fieldId);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    public static void editNestedItem(int loadId, int fieldId) {
+        LoadTreeItem targetItem = findChildByLoadAndField(root, loadId, fieldId);
+        if (targetItem == null) {
+            System.out.println("No matching nested item found for loadId=" + loadId
+                    + " fieldId=" + fieldId);
+            return;
+        }
+
+        loadsTreeView.getSelectionModel().select(targetItem);
+        loadsTreeView.layout();
+        loadsTreeView.edit(targetItem);
+    }
+
 
     /**
      * Create a lod tree item for a given load
