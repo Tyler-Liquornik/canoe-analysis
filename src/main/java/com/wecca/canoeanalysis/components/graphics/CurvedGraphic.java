@@ -5,6 +5,7 @@ import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
+import com.wecca.canoeanalysis.utils.CalculusUtils;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
@@ -78,7 +79,7 @@ public class CurvedGraphic extends Group implements FunctionGraphic {
 
         // Build the curve and contained area
         for (int i = 1; i <= numSamples; i++) {
-            currentX = section.getX() + i * step;
+            currentX = CalculusUtils.roundXDecimalDigits((section.getX() + i * step), 10);
             double scaledY = encasingRectangle.getY() + ((effectiveFunction.value(currentX) - minValue) / valueRange) * encasingRectangle.getHeight();
             double scaledX = encasingRectangle.getX() + ((currentX - section.getX()) / (section.getRx() - section.getX())) * encasingRectangle.getWidth();
             linePath.getElements().add(new LineTo(scaledX, scaledY));

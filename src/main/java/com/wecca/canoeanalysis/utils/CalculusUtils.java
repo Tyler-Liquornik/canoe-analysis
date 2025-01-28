@@ -269,7 +269,7 @@ public class CalculusUtils
                 if (section.getX() <= x && x <= section.getRx())
                     return func.value(x);
             }
-            throw new IllegalArgumentException("x is out of bounds of the provided functions.");
+            throw new IllegalArgumentException("x = + " + x + " is out of bounds of the provided functions.");
         };
 
         Section fullSection = new Section(sections.getFirst().getX(), sections.getLast().getRx());

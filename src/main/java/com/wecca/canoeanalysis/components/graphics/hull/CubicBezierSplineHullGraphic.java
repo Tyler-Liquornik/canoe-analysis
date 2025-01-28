@@ -108,7 +108,7 @@ public class CubicBezierSplineHullGraphic extends HullGraphic {
     public void colorBezierPointGroup(int sectionIndex, boolean setColored) {
         // One less section than the number of section endpoints (one slope graphic on every section endpoint)
         if (sectionIndex < 0 || sectionIndex >= slopeGraphics.size() - 1)
-            throw new IndexOutOfBoundsException("sectionIndex out of bounds");
+            throw new IndexOutOfBoundsException("sectionIndex: " + sectionIndex + " out of bounds");
 
         // Set the current colored section index
         coloredSectionIndex = sectionIndex;
