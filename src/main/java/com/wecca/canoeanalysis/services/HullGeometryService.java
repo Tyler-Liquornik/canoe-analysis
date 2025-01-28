@@ -14,6 +14,7 @@ import javafx.scene.shape.Rectangle;
 import lombok.NonNull;
 import lombok.Setter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -627,6 +628,7 @@ public class HullGeometryService {
 
     /**
      * Merges two adjacent hull sections to maintain continuity after a knot point is deleted.
+     * The aim of this is to minimize changing geometry as much as possible
      * @param rightIndex the index of the right section of the two adjacent hull sections
      * @return the updated Hull
      */
@@ -653,26 +655,57 @@ public class HullGeometryService {
             leftSection.setRx(rightSection.getRx());
 
             // Replace the updated left section and remove the right section
+            // Note that this intermediary hull is not valid is it violates C1 continuity
+            // This is because out of bounds points are not handled and shift unpredictably
             hull.getHullSections().set(leftIndex, leftSection);
             hull.getHullSections().remove(rightIndex);
 
-            // Clamp control points if they fall out of bounds
-            double bottomBoundary = -hull.getMaxHeight();
-            for (int i = 0; i < hull.getHullSections().size(); i++) {
-                HullSection prevSection = i > 0 ? hull.getHullSections().get(i - 1) : null;
+            // At this point, if we have deleted the minimum knot point, we need to adjust the geometry
+            // This is because the min knot point acts as a minimum bound
+            // After deleting, we might have points below the new minimum bound and need to fix that
+
+            // "Flatten" new min knot control points (set adjacent section control point thetas to make 180-degree angle across the bezier handle)
+            Point2D minKnot = hull.getHullSections().stream()
+                    .flatMap(hs -> ((CubicBezierFunction) hs.getSideProfileCurve()).getKnotPoints().stream())
+                    .min(Comparator.comparingDouble(Point2D::getY))
+                    .orElseThrow(() -> new RuntimeException("No minimum knot point found"));
+            for (int i = 1; i < hull.getHullSections().size(); i++) {
+                HullSection prevSection = hull.getHullSections().get(i - 1);
                 HullSection section = hull.getHullSections().get(i);
-                HullSection nextSection = i < hull.getHullSections().size() - 1 ? hull.getHullSections().get(i + 1) : null;
-                if (!(section.getSideProfileCurve() instanceof CubicBezierFunction bezier)) continue;
-                if (prevSection != null && prevSection.getSideProfileCurve() instanceof CubicBezierFunction prevBezier) {
-                      if (bezier.getControlY1() < bottomBoundary || prevBezier.getControlY2() < bottomBoundary) {
-                        bezier.setControlY1(bottomBoundary);
-                        prevBezier.setControlY2(bottomBoundary);
+                // Adjust control points for the two sections sharing the minKnot
+                if (prevSection.getSideProfileCurve() instanceof CubicBezierFunction prevBezier &&
+                        section.getSideProfileCurve() instanceof CubicBezierFunction bezier) {
+                    if (prevBezier.getKnotPoints().getLast().equals(minKnot) && bezier.getKnotPoints().getFirst().equals(minKnot)) {
+                        prevBezier.setControlY2(minKnot.getY());
+                        bezier.setControlY1(minKnot.getY());
                     }
                 }
-                if (nextSection != null && nextSection.getSideProfileCurve() instanceof CubicBezierFunction nextBezier) {
-                     if (bezier.getControlY2() < bottomBoundary || nextBezier.getControlY1() < bottomBoundary) {
-                        bezier.setControlY2(bottomBoundary);
-                        nextBezier.setControlY1(bottomBoundary);
+            }
+
+            // Reduce the r parameter for any control points below the new minimum
+            double minY = minKnot.getY();
+            for (int i = 0; i < hull.getHullSections().size(); i++) {
+                HullSection section = hull.getHullSections().get(i);
+                if (section.getSideProfileCurve() instanceof CubicBezierFunction bezier) {
+                    Point2D firstControl = bezier.getControlPoints().getFirst();
+                    Point2D lastControl = bezier.getControlPoints().getLast();
+
+                    // Adjust the first control point if it's below the minY
+                    if (firstControl.getY() < minY) {
+                        double theta = CalculusUtils.toPolar(firstControl, bezier.getKnotPoints().getFirst()).getY();
+                        double maxR = HullGeometryService.calculateMaxR(bezier.getKnotPoints().getFirst(), Math.toDegrees(theta), i);
+                        Point2D updatedPoint = CalculusUtils.toCartesian(new Point2D(maxR, theta), bezier.getKnotPoints().getFirst());
+                        bezier.setControlX1(updatedPoint.getX());
+                        bezier.setControlY1(updatedPoint.getY());
+                    }
+
+                    // Adjust the last control point if it's below the minY
+                    if (lastControl.getY() < minY) {
+                        double theta = CalculusUtils.toPolar(lastControl, bezier.getKnotPoints().getLast()).getY();
+                        double maxR = HullGeometryService.calculateMaxR(bezier.getKnotPoints().getLast(), Math.toDegrees(theta), i);
+                        Point2D updatedPoint = CalculusUtils.toCartesian(new Point2D(maxR, theta), bezier.getKnotPoints().getLast());
+                        bezier.setControlX2(updatedPoint.getX());
+                        bezier.setControlY2(updatedPoint.getY());
                     }
                 }
             }
