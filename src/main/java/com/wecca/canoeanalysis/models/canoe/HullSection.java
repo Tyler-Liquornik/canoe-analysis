@@ -117,8 +117,8 @@ public class HullSection extends Section
                        @JsonProperty("thickness") double thickness,
                        @JsonProperty("hasBulkhead") boolean hasBulkhead) {
         super(x, rx);
-        validateSign(sideProfileCurve::value, false);
-        validateSign(topProfileCurve::value, true);
+        validateSign(sideProfileCurve, false);
+        validateSign(topProfileCurve, null);
         this.sideProfileCurve = sideProfileCurve;
         this.topProfileCurve = topProfileCurve;
         this.thickness = thickness;
@@ -205,8 +205,8 @@ public class HullSection extends Section
 
     /**
      * Defines a function m(x) which models the mass as a function of length x
-     * md(x) for a given x is the mass of the x-sectional area element dA (comprises concrete and bulkhead if applicable)
-     * @return the function A_concrete(x)
+     * m(x) for a given x is the mass of the x-sectional area element dA (comprises concrete and bulkhead if applicable)
+     * @return the function m(x)
      */
     @JsonIgnore
     public BoundedUnivariateFunction getMassDistributionFunction() {
@@ -245,11 +245,10 @@ public class HullSection extends Section
     /**
      * @return the maximum width of the hull section based on the top profile curve
      */
-    @JsonIgnore
     public double getMaxWidth() {
-        BoundedUnivariateFunction topProfileFunction = topProfileCurve;
+        BoundedUnivariateFunction absTopProfileFunction = x -> Math.abs(topProfileCurve.value(x));
         UnivariateOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);
-        UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(topProfileFunction);
+        UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(absTopProfileFunction);
         SearchInterval searchInterval = new SearchInterval(x, rx);
         return 2 * optimizer.optimize(MaxEval.unlimited(), objectiveFunction, searchInterval).getValue();
     }
@@ -272,31 +271,20 @@ public class HullSection extends Section
     }
 
     /**
-     * Validates that the hull shape function is non-positive on its domain [start, end]
-     * This convention allows waterline height y = h (downward is +y)
-     * Note that this means the topmost point of the hull on the y-axis is y = 0
+     * Validates that the hull shape function does not cross zero beyond a small threshold.
+     * If `expectPositive == true`, function must be non-negative (can touch zero but not go below `-1e-6`).
+     * If `expectPositive == false`, function must be non-positive (can touch zero but not go above `1e-6`).
+     * If `expectPositive == null`, function can be positive or negative, but **must not cross zero by more than `1e-6`**.
      */
-    private void validateSign(Function<Double, Double> profileCurve, boolean positive) {
-        // Convert the hullShapeFunction to BoundedUnivariateFunction for compatibility with Apache Commons Math
-        // Need to negate the function as BrentOptimizer finds the min, and we want the max
-        BoundedUnivariateFunction profileCurveAsUnivariateFunction = profileCurve::apply;
-        BoundedUnivariateFunction negatedProfileCurve = x -> -profileCurveAsUnivariateFunction.value(x);
-
-        // Use BrentOptimizer to find the maximum value of the hull shape function on [start, end]
-        UnivariateOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);
-        UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(negatedProfileCurve);
-        SearchInterval searchInterval = new SearchInterval(x, rx);
-
-        // Optimize (find minimum of the negated function, which corresponds to the maximum of the original function)
-        UnivariatePointValuePair result = optimizer.optimize(MaxEval.unlimited(), objectiveFunction, searchInterval);
-
-        // Negate the result to get the maximum value
-        double maxValue = -result.getValue();
-
-        // Validate the extreme value based on the sign
-        if (positive && maxValue < 0)
-            throw new IllegalArgumentException("Hull shape function must be positive on its domain [start, end]");
-        else if (!positive && maxValue > 0)
-            throw new IllegalArgumentException("Hull shape function must be non-positive on its domain [start, end]");
+    private void validateSign(BoundedUnivariateFunction curve, Boolean expectPositive) {
+        double maxVal = curve.getMaxValue(new Section(x, rx));
+        double minVal = curve.getMinValue(new Section(x, rx));
+        if (expectPositive == null) {
+            if (minVal < -1e-6 && maxVal > 1e-6) throw new IllegalArgumentException("Curve crosses zero by more than ±1e-6.");
+        } else if (expectPositive) {
+            if (minVal < -1e-6) throw new IllegalArgumentException("Curve crosses below zero by more than 1e-6.");
+        } else {
+            if (maxVal > 1e-6) throw new IllegalArgumentException("Curve crosses above zero by more than 1e-6.");
+        }
     }
 }

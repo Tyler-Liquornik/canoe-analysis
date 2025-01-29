@@ -87,9 +87,9 @@ public class SharkBaitHullLibrary {
         CubicBezierFunction rightCurve = new CubicBezierFunction(rightX1, rightY1, rightControlX1, rightControlY1, rightControlX2, rightControlY2, rightX2, rightY2);
 
         // Still using parabola for now until desmos model is created
-        double a = - 7.0 / (180.0 * scalingFactor);
+        double a = 7.0 / (180.0 * scalingFactor);
         double h = 3.0 * scalingFactor;
-        double k = 0.35 * scalingFactor;
+        double k = - 0.35 * scalingFactor;
         VertexFormParabolaFunction topCurve = new VertexFormParabolaFunction(a, h, k);
 
         List<HullSection> sections = new ArrayList<>();

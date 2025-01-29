@@ -842,7 +842,7 @@ public class HullBuilderController implements Initializable {
         // Pass the Point2D knot to the service to delete the point
         if (knotPointToDelete == null) {
             if (isMouseInAddingKnotPointZone(mouseX)) {
-                 Hull updatedHull = HullGeometryService.addKnotPoint(new Point2D(functionSpaceX, functionSpaceY));
+                 // Hull updatedHull = HullGeometryService.addKnotPoint(new Point2D(functionSpaceX, functionSpaceY));
             }
         } else if (hull.getHullSections().size() > 2) {
             Hull updatedHull = HullGeometryService.deleteKnotPoint(knotPointToDelete);
