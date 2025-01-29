@@ -830,13 +830,19 @@ public class HullBuilderController implements Initializable {
         if (mouseX < hullGraphicPane.getLayoutX() || mouseX > hullGraphicPane.getLayoutX() + hullGraphicPane.getWidth())
             return;
 
-        double functionSpaceX = (mouseX - hullGraphicPane.getLayoutX()) / hullGraphicPane.getWidth() * hull.getLength();
+        double poiX = mouseX - hullGraphicPane.getLayoutX();
+        final double functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
+        HullSection section = hull.getHullSections().stream()
+                .filter(s -> s.getX() <= functionSpaceX && s.getRx() >= functionSpaceX)
+                .findFirst().orElseThrow(() -> new RuntimeException("Cannot place intersection point, out of bounds"));
+        CubicBezierFunction bezier = (CubicBezierFunction) section.getSideProfileCurve();
+        double functionSpaceY = bezier.value(functionSpaceX);
         Point2D knotPointToDelete = HullGeometryService.getDeletableKnotPoint(functionSpaceX);
 
         // Pass the Point2D knot to the service to delete the point
         if (knotPointToDelete == null) {
             if (isMouseInAddingKnotPointZone(mouseX)) {
-                // HullGeometryService.addKnotPoint(knotPointToAdd); // This method remains unchanged
+                 Hull updatedHull = HullGeometryService.addKnotPoint(new Point2D(functionSpaceX, functionSpaceY));
             }
         } else if (hull.getHullSections().size() > 2) {
             Hull updatedHull = HullGeometryService.deleteKnotPoint(knotPointToDelete);

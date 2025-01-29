@@ -595,11 +595,113 @@ public class HullGeometryService {
         return null;
     }
 
-    /**
-     * @param knotPointToAdd the knot point to add to the hull model
-     */
-    public static void addKnotPoint(@NonNull Point2D knotPointToAdd) {
+//    /**
+//     * Adds a new knot point to the hull by splitting the relevant Bezier section at the knot's X-coordinate.
+//     * Returns a new Hull instance, leaving the original unmodified.
+//     *
+//     * @param knotPointToAdd the new knot point (x,y) on the existing curve
+//     * @return a deep-copied and updated Hull with the new knot inserted as a split in its section
+//     */
+//    public static Hull addKnotPoint(@NonNull Point2D knotPointToAdd) {
+//        // Copy the current hull so we don’t alter the original in place
+//        Hull currHull = getHull();
+//        Hull updatedHull = YamlMarshallingService.deepCopy(currHull);
+//        if (updatedHull == null) throw new RuntimeException("Marshalling error deep copying the hull");
+//        double newX = knotPointToAdd.getX();
+//
+//        // Locate the existing section that covers [section.getX(), section.getRx()] for newX
+//        int sectionIndex = -1;
+//        for (int i = 0; i < updatedHull.getHullSections().size(); i++) {
+//            HullSection sec = updatedHull.getHullSections().get(i);
+//            if (newX >= sec.getX() && newX <= sec.getRx()) {
+//                sectionIndex = i;
+//                break;
+//            }
+//        }
+//        if (sectionIndex < 0) throw new IllegalArgumentException(String.format("X=%.3f is out of range for every section.", newX));
+//
+//
+//        // Solve for parameter t in [0..1] where x(t) == newX, and then split the curve at t
+//        HullSection oldSection = updatedHull.getHullSections().get(sectionIndex);
+//        if (!(oldSection.getSideProfileCurve() instanceof CubicBezierFunction oldBezier)) throw new IllegalArgumentException("Cannot split a non-Bezier hull section");
+//        double t = oldBezier.getT(newX);
+//        CubicBezierFunction[] splitCurves = splitCubicBezier(oldBezier, t);
+//        CubicBezierFunction leftBezier = splitCurves[0];
+//        CubicBezierFunction rightBezier = splitCurves[1];
+//
+//        // Construct two new hull sections around the new knot
+//        HullSection newLeftSec = new HullSection();
+//        newLeftSec.setSideProfileCurve(leftBezier);
+//        newLeftSec.setX(oldSection.getX());
+//        newLeftSec.setRx(newX);
+//
+//        HullSection newRightSec = new HullSection();
+//        newRightSec.setSideProfileCurve(rightBezier);
+//        newRightSec.setX(newX);
+//        newRightSec.setRx(oldSection.getRx());
+//
+//        // Remove the original section and insert new ones
+//        updatedHull.getHullSections().remove(sectionIndex);
+//        updatedHull.getHullSections().add(sectionIndex, newRightSec);
+//        updatedHull.getHullSections().add(sectionIndex, newLeftSec);
+//        return updatedHull;
+//    }
 
+    /**
+     * Splits a cubic Bezier at parameter t in [0..1].
+     * Returns an array [leftCurve, rightCurve].
+     */
+    private static CubicBezierFunction[] splitCubicBezier(CubicBezierFunction original, double t) {
+        double x0 = original.getX1(),    y0 = original.getY1();
+        double cx1 = original.getControlX1(), cy1 = original.getControlY1();
+        double cx2 = original.getControlX2(), cy2 = original.getControlY2();
+        double x3 = original.getX2(),    y3 = original.getY2();
+
+        // Execute De Casteljau's algorithm for bezier curve splitting
+        // For more: https://en.wikipedia.org/wiki/De_Casteljau%27s_algorithm
+        double p01x = lerp(x0,  cx1, t);
+        double p01y = lerp(y0,  cy1, t);
+        double p12x = lerp(cx1, cx2, t);
+        double p12y = lerp(cy1, cy2, t);
+        double p23x = lerp(cx2, x3,  t);
+        double p23y = lerp(cy2, y3,  t);
+
+        double p012x = lerp(p01x, p12x, t);
+        double p012y = lerp(p01y, p12y, t);
+        double p123x = lerp(p12x, p23x, t);
+        double p123y = lerp(p12y, p23y, t);
+
+        double p0123x = lerp(p012x, p123x, t);
+        double p0123y = lerp(p012y, p123y, t);
+
+        // Left sub-curve
+        CubicBezierFunction left = new CubicBezierFunction(
+                x0,    y0,
+                p01x,  p01y,
+                p012x, p012y,
+                p0123x, p0123y
+        );
+
+        // Right sub-curve
+        CubicBezierFunction right = new CubicBezierFunction(
+                p0123x,  p0123y,
+                p123x,   p123y,
+                p23x,    p23y,
+                x3,      y3
+        );
+
+        return new CubicBezierFunction[]{ left, right };
+    }
+
+    /**
+     * Performs linear interpolation between two values.
+     * @param a The starting value
+     * @param b The ending value
+     * @param t The interpolation factor between 0 and 1 (where 0 returns a and 1 returns b)
+     * @return The interpolated value between a and b
+     */
+    private static double lerp(double a, double b, double t) {
+        return a + (b - a) * t;
     }
 
     /**

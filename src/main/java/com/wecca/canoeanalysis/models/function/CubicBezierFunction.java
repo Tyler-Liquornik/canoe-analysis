@@ -107,7 +107,7 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
      * @param x The x-coordinate for which we want to find the corresponding parameter 't'.
      * @return The value of the parameter 't' (in the range [0, 1]) where the x-coordinate of the Bézier curve matches the input 'x'.
      */
-    private double getT(double x)
+    public double getT(double x)
     {
         // Ensure x is within the range of the curve
         double tolerance = 1e-3;
