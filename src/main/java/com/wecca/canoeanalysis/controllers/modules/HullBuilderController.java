@@ -27,7 +27,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
@@ -571,10 +570,12 @@ public class HullBuilderController implements Initializable {
      * Thus we differentiate between the data of the selected and adjacent hull sections
      *
      * @param knobIndex the index of the knob that was changed (knobs indexed L to R in increasing order from 0)
+     * @param oldROrThetaVal the old value for the knob (before user interaction)
      * @param newROrThetaVal the new value for the knob (after user interaction)
      */
     @Traceable
-    private void updateSystemFromKnob(int knobIndex, double newROrThetaVal) {
+    private void updateSystemFromKnob(int knobIndex, double oldROrThetaVal, double newROrThetaVal) {
+        if (Math.abs(oldROrThetaVal - newROrThetaVal) < 1e-6) return;
         if (selectedHullSection == null) return;
 
         // Update the relevant knob value
@@ -626,7 +627,7 @@ public class HullBuilderController implements Initializable {
             knob.setLocked(true);
             knobs.add(knob);
             int finalI = i;
-            knobListeners.add((observable, oldValue, newValue) -> updateSystemFromKnob(finalI, newValue.doubleValue()));
+            knobListeners.add((observable, oldValue, newValue) -> updateSystemFromKnob(finalI, oldValue.doubleValue(), newValue.doubleValue()));
             knob.valueProperty().addListener(knobListeners.get(i));
         }
 
