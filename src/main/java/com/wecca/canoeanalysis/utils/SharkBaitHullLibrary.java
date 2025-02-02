@@ -30,8 +30,7 @@ public class SharkBaitHullLibrary {
         // Scale compared to the actual length of Shark Bait
         scalingFactor = length / SHARK_BAIT_LENGTH;
 
-        // Side view Curve Construction Bezier Spline
-        // Redundant lines are for readability, and for synchronization with desmos model
+        // Knot Points (points x values for which the top and side view must pass through x, f(x))
         double top = 0.00;
         double knot0 = 0.00;
         double knot1 = 0.50 * scalingFactor;
@@ -39,6 +38,8 @@ public class SharkBaitHullLibrary {
         double knot3 = 5.50 * scalingFactor;
         double scaledLength = 6.00 * scalingFactor;
 
+        // Side view Curve Construction Bezier Spline
+        // Note: Redundant lines are for readability, and for synchronization with desmos model
         double leftX1 = knot0;
         double leftY1 = top;
         double leftControlX1 = 0.07 * scalingFactor;

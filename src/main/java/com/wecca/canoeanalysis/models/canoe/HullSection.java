@@ -245,6 +245,7 @@ public class HullSection extends Section
     /**
      * @return the maximum width of the hull section based on the top profile curve
      */
+    @JsonIgnore
     public double getMaxWidth() {
         BoundedUnivariateFunction absTopProfileFunction = x -> Math.abs(topProfileCurve.value(x));
         UnivariateOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);

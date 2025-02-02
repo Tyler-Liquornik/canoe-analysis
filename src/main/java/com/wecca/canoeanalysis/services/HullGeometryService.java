@@ -736,7 +736,6 @@ public class HullGeometryService {
         // Do not change the model from the service, pass the hull back up and set it in the controller
         Hull currHull = getHull();
         Hull hull = YamlMarshallingService.deepCopy(currHull);
-        if (hull == null) throw new RuntimeException("Marshalling error deep copying the hull");
         if (rightIndex <= 0 ) throw new IllegalArgumentException("index must be at least 1");
         int leftIndex = rightIndex - 1;
         HullSection leftSection = hull.getHullSections().get(leftIndex);
@@ -809,8 +808,27 @@ public class HullGeometryService {
                     }
                 }
             }
-        } else throw new IllegalArgumentException("Cannot work with non-bezier hull");
+        } else throw new IllegalArgumentException("Cannot work with non-bezier side view");
+
+
+        // TODO fix
+        if (leftSection.getTopProfileCurve() instanceof CubicBezierFunction leftTopBezier &&
+             rightSection.getTopProfileCurve() instanceof CubicBezierFunction rightTopBezier) {
+
+            // Get right knot & control point from right section
+            Point2D rightKnotTop = rightTopBezier.getKnotPoints().getLast();
+            Point2D rightControlTop = rightTopBezier.getControlPoints().getLast();
+
+            // Set right knot as the new end of the left section
+            leftTopBezier.setX2(rightKnotTop.getX());
+            leftTopBezier.setY2(rightKnotTop.getY());
+            leftTopBezier.setControlX2(rightControlTop.getX());
+            leftTopBezier.setControlY2(rightControlTop.getY());
+
+            // Update hull section
+            leftSection.setTopProfileCurve(leftTopBezier);
+        } else throw new IllegalArgumentException("Cannot work with non-bezier top view");
 
         return hull;
-    }
+     }
 }
