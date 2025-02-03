@@ -661,11 +661,6 @@ public class HullGeometryService {
         hull.getHullSections().add(sectionIndex, newRightSec);
         hull.getHullSections().add(sectionIndex, newLeftSec);
 
-
-        LoggerService.logPoints(leftTopBezier::value, new Section(oldSection.getX(), newX), 500);
-        LoggerService.logPoints(rightTopBezier::value, new Section(newX, oldSection.getRx()), 500);
-
-
         return hull;
     }
 
