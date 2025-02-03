@@ -840,37 +840,51 @@ public class HullBuilderController implements Initializable {
         double functionSpaceY = bezier.value(functionSpaceX);
         Point2D knotPointToDelete = HullGeometryService.getDeletableKnotPoint(functionSpaceX);
 
-        // Pass the Point2D knot to the service to delete the point
+        // Process the updated hull logic
+        Hull updatedHull = null;
+        boolean isAddOperation = false;
         if (knotPointToDelete == null) {
             if (isMouseInAddingKnotPointZone(mouseX)) {
-                 // Hull updatedHull = HullGeometryService.addKnotPoint(new Point2D(functionSpaceX, functionSpaceY));
+                updatedHull = HullGeometryService.addKnotPoint(new Point2D(functionSpaceX, functionSpaceY));
+                isAddOperation = true;
             }
-        } else if (hull.getHullSections().size() > 2) {
-            Hull updatedHull = HullGeometryService.deleteKnotPoint(knotPointToDelete);
-            if (updatedHull != null) {
-                selectedHullSection = null;
-                selectedHullSectionIndex = -1;
-                nextPressedBefore = false;
-                previousPressedBefore = false;
-                recalculateAndDisplayHullProperties();
-                setSideViewHullGraphic(updatedHull);
-                hull = updatedHull;
-                updateSectionsEditorHullCurveOverlay();
+        }
+        // There is a deletable knot and enough sections exist to delete.
+        else if (hull.getHullSections().size() > 2) updatedHull = HullGeometryService.deleteKnotPoint(knotPointToDelete);
+
+        // If the hull was successfully updated, update the UI and shared state.
+        if (updatedHull != null) {
+            selectedHullSection = null;
+            selectedHullSectionIndex = -1;
+            nextPressedBefore = false;
+            previousPressedBefore = false;
+            recalculateAndDisplayHullProperties();
+            setSideViewHullGraphic(updatedHull);
+            hull = updatedHull;
+            updateSectionsEditorHullCurveOverlay();
+        }
+
+        // Display the appropriate snackbar message
+        if (updatedHull == null) {
+            if (knotPointToDelete != null) {
                 mainController.showSnackbar(String.format(
-                        "Knot point deleted successfully: (x = %.3f, y = %.3f)",
-                        knotPointToDelete.getX(),
-                        knotPointToDelete.getY()
-                ));
+                        "Delete knot point error: (x = %.3f, y = %.3f)",
+                        knotPointToDelete.getX(), knotPointToDelete.getY()));
+            }
+            else mainController.showSnackbar("Cannot delete knot point: too few sections");
+        }
+        else {
+            if (isAddOperation) {
+                mainController.showSnackbar(String.format(
+                        "Knot point added: (x = %.3f, y = %.3f)",
+                        functionSpaceX, functionSpaceY));
             }
             else {
                 mainController.showSnackbar(String.format(
-                        "Delete knot point error: (x = %.3f, y = %.3f)",
-                        knotPointToDelete.getX(),
-                        knotPointToDelete.getY()
-                ));
+                        "Knot point deleted successfully: (x = %.3f, y = %.3f)",
+                        knotPointToDelete.getX(), knotPointToDelete.getY()));
             }
         }
-        else mainController.showSnackbar("Cannot delete knot point: too few sections");
     }
 
     @Override
