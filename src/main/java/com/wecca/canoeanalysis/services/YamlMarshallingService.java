@@ -192,7 +192,7 @@ public class YamlMarshallingService {
 
     /**
      * Note: type is checked, IDE is wrongly giving a warning which was suppressed
-     * Deep copies an object in-memory by marshalling and unmarshalling the object.
+     * Deep copies an object in-memory by marshalling and unmarshalling the object such that all fields are reinitialized recursively.
      * @param <T>  The type of the object being copied.
      * @param marshallableObject The object to deep copy which is integrated with Jackson for YAML marshalling.
      * @return A deep copy of the object, or null if copying fails.
@@ -204,7 +204,10 @@ public class YamlMarshallingService {
             String yamlString = yamlMapper.writeValueAsString(marshallableObject);
             Object read = yamlMapper.readValue(yamlString, marshallableObject.getClass());
             Class<?> classT = marshallableObject.getClass();
-            return classT.isInstance(read) ? (T) read : null;
-        } catch (Exception e) {return null;}
+            if (classT.isInstance(read)) return (T) read;
+            else throw new RuntimeException("Null read object during deep copy");
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
     }
 }

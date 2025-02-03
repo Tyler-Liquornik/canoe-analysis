@@ -1,7 +1,6 @@
 package com.wecca.canoeanalysis.services;
 
 import com.wecca.canoeanalysis.aop.Traceable;
-import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.controllers.modules.HullBuilderController;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
@@ -596,10 +595,147 @@ public class HullGeometryService {
     }
 
     /**
-     * @param knotPointToAdd the knot point to add to the hull model
+     * Adds a new knot point to the hull by splitting the relevant Bezier section at the knot's X-coordinate.
+     * Returns a new Hull instance, leaving the original unmodified.
+     *
+     * @param knotPointToAdd the new knot point (x,y) on the existing curve
+     * @return a deep-copied and updated Hull with the new knot inserted as a split in its section
      */
-    public static void addKnotPoint(@NonNull Point2D knotPointToAdd) {
+    public static Hull addKnotPoint(@NonNull Point2D knotPointToAdd) {
+        // Copy the current hull so we don’t alter the original in place
+        Hull currHull = getHull();
+        Hull hull = YamlMarshallingService.deepCopy(currHull);
+        if (hull == null) throw new RuntimeException("Marshalling error deep copying the hull");
+        double newX = knotPointToAdd.getX();
 
+        // Locate the existing section that covers [section.getX(), section.getRx()] for newX
+        int sectionIndex = -1;
+        for (int i = 0; i < hull.getHullSections().size(); i++) {
+            HullSection sec = hull.getHullSections().get(i);
+            if (newX >= sec.getX() && newX <= sec.getRx()) {
+                sectionIndex = i;
+                break;
+            }
+        }
+        if (sectionIndex < 0) throw new IllegalArgumentException(String.format("X=%.3f is out of range for every section.", newX));
+
+
+        // Solve for parameter t in [0..1] where x(t) == newX, and then split the curve at t
+        HullSection oldSection = hull.getHullSections().get(sectionIndex);
+
+        if (!(oldSection.getSideProfileCurve() instanceof CubicBezierFunction oldBezier)) throw new IllegalArgumentException("Cannot split a non-Bezier hull section");
+        double t = oldBezier.getT(newX);
+        CubicBezierFunction[] splitCurves = splitCubicBezier(oldBezier, t);
+        CubicBezierFunction leftBezier = splitCurves[0];
+        CubicBezierFunction rightBezier = splitCurves[1];
+
+
+        // adjustment TODO fix
+        Point2D globalMinKnot = hull.getHullSections().stream()
+                .flatMap(hs -> ((CubicBezierFunction) hs.getSideProfileCurve()).getKnotPoints().stream())
+                .min(Comparator.comparingDouble(Point2D::getY))
+                .orElseThrow(() -> new RuntimeException("No minimum knot found"));
+        double globalMinY = globalMinKnot.getY();
+        adjustBezierWithMinKnot(leftBezier, globalMinY, sectionIndex);
+        adjustBezierWithMinKnot(rightBezier, globalMinY, sectionIndex);
+
+        if (!(oldSection.getTopProfileCurve() instanceof CubicBezierFunction oldTopBezier)) throw new IllegalArgumentException("Cannot split a non-Bezier hull top section");
+        double tTop = oldTopBezier.getT(newX);
+        CubicBezierFunction[] splitTopCurves = splitCubicBezier(oldTopBezier, tTop);
+        CubicBezierFunction leftTopBezier = splitTopCurves[0];
+        CubicBezierFunction rightTopBezier = splitTopCurves[1];
+
+        // todo fix
+        Point2D globalMinKnotTop = hull.getHullSections().stream()
+                .flatMap(hs -> ((CubicBezierFunction) hs.getTopProfileCurve()).getKnotPoints().stream())
+                .min(Comparator.comparingDouble(Point2D::getY))
+                .orElseThrow(() -> new RuntimeException("No minimum top knot found"));
+        double globalMinYTop = globalMinKnotTop.getY();
+        adjustBezierWithMinKnot(leftTopBezier, globalMinYTop, sectionIndex);
+        adjustBezierWithMinKnot(rightTopBezier, globalMinYTop, sectionIndex);
+
+        // Rebuild the hull
+        HullSection newLeftSec = new HullSection(leftBezier, leftTopBezier, oldSection.getX(), newX, oldSection.getThickness(), oldSection.isFilledBulkhead());
+        HullSection newRightSec = new HullSection(rightBezier, rightTopBezier, newX, oldSection.getRx(), oldSection.getThickness(), oldSection.isFilledBulkhead());
+        hull.getHullSections().remove(sectionIndex);
+        hull.getHullSections().add(sectionIndex, newRightSec);
+        hull.getHullSections().add(sectionIndex, newLeftSec);
+
+        return hull;
+    }
+
+    /**
+     * Adjusts a given CubicBezierFunction using the strategy from the merge logic.
+     * If a control point lies below the provided minimum Y (minY), its radial coordinate (r)
+     * is clamped by computing the maximum allowed radius (via calculateMaxR) for that knot.
+     *
+     * @param bezier       the CubicBezierFunction to adjust
+     * @param minY         the minimum allowed Y value (from the global minimum knot)
+     * @param sectionIndex the index of the section (used in calculateMaxR)
+     */
+    private static void adjustBezierWithMinKnot(CubicBezierFunction bezier, double minY, int sectionIndex) {
+        // Adjust the first control point (relative to the first knot)
+        Point2D firstControl = bezier.getControlPoints().getFirst();
+        if (firstControl.getY() < minY) {
+            double theta = CalculusUtils.toPolar(firstControl, bezier.getKnotPoints().getFirst()).getY();
+            double maxR = calculateMaxR(bezier.getKnotPoints().getFirst(), Math.toDegrees(theta), sectionIndex);
+            Point2D updatedPoint = CalculusUtils.toCartesian(new Point2D(maxR, theta), bezier.getKnotPoints().getFirst());
+            bezier.setControlX1(updatedPoint.getX());
+            bezier.setControlY1(updatedPoint.getY());
+        }
+        // Adjust the last control point (relative to the last knot)
+        Point2D lastControl = bezier.getControlPoints().getLast();
+        if (lastControl.getY() < minY) {
+            double theta = CalculusUtils.toPolar(lastControl, bezier.getKnotPoints().getLast()).getY();
+            double maxR = calculateMaxR(bezier.getKnotPoints().getLast(), Math.toDegrees(theta), sectionIndex);
+            Point2D updatedPoint = CalculusUtils.toCartesian(new Point2D(maxR, theta), bezier.getKnotPoints().getLast());
+            bezier.setControlX2(updatedPoint.getX());
+            bezier.setControlY2(updatedPoint.getY());
+        }
+    }
+
+    /**
+     * Splits a cubic Bezier at parameter t in [0..1].
+     * Returns an array [leftCurve, rightCurve].
+     */
+    private static CubicBezierFunction[] splitCubicBezier(CubicBezierFunction original, double t) {
+        double x0 = original.getX1();
+        double y0 = original.getY1();
+        double cx1 = original.getControlX1();
+        double cy1 = original.getControlY1();
+        double cx2 = original.getControlX2();
+        double cy2 = original.getControlY2();
+        double x3 = original.getX2();
+        double y3 = original.getY2();
+
+        // Execute De Casteljau's algorithm for bezier curve splitting
+        // For more: https://en.wikipedia.org/wiki/De_Casteljau%27s_algorithm
+        double p01x = lerp(x0,  cx1, t);
+        double p01y = lerp(y0,  cy1, t);
+        double p12x = lerp(cx1, cx2, t);
+        double p12y = lerp(cy1, cy2, t);
+        double p23x = lerp(cx2, x3, t);
+        double p23y = lerp(cy2, y3, t);
+        double p012x = lerp(p01x, p12x, t);
+        double p012y = lerp(p01y, p12y, t);
+        double p123x = lerp(p12x, p23x, t);
+        double p123y = lerp(p12y, p23y, t);
+        double p0123x = lerp(p012x, p123x, t);
+        double p0123y = lerp(p012y, p123y, t);
+        CubicBezierFunction left = new CubicBezierFunction(x0, y0, p01x, p01y, p012x, p012y, p0123x, p0123y);
+        CubicBezierFunction right = new CubicBezierFunction(p0123x, p0123y, p123x, p123y, p23x, p23y, x3, y3);
+        return new CubicBezierFunction[] {left, right};
+    }
+
+    /**
+     * Performs linear interpolation between two values.
+     * @param a The starting value
+     * @param b The ending value
+     * @param t The interpolation factor between 0 and 1 (where 0 returns a and 1 returns b)
+     * @return The interpolated value between a and b
+     */
+    private static double lerp(double a, double b, double t) {
+        return a + (b - a) * t;
     }
 
     /**
@@ -636,7 +772,6 @@ public class HullGeometryService {
         // Do not change the model from the service, pass the hull back up and set it in the controller
         Hull currHull = getHull();
         Hull hull = YamlMarshallingService.deepCopy(currHull);
-        if (hull == null) throw new RuntimeException("Marshalling error deep copying the hull");
         if (rightIndex <= 0 ) throw new IllegalArgumentException("index must be at least 1");
         int leftIndex = rightIndex - 1;
         HullSection leftSection = hull.getHullSections().get(leftIndex);
@@ -681,36 +816,29 @@ public class HullGeometryService {
                     }
                 }
             }
-
-            // Reduce the r parameter for any control points below the new minimum
             double minY = minKnot.getY();
             for (int i = 0; i < hull.getHullSections().size(); i++) {
                 HullSection section = hull.getHullSections().get(i);
-                if (section.getSideProfileCurve() instanceof CubicBezierFunction bezier) {
-                    Point2D firstControl = bezier.getControlPoints().getFirst();
-                    Point2D lastControl = bezier.getControlPoints().getLast();
-
-                    // Adjust the first control point if it's below the minY
-                    if (firstControl.getY() < minY) {
-                        double theta = CalculusUtils.toPolar(firstControl, bezier.getKnotPoints().getFirst()).getY();
-                        double maxR = HullGeometryService.calculateMaxR(bezier.getKnotPoints().getFirst(), Math.toDegrees(theta), i);
-                        Point2D updatedPoint = CalculusUtils.toCartesian(new Point2D(maxR, theta), bezier.getKnotPoints().getFirst());
-                        bezier.setControlX1(updatedPoint.getX());
-                        bezier.setControlY1(updatedPoint.getY());
-                    }
-
-                    // Adjust the last control point if it's below the minY
-                    if (lastControl.getY() < minY) {
-                        double theta = CalculusUtils.toPolar(lastControl, bezier.getKnotPoints().getLast()).getY();
-                        double maxR = HullGeometryService.calculateMaxR(bezier.getKnotPoints().getLast(), Math.toDegrees(theta), i);
-                        Point2D updatedPoint = CalculusUtils.toCartesian(new Point2D(maxR, theta), bezier.getKnotPoints().getLast());
-                        bezier.setControlX2(updatedPoint.getX());
-                        bezier.setControlY2(updatedPoint.getY());
-                    }
-                }
+                if (section.getSideProfileCurve() instanceof CubicBezierFunction bezier) adjustBezierWithMinKnot(bezier, minY, i);
             }
-        } else throw new IllegalArgumentException("Cannot work with non-bezier hull");
+        } else throw new IllegalArgumentException("Cannot work with non-bezier side view");
 
+        if (leftSection.getTopProfileCurve() instanceof CubicBezierFunction leftTopBezier &&
+             rightSection.getTopProfileCurve() instanceof CubicBezierFunction rightTopBezier) {
+
+            // Get right knot & control point from right section
+            Point2D rightKnotTop = rightTopBezier.getKnotPoints().getLast();
+            Point2D rightControlTop = rightTopBezier.getControlPoints().getLast();
+
+            // Set right knot as the new end of the left section
+            leftTopBezier.setX2(rightKnotTop.getX());
+            leftTopBezier.setY2(rightKnotTop.getY());
+            leftTopBezier.setControlX2(rightControlTop.getX());
+            leftTopBezier.setControlY2(rightControlTop.getY());
+
+            // Update hull section
+            leftSection.setTopProfileCurve(leftTopBezier);
+        } else throw new IllegalArgumentException("Cannot work with non-bezier top view");
         return hull;
-    }
+     }
 }

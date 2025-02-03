@@ -27,7 +27,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
@@ -435,7 +434,7 @@ public class HullBuilderController implements Initializable {
     public void setSectionProperties(double height, double volume, double mass, double x, double rx) {
         String heightInfo = String.format("%.4f m", height);
         this.heightLabel.setText(heightInfo);
-        String interval = "(" + x + " m, " + rx + " m)";
+        String interval = String.format("(%.4f m, %.4f m)", x, rx);
         this.intervalLabel.setText(interval);
         String volumeFormated = String.format("%.4f m^3", volume);
         this.volumeLabel.setText(volumeFormated);
@@ -571,10 +570,12 @@ public class HullBuilderController implements Initializable {
      * Thus we differentiate between the data of the selected and adjacent hull sections
      *
      * @param knobIndex the index of the knob that was changed (knobs indexed L to R in increasing order from 0)
+     * @param oldROrThetaVal the old value for the knob (before user interaction)
      * @param newROrThetaVal the new value for the knob (after user interaction)
      */
     @Traceable
-    private void updateSystemFromKnob(int knobIndex, double newROrThetaVal) {
+    private void updateSystemFromKnob(int knobIndex, double oldROrThetaVal, double newROrThetaVal) {
+        if (Math.abs(oldROrThetaVal - newROrThetaVal) < 1e-6) return;
         if (selectedHullSection == null) return;
 
         // Update the relevant knob value
@@ -626,7 +627,7 @@ public class HullBuilderController implements Initializable {
             knob.setLocked(true);
             knobs.add(knob);
             int finalI = i;
-            knobListeners.add((observable, oldValue, newValue) -> updateSystemFromKnob(finalI, newValue.doubleValue()));
+            knobListeners.add((observable, oldValue, newValue) -> updateSystemFromKnob(finalI, oldValue.doubleValue(), newValue.doubleValue()));
             knob.valueProperty().addListener(knobListeners.get(i));
         }
 
@@ -830,40 +831,60 @@ public class HullBuilderController implements Initializable {
         if (mouseX < hullGraphicPane.getLayoutX() || mouseX > hullGraphicPane.getLayoutX() + hullGraphicPane.getWidth())
             return;
 
-        double functionSpaceX = (mouseX - hullGraphicPane.getLayoutX()) / hullGraphicPane.getWidth() * hull.getLength();
+        double poiX = mouseX - hullGraphicPane.getLayoutX();
+        final double functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
+        HullSection section = hull.getHullSections().stream()
+                .filter(s -> s.getX() <= functionSpaceX && s.getRx() >= functionSpaceX)
+                .findFirst().orElseThrow(() -> new RuntimeException("Cannot place intersection point, out of bounds"));
+        CubicBezierFunction bezier = (CubicBezierFunction) section.getSideProfileCurve();
+        double functionSpaceY = bezier.value(functionSpaceX);
         Point2D knotPointToDelete = HullGeometryService.getDeletableKnotPoint(functionSpaceX);
 
-        // Pass the Point2D knot to the service to delete the point
+        // Process the updated hull logic
+        Hull updatedHull = null;
+        boolean isAddOperation = false;
         if (knotPointToDelete == null) {
             if (isMouseInAddingKnotPointZone(mouseX)) {
-                // HullGeometryService.addKnotPoint(knotPointToAdd); // This method remains unchanged
+                updatedHull = HullGeometryService.addKnotPoint(new Point2D(functionSpaceX, functionSpaceY));
+                isAddOperation = true;
             }
-        } else if (hull.getHullSections().size() > 2) {
-            Hull updatedHull = HullGeometryService.deleteKnotPoint(knotPointToDelete);
-            if (updatedHull != null) {
-                selectedHullSection = null;
-                selectedHullSectionIndex = -1;
-                nextPressedBefore = false;
-                previousPressedBefore = false;
-                recalculateAndDisplayHullProperties();
-                setSideViewHullGraphic(updatedHull);
-                hull = updatedHull;
-                updateSectionsEditorHullCurveOverlay();
+        }
+        // There is a deletable knot and enough sections exist to delete.
+        else if (hull.getHullSections().size() > 2) updatedHull = HullGeometryService.deleteKnotPoint(knotPointToDelete);
+
+        // If the hull was successfully updated, update the UI and shared state.
+        if (updatedHull != null) {
+            selectedHullSection = null;
+            selectedHullSectionIndex = -1;
+            nextPressedBefore = false;
+            previousPressedBefore = false;
+            recalculateAndDisplayHullProperties();
+            setSideViewHullGraphic(updatedHull);
+            hull = updatedHull;
+            updateSectionsEditorHullCurveOverlay();
+        }
+
+        // Display the appropriate snackbar message
+        if (updatedHull == null) {
+            if (knotPointToDelete == null) mainController.showSnackbar("Cannot delete knot point");
+            else {
                 mainController.showSnackbar(String.format(
-                        "Knot point deleted successfully: (x = %.3f, y = %.3f)",
-                        knotPointToDelete.getX(),
-                        knotPointToDelete.getY()
-                ));
+                        "Cannot delete knot point: (x = %.3f, y = %.3f), too few sections",
+                        knotPointToDelete.getX(), knotPointToDelete.getY()));
+            }
+        }
+        else {
+            if (isAddOperation) {
+                mainController.showSnackbar(String.format(
+                        "Knot point added: (x = %.3f, y = %.3f)",
+                        functionSpaceX, functionSpaceY));
             }
             else {
                 mainController.showSnackbar(String.format(
-                        "Delete knot point error: (x = %.3f, y = %.3f)",
-                        knotPointToDelete.getX(),
-                        knotPointToDelete.getY()
-                ));
+                        "Knot point deleted successfully: (x = %.3f, y = %.3f)",
+                        knotPointToDelete.getX(), knotPointToDelete.getY()));
             }
         }
-        else mainController.showSnackbar("Cannot delete knot point: too few sections");
     }
 
     @Override

@@ -268,8 +268,13 @@ public class Hull {
     private void validateWallThickness(List<HullSection> sections) {
         for (HullSection section : sections)
         {
-            if (section.getThickness() > section.getMaxWidth() / 2)
-                throw new IllegalArgumentException("Hull walls would be greater than the width of the canoe");
+            if (section.getThickness() > section.getMaxWidth() / 2) {
+                throw new IllegalArgumentException(String.format(
+                        "Hull walls would be greater than the width of the canoe. " +
+                                "Thickness: %.4f, Allowed max: %.4f",
+                        section.getThickness(), section.getMaxWidth() / 2
+                ));
+            }
         }
     }
 }

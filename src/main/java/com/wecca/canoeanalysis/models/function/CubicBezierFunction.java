@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis.models.function;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.utils.CalculusUtils;
 import javafx.geometry.Point2D;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -107,19 +108,27 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
      * @param x The x-coordinate for which we want to find the corresponding parameter 't'.
      * @return The value of the parameter 't' (in the range [0, 1]) where the x-coordinate of the Bézier curve matches the input 'x'.
      */
-    private double getT(double x)
-    {
-        // Ensure x is within the range of the curve
-        double tolerance = 1e-3;
-        if (x < getX() - tolerance || x > getRx() + tolerance)
-            throw new IllegalArgumentException("x = " + x + " is out of bounds for this Bézier curve");
+    public double getT(double x) {
+        // Round the input x and the endpoints (using 6 decimal digits; adjust if needed).
+        double roundedX = CalculusUtils.roundXDecimalDigits(x, 6);
+        double roundedMin = CalculusUtils.roundXDecimalDigits(getX(), 6);
+        double roundedMax = CalculusUtils.roundXDecimalDigits(getRx(), 6);
+        if (roundedX < roundedMin - 1e-3 || roundedX > roundedMax + 1e-3)
+            throw new IllegalArgumentException("x = " + roundedX + " is out of bounds for this Bézier curve [" + roundedMin + ", " + roundedMax + "]");
 
-        // Solve for t given x, should be one t per x since the curve passes the vertical line test
-        UnivariateFunction xFunc = t -> getCubicBezierCurve2D().point(t).x() - x;
+        // If x out of bounds, clamp it to the respective bound
+        if (roundedX < roundedMin) roundedX = roundedMin;
+        if (roundedX > roundedMax) roundedX = roundedMax;
+
+        // Define and root-solve the function for which we want to find the root:
+        // f(t) = (rounded Bézier x-value at t) - (rounded target x)
+        double finalRoundedX = roundedX;
+        UnivariateFunction xFunc = t -> CalculusUtils.roundXDecimalDigits(getCubicBezierCurve2D().point(t).x(), 6) - finalRoundedX;
         try {
             return solver.solve(MaxEval.unlimited().getMaxEval(), xFunc, T_MIN, T_MAX);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to solve for t given x = " + x, e);
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Failed to solve for t given x = " + roundedX + " within bounds [" + roundedMin + ", " + roundedMax + "]", e);
         }
     }
 
