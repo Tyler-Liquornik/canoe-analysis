@@ -434,7 +434,7 @@ public class HullBuilderController implements Initializable {
     public void setSectionProperties(double height, double volume, double mass, double x, double rx) {
         String heightInfo = String.format("%.4f m", height);
         this.heightLabel.setText(heightInfo);
-        String interval = "(" + x + " m, " + rx + " m)";
+        String interval = String.format("(%.4f m, %.4f m)", x, rx);
         this.intervalLabel.setText(interval);
         String volumeFormated = String.format("%.4f m^3", volume);
         this.volumeLabel.setText(volumeFormated);
@@ -866,12 +866,12 @@ public class HullBuilderController implements Initializable {
 
         // Display the appropriate snackbar message
         if (updatedHull == null) {
-            if (knotPointToDelete != null) {
+            if (knotPointToDelete == null) mainController.showSnackbar("Cannot delete knot point");
+            else {
                 mainController.showSnackbar(String.format(
-                        "Delete knot point error: (x = %.3f, y = %.3f)",
+                        "Cannot delete knot point: (x = %.3f, y = %.3f), too few sections",
                         knotPointToDelete.getX(), knotPointToDelete.getY()));
             }
-            else mainController.showSnackbar("Cannot delete knot point: too few sections");
         }
         else {
             if (isAddOperation) {

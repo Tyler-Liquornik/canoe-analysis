@@ -816,38 +816,13 @@ public class HullGeometryService {
                     }
                 }
             }
-
-            // Reduce the r parameter for any control points below the new minimum
             double minY = minKnot.getY();
             for (int i = 0; i < hull.getHullSections().size(); i++) {
                 HullSection section = hull.getHullSections().get(i);
-                if (section.getSideProfileCurve() instanceof CubicBezierFunction bezier) {
-                    Point2D firstControl = bezier.getControlPoints().getFirst();
-                    Point2D lastControl = bezier.getControlPoints().getLast();
-
-                    // Adjust the first control point if it's below the minY
-                    if (firstControl.getY() < minY) {
-                        double theta = CalculusUtils.toPolar(firstControl, bezier.getKnotPoints().getFirst()).getY();
-                        double maxR = HullGeometryService.calculateMaxR(bezier.getKnotPoints().getFirst(), Math.toDegrees(theta), i);
-                        Point2D updatedPoint = CalculusUtils.toCartesian(new Point2D(maxR, theta), bezier.getKnotPoints().getFirst());
-                        bezier.setControlX1(updatedPoint.getX());
-                        bezier.setControlY1(updatedPoint.getY());
-                    }
-
-                    // Adjust the last control point if it's below the minY
-                    if (lastControl.getY() < minY) {
-                        double theta = CalculusUtils.toPolar(lastControl, bezier.getKnotPoints().getLast()).getY();
-                        double maxR = HullGeometryService.calculateMaxR(bezier.getKnotPoints().getLast(), Math.toDegrees(theta), i);
-                        Point2D updatedPoint = CalculusUtils.toCartesian(new Point2D(maxR, theta), bezier.getKnotPoints().getLast());
-                        bezier.setControlX2(updatedPoint.getX());
-                        bezier.setControlY2(updatedPoint.getY());
-                    }
-                }
+                if (section.getSideProfileCurve() instanceof CubicBezierFunction bezier) adjustBezierWithMinKnot(bezier, minY, i);
             }
         } else throw new IllegalArgumentException("Cannot work with non-bezier side view");
 
-
-        // TODO fix
         if (leftSection.getTopProfileCurve() instanceof CubicBezierFunction leftTopBezier &&
              rightSection.getTopProfileCurve() instanceof CubicBezierFunction rightTopBezier) {
 
@@ -864,7 +839,6 @@ public class HullGeometryService {
             // Update hull section
             leftSection.setTopProfileCurve(leftTopBezier);
         } else throw new IllegalArgumentException("Cannot work with non-bezier top view");
-
         return hull;
      }
 }
