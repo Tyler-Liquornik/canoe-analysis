@@ -47,7 +47,7 @@
             </AnchorPane>
          </children>
       </StackPane>
-      <TableView fx:id="dataTable" layoutX="31.0" layoutY="60.0" prefHeight="400" prefWidth="750">
+      <TableView fx:id="dataTable" layoutX="31.0" layoutY="60.0" prefHeight="475" prefWidth="750">
          <columns>
             <TableColumn fx:id="parameterColumn" prefWidth="150.0" text="Parameter"/>
             <TableColumn fx:id="descriptionColumn" prefWidth="250" text="Description" />

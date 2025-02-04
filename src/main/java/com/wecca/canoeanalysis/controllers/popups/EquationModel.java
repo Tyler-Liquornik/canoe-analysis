@@ -1,37 +1,39 @@
 package com.wecca.canoeanalysis.controllers.popups;
 
-public class EquationModel {
-    private String parameter;
-    private String description;
-    private String value;
+import javafx.scene.text.TextFlow;
 
-    public EquationModel(String parameter, String description, String value) {
+public class EquationModel {
+    private TextFlow parameter;
+    private TextFlow description;
+    private TextFlow value;
+
+    public EquationModel(TextFlow parameter, TextFlow description, TextFlow value) {
         this.parameter = parameter;
         this.description = description;
         this.value = value;
     }
 
-    public String getParameter() {
+    public TextFlow getParameter() {
         return parameter;
     }
 
-    public void setParameter(String parameter) {
+    public void setParameter(TextFlow parameter) {
         this.parameter = parameter;
     }
 
-    public String getDescription() {
+    public TextFlow getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(TextFlow description) {
         this.description = description;
     }
 
-    public String getValue() {
+    public TextFlow getValue() {
         return value;
     }
 
-    public void setValue(String value) {
+    public void setValue(TextFlow value) {
         this.value = value;
     }
 }
