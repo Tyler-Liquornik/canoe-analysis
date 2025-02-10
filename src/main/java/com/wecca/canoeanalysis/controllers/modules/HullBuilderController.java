@@ -228,12 +228,10 @@ public class HullBuilderController implements Initializable {
                 Range overlaySection;
                 double lControlX = bezier.getControlX1();
                 double rControlX = bezier.getControlX2();
-                if (Math.abs(rControlX - lControlX) <= 1e-2)
-                    continue;
-                else if (rControlX - lControlX <= 1e-2)
+                if (Math.abs(rControlX - lControlX) <= 5e-3 || rControlX - lControlX <= 5e-3)
                     overlaySection = new Range(lControlX, rControlX);
                 else {
-                    overlaySection = new Range(lControlX, rControlX);
+                    overlaySection = new Section(lControlX, rControlX);
                     double maxY = bezier.getMaxValue(new Section(lControlX, rControlX));
                     double minY = bezier.getMinValue(new Section(lControlX, rControlX));
                     Rectangle validAddKnotRectangle = new Rectangle(
