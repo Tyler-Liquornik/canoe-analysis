@@ -1,52 +1,53 @@
 package com.wecca.canoeanalysis.models.function;
 
+import com.wecca.canoeanalysis.aop.Traceable;
 import javafx.geometry.Point2D;
 import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
+import org.apache.commons.math3.optim.univariate.BrentOptimizer;
+import org.apache.commons.math3.optim.univariate.SearchInterval;
+import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
+import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
 
 /**
  * A function which has bounded y-values on its domain, some subset of R^+
  */
 public interface BoundedUnivariateFunction extends UnivariateFunction {
+
     /**
-     * Gets the minimum point of the function within a specific section.
-     * @param section the section within which to find the minimum point
-     * @return the point (x, y) where the function has its minimum value within the specified section
+     * @param section the section within which to find the minimum
+     * @return the minimum point (x, y) of the function within the specified section.
      */
     default Point2D getMinPoint(Section section) {
-        double step = (section.getRx() - section.getX()) / 100;
-        double xMin = section.getX();
-        double yMin = value(xMin);
-
-        for (double x = section.getX(); x <= section.getRx(); x += step) {
-            double y = value(x);
-            if (y < yMin) {
-                yMin = y;
-                xMin = x;
-            }
-        }
-
-        return new Point2D(xMin, yMin);
+        return optimize(section, GoalType.MINIMIZE);
     }
 
     /**
-     * Gets the maximum point of the function within a specific section.
-     * @param section the section within which to find the maximum point
-     * @return the point (x, y) where the function has its maximum value within the specified section
+     * @param section the section within which to find the maximum
+     * @return the maximum point (x, y) of the function within the specified section.
      */
     default Point2D getMaxPoint(Section section) {
-        double step = (section.getRx() - section.getX()) / 100;
-        double xMax = section.getX();
-        double yMax = value(xMax);
+        return optimize(section, GoalType.MAXIMIZE);
+    }
 
-        for (double x = section.getX(); x <= section.getRx(); x += step) {
-            double y = value(x);
-            if (y > yMax) {
-                yMax = y;
-                xMax = x;
-            }
-        }
-
-        return new Point2D(xMax, yMax);
+    /**
+     * Optimizes the function to find the minimum or maximum point within a section.
+     * @param section  the section within which to perform the optimization
+     * @param goalType the optimization goal (minimize or maximize)
+     * @return the optimal point (x, y)
+     */
+    private Point2D optimize(Section section, GoalType goalType) {
+        BrentOptimizer optimizer = new BrentOptimizer(1e-10, 1e-8);
+        UnivariatePointValuePair result = optimizer.optimize(
+                new MaxEval(1000),
+                new UnivariateObjectiveFunction(this),
+                goalType,
+                new SearchInterval(section.getX(), section.getRx())
+        );
+        double x = result.getPoint();
+        double y = result.getValue();
+        return new Point2D(x, y);
     }
 
     /**
