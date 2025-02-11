@@ -2,6 +2,7 @@ package com.wecca.canoeanalysis.models.canoe;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.models.data.SolveType;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.LoadUtils;
@@ -32,10 +33,14 @@ public class Canoe
     @Setter
     private double sessionMaxShear;
 
+    @Setter
+    private SolveType solveType;
+
     public Canoe() {
         this.hull = null;
         this.loads = new ArrayList<>();
-        sessionMaxShear = 0.0;
+        this.sessionMaxShear = 0.0;
+        this.solveType = SolveType.UNSOLVED;
     }
 
     public void setHull(Hull hull) {
@@ -47,7 +52,7 @@ public class Canoe
     /**
      * Add a load to the canoe, combining pLoads and dLoads where their x/rx match up (complex distributions added with no extra logic)
      * @param load the load to add
-     * @return the result of adding the load (ADDED | REMOVED | COMBINED)
+     * @return the resultof adding the load (ADDED | REMOVED | COMBINED)
      */
     public AddLoadResult addLoad(Load load) {
         if (!isLoadWithinCanoeLength(load))
