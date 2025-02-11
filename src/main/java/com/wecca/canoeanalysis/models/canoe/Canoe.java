@@ -2,6 +2,7 @@ package com.wecca.canoeanalysis.models.canoe;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.models.data.SolveType;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.LoadUtils;
@@ -33,13 +34,13 @@ public class Canoe
     private double sessionMaxShear;
 
     @Setter
-    private String solveType;
+    private SolveType solveType;
 
     public Canoe() {
         this.hull = null;
         this.loads = new ArrayList<>();
         this.sessionMaxShear = 0.0;
-        this.solveType = "Unsolved";
+        this.solveType = SolveType.UNSOLVED;
     }
 
     public void setHull(Hull hull) {

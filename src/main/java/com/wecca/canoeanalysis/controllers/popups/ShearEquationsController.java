@@ -1,6 +1,6 @@
 package com.wecca.canoeanalysis.controllers.popups;
 
-import com.wecca.canoeanalysis.controllers.popups.EquationModel;
+import com.wecca.canoeanalysis.models.data.Equation;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -15,16 +15,16 @@ import javafx.scene.text.TextFlow;
 public class ShearEquationsController {
 
     @FXML
-    private TableView<EquationModel> dataTable;
+    private TableView<Equation> dataTable;
 
     @FXML
-    private TableColumn<EquationModel, TextFlow> parameterColumn;
+    private TableColumn<Equation, TextFlow> parameterColumn;
 
     @FXML
-    private TableColumn<EquationModel, TextFlow> descriptionColumn;
+    private TableColumn<Equation, TextFlow> descriptionColumn;
 
     @FXML
-    private TableColumn<EquationModel, TextFlow> valueColumn;
+    private TableColumn<Equation, TextFlow> valueColumn;
 
     @FXML
     public void initialize() {
@@ -40,76 +40,76 @@ public class ShearEquationsController {
         setRowHeight();
 
         // Creating the ObservableList with correctly formatted subscripts
-        ObservableList<EquationModel> data = FXCollections.observableArrayList(
-                new EquationModel(createSubscriptText("P", "critical"),
+        ObservableList<Equation> data = FXCollections.observableArrayList(
+                new Equation(createSubscriptText("P", "critical"),
                         new TextFlow(new Text("Perimeter affected by knee (mm)")),
                         new TextFlow(new Text("4[b + 2(d / 2)]"))),
 
-                new EquationModel(createSubscriptText("A", "critical"),
+                new Equation(createSubscriptText("A", "critical"),
                         new TextFlow(new Text("Area affected by knee (mm²)")),
                         new TextFlow(createSubscriptText("P", "critical"), new Text(" * "), createSubscriptText("t", ""))),
 
-                new EquationModel(createSubscriptText("V", "p"),
+                new Equation(createSubscriptText("V", "p"),
                         new TextFlow(new Text("Punching shear force (N)")),
                         new TextFlow(new Text("625.3875"))),
 
-                new EquationModel(createSubscriptText("v", "f"),
+                new Equation(createSubscriptText("v", "f"),
                         new TextFlow(new Text("Punching shear stress (MPa)")),
                         new TextFlow(createSubscriptText("V", "f"), new Text(" / "), createSubscriptText("A", "critical"))),
 
-                new EquationModel(createSubscriptText("t", ""),
+                new Equation(createSubscriptText("t", ""),
                         new TextFlow(new Text("Canoe thickness (mm)")),
                         new TextFlow(new Text("Input / from hull builder"))),
 
-                new EquationModel(createSubscriptText("b", ""),
+                new Equation(createSubscriptText("b", ""),
                         new TextFlow(new Text("Hull width (mm)")),
                         new TextFlow(new Text("Input / from hull builder"))),
 
-                new EquationModel(createSubscriptText("f", "c"),
+                new Equation(createSubscriptText("f", "c"),
                         new TextFlow(new Text("Compressive strength (MPa)")),
                         new TextFlow(new Text("Input"))),
 
-                new EquationModel(createSubscriptText("α", ""),
+                new Equation(createSubscriptText("α", ""),
                         new TextFlow(new Text("Internal column")),
                         new TextFlow(new Text("4"))),
 
-                new EquationModel(createSubscriptText("λ", ""),
+                new Equation(createSubscriptText("λ", ""),
                         new TextFlow(new Text("Low-density concrete")),
                         new TextFlow(new Text("0.75"))),
 
-                new EquationModel(createSubscriptText("β", "c"),
+                new Equation(createSubscriptText("β", "c"),
                         new TextFlow(new Text("Square column")),
                         new TextFlow(new Text("1"))),
 
-                new EquationModel(createSubscriptText("φ", "c"),
+                new Equation(createSubscriptText("φ", "c"),
                         new TextFlow(new Text("Concrete")),
                         new TextFlow(new Text("0.65"))),
 
-                new EquationModel(createSubscriptText("d", ""),
+                new Equation(createSubscriptText("d", ""),
                         new TextFlow(new Text("Diameter of knee")),
                         new TextFlow(new Text("13"))),
 
-                new EquationModel(createSubscriptText("v", "c1"),
+                new Equation(createSubscriptText("v", "c1"),
                         new TextFlow(new Text("First formula for calculating vc min")),
                         new TextFlow(new Text("(1 + 2 / "), createSubscriptText("β", "c"), new Text(")(0.19)("), createSubscriptText("λ", ""), new Text(")("),
                                 createSubscriptText("φ", "c"), new Text(")(√"), createSubscriptText("f", "c"), new Text(")"))),
 
-                new EquationModel(createSubscriptText("v", "c2"),
+                new Equation(createSubscriptText("v", "c2"),
                         new TextFlow(new Text("Second formula for calculating vc min")),
                         new TextFlow(new Text("(0.19 + (α * d / "), createSubscriptText("P", "critical"), new Text(") * "), createSubscriptText("λ", ""),
                                 new Text(" * "), createSubscriptText("φ", "c"), new Text(" * √"), createSubscriptText("f", "c"), new Text(")"))),
 
-                new EquationModel(createSubscriptText("v", "c3"),
+                new Equation(createSubscriptText("v", "c3"),
                         new TextFlow(new Text("Third equation for calculating vc min")),
                         new TextFlow(new Text("0.38 * "), createSubscriptText("λ", ""), new Text(" * "), createSubscriptText("φ", "c"),
                                 new Text(" * √"), createSubscriptText("f", "c"))),
 
-                new EquationModel(createSubscriptText("v", "c min"),
+                new Equation(createSubscriptText("v", "c min"),
                         new TextFlow(new Text("Lowest of vc1,2,3")),
                         new TextFlow(new Text("min("), createSubscriptText("v", "c1"), new Text(", "), createSubscriptText("v", "c2"),
                                 new Text(", "), createSubscriptText("v", "c3"), new Text(")"))),
 
-                new EquationModel(
+                new Equation(
                         createSubscriptText("V", "c"),
                         new TextFlow(new Text("Shear strength of concrete")),
                         new TextFlow(
@@ -147,9 +147,9 @@ public class ShearEquationsController {
     }
 
     private void setRowHeight() {
-        dataTable.setRowFactory(tv -> new TableRow<EquationModel>() {
+        dataTable.setRowFactory(tv -> new TableRow<Equation>() {
             @Override
-            protected void updateItem(EquationModel item, boolean empty) {
+            protected void updateItem(Equation item, boolean empty) {
                 super.updateItem(item, empty);
                 if (!empty && item != null) {
                     setPrefHeight(25);
@@ -159,7 +159,7 @@ public class ShearEquationsController {
     }
 
 
-    private void setTextFlowColumnFactory(TableColumn<EquationModel, TextFlow> column) {
+    private void setTextFlowColumnFactory(TableColumn<Equation, TextFlow> column) {
         column.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(TextFlow item, boolean empty) {

@@ -6,6 +6,7 @@ import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.canoe.FloatingSolution;
+import com.wecca.canoeanalysis.models.data.SolveType;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
 import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.utils.InputParsingUtils;
@@ -242,7 +243,7 @@ public class PunchingShearController implements Initializable {
         hullWidthTextField.setText(String.format("%.2f",canoe.getMaxWidth()*1000));
 
         // need to account for floating
-        if(canoe.getSolveType().equals("Floating")){
+        if(canoe.getSolveType().equals(SolveType.FLOATING)){
             FloatingSolution solution = BeamSolverService.solveFloatingSystem(canoe);
             if (solution == null) {
                 mainController.showSnackbar("Error, buoyancy solver could not converge to a solution");
