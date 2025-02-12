@@ -605,7 +605,7 @@ public class HullBuilderController implements Initializable {
         if (sectionPropertiesSelected && selectedHullSection != null) {
             setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),
                     selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
-        } else {
+        } else if (selectedHullSection != null) {
             setSectionProperties(hull.getMaxHeight(), hull.getTotalVolume(),
                     hull.getMass(), 0, hull.getLength());
         }
