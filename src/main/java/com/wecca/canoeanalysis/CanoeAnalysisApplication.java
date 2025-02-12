@@ -5,7 +5,7 @@ import com.wecca.canoeanalysis.controllers.util.SideDrawerController;
 import com.wecca.canoeanalysis.models.data.Settings;
 import com.wecca.canoeanalysis.services.LoggerService;
 import com.wecca.canoeanalysis.services.ResourceManagerService;
-import com.wecca.canoeanalysis.services.YamlMarshallingService;
+import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import javafx.scene.layout.AnchorPane;
 import lombok.Getter;
@@ -59,8 +59,8 @@ public class CanoeAnalysisApplication extends Application {
         stage.getIcons().add(icon);
 
         // Load the color from the previous session or the default orange "#F96C37" on first load
-        ColorManagerService.putColorPalette("primary", YamlMarshallingService
-                        .loadYamlData(Settings.class, new Settings("#F96C37"), YamlMarshallingService.SETTINGS_FILE_PATH)
+        ColorManagerService.putColorPalette("primary", MarshallingService
+                        .loadYamlData(Settings.class, new Settings("#F96C37"), MarshallingService.SETTINGS_FILE_PATH)
                         .getPrimaryColor());
     }
 

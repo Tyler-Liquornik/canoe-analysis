@@ -927,7 +927,7 @@ public class BeamController implements Initializable {
      * This populates the list view and beam graphic with the new model
      */
     public void uploadCanoe() {
-        YamlMarshallingService.setBeamController(this);
+        MarshallingService.setBeamController(this);
 
         // Alert the user they will be overriding the current loads on the canoe by uploading a new one
         if (!canoe.getAllLoads().isEmpty()) {
@@ -935,7 +935,7 @@ public class BeamController implements Initializable {
             WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view.fxml", 350, 230);
         }
         else
-            YamlMarshallingService.importCanoeFromYAML(mainController.getPrimaryStage());
+            MarshallingService.importCanoeFromYAML(mainController.getPrimaryStage());
     }
 
     /**
@@ -982,7 +982,7 @@ public class BeamController implements Initializable {
      * This can be uploaded later with uploadCanoe() or manually modified
      */
     public void downloadCanoe() {
-        File downloadedFile = YamlMarshallingService.exportCanoeToYAML(canoe, mainController.getPrimaryStage());
+        File downloadedFile = MarshallingService.exportCanoeToYAML(canoe, mainController.getPrimaryStage());
 
         String message = downloadedFile != null ? "Successfully downloaded canoe as \"" + downloadedFile.getName()
                 + "\" to " + downloadedFile.getParentFile().getName() : "Download cancelled";

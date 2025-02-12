@@ -1,6 +1,6 @@
 package com.wecca.canoeanalysis.aop;
 
-import com.wecca.canoeanalysis.services.YamlMarshallingService;
+import com.wecca.canoeanalysis.services.MarshallingService;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
@@ -33,7 +33,7 @@ public class TracingAspect {
      */
     @Before("pointcut()")
     public void beforeAdvice(JoinPoint joinPoint) {
-        if (YamlMarshallingService.TRACING)
+        if (MarshallingService.TRACING)
             logBuilder.beforeAdvice(joinPoint);
     }
 
@@ -43,7 +43,7 @@ public class TracingAspect {
      */
     @AfterReturning(pointcut = "pointcut()", returning = "response")
     public void afterAdvice(JoinPoint joinPoint, Object response) {
-        if (YamlMarshallingService.TRACING)
+        if (MarshallingService.TRACING)
             logBuilder.afterAdvice(joinPoint, response);
     }
 }

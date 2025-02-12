@@ -14,7 +14,7 @@ import com.wecca.canoeanalysis.models.load.Load;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Setter;
-
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -22,11 +22,11 @@ import java.util.function.Consumer;
 
 
 /**
- * Marshalling and unmarshalling of POJO models in YAML for state management
- * This includes writing YAML to and from files
+ * Marshalling and unmarshalling of POJO models
+ * Mostly dealing with YAML and file I/O, also Smile for binary
  */
 @Traceable
-public class YamlMarshallingService {
+public class MarshallingService {
 
     @Setter
     private static MainController mainController;
@@ -35,6 +35,7 @@ public class YamlMarshallingService {
     @Setter
     private static PunchingShearController punchingShearController;
     private static final ObjectMapper yamlMapper;
+    private static final ObjectMapper smileMapper;
     public static final String SETTINGS_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/settings.yaml", true);
     public static final String DEV_CONFIG_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/dev-config.yaml", true);
     public static final boolean TRACING;
@@ -42,12 +43,13 @@ public class YamlMarshallingService {
     // Initializations, and loading state
     static {
         yamlMapper = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
+        smileMapper = new ObjectMapper(new SmileFactory());
         yamlMapper.findAndRegisterModules();
 
         try {
-            TRACING = YamlMarshallingService
+            TRACING = MarshallingService
                     .loadYamlData(DevConfig.class, new DevConfig(false),
-                            YamlMarshallingService.DEV_CONFIG_FILE_PATH).isTracing();
+                            MarshallingService.DEV_CONFIG_FILE_PATH).isTracing();
         } catch (IOException e) {throw new RuntimeException(e);}
     }
 
@@ -116,10 +118,7 @@ public class YamlMarshallingService {
      * @param stage the stage to display the FileChooser dialog
      */
     public static void punchingShearImportCanoeFromYAML(Stage stage) {
-        uploadAndProcessCanoe(stage, adjustedCanoe -> {
-
-            punchingShearController.setValues(adjustedCanoe);
-        });
+        uploadAndProcessCanoe(stage, adjustedCanoe -> punchingShearController.setValues(adjustedCanoe));
     }
 
     /**
@@ -193,6 +192,7 @@ public class YamlMarshallingService {
     /**
      * Note: type is checked, IDE is wrongly giving a warning which was suppressed
      * Deep copies an object in-memory by marshalling and unmarshalling the object such that all fields are reinitialized recursively.
+     * Deep copy is implemented using smile, jackson's binary serialization protocol to improve performance for large objects (like the canoe)
      * @param <T>  The type of the object being copied.
      * @param marshallableObject The object to deep copy which is integrated with Jackson for YAML marshalling.
      * @return A deep copy of the object, or null if copying fails.
@@ -201,11 +201,8 @@ public class YamlMarshallingService {
     public static <T> T deepCopy(T marshallableObject) {
         if (marshallableObject == null) return null;
         try {
-            String yamlString = yamlMapper.writeValueAsString(marshallableObject);
-            Object read = yamlMapper.readValue(yamlString, marshallableObject.getClass());
-            Class<?> classT = marshallableObject.getClass();
-            if (classT.isInstance(read)) return (T) read;
-            else throw new RuntimeException("Null read object during deep copy");
+            byte[] data = smileMapper.writeValueAsBytes(marshallableObject);
+            return (T) smileMapper.readValue(data, marshallableObject.getClass());
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
