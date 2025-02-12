@@ -33,21 +33,39 @@ public interface BoundedUnivariateFunction extends UnivariateFunction {
 
     /**
      * Optimizes the function to find the minimum or maximum point within a section.
+     * Uses a hybrid Manual search + Brent's method strategy to balance drawbacks of each
      * @param section  the section within which to perform the optimization
      * @param goalType the optimization goal (minimize or maximize)
      * @return the optimal point (x, y)
      */
     private Point2D optimize(Section section, GoalType goalType) {
+        // Manual search to narrow the range, very coarse to negate performance concerns
+        double xStart = section.getX();
+        double xEnd = section.getRx();
+        double step = (xEnd - xStart) / 10.0;
+        double bestX = xStart;
+        double bestY = value(xStart);
+        for (double x = xStart; x <= xEnd; x += step) {
+            double y = value(x);
+            if ((goalType == GoalType.MINIMIZE && y < bestY) ||
+                    (goalType == GoalType.MAXIMIZE && y > bestY)) {
+                bestX = x;
+                bestY = y;
+            }
+        }
+        // Define a narrow range to do a more precise search
+        double lower = Math.max(xStart, bestX - step);
+        double upper = Math.min(xEnd, bestX + step);
+
+        // Refine the result using Brent's method
         BrentOptimizer optimizer = new BrentOptimizer(1e-10, 1e-8);
         UnivariatePointValuePair result = optimizer.optimize(
                 new MaxEval(1000),
                 new UnivariateObjectiveFunction(this),
                 goalType,
-                new SearchInterval(section.getX(), section.getRx())
+                new SearchInterval(lower, upper)
         );
-        double x = result.getPoint();
-        double y = result.getValue();
-        return new Point2D(x, y);
+        return new Point2D(result.getPoint(), result.getValue());
     }
 
     /**
