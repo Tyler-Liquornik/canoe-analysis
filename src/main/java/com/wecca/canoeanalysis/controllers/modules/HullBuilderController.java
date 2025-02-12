@@ -586,6 +586,11 @@ public class HullBuilderController implements Initializable {
         // Update UI with new hull
         hullGraphicPane.getChildren().clear();
         setSideViewHullGraphic(hull);
+
+        // If section properties are selected, update the selected section using its index.
+        if (sectionPropertiesSelected && selectedHullSectionIndex >= 0 && selectedHullSectionIndex < hull.getHullSections().size())
+            selectedHullSection = hull.getHullSections().get(selectedHullSectionIndex);
+
         recalculateAndDisplayHullProperties();
 
         // Update sibling knob bounds
