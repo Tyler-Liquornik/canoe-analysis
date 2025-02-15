@@ -43,7 +43,7 @@ public class HullGeometryService {
     private static Hull getHull() {
         if (hullBuilderController == null)
             throw new IllegalStateException("HullBuilderController is not set");
-        return YamlMarshallingService.deepCopy(hullBuilderController.getHull());
+        return MarshallingService.deepCopy(hullBuilderController.getHull());
     }
 
     /**
@@ -604,7 +604,7 @@ public class HullGeometryService {
     public static Hull addKnotPoint(@NonNull Point2D knotPointToAdd) {
         // Copy the current hull so we don’t alter the original in place
         Hull currHull = getHull();
-        Hull hull = YamlMarshallingService.deepCopy(currHull);
+        Hull hull = MarshallingService.deepCopy(currHull);
         if (hull == null) throw new RuntimeException("Marshalling error deep copying the hull");
         double newX = knotPointToAdd.getX();
 
@@ -771,7 +771,7 @@ public class HullGeometryService {
      private static Hull getHullWithMergedAdjacentSections(int rightIndex) {
         // Do not change the model from the service, pass the hull back up and set it in the controller
         Hull currHull = getHull();
-        Hull hull = YamlMarshallingService.deepCopy(currHull);
+        Hull hull = MarshallingService.deepCopy(currHull);
         if (rightIndex <= 0 ) throw new IllegalArgumentException("index must be at least 1");
         int leftIndex = rightIndex - 1;
         HullSection leftSection = hull.getHullSections().get(leftIndex);

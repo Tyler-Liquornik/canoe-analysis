@@ -17,6 +17,7 @@ module com.wecca.canoeanalysis {
     requires ch.qos.logback.core;
     requires javaGeom;
     requires jama;
+    requires com.fasterxml.jackson.dataformat.smile;
 
     exports com.wecca.canoeanalysis;
     opens com.wecca.canoeanalysis to javafx.fxml;

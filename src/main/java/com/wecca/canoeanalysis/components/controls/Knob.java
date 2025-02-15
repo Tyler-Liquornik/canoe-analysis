@@ -323,7 +323,7 @@ public class Knob extends Slider {
                 // from min to max is not visible (1e-3 or smaller) since we only display %.2f
                 double min = getMin();
                 if (Math.abs(value - min) < 1e-3) {
-                    double roundedValue = Math.round(value * 100.0) / 100.0;
+                    double roundedValue = Math.round(value * 1000.0) / 1000.0;
                     Knob.super.setMax(roundedValue);
                     Knob.super.setMin(roundedValue);
                 } else {

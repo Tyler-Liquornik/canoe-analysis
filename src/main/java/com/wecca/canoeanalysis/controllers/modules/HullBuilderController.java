@@ -228,12 +228,10 @@ public class HullBuilderController implements Initializable {
                 Range overlaySection;
                 double lControlX = bezier.getControlX1();
                 double rControlX = bezier.getControlX2();
-                if (Math.abs(rControlX - lControlX) <= 1e-2)
-                    continue;
-                else if (rControlX - lControlX <= 1e-2)
+                if (Math.abs(rControlX - lControlX) <= 5e-3 || rControlX - lControlX <= 5e-3)
                     overlaySection = new Range(lControlX, rControlX);
                 else {
-                    overlaySection = new Range(lControlX, rControlX);
+                    overlaySection = new Section(lControlX, rControlX);
                     double maxY = bezier.getMaxValue(new Section(lControlX, rControlX));
                     double minY = bezier.getMinValue(new Section(lControlX, rControlX));
                     Rectangle validAddKnotRectangle = new Rectangle(
@@ -588,6 +586,11 @@ public class HullBuilderController implements Initializable {
         // Update UI with new hull
         hullGraphicPane.getChildren().clear();
         setSideViewHullGraphic(hull);
+
+        // If section properties are selected, update the selected section using its index.
+        if (sectionPropertiesSelected && selectedHullSectionIndex >= 0 && selectedHullSectionIndex < hull.getHullSections().size())
+            selectedHullSection = hull.getHullSections().get(selectedHullSectionIndex);
+
         recalculateAndDisplayHullProperties();
 
         // Update sibling knob bounds
@@ -602,7 +605,7 @@ public class HullBuilderController implements Initializable {
         if (sectionPropertiesSelected && selectedHullSection != null) {
             setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),
                     selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
-        } else {
+        } else if (selectedHullSection != null) {
             setSectionProperties(hull.getMaxHeight(), hull.getTotalVolume(),
                     hull.getMass(), 0, hull.getLength());
         }

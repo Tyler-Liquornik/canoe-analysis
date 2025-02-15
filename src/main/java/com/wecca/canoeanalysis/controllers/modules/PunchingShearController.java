@@ -5,7 +5,7 @@ import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
-import com.wecca.canoeanalysis.services.YamlMarshallingService;
+import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.utils.InputParsingUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -213,9 +213,9 @@ public class PunchingShearController implements Initializable {
      * This populates the list view and beam graphic with the new model
      */
     public void uploadCanoe() {
-        YamlMarshallingService.setPunchingShearController(this);
+        MarshallingService.setPunchingShearController(this);
 
-        YamlMarshallingService.punchingShearImportCanoeFromYAML(mainController.getPrimaryStage());
+        MarshallingService.punchingShearImportCanoeFromYAML(mainController.getPrimaryStage());
 
     }
 
