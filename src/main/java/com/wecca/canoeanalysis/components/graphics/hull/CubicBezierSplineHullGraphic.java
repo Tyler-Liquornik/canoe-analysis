@@ -29,7 +29,16 @@ public class CubicBezierSplineHullGraphic extends HullGraphic {
      *                          which is mapped to this rectangle in graphics space.
      */
     public CubicBezierSplineHullGraphic(List<CubicBezierFunction> beziers, Rectangle encasingRectangle) {
-        super(CalculusUtils.createBezierSplineFunctionShiftedPositive(beziers), new Section(beziers.getFirst().getX(), beziers.getLast().getRx()), encasingRectangle);
+        this(beziers, encasingRectangle, false);
+    }
+
+    /**
+     * @param useUnimodalOptimization, an extra flag to optimize the function faster for quick renders which only works for unimodal functions
+     *                                 it is up to the implementer to understand if the function is unimodal as the cost to validate for this makes the optimization it provides redundant!
+     *                                 logically, a hull shape should probably almost always meet these criteria anyway!
+     */
+    public CubicBezierSplineHullGraphic(List<CubicBezierFunction> beziers, Rectangle encasingRectangle, boolean useUnimodalOptimization) {
+        super(CalculusUtils.createBezierSplineFunctionShiftedPositive(beziers, useUnimodalOptimization), new Section(beziers.getFirst().getX(), beziers.getLast().getRx()), encasingRectangle, useUnimodalOptimization);
         this.beziers = beziers;
         this.slopeGraphics = new ArrayList<>();
         this.getCurvedGraphic().setEncasingRectangle(encasingRectangle);

@@ -217,7 +217,7 @@ public class Hull {
     public BoundedUnivariateFunction getPiecedSideProfileCurveShiftedAboveYAxis() {
         List<BoundedUnivariateFunction> functions = hullSections.stream().map(HullSection::getSideProfileCurve).toList();
         List<Section> sections = hullSections.stream().map(sec -> (Section) sec).toList();
-        return CalculusUtils.createCompositeFunctionShiftedPositive(functions, sections);
+        return CalculusUtils.createCompositeFunctionShiftedPositive(functions, sections, false);
     }
 
     /**

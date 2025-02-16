@@ -31,8 +31,17 @@ public class HullGraphic extends Group implements FunctionGraphic {
      *                          is mapped to this rectangle in graphics space
      */
     public HullGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
+        this(function, section, encasingRectangle, false);
+    }
+
+    /**
+     * @param useUnimodalOptimization, an extra flag to optimize the function faster for quick renders which only works for unimodal functions
+     *                                 it is up to the implementer to understand if the function is unimodal as the cost to validate for this makes the optimization it provides redundant!
+     *                                 logically, a hull shape should probably almost always meet these criteria anyway!
+     */
+    public HullGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle, boolean useUnimodalOptimization) {
         this.closingTopLine = new Line(encasingRectangle.getX(), encasingRectangle.getY(), encasingRectangle.getX() + encasingRectangle.getWidth(), encasingRectangle.getY());
-        this.curvedGraphic = new CurvedGraphic(function, section, encasingRectangle, true);
+        this.curvedGraphic = new CurvedGraphic(function, section, encasingRectangle, true, useUnimodalOptimization);
         draw();
     }
 
