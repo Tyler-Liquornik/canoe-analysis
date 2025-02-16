@@ -336,7 +336,7 @@ public class HullBuilderController implements Initializable {
             else
                 throw new RuntimeException("Not a bezier hull");
         }).toList();
-        hullGraphic = new CubicBezierSplineHullGraphic(beziers, rect);
+        hullGraphic = new CubicBezierSplineHullGraphic(beziers, rect, true);
 
         // Add graphic to pane
         hullGraphicPane.getChildren().clear();

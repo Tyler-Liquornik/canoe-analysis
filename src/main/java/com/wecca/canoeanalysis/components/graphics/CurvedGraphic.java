@@ -38,20 +38,24 @@ public class CurvedGraphic extends Group implements FunctionGraphic {
      * Deals with mapping between function space and graphic space
      * @param function the function definition in function space
      * @param section the interval of the function in function space
-     * @param encasingRectangle the smallest region in function space that encloses all points in the function
-     *                          is mapped to this rectangle in graphics space
+     * @param encasingRectangle the smallest region in function space that encloses all points in the function is mapped to this rectangle in graphics space
      */
     public CurvedGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle, boolean fillCurve) {
+        this(function, section, encasingRectangle, fillCurve, false);
+    }
+
+    /**
+     * @param useUnimodalOptimization, an extra flag to optimize the function faster for quick renders which only works for unimodal functions
+     *                                 it is up to the implementer to understand if the function is unimodal as the cost to validate for this makes the optimization it provides redundant!
+     */
+    public CurvedGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle, boolean fillCurve, boolean useUnimodalOptimization) {
         super();
         this.function = function;
         this.section = section;
         this.encasingRectangle = encasingRectangle;
-        this.maxSignedValue = function.getMaxSignedValue(section); // precalculated to save time fetching
         this.isColored = false;
         this.isFilled = fillCurve;
-
-        // Commented out to improve rendering speed, but should be enforced... be careful lol
-        // CalculusUtils.validatePiecewiseAsUpOrDown(List.of(function), List.of(section));
+        this.maxSignedValue = useUnimodalOptimization ? function.getMaxSignedValueUnimodal(section) : function.getMaxSignedValue(section);
 
         draw();
         JFXDepthManager.setDepth(this, 4);
