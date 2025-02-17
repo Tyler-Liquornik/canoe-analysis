@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.controllers.popups;
 
 import com.wecca.canoeanalysis.models.data.Equation;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -9,6 +10,8 @@ import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.TableCell;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 
@@ -67,26 +70,26 @@ public class ShearEquationsController {
 
                 new Equation(createSubscriptText("f", "c"),
                         new TextFlow(new Text("Compressive strength (MPa)")),
-                        new TextFlow(new Text("Input"))),
+                        new TextFlow(new Text("Input / from hull builder"))),
 
                 new Equation(createSubscriptText("α", ""),
-                        new TextFlow(new Text("Internal column")),
+                        new TextFlow(new Text("Internal column (constant)")),
                         new TextFlow(new Text("4"))),
 
                 new Equation(createSubscriptText("λ", ""),
-                        new TextFlow(new Text("Low-density concrete")),
+                        new TextFlow(new Text("Low-density concrete (constant)")),
                         new TextFlow(new Text("0.75"))),
 
                 new Equation(createSubscriptText("β", "c"),
-                        new TextFlow(new Text("Square column")),
+                        new TextFlow(new Text("Square column (constant)")),
                         new TextFlow(new Text("1"))),
 
                 new Equation(createSubscriptText("φ", "c"),
-                        new TextFlow(new Text("Concrete")),
+                        new TextFlow(new Text("Concrete (constant)")),
                         new TextFlow(new Text("0.65"))),
 
                 new Equation(createSubscriptText("d", ""),
-                        new TextFlow(new Text("Diameter of knee")),
+                        new TextFlow(new Text("Diameter of knee (constant)")),
                         new TextFlow(new Text("13"))),
 
                 new Equation(createSubscriptText("v", "c1"),
@@ -105,7 +108,7 @@ public class ShearEquationsController {
                                 new Text(" * √"), createSubscriptText("f", "c"))),
 
                 new Equation(createSubscriptText("v", "c min"),
-                        new TextFlow(new Text("Lowest of vc1,2,3")),
+                        new TextFlow(new Text("Lowest value of vc1,2,3")),
                         new TextFlow(new Text("min("), createSubscriptText("v", "c1"), new Text(", "), createSubscriptText("v", "c2"),
                                 new Text(", "), createSubscriptText("v", "c3"), new Text(")"))),
 
@@ -130,8 +133,26 @@ public class ShearEquationsController {
 
         );
 
-        // **Fixed missing semicolon**
+
         dataTable.setItems(data);
+
+        // Make grid pane non-interactive
+        dataTable.setSelectionModel(null);
+        dataTable.setEditable(false);
+
+        // Prevent scrolling with mouse wheel or gestures
+        dataTable.addEventFilter(ScrollEvent.ANY, event -> event.consume());
+
+        // Prevent keyboard navigation (arrow keys)
+        dataTable.addEventFilter(KeyEvent.ANY, event -> event.consume());
+
+        // Hide scrollbars completely
+        Platform.runLater(() -> {
+            dataTable.lookupAll(".scroll-bar").forEach(node -> {
+                node.setVisible(false);
+                node.setManaged(false);
+            });
+        });
     }
 
     // Method to create subscripts properly using TextFlow
