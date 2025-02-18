@@ -1,7 +1,6 @@
 package com.wecca.canoeanalysis.components.graphics;
 
 import com.jfoenix.effects.JFXDepthManager;
-import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
@@ -14,10 +13,9 @@ import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.List;
 
 /**
  * Icon used for piecewise continuous load distributions
@@ -32,25 +30,32 @@ public class CurvedGraphic extends Group implements FunctionGraphic {
     protected Path linePath;
     protected Polygon area;
     protected boolean isColored;
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    protected boolean isFilled;
     private final double maxSignedValue;
 
     /**
      * Deals with mapping between function space and graphic space
      * @param function the function definition in function space
      * @param section the interval of the function in function space
-     * @param encasingRectangle the smallest region in function space that encloses all points in the function
-     *                          is mapped to this rectangle in graphics space
+     * @param encasingRectangle the smallest region in function space that encloses all points in the function is mapped to this rectangle in graphics space
      */
-    public CurvedGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle) {
+    public CurvedGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle, boolean fillCurve) {
+        this(function, section, encasingRectangle, fillCurve, false);
+    }
+
+    /**
+     * @param useUnimodalOptimization, an extra flag to optimize the function faster for quick renders which only works for unimodal functions
+     *                                 it is up to the implementer to understand if the function is unimodal as the cost to validate for this makes the optimization it provides redundant!
+     */
+    public CurvedGraphic(BoundedUnivariateFunction function, Section section, Rectangle encasingRectangle, boolean fillCurve, boolean useUnimodalOptimization) {
         super();
         this.function = function;
         this.section = section;
         this.encasingRectangle = encasingRectangle;
-        this.maxSignedValue = function.getMaxSignedValue(section); // precalculated to save time fetching
         this.isColored = false;
-
-        // Commented out to improve rendering speed, but should be enforced... be careful lol
-        // CalculusUtils.validatePiecewiseAsUpOrDown(List.of(function), List.of(section));
+        this.isFilled = fillCurve;
+        this.maxSignedValue = useUnimodalOptimization ? function.getMaxSignedValueUnimodal(section) : function.getMaxSignedValue(section);
 
         draw();
         JFXDepthManager.setDepth(this, 4);
@@ -78,7 +83,7 @@ public class CurvedGraphic extends Group implements FunctionGraphic {
 
         // Build the curve and contained area
         for (int i = 1; i <= numSamples; i++) {
-            currentX = section.getX() + i * step;
+            currentX = CalculusUtils.roundXDecimalDigits((section.getX() + i * step), 10);
             double scaledY = encasingRectangle.getY() + ((effectiveFunction.value(currentX) - minValue) / valueRange) * encasingRectangle.getHeight();
             double scaledX = encasingRectangle.getX() + ((currentX - section.getX()) / (section.getRx() - section.getX())) * encasingRectangle.getWidth();
             linePath.getElements().add(new LineTo(scaledX, scaledY));
@@ -88,7 +93,8 @@ public class CurvedGraphic extends Group implements FunctionGraphic {
         // Close off the area and style
         area.getPoints().addAll(encasingRectangle.getX() + encasingRectangle.getWidth(), initialPathY);
         area.getPoints().addAll(encasingRectangle.getX(), initialPathY);
-        area.setFill(ColorPaletteService.getColor("above-surface"));
+        if (isFilled) area.setFill(ColorPaletteService.getColor("above-surface"));
+        else area.setFill(ColorPaletteService.getColor("above-surface").deriveColor(0, 1, 1, 0));
         linePath.setStroke(ColorPaletteService.getColor("white"));
         linePath.setStrokeWidth(1.5);
 
@@ -114,7 +120,7 @@ public class CurvedGraphic extends Group implements FunctionGraphic {
         Color areaColor = setColored ? ColorPaletteService.getColor("primary-light") : ColorPaletteService.getColor("above-surface");
 
         linePath.setStroke(lineColor);
-        area.setFill(areaColor);
+        if (isFilled) area.setFill(areaColor);
     }
 
     protected boolean isNonNegative() {

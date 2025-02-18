@@ -74,7 +74,7 @@ public class BeamController implements Initializable {
     @Getter
     private Canoe canoe;
     @Getter @Setter
-    private FunctionGraphic hullGraphic;
+    private FunctionGraphic hullGraphic; // TODO: change to CubicBezierSplineHullGraphic
 
     /**
      * Toggles settings for empty tree view if it's considered empty (placeholder doesn't count)
@@ -97,7 +97,6 @@ public class BeamController implements Initializable {
 
     /**
      * Updates the view order (z-axis rendering) property of all graphics for rendering
-     * Supports are above point loads which are above distributed loads as the preferred order
      */
     public void updateViewOrder() {
         // Create the list of current load graphics
@@ -522,7 +521,7 @@ public class BeamController implements Initializable {
                                             ? piecewiseValue // Adjust the distribution graphic by adding the hull curve
                                             : piecewiseValue - GraphicsUtils.getScaledFromModelToGraphic(hullCurve.value(X), loadMax / loadMagnitudeRatio, hullAbsMax) / loadMaxToCurvedProfileMaxRatio;
                                 };
-                                rescaledGraphics.add(new CurvedGraphic(f, piecewise.getSection(), rect));
+                                rescaledGraphics.add(new CurvedGraphic(f, piecewise.getSection(), rect, true));
                             }
                         }
                         default -> throw new IllegalStateException("Invalid load type");
@@ -933,7 +932,7 @@ public class BeamController implements Initializable {
      * This populates the list view and beam graphic with the new model
      */
     public void uploadCanoe() {
-        YamlMarshallingService.setBeamController(this);
+        MarshallingService.setBeamController(this);
 
         // Alert the user they will be overriding the current loads on the canoe by uploading a new one
         if (!canoe.getAllLoads().isEmpty()) {
@@ -941,7 +940,7 @@ public class BeamController implements Initializable {
             WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view.fxml", 350, 230);
         }
         else
-            YamlMarshallingService.importCanoeFromYAML(mainController.getPrimaryStage());
+            MarshallingService.importCanoeFromYAML(mainController.getPrimaryStage());
     }
 
     /**
@@ -988,7 +987,7 @@ public class BeamController implements Initializable {
      * This can be uploaded later with uploadCanoe() or manually modified
      */
     public void downloadCanoe() {
-        File downloadedFile = YamlMarshallingService.exportCanoeToYAML(canoe, mainController.getPrimaryStage());
+        File downloadedFile = MarshallingService.exportCanoeToYAML(canoe, mainController.getPrimaryStage());
 
         String message = downloadedFile != null ? "Successfully downloaded canoe as \"" + downloadedFile.getName()
                 + "\" to " + downloadedFile.getParentFile().getName() : "Download cancelled";

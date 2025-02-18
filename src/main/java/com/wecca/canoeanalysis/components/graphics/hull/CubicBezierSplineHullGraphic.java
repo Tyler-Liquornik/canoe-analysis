@@ -29,7 +29,16 @@ public class CubicBezierSplineHullGraphic extends HullGraphic {
      *                          which is mapped to this rectangle in graphics space.
      */
     public CubicBezierSplineHullGraphic(List<CubicBezierFunction> beziers, Rectangle encasingRectangle) {
-        super(CalculusUtils.createBezierSplineFunctionShiftedPositive(beziers), new Section(beziers.getFirst().getX(), beziers.getLast().getRx()), encasingRectangle);
+        this(beziers, encasingRectangle, false);
+    }
+
+    /**
+     * @param useUnimodalOptimization, an extra flag to optimize the function faster for quick renders which only works for unimodal functions
+     *                                 it is up to the implementer to understand if the function is unimodal as the cost to validate for this makes the optimization it provides redundant!
+     *                                 logically, a hull shape should probably almost always meet these criteria anyway!
+     */
+    public CubicBezierSplineHullGraphic(List<CubicBezierFunction> beziers, Rectangle encasingRectangle, boolean useUnimodalOptimization) {
+        super(CalculusUtils.createBezierSplineFunctionShiftedPositive(beziers, useUnimodalOptimization), new Section(beziers.getFirst().getX(), beziers.getLast().getRx()), encasingRectangle, useUnimodalOptimization);
         this.beziers = beziers;
         this.slopeGraphics = new ArrayList<>();
         this.getCurvedGraphic().setEncasingRectangle(encasingRectangle);
@@ -71,7 +80,18 @@ public class CubicBezierSplineHullGraphic extends HullGraphic {
      * @param beziers the curves that make up a spline
      * @return all the construction points of the bezier in L to R order ([knot, control, control, knot] order for each bezier)
      */
-    private List<Point2D> getAllKnotAndControlPoints(List<CubicBezierFunction> beziers) {
+    public List<Point2D> getAllKnotPoints(List<CubicBezierFunction> beziers) {
+        return beziers.stream()
+                .flatMap(bezier -> bezier.getKnotPoints().stream())
+                .distinct()
+                .toList();
+    }
+
+    /**
+     * @param beziers the curves that make up a spline
+     * @return all the construction points of the bezier in L to R order ([knot, control, control, knot] order for each bezier)
+     */
+    public List<Point2D> getAllKnotAndControlPoints(List<CubicBezierFunction> beziers) {
         return beziers.stream()
                 .flatMap(bezier -> bezier.getKnotAndControlPoints().stream())
                 .distinct()
@@ -97,7 +117,7 @@ public class CubicBezierSplineHullGraphic extends HullGraphic {
     public void colorBezierPointGroup(int sectionIndex, boolean setColored) {
         // One less section than the number of section endpoints (one slope graphic on every section endpoint)
         if (sectionIndex < 0 || sectionIndex >= slopeGraphics.size() - 1)
-            throw new IndexOutOfBoundsException("sectionIndex out of bounds");
+            throw new IndexOutOfBoundsException("sectionIndex: " + sectionIndex + " out of bounds");
 
         // Set the current colored section index
         coloredSectionIndex = sectionIndex;

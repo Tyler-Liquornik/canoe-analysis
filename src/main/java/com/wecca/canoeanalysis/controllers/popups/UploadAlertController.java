@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis.controllers.popups;
 
 import com.wecca.canoeanalysis.controllers.modules.BeamController;
-import com.wecca.canoeanalysis.services.YamlMarshallingService;
+import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -22,7 +22,7 @@ public class UploadAlertController implements Initializable {
     }
 
     public void continueToCanoeUpload(ActionEvent e) {
-        YamlMarshallingService.importCanoeFromYAML(beamController.getMainController().getPrimaryStage());
+        MarshallingService.importCanoeFromYAML(beamController.getMainController().getPrimaryStage());
         closeWindow(e);
     }
 

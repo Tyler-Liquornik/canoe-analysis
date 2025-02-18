@@ -8,7 +8,7 @@ import com.jfoenix.controls.JFXSnackbarLayout;
 import com.wecca.canoeanalysis.components.controls.IconButton;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.services.ResourceManagerService;
-import com.wecca.canoeanalysis.services.YamlMarshallingService;
+import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
@@ -335,6 +335,6 @@ public class MainController implements Initializable {
         isDrawerOpen = false;
 
         // Pass references to services that require it
-        YamlMarshallingService.setMainController(this);
+        MarshallingService.setMainController(this);
     }
 }

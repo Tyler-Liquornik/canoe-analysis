@@ -42,11 +42,7 @@ public class LoggerService {
 
             @Override
             public void println(Object obj) {
-                if (obj instanceof Throwable) {
-                    log.error("Exception occurred: ", (Throwable) obj);
-                } else {
-                    log.error(obj.toString());
-                }
+                if (obj != null) log.error(obj.toString());
             }
 
             @Override
@@ -71,7 +67,7 @@ public class LoggerService {
 
             @Override
             public void println(Object obj) {
-                log.info(obj.toString());
+                if (obj != null) log.info(obj.toString());
             }
 
             @Override

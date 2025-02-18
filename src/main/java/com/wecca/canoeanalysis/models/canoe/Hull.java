@@ -18,7 +18,6 @@ import org.apache.commons.math3.optim.univariate.BrentOptimizer;
 import org.apache.commons.math3.optim.univariate.SearchInterval;
 import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
 import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.TreeSet;
@@ -218,7 +217,7 @@ public class Hull {
     public BoundedUnivariateFunction getPiecedSideProfileCurveShiftedAboveYAxis() {
         List<BoundedUnivariateFunction> functions = hullSections.stream().map(HullSection::getSideProfileCurve).toList();
         List<Section> sections = hullSections.stream().map(sec -> (Section) sec).toList();
-        return CalculusUtils.createCompositeFunctionShiftedPositive(functions, sections);
+        return CalculusUtils.createCompositeFunctionShiftedPositive(functions, sections, false);
     }
 
     /**
@@ -269,8 +268,13 @@ public class Hull {
     private void validateWallThickness(List<HullSection> sections) {
         for (HullSection section : sections)
         {
-            if (section.getThickness() > section.getMaxWidth() / 2)
-                throw new IllegalArgumentException("Hull walls would be greater than the width of the canoe");
+            if (section.getThickness() > section.getMaxWidth() / 2) {
+                throw new IllegalArgumentException(String.format(
+                        "Hull walls would be greater than the width of the canoe. " +
+                                "Thickness: %.4f, Allowed max: %.4f",
+                        section.getThickness(), section.getMaxWidth() / 2
+                ));
+            }
         }
     }
 }

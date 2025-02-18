@@ -30,8 +30,7 @@ public class SharkBaitHullLibrary {
         // Scale compared to the actual length of Shark Bait
         scalingFactor = length / SHARK_BAIT_LENGTH;
 
-        // Side view Curve Construction Bezier Spline
-        // Redundant lines are for readability, and for synchronization with desmos model
+        // Knot Points (points x values for which the top and side view must pass through x, f(x))
         double top = 0.00;
         double knot0 = 0.00;
         double knot1 = 0.50 * scalingFactor;
@@ -39,6 +38,8 @@ public class SharkBaitHullLibrary {
         double knot3 = 5.50 * scalingFactor;
         double scaledLength = 6.00 * scalingFactor;
 
+        // Side view Curve Construction Bezier Spline
+        // Note: Redundant lines are for readability, and for synchronization with desmos model
         double leftX1 = knot0;
         double leftY1 = top;
         double leftControlX1 = 0.07 * scalingFactor;
@@ -86,19 +87,61 @@ public class SharkBaitHullLibrary {
         CubicBezierFunction midRightCurve = new CubicBezierFunction(midRightX1, midRightY1, midRightControlX1, midRightControlY1, midRightControlX2, midRightControlY2, midRightX2, midRightY2);
         CubicBezierFunction rightCurve = new CubicBezierFunction(rightX1, rightY1, rightControlX1, rightControlY1, rightControlX2, rightControlY2, rightX2, rightY2);
 
-        // Still using parabola for now until desmos model is created
-        double a = - 7.0 / (180.0 * scalingFactor);
-        double h = 3.0 * scalingFactor;
-        double k = 0.35 * scalingFactor;
-        VertexFormParabolaFunction topCurve = new VertexFormParabolaFunction(a, h, k);
+        // Top view Curve Construction Bezier Spline
+        double topViewLeftX1 = knot0;
+        double topViewLeftY1 = top;
+        double topViewLeftControlX1 = 0.17 * scalingFactor;
+        double topViewLeftControlY1 = -0.07 * scalingFactor;
+        double topViewLeftControlX2 = 0.33 * scalingFactor;
+        double topViewLeftControlY2 = -0.10 * scalingFactor;
+        double topViewLeftX2 = knot1;
+        double topViewMidLeftY1 = -0.14 * scalingFactor;
+        double topViewLeftY2 = topViewMidLeftY1;
+        double topViewLeftSlope2 = (topViewLeftY2 - topViewLeftControlY2) / (topViewLeftX2 - topViewLeftControlX2);
 
+        double topViewMidLeftX1 = topViewLeftX2;
+        double topViewMidLeftSlope1 = topViewLeftSlope2;
+        double topViewMidLeftControlX1 = 0.90 * scalingFactor;
+        double topViewMidLeftControlY1 = topViewMidLeftSlope1 * (topViewMidLeftControlX1 - topViewMidLeftX1) + topViewMidLeftY1;
+        double topViewMidLeftControlX2 = 2.09 * scalingFactor;
+        double topViewMidLeftControlY2 = -0.35 * scalingFactor;
+        double topViewMidLeftX2 = knot2;
+        double topViewMidRightY1 = -0.35 * scalingFactor;
+        double topViewMidLeftY2 = topViewMidRightY1;
+        double topViewMidLeftSlope2 = (topViewMidLeftY2 - topViewMidLeftControlY2) / (topViewMidLeftX2 - topViewMidLeftControlX2);
+
+        double topViewMidRightX1 = topViewMidLeftX2;
+        double topViewMidRightSlope1 = topViewMidLeftSlope2;
+        double topViewMidRightControlX1 = 3.75 * scalingFactor;
+        double topViewMidRightControlY1 = topViewMidRightSlope1 * (topViewMidRightControlX1 - topViewMidRightX1) + topViewMidRightY1;
+        double topViewMidRightControlX2 = 4.38 * scalingFactor;
+        double topViewMidRightControlY2 = -0.28 * scalingFactor;
+        double topViewMidRightX2 = knot3;
+        double topViewRightY1 = -0.10 * scalingFactor;
+        double topViewMidRightY2 = topViewRightY1;
+        double topViewMidRightSlope2 = (topViewMidRightY2 - topViewMidRightControlY2) / (topViewMidRightX2 - topViewMidRightControlX2);
+
+        double topViewRightX1 = topViewMidRightX2;
+        double topViewRightSlope1 = topViewMidRightSlope2;
+        double topViewRightControlX1 = 5.67 * scalingFactor;
+        double topViewRightControlY1 = topViewRightSlope1 * (topViewRightControlX1 - topViewRightX1) + topViewRightY1;
+        double topViewRightControlX2 = 5.83 * scalingFactor;
+        double topViewRightControlY2 = -0.04 * scalingFactor;
+        double topViewRightX2 = scaledLength;
+        double topViewRightY2 = top;
+
+        CubicBezierFunction topViewLeftCurve = new CubicBezierFunction(topViewLeftX1, topViewLeftY1, topViewLeftControlX1, topViewLeftControlY1, topViewLeftControlX2, topViewLeftControlY2, topViewLeftX2, topViewLeftY2);
+        CubicBezierFunction topViewMidLeftCurve = new CubicBezierFunction(topViewMidLeftX1, topViewMidLeftY1, topViewMidLeftControlX1, topViewMidLeftControlY1, topViewMidLeftControlX2, topViewMidLeftControlY2, topViewMidLeftX2, topViewMidLeftY2);
+        CubicBezierFunction topViewMidRightCurve = new CubicBezierFunction(topViewMidRightX1, topViewMidRightY1, topViewMidRightControlX1, topViewMidRightControlY1, topViewMidRightControlX2, topViewMidRightControlY2, topViewMidRightX2, topViewMidRightY2);
+        CubicBezierFunction topViewRightCurve = new CubicBezierFunction(topViewRightX1, topViewRightY1, topViewRightControlX1, topViewRightControlY1, topViewRightControlX2, topViewRightControlY2, topViewRightX2, topViewRightY2);
+
+        // Construct the hull from the hull section view curves
         List<HullSection> sections = new ArrayList<>();
         double thickness = 0.013 * scalingFactor;
-        sections.add(new HullSection(leftCurve, topCurve, knot0, knot1, thickness, true));
-        sections.add(new HullSection(midLeftCurve, topCurve, knot1, knot2, thickness, false));
-        sections.add(new HullSection(midRightCurve, topCurve, knot2, knot3, thickness, false));
-        sections.add(new HullSection(rightCurve, topCurve, knot3, scaledLength, thickness, true));
-
+        sections.add(new HullSection(leftCurve, topViewLeftCurve, knot0, knot1, thickness, true));
+        sections.add(new HullSection(midLeftCurve, topViewMidLeftCurve, knot1, knot2, thickness, false));
+        sections.add(new HullSection(midRightCurve, topViewMidRightCurve, knot2, knot3, thickness, false));
+        sections.add(new HullSection(rightCurve, topViewRightCurve, knot3, scaledLength, thickness, true));
         return new Hull(1056, 28.82, sections);
     }
 

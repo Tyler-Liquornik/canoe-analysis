@@ -255,9 +255,11 @@ public class CalculusUtils
      *
      * @param functions The list of bounded univariate functions.
      * @param sections  The list of sections that correspond to each function.
+     * @param useUnimodalOptimization, an extra flag to optimize the function faster for quick calculations which only works for unimodal functions
+     *                                 it is up to the implementer to understand if the function is unimodal as the cost to validate for this makes the optimization it provides redundant!
      * @return The shifted composite function.
      */
-    public static BoundedUnivariateFunction createCompositeFunctionShiftedPositive(List<BoundedUnivariateFunction> functions, List<Section> sections) {
+    public static BoundedUnivariateFunction createCompositeFunctionShiftedPositive(List<BoundedUnivariateFunction> functions, List<Section> sections, boolean useUnimodalOptimization) {
         if (functions.size() != sections.size())
             throw new IllegalArgumentException("The number of functions must match the number of sections.");
 
@@ -269,21 +271,25 @@ public class CalculusUtils
                 if (section.getX() <= x && x <= section.getRx())
                     return func.value(x);
             }
-            throw new IllegalArgumentException("x is out of bounds of the provided functions.");
+            throw new IllegalArgumentException("x = + " + x + " is out of bounds of the provided functions.");
         };
 
         Section fullSection = new Section(sections.getFirst().getX(), sections.getLast().getRx());
-        return x -> f.value(x) - f.getMinValue(fullSection);
+        double minValue = useUnimodalOptimization ? f.getMinValueUnimodal(fullSection) : f.getMinValue(fullSection);
+        return x -> f.value(x) - minValue;
     }
 
     /**
      * Essentially an overload of createCompositeFunctionShiftedPositive
      * @param functions the cubic bezier functions which have the section encoded into their constructions points
+     * @param useUnimodalOptimization, an extra flag to optimize the function faster for quick calculations which only works for unimodal functions
+     *                                 it is up to the implementer to understand if the function is unimodal as the cost to validate for this makes the optimization it provides redundant!
      * @return the shifted bezier spline based function.
      */
-    public static BoundedUnivariateFunction createBezierSplineFunctionShiftedPositive(List<CubicBezierFunction> functions) {
+    @Traceable
+    public static BoundedUnivariateFunction createBezierSplineFunctionShiftedPositive(List<CubicBezierFunction> functions, boolean useUnimodalOptimization) {
         List<BoundedUnivariateFunction> functionsMapped = functions.stream().map(CubicBezierFunction::getFunction).toList();
         List<Section> sections = functions.stream().map(f -> new Section(f.getX1(), f.getX2())).toList();
-        return createCompositeFunctionShiftedPositive(functionsMapped, sections);
+        return createCompositeFunctionShiftedPositive(functionsMapped, sections, useUnimodalOptimization);
     }
 }

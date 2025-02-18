@@ -30,7 +30,7 @@ public class ArrowBoundCurvedGraphic extends Group implements Graphic {
         this.isColored = false;
         this.lArrow = lArrow;
         this.rArrow = rArrow;
-        this.borderCurve = new CurvedGraphic(function, section, encasingRectangle);
+        this.borderCurve = new CurvedGraphic(function, section, encasingRectangle, true);
         draw();
 
         JFXDepthManager.setDepth(this, 4);

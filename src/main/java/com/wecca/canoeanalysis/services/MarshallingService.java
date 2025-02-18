@@ -1,7 +1,6 @@
 package com.wecca.canoeanalysis.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.wecca.canoeanalysis.aop.Traceable;
@@ -12,25 +11,22 @@ import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.data.DevConfig;
 import com.wecca.canoeanalysis.models.data.Settings;
 import com.wecca.canoeanalysis.models.load.Load;
-import javafx.geometry.Point2D;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Setter;
-
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-
 /**
- * Marshalling and unmarshalling of POJO models in YAML for state management
- * This includes writing YAML to and from files
+ * Marshalling and unmarshalling of POJO models
+ * Mostly dealing with YAML and file I/O, also Smile for binary
  */
 @Traceable
-public class YamlMarshallingService {
+public class MarshallingService {
 
     @Setter
     private static MainController mainController;
@@ -39,6 +35,7 @@ public class YamlMarshallingService {
     @Setter
     private static PunchingShearController punchingShearController;
     private static final ObjectMapper yamlMapper;
+    private static final ObjectMapper smileMapper;
     public static final String SETTINGS_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/settings.yaml", true);
     public static final String DEV_CONFIG_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/dev-config.yaml", true);
     public static final boolean TRACING;
@@ -46,12 +43,13 @@ public class YamlMarshallingService {
     // Initializations, and loading state
     static {
         yamlMapper = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
+        smileMapper = new ObjectMapper(new SmileFactory());
         yamlMapper.findAndRegisterModules();
 
         try {
-            TRACING = YamlMarshallingService
+            TRACING = MarshallingService
                     .loadYamlData(DevConfig.class, new DevConfig(false),
-                            YamlMarshallingService.DEV_CONFIG_FILE_PATH).isTracing();
+                            MarshallingService.DEV_CONFIG_FILE_PATH).isTracing();
         } catch (IOException e) {throw new RuntimeException(e);}
     }
 
@@ -105,10 +103,6 @@ public class YamlMarshallingService {
         return fileToDownload;
     }
 
-
-
-
-
     /**
      * Prompts the user to upload a YAML file representing a new canoe model and processes it.
      * The uploaded canoe is used for general beam control operations.
@@ -132,16 +126,12 @@ public class YamlMarshallingService {
      * @param stage the stage to display the FileChooser dialog
      */
     public static void punchingShearImportCanoeFromYAML(Stage stage) {
-        uploadAndProcessCanoe(stage, adjustedCanoe -> {
-
-            punchingShearController.setValues(adjustedCanoe);
-        },true);
+        uploadAndProcessCanoe(stage, adjustedCanoe -> punchingShearController.setValues(adjustedCanoe),true);
     }
 
     /**
      * Handles the common logic for uploading and processing one to many canoe YAML file(s).
      * Allows custom processing logic to be applied to the parsed and adjusted Canoe object.
-     *
      * @param stage          the stage to display the FileChooser dialog
      * @param canoeProcessor a Consumer function to process the adjusted Canoe object
      */
@@ -149,30 +139,26 @@ public class YamlMarshallingService {
         // Create a file chooser
         FileChooser fileChooser = new FileChooser();
 
-
         // Set extension filter for YAML files
         FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("YAML files (*.yaml, *.yml)", "*.yaml", "*.yml");
         fileChooser.getExtensionFilters().add(extFilter);
 
         // Show open file dialog
-        if(!allowMultipleFiles){
+        if (!allowMultipleFiles) {
             fileChooser.setTitle("Upload Canoe");
             File fileToUpload = fileChooser.showOpenDialog(stage);
-
             if (fileToUpload != null) {
                 try {
                     Canoe canoe = yamlMapper.readValue(fileToUpload, Canoe.class);
 
                     // Rebuild the canoe to trigger validations and data restructuring
                     Canoe adjustedCanoe = new Canoe();
-                    if(canoe.getSessionMaxShear() > 0){
-                        adjustedCanoe.setSessionMaxShear(canoe.getSessionMaxShear());
-                    }
-
+                    if(canoe.getSessionMaxShear() > 0) adjustedCanoe.setSessionMaxShear(canoe.getSessionMaxShear());
                     adjustedCanoe.setSolveType(canoe.getSolveType());
                     adjustedCanoe.setHull(canoe.getHull());
-                    for (Load load : canoe.getLoads())
+                    for (Load load : canoe.getLoads()) {
                         adjustedCanoe.addLoad(load);
+                    }
 
                     // Apply the custom processing logic
                     canoeProcessor.accept(adjustedCanoe);
@@ -183,33 +169,27 @@ public class YamlMarshallingService {
                 }
             }
         }
-        else{
+        else {
             fileChooser.setTitle("Upload one or more Canoes");
             List<File> filesToUpload = fileChooser.showOpenMultipleDialog(stage);
-
             if (filesToUpload != null) {
                 try {
-
                     double maxSessionShear = Double.MIN_VALUE;
                     String fileName = null;
-                    for(File fileToUpload : filesToUpload){
+                    for(File fileToUpload : filesToUpload) {
 
                         Canoe canoe = yamlMapper.readValue(fileToUpload, Canoe.class);
 
                         // Rebuild the canoe to trigger validations and data restructuring
                         Canoe adjustedCanoe = new Canoe();
-                        if(canoe.getSessionMaxShear() > 0){
-                            adjustedCanoe.setSessionMaxShear(canoe.getSessionMaxShear());
-
-                        }
+                        if (canoe.getSessionMaxShear() > 0) adjustedCanoe.setSessionMaxShear(canoe.getSessionMaxShear());
                         adjustedCanoe.setSolveType(canoe.getSolveType());
                         adjustedCanoe.setHull(canoe.getHull());
-                        for (Load load : canoe.getLoads())
+                        for (Load load : canoe.getLoads()) {
                             adjustedCanoe.addLoad(load);
+                        }
 
                         // Apply the custom processing logic
-
-
                         if (adjustedCanoe.getSessionMaxShear() > maxSessionShear) {
                             maxSessionShear = adjustedCanoe.getSessionMaxShear();
                             fileName = fileToUpload.getName();
@@ -217,23 +197,13 @@ public class YamlMarshallingService {
                             canoeProcessor.accept(adjustedCanoe);
                         }
                     }
-
-
                     mainController.showSnackbar(String.format("Success. File with name \"%s\" has max absolute shear of %.2f N.", fileName, maxSessionShear * 1000));
-
-
                 } catch (IOException ex) {
                     mainController.showSnackbar("Could not parse files.");
                 }
             }
         }
-
     }
-
-
-
-
-
 
     /**
      * Write the current state of settings to a file
@@ -258,5 +228,24 @@ public class YamlMarshallingService {
        }
        catch (Exception ignored) {}
        return defaultData;
+    }
+
+    /**
+     * Note: type is checked, IDE is wrongly giving a warning which was suppressed
+     * Deep copies an object in-memory by marshalling and unmarshalling the object such that all fields are reinitialized recursively.
+     * Deep copy is implemented using smile, jackson's binary serialization protocol to improve performance for large objects (like the canoe)
+     * @param <T>  The type of the object being copied.
+     * @param marshallableObject The object to deep copy which is integrated with Jackson for YAML marshalling.
+     * @return A deep copy of the object, or null if copying fails.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T deepCopy(T marshallableObject) {
+        if (marshallableObject == null) return null;
+        try {
+            byte[] data = smileMapper.writeValueAsBytes(marshallableObject);
+            return (T) smileMapper.readValue(data, marshallableObject.getClass());
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
     }
 }

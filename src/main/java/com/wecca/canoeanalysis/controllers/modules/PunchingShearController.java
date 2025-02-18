@@ -18,17 +18,15 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Pane;
 import lombok.Setter;
-
 import java.net.URL;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
-
-import static com.wecca.canoeanalysis.services.WindowManagerService.openUtilityWindow;
+import com.wecca.canoeanalysis.services.WindowManagerService;
+import com.wecca.canoeanalysis.services.MarshallingService;
 
 /**
  * Controller class for Punching Shear calculations in the Canoe Analysis Application.
@@ -221,9 +219,9 @@ public class PunchingShearController implements Initializable {
      * This populates the list view and beam graphic with the new model
      */
     public void uploadCanoe() {
-        YamlMarshallingService.setPunchingShearController(this);
+        MarshallingService.setPunchingShearController(this);
 
-        YamlMarshallingService.punchingShearImportCanoeFromYAML(mainController.getPrimaryStage());
+        MarshallingService.punchingShearImportCanoeFromYAML(mainController.getPrimaryStage());
 
     }
 
@@ -281,7 +279,7 @@ public class PunchingShearController implements Initializable {
     }
 
     public void openGlossary() {
-        openUtilityWindow("Glossary", "/com/wecca/canoeanalysis/view/shear-equations-view.fxml", 800, 550);
+        WindowManagerService.openUtilityWindow("Glossary", "/com/wecca/canoeanalysis/view/shear-equations-view.fxml", 800, 550);
     }
 
 }
