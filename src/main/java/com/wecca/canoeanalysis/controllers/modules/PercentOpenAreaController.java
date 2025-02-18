@@ -238,11 +238,6 @@ public class PercentOpenAreaController implements Initializable {
         return ColorUtils.colorFromInteger(secondMostColor);
     }
 
-    /**
-     * Operations called on initialization of the view
-     * @param url unused, part of javafx framework
-     * @param resourceBundle unused, part of javafx framework
-     */
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setMainController(CanoeAnalysisApplication.getMainController());
