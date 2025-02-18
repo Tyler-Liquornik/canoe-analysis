@@ -5,20 +5,28 @@ import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
-import com.wecca.canoeanalysis.services.MarshallingService;
+import com.wecca.canoeanalysis.models.canoe.FloatingSolution;
+import com.wecca.canoeanalysis.models.data.SolveType;
+import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
+import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.utils.InputParsingUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Point2D;
+import javafx.scene.chart.AreaChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
 import lombok.Setter;
-
 import java.net.URL;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
+import com.wecca.canoeanalysis.services.WindowManagerService;
+import com.wecca.canoeanalysis.services.MarshallingService;
 
 /**
  * Controller class for Punching Shear calculations in the Canoe Analysis Application.
@@ -34,6 +42,8 @@ public class PunchingShearController implements Initializable {
             twoWayVc3TextField, vcMinTextField;
     @FXML
     private Label oneWaySafeLabel, oneWayUnsafeLabel, twoWaySafeLabel, twoWayUnsafeLabel;
+    @FXML
+    private AnchorPane chartContainer;
 
     @Setter
     private static MainController mainController;
@@ -50,6 +60,10 @@ public class PunchingShearController implements Initializable {
     private double canoeThickness;
     private double hullWidth;
     private double compressiveStrength;
+
+    public void maxShearToVf(){
+        oneWayVfTextField.setText(maxShearTextField.getText());
+    }
 
     /**
      * Performs safety check for one-way shear.
@@ -98,19 +112,6 @@ public class PunchingShearController implements Initializable {
     }
 
     /**
-     * Populates the one-way shear force field with the value entered for the max shear text field.
-     * Shows an error message if the max shear field is empty.
-     */
-    public void uploadShear() {
-        if (!maxShearTextField.getText().isEmpty()) {
-            oneWayVfTextField.setText(maxShearTextField.getText());
-        } else {
-            oneWayVfTextField.setText("");
-            mainController.showSnackbar("Please input a value for max shear");
-        }
-    }
-
-    /**
      * Calculates the one-way shear capacity (Vc) based on the input hull thickness, width, and compressive strength.
      * Displays the calculated value in the UI.
      */
@@ -121,6 +122,7 @@ public class PunchingShearController implements Initializable {
             compressiveStrength = Double.parseDouble(compressiveStrengthTextField.getText());
             double vc = concrete * lowDensityConcrete * squareColumn * Math.sqrt(compressiveStrength) * hullWidth * canoeThickness;
             oneWayVcTextField.setText(String.format("%.2f", vc));
+            safetyTest1();
         }
         else
             mainController.showSnackbar("Please fill all the fields with valid numeric values.");
@@ -158,6 +160,7 @@ public class PunchingShearController implements Initializable {
             double vc3 = 0.38 * lowDensityConcrete * concrete * Math.sqrt(compressiveStrength);
             twoWayVc3TextField.setText(String.format("%.4f", vc3));
             vcMinTextField.setText(String.format("%.4f", Math.min(vc1, Math.min(vc2, vc3))));
+            safetyTest2();
         }
         else
             mainController.showSnackbar("Please fill all the fields with valid numeric values.");
@@ -186,6 +189,7 @@ public class PunchingShearController implements Initializable {
         hullWidthTextField.clear();
         compressiveStrengthTextField.clear();
         maxShearTextField.clear();
+        chartContainer.getChildren().clear();
         clearOneWay();
         clearTwoWay();
     }
@@ -197,6 +201,8 @@ public class PunchingShearController implements Initializable {
         LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
         //iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
+        iconGlyphToFunctionMap.put(IconGlyphType.BOOK, e -> openGlossary());
+        iconGlyphToFunctionMap.put(IconGlyphType.RESET, e -> reset());
 
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
@@ -234,5 +240,46 @@ public class PunchingShearController implements Initializable {
         hullThicknessTextField.setText(String.format("%.2f",canoe.getMaxThickness()*1000));
         hullWidthTextField.setText(String.format("%.2f",canoe.getMaxWidth()*1000));
 
+        // need to account for floating
+        if(canoe.getSolveType().equals(SolveType.FLOATING)){
+            FloatingSolution solution = BeamSolverService.solveFloatingSystem(canoe);
+            if (solution == null) {
+                mainController.showSnackbar("Error, buoyancy solver could not converge to a solution");
+
+            }
+
+            // Proceed with floating system solve if no tipping or sinking is detected
+            PiecewiseContinuousLoadDistribution buoyancy = solution.getSolvedBuoyancy();
+            if (buoyancy.getForce() != 0) canoe.addLoad(buoyancy);
+        }
+        displayChart(canoe);
+
     }
+
+    /**
+     *
+     * @param canoe
+     * this method calls on the diagram manager service and uses it to set up the chart and display it in module
+     * this is displaying the chart of the canoe uploaded with the max absolute shear
+     */
+    public void displayChart(Canoe canoe ) {
+        List<Point2D> points = DiagramService.generateSfdPoints(canoe);
+        AreaChart<Number, Number> chart = DiagramService.setupChart(canoe, points, "kN", "Force");
+
+        // Set size of chart to match anchor pane
+        AnchorPane.setTopAnchor(chart, 0.0);
+        AnchorPane.setRightAnchor(chart, 0.0);
+        AnchorPane.setBottomAnchor(chart, 0.0);
+        AnchorPane.setLeftAnchor(chart, 0.0);
+
+        chart.getStylesheets().add(ResourceManagerService.getResourceFilePathString("css/chart.css", false));
+
+        // Add the chart to the container
+        chartContainer.getChildren().add(chart);
+    }
+
+    public void openGlossary() {
+        WindowManagerService.openUtilityWindow("Glossary", "/com/wecca/canoeanalysis/view/shear-equations-view.fxml", 800, 550);
+    }
+
 }
