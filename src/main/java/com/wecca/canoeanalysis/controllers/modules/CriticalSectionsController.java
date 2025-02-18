@@ -7,7 +7,7 @@ import lombok.Setter;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-public class CriticalSectionsController implements Initializable {
+public class CriticalSectionsController implements Initializable, ModuleController {
 
     @Setter
     private static MainController mainController;

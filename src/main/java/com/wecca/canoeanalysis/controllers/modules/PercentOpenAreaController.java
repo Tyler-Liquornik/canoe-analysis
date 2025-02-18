@@ -31,7 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-public class PercentOpenAreaController implements Initializable {
+public class PercentOpenAreaController implements Initializable, ModuleController {
 
     @Setter
     private static MainController mainController;

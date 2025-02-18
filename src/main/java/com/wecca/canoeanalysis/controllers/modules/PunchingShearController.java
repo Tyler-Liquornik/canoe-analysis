@@ -25,7 +25,7 @@ import java.util.function.Consumer;
  * This class handles the logic for calculating one-way and two-way shear safety and provides methods
  * for input validation and result display in the UI.
  */
-public class PunchingShearController implements Initializable {
+public class PunchingShearController implements Initializable, ModuleController {
 
     @FXML
     private JFXTextField hullThicknessTextField, hullWidthTextField, compressiveStrengthTextField,

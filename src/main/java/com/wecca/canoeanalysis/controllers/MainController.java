@@ -7,6 +7,7 @@ import com.jfoenix.transitions.hamburger.HamburgerBackArrowBasicTransition;
 import com.jfoenix.controls.JFXSnackbarLayout;
 import com.wecca.canoeanalysis.components.controls.IconButton;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
+import com.wecca.canoeanalysis.controllers.modules.ModuleController;
 import com.wecca.canoeanalysis.services.ResourceManagerService;
 import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
@@ -59,6 +60,10 @@ public class MainController implements Initializable {
 
     // Each module will have a set of custom toolbar buttons on top of the minimize and close window buttons
     private List<Button> moduleToolBarButtons = new ArrayList<>();
+
+    // Back reference to the selected controller
+    @Getter @Setter
+    private ModuleController currentModuleController;
 
     /**
      * Mouse clicked event to set the current location of the window
@@ -196,7 +201,7 @@ public class MainController implements Initializable {
 
     public void initializeDrawer() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/wecca/canoeanalysis/view/side-drawer-view.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/wecca/canoeanalysis/view/module-selector-view.fxml"));
             AnchorPane drawerContent = loader.load();
             menuDrawer.getChildren().setAll(drawerContent);
             menuDrawer.setTranslateX(-menuDrawer.getPrefWidth());
