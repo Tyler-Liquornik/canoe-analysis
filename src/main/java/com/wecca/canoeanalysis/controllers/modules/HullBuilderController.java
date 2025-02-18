@@ -760,28 +760,61 @@ public class HullBuilderController implements Initializable, ModuleController {
             return;
         }
 
-        // Update the vertical line's position
         double mouseX = event.getX();
         double paneHeight = hullViewAnchorPane.getHeight();
-        mouseXTrackerLine.setStartX(mouseX);
-        mouseXTrackerLine.setEndX(mouseX);
-        mouseXTrackerLine.setStartY(0);
-        mouseXTrackerLine.setEndY(paneHeight - 1);
-        updateHullIntersectionPoint(mouseX);
 
-        // Update the labels and cursor:
-        if (!isMouseInAddingKnotPointZone(mouseX)) {
-            poiTitleLabel.setText("Deleting Knot Point");
-            if (!event.isShiftDown()) {
-                poiModeLabel.setText("Hold Shift to Drag");
+        if (event.isShiftDown()) {
+            if (!isMouseInAddingKnotPointZone(mouseX)) {
+                // In dragging zone: hide the vertical tracker and POI markers,
+                // and update labels to indicate dragging.
+                mouseXTrackerLine.setOpacity(0);
+                if (intersectionPoint != null) intersectionPoint.setOpacity(0);
+                if (intersectionXMark != null) intersectionXMark.setOpacity(0);
+                poiTitleLabel.setText("Dragging Knot Point");
+                poiModeLabel.setText("Release Shift to Stop Dragging");
+                hullViewAnchorPane.setCursor(Cursor.CLOSED_HAND);
+            } else {
+                // If the mouse moves into the adding zone while Shift is held:
+                // Cancel any active dragging.
+                if (isDraggingKnot) {
+                    isDraggingKnot = false;
+                    initialKnotDragMousePos = null;
+                    initialKnotDragKnotPos = null;
+                    hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_DRAGGED, this::handleKnotDragMouseDragged);
+                    hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_RELEASED, this::handleKnotDragMouseReleased);
+                }
+                // Restore the vertical tracker and POI markers as in non-drag mode.
+                mouseXTrackerLine.setOpacity(0.7);
+                mouseXTrackerLine.setStartX(mouseX);
+                mouseXTrackerLine.setEndX(mouseX);
+                mouseXTrackerLine.setStartY(0);
+                mouseXTrackerLine.setEndY(paneHeight - 1);
+                updateHullIntersectionPoint(mouseX);
+                poiTitleLabel.setText("Adding Knot Point");
+                poiModeLabel.setText("");
                 hullViewAnchorPane.setCursor(Cursor.CROSSHAIR);
             }
         } else {
-            poiModeLabel.setText("");
-            poiTitleLabel.setText("Adding Knot Point");
-            hullViewAnchorPane.setCursor(Cursor.CROSSHAIR);
+            // When Shift is not held, update normally.
+            mouseXTrackerLine.setOpacity(0.7);
+            mouseXTrackerLine.setStartX(mouseX);
+            mouseXTrackerLine.setEndX(mouseX);
+            mouseXTrackerLine.setStartY(0);
+            mouseXTrackerLine.setEndY(paneHeight - 1);
+            updateHullIntersectionPoint(mouseX);
+
+            if (!isMouseInAddingKnotPointZone(mouseX)) {
+                poiTitleLabel.setText("Deleting Knot Point");
+                poiModeLabel.setText("Hold Shift to Drag Knot Point");
+                hullViewAnchorPane.setCursor(Cursor.CROSSHAIR);
+            } else {
+                poiTitleLabel.setText("Adding Knot Point");
+                poiModeLabel.setText("");
+                hullViewAnchorPane.setCursor(Cursor.CROSSHAIR);
+            }
         }
     }
+
 
     /**
      * Render or un-render the point of intersection between the line x = mouseX and the hull curve graphic
@@ -1020,11 +1053,10 @@ public class HullBuilderController implements Initializable, ModuleController {
     }
 
     /**
-     * Update the hull view pane state when the shift key is released
-     * For knot point dragging feature
-     * @param event contains information about the event where some key was released (may or may not be SHIFT)
+     * Detects the release of any key on the keyboard
+     * @param event contains information about the event where some key was released
      */
-    private void handleShiftKeyReleased(KeyEvent event) {
+    private void handleKeyReleased(KeyEvent event) {
         if (event.getCode() == KeyCode.SHIFT) {
             // If a knot is currently being dragged, stop dragging immediately.
             if (isDraggingKnot) {
@@ -1038,30 +1070,45 @@ public class HullBuilderController implements Initializable, ModuleController {
             // Then update label and cursor based on the current mouse position.
             if (isMouseOverHullViewAnchorPane()) {
                 if (isMouseInAddingKnotPointZone(currentMouseX)) {
+                    poiTitleLabel.setText("Adding Knot Point");
                     poiModeLabel.setText("");
                     hullViewAnchorPane.setCursor(Cursor.CROSSHAIR);
                 } else {
-                    poiModeLabel.setText("Hold Shift to Drag");
+                    poiTitleLabel.setText("Deleting Knot Point");
+                    poiModeLabel.setText("Hold Shift to Drag Knot Point");
                     hullViewAnchorPane.setCursor(Cursor.CROSSHAIR);
                 }
+                mouseXTrackerLine.setOpacity(0.7);
+                mouseXTrackerLine.setStartX(currentMouseX);
+                mouseXTrackerLine.setEndX(currentMouseX);
+                mouseXTrackerLine.setStartY(0);
+                mouseXTrackerLine.setEndY(hullViewAnchorPane.getHeight() - 1);
+                updateHullIntersectionPoint(currentMouseX);
             }
         }
     }
 
     /**
-     * Update the hull view pane state when the shift key is pressed
-     * For knot point dragging feature
-     * @param event contains information about the event where some key was pressed (may or may not be SHIFT)
+     * Detects the pressing of any key on the keyboard
+     * @param event contains information about the event where some key was pressed
      */
-    private void handleShiftKeyPressed(KeyEvent event) {
+    private void handleKeyPressed(KeyEvent event) {
         if (event.getCode() == KeyCode.SHIFT) {
-            // When Shift is pressed, update the UI immediately
             if (isMouseOverHullViewAnchorPane()) {
                 if (isMouseInAddingKnotPointZone(currentMouseX)) {
                     poiModeLabel.setText("");
                     hullViewAnchorPane.setCursor(Cursor.CROSSHAIR);
                 } else {
-                    poiModeLabel.setText("Release Shift to stop Dragging");
+                    // Hide vertical tracker and POI indicators while dragging.
+                    mouseXTrackerLine.setOpacity(0);
+                    if (intersectionPoint != null) {
+                        intersectionPoint.setOpacity(0);
+                    }
+                    if (intersectionXMark != null) {
+                        intersectionXMark.setOpacity(0);
+                    }
+                    poiTitleLabel.setText("Dragging Knot Point");
+                    poiModeLabel.setText("Release Shift to Stop Dragging");
                     hullViewAnchorPane.setCursor(Cursor.CLOSED_HAND);
                 }
             }
@@ -1100,8 +1147,8 @@ public class HullBuilderController implements Initializable, ModuleController {
         intersectionPointPane.setPickOnBounds(false);
         intersectionPointPane = getOverlayPane(hullGraphicPane);
         hullViewAnchorPane.getChildren().add(intersectionPointPane);
-        shiftKeyReleasedHandler = this::handleShiftKeyReleased;
-        shiftKeyPressedHandler = this::handleShiftKeyPressed;
+        shiftKeyReleasedHandler = this::handleKeyReleased;
+        shiftKeyPressedHandler = this::handleKeyPressed;
 
         Line xLine1 = new Line(-5, -5, 5, 5);
         Line xLine2 = new Line(-5, 5, 5, -5);
@@ -1135,7 +1182,7 @@ public class HullBuilderController implements Initializable, ModuleController {
         currentMouseX = 0;
         currentMouseY = 0;
 
-        // Attach a key released event filter once the scene is available.
+        // Attach a keystroke event detection filter once the scene is available.
         hullViewAnchorPane.setFocusTraversable(true);
         hullViewAnchorPane.requestFocus();
         hullViewAnchorPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
