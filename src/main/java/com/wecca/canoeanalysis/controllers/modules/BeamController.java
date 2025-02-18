@@ -16,6 +16,7 @@ import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.canoe.FloatingSolution;
 import com.wecca.canoeanalysis.models.canoe.Hull;
+import com.wecca.canoeanalysis.models.data.SolveType;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.RectFunction;
 import com.wecca.canoeanalysis.models.load.*;
@@ -618,6 +619,7 @@ public class BeamController implements Initializable, ModuleController {
             renderSupportGraphic(supportLoad.getX());
         }
         checkAndSetEmptyLoadTreeSettings();
+        canoe.setSolveType(SolveType.STANDS);
     }
 
     /**
@@ -626,6 +628,7 @@ public class BeamController implements Initializable, ModuleController {
     private void undoStandsSolve() {
         undoSolveUpdateUI();
         clearLoadsOfType(LoadType.POINT_LOAD_SUPPORT);
+        canoe.setSolveType(SolveType.STANDS);
     }
 
     /**
@@ -682,6 +685,7 @@ public class BeamController implements Initializable, ModuleController {
         }
         generateGraphsButton.setDisable(solution.isTippedOver());
 
+        canoe.setSolveType(SolveType.FLOATING);
         return true;
     }
 
@@ -706,6 +710,7 @@ public class BeamController implements Initializable, ModuleController {
         clearLoadsOfType(LoadType.BUOYANCY);
         setCanoe(canoe);
         undoSolveUpdateUI();
+        canoe.setSolveType(SolveType.UNSOLVED);
     }
 
     /**
