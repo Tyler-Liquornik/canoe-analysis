@@ -1,9 +1,11 @@
 package com.wecca.canoeanalysis.controllers.popups;
 
 import com.wecca.canoeanalysis.models.data.Equation;
-import javafx.application.Platform;
+import com.wecca.canoeanalysis.services.color.ColorPaletteService;
+import com.wecca.canoeanalysis.utils.ColorUtils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
@@ -21,13 +23,7 @@ public class ShearEquationsController {
     private TableView<Equation> dataTable;
 
     @FXML
-    private TableColumn<Equation, TextFlow> parameterColumn;
-
-    @FXML
-    private TableColumn<Equation, TextFlow> descriptionColumn;
-
-    @FXML
-    private TableColumn<Equation, TextFlow> valueColumn;
+    private TableColumn<Equation, TextFlow> parameterColumn, descriptionColumn, valueColumn;
 
     @FXML
     public void initialize() {
@@ -130,7 +126,6 @@ public class ShearEquationsController {
                                 createSubscriptText("d", "v")
                         )
                 )
-
         );
 
 
@@ -141,17 +136,15 @@ public class ShearEquationsController {
         dataTable.setEditable(false);
 
         // Prevent scrolling with mouse wheel or gestures
-        dataTable.addEventFilter(ScrollEvent.ANY, event -> event.consume());
+        dataTable.addEventFilter(ScrollEvent.ANY, Event::consume);
 
         // Prevent keyboard navigation (arrow keys)
-        dataTable.addEventFilter(KeyEvent.ANY, event -> event.consume());
+        dataTable.addEventFilter(KeyEvent.ANY, Event::consume);
 
         // Hide scrollbars completely
-        Platform.runLater(() -> {
-            dataTable.lookupAll(".scroll-bar").forEach(node -> {
-                node.setVisible(false);
-                node.setManaged(false);
-            });
+        dataTable.lookupAll(".scroll-bar").forEach(node -> {
+            node.setVisible(false);
+            node.setManaged(false);
         });
     }
 
@@ -168,17 +161,23 @@ public class ShearEquationsController {
     }
 
     private void setRowHeight() {
-        dataTable.setRowFactory(tv -> new TableRow<Equation>() {
+        dataTable.setRowFactory(tv -> new TableRow<>() {
             @Override
             protected void updateItem(Equation item, boolean empty) {
                 super.updateItem(item, empty);
-                if (!empty && item != null) {
+                if (empty || item == null)
+                    setStyle("");
+                else {
+                    setStyle("-fx-background-color: " +
+                            (getIndex() % 2 == 0
+                                    ? ColorUtils.colorToHexString(ColorPaletteService.getColor("surface"))
+                                    : ColorUtils.colorToHexString(ColorPaletteService.getColor("above-surface")))
+                            + ";");
                     setPrefHeight(25);
                 }
             }
         });
     }
-
 
     private void setTextFlowColumnFactory(TableColumn<Equation, TextFlow> column) {
         column.setCellFactory(col -> new TableCell<>() {
