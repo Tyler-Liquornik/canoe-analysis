@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis;
 
 import com.wecca.canoeanalysis.controllers.MainController;
-import com.wecca.canoeanalysis.controllers.util.SideDrawerController;
+import com.wecca.canoeanalysis.controllers.util.ModuleSelectorController;
 import com.wecca.canoeanalysis.models.data.Settings;
 import com.wecca.canoeanalysis.services.LoggerService;
 import com.wecca.canoeanalysis.services.ResourceManagerService;
@@ -42,13 +42,14 @@ public class CanoeAnalysisApplication extends Application {
         stage.initStyle(StageStyle.UNDECORATED);
         stage.show();
 
-        // com.wecca.canoeanalysis.Main controller setup, load default module (beam module)
+        // com.wecca.canoeanalysis.Main controller setup, load default module (hull builder module)
         setMainController(mainFxmlLoader.getController());
         mainController.setPrimaryStage(stage);
         mainController.setPrimaryScene(scene);
-        FXMLLoader beamFxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/" + SideDrawerController.selectedModule.getViewName() + ".fxml"));
+        FXMLLoader beamFxmlLoader = new FXMLLoader(CanoeAnalysisApplication.class.getResource("view/" + ModuleSelectorController.selectedModule.getViewName() + ".fxml"));
         AnchorPane moduleInjectionRoot = beamFxmlLoader.load();
         mainController.getModuleInjectionRoot().getChildren().setAll(moduleInjectionRoot);
+        ModuleSelectorController.selectModule(ModuleSelectorController.Module.HULL_BUILDER, true);
 
         // Add the CSS file to the scene's stylesheets
         scene.getStylesheets().add(ResourceManagerService.getResourceFilePathString("css/style.css", false));

@@ -7,7 +7,7 @@ import lombok.Setter;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-public class FailureEnvelopeController implements Initializable {
+public class FailureEnvelopeController implements Initializable, ModuleController {
 
     @Setter
     private static MainController mainController;

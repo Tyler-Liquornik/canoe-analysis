@@ -530,7 +530,7 @@ public class HullGeometryService {
         return hull;
     }
 
-    public static Point2D getDeletableKnotPoint(double functionSpaceX) {
+    public static Point2D getEditableKnotPoint(double functionSpaceX) {
         Hull hull = getHull();
         List<Range> overlaySections = hullBuilderController.getOverlaySections();
 
@@ -595,14 +595,53 @@ public class HullGeometryService {
     }
 
     /**
+     * Updates the hull geometry by dragging a knot point from its old position to a new position.
+     * The method shifts the knot point as well as its adjacent control points so that C1 continuity is maintained.
+     * If the knot is not the minimum, the new position is assumed already clamped.
+     */
+    public static Hull dragKnotPoint(@NonNull Point2D oldKnot, @NonNull Point2D newKnot) {
+        Hull hull = getHull();
+        // Loop through sections to find the matching knot (using a tolerance)
+        for (int i = 0; i < hull.getHullSections().size(); i++) {
+            HullSection section = hull.getHullSections().get(i);
+            if (section.getSideProfileCurve() instanceof CubicBezierFunction bezier) {
+                Point2D knot = bezier.getKnotPoints().getFirst();
+                if (knot.distance(oldKnot) < 1e-6) {
+                    // Compute the delta movement.
+                    double deltaX = newKnot.getX() - oldKnot.getX();
+                    double deltaY = newKnot.getY() - oldKnot.getY();
+                    // Update the current section's knot.
+                    bezier.setX1(newKnot.getX());
+                    bezier.setY1(newKnot.getY());
+                    // Shift its left control point to preserve relative position.
+                    bezier.setControlX1(bezier.getControlX1() + deltaX);
+                    bezier.setControlY1(bezier.getControlY1() + deltaY);
+                    // If there is an adjacent (previous) section sharing this knot, update its end.
+                    if (i > 0) {
+                        HullSection prevSection = hull.getHullSections().get(i - 1);
+                        if (prevSection.getSideProfileCurve() instanceof CubicBezierFunction prevBezier) {
+                            prevBezier.setX2(newKnot.getX());
+                            prevBezier.setY2(newKnot.getY());
+                            prevBezier.setControlX2(prevBezier.getControlX2() + deltaX);
+                            prevBezier.setControlY2(prevBezier.getControlY2() + deltaY);
+                        }
+                    }
+                    // (Optionally, you could add extra clamping here to enforce that no control point goes beyond the bounds.)
+                    return hull;
+                }
+            }
+        }
+        return hull;
+    }
+
+    /**
      * Adds a new knot point to the hull by splitting the relevant Bezier section at the knot's X-coordinate.
      * Returns a new Hull instance, leaving the original unmodified.
-     *
      * @param knotPointToAdd the new knot point (x,y) on the existing curve
      * @return a deep-copied and updated Hull with the new knot inserted as a split in its section
      */
     public static Hull addKnotPoint(@NonNull Point2D knotPointToAdd) {
-        // Copy the current hull so we don’t alter the original in place
+        // Copy the current hull, so we don’t alter the original in place
         Hull currHull = getHull();
         Hull hull = MarshallingService.deepCopy(currHull);
         if (hull == null) throw new RuntimeException("Marshalling error deep copying the hull");
@@ -617,20 +656,15 @@ public class HullGeometryService {
                 break;
             }
         }
-        if (sectionIndex < 0) throw new IllegalArgumentException(String.format("X=%.3f is out of range for every section.", newX));
+        if (sectionIndex < 0) throw new IllegalArgumentException(String.format("x = %.3f is out of range for every section.", newX));
 
-
-        // Solve for parameter t in [0..1] where x(t) == newX, and then split the curve at t
+        // Solve for parameter t in [0..1] where x(t) == newX, and then split the side profile curve at t
         HullSection oldSection = hull.getHullSections().get(sectionIndex);
-
         if (!(oldSection.getSideProfileCurve() instanceof CubicBezierFunction oldBezier)) throw new IllegalArgumentException("Cannot split a non-Bezier hull section");
         double t = oldBezier.getT(newX);
         CubicBezierFunction[] splitCurves = splitCubicBezier(oldBezier, t);
         CubicBezierFunction leftBezier = splitCurves[0];
         CubicBezierFunction rightBezier = splitCurves[1];
-
-
-        // adjustment TODO fix
         Point2D globalMinKnot = hull.getHullSections().stream()
                 .flatMap(hs -> ((CubicBezierFunction) hs.getSideProfileCurve()).getKnotPoints().stream())
                 .min(Comparator.comparingDouble(Point2D::getY))
@@ -639,13 +673,12 @@ public class HullGeometryService {
         adjustBezierWithMinKnot(leftBezier, globalMinY, sectionIndex);
         adjustBezierWithMinKnot(rightBezier, globalMinY, sectionIndex);
 
+        // Same thing for top profile
         if (!(oldSection.getTopProfileCurve() instanceof CubicBezierFunction oldTopBezier)) throw new IllegalArgumentException("Cannot split a non-Bezier hull top section");
         double tTop = oldTopBezier.getT(newX);
         CubicBezierFunction[] splitTopCurves = splitCubicBezier(oldTopBezier, tTop);
         CubicBezierFunction leftTopBezier = splitTopCurves[0];
         CubicBezierFunction rightTopBezier = splitTopCurves[1];
-
-        // todo fix
         Point2D globalMinKnotTop = hull.getHullSections().stream()
                 .flatMap(hs -> ((CubicBezierFunction) hs.getTopProfileCurve()).getKnotPoints().stream())
                 .min(Comparator.comparingDouble(Point2D::getY))
@@ -660,17 +693,15 @@ public class HullGeometryService {
         hull.getHullSections().remove(sectionIndex);
         hull.getHullSections().add(sectionIndex, newRightSec);
         hull.getHullSections().add(sectionIndex, newLeftSec);
-
         return hull;
     }
 
     /**
-     * Adjusts a given CubicBezierFunction using the strategy from the merge logic.
+     * Adjusts a given CubicBezierFunction after an operation has been done it to ensure its validity
      * If a control point lies below the provided minimum Y (minY), its radial coordinate (r)
-     * is clamped by computing the maximum allowed radius (via calculateMaxR) for that knot.
-     *
-     * @param bezier       the CubicBezierFunction to adjust
-     * @param minY         the minimum allowed Y value (from the global minimum knot)
+     * is clamped into a valid range by computing the maximum allowed radius (via calculateMaxR) for that knot.
+     * @param bezier the CubicBezierFunction to adjust
+     * @param minY the minimum allowed Y value (from the global minimum knot)
      * @param sectionIndex the index of the section (used in calculateMaxR)
      */
     private static void adjustBezierWithMinKnot(CubicBezierFunction bezier, double minY, int sectionIndex) {
