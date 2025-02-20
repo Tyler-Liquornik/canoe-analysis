@@ -116,7 +116,7 @@ public class HullBuilderController implements Initializable, ModuleController {
     @Getter @Setter
     private boolean mousePressWasInAddingKnotPointZone;
     @Getter @Setter
-    private boolean shiftKeyPressHadMouseInAddingKnotPointZone;
+    private boolean shiftKeyPressHadMouseInDeletingKnotPointZone;
     @Getter @Setter
     private boolean knotEditingMouseButtonDown;
 
@@ -764,7 +764,7 @@ public class HullBuilderController implements Initializable, ModuleController {
             // State update out of dragging mode
             isDraggingKnot = false;
             isDraggingKnotPreview = false;
-            shiftKeyPressHadMouseInAddingKnotPointZone = false;
+            shiftKeyPressHadMouseInDeletingKnotPointZone = false;
             mousePressWasInAddingKnotPointZone = false;
             initialKnotDragMousePos = null;
             initialKnotDragKnotPos = null;
@@ -811,7 +811,7 @@ public class HullBuilderController implements Initializable, ModuleController {
         double mouseX = event.getX();
         double paneHeight = hullViewAnchorPane.getHeight();
 
-        if (event.isShiftDown() && !shiftKeyPressHadMouseInAddingKnotPointZone) {
+        if (event.isShiftDown() && shiftKeyPressHadMouseInDeletingKnotPointZone) {
             if (!isMouseInAddingKnotPointZone(mouseX)) {
                 // In dragging zone: hide the vertical tracker and POI markers, and update labels to indicate dragging.
                 mouseXTrackerLine.setOpacity(0);
@@ -840,7 +840,7 @@ public class HullBuilderController implements Initializable, ModuleController {
                 }
             }
             if (!mousePressWasInAddingKnotPointZone
-                    || !shiftKeyPressHadMouseInAddingKnotPointZone
+                    || shiftKeyPressHadMouseInDeletingKnotPointZone
                     || !isMouseInAddingKnotPointZone(mouseX)) {
                 if (initialKnotDragKnotPos != null) {
                     // Create the drag indicator line
@@ -849,7 +849,7 @@ public class HullBuilderController implements Initializable, ModuleController {
                     double knotScreenY = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getY(),
                             hullGraphicPane.getPrefHeight(), -Math.abs(hull.getMaxHeight())) + hullGraphicPane.getLayoutY();
                     dragIndicatorLine.setStartX(event.getX());
-                    dragIndicatorLine.setStartY(event.getY());
+                    dragIndicatorLine.setStartY(event.getY() - 1);
                     dragIndicatorLine.setEndX(knotScreenX);
                     dragIndicatorLine.setEndY(knotScreenY);
                     dragIndicatorLine.setVisible(true);
@@ -867,7 +867,7 @@ public class HullBuilderController implements Initializable, ModuleController {
 
             if (!isMouseInAddingKnotPointZone(mouseX)) {
                 poiTitleLabel.setText("Deleting Knot Point");
-                if (!shiftKeyPressHadMouseInAddingKnotPointZone)
+                if (shiftKeyPressHadMouseInDeletingKnotPointZone)
                     poiModeLabel.setText("Hold Shift to Drag Knot Point");
                 hullViewAnchorPane.setCursor(Cursor.CROSSHAIR);
             } else {
@@ -1056,7 +1056,7 @@ public class HullBuilderController implements Initializable, ModuleController {
             double newEndX = event.getX() + offsetX;
             double newEndY = event.getY() + offsetY;
             dragIndicatorLine.setStartX(event.getX());
-            dragIndicatorLine.setStartY(event.getY());
+            dragIndicatorLine.setStartY(event.getY() - 1);
             dragIndicatorLine.setEndX(newEndX);
             dragIndicatorLine.setEndY(newEndY);
             dragIndicatorLine.setVisible(true);
@@ -1175,7 +1175,7 @@ public class HullBuilderController implements Initializable, ModuleController {
                         double knotScreenX = GraphicsUtils.getScaledFromModelToGraphic(editableKnot.getX(), hullGraphicPane.getPrefWidth(), hull.getLength()) + hullGraphicPane.getLayoutX();
                         double knotScreenY = GraphicsUtils.getScaledFromModelToGraphic(editableKnot.getY(), hullGraphicPane.getPrefHeight(), -Math.abs(hull.getMaxHeight())) + hullGraphicPane.getLayoutY();
                         dragIndicatorLine.setStartX(knotEditingCurrentMouseX);
-                        dragIndicatorLine.setStartY(knotEditingCurrentMouseY);
+                        dragIndicatorLine.setStartY(knotEditingCurrentMouseY - 1);
                         dragIndicatorLine.setEndX(knotScreenX);
                         dragIndicatorLine.setEndY(knotScreenY);
                         dragIndicatorLine.setVisible(true);
@@ -1183,7 +1183,8 @@ public class HullBuilderController implements Initializable, ModuleController {
                 }
                 initialKnotDragKnotPos = HullGeometryService.getEditableKnotPoint(functionSpaceX);
             }
-            shiftKeyPressHadMouseInAddingKnotPointZone = isMouseInAddingKnotPointZone(knotEditingCurrentMouseX);
+            shiftKeyPressHadMouseInDeletingKnotPointZone =
+                    !isMouseInAddingKnotPointZone(knotEditingCurrentMouseX) && isMouseOverHullViewAnchorPane();
         }
     }
 
@@ -1267,7 +1268,7 @@ public class HullBuilderController implements Initializable, ModuleController {
         knotEditingCurrentMouseY = -1;
         mousePressWasInAddingKnotPointZone = false;
         knotEditingMouseButtonDown = false;
-        shiftKeyPressHadMouseInAddingKnotPointZone = false;
+        shiftKeyPressHadMouseInDeletingKnotPointZone = false;
 
         // Attach a keystroke event detection filter once the scene is available.
         hullViewAnchorPane.setFocusTraversable(true);
