@@ -756,8 +756,26 @@ public class HullBuilderController implements Initializable, ModuleController {
     }
 
     /**
+     * Handles the mouse exiting the hull view pane.
+     */
+    private void handleKnotDragMouseExited(MouseEvent event) {
+        if (isDraggingKnot || isDraggingKnotPreview) {
+            isDraggingKnot = false;
+            isDraggingKnotPreview = false;
+            initialKnotDragMousePos = null;
+            initialKnotDragKnotPos = null;
+            currentMouseX = 0;
+            currentMouseY = 0;
+            if (dragIndicatorLine != null) dragIndicatorLine.setVisible(false);
+            hullViewAnchorPane.setCursor(Cursor.CROSSHAIR);
+            hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_EXITED, this::handleKnotDragMouseExited);
+            hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_DRAGGED, this::handleKnotDragMouseDragged);
+            hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_RELEASED, this::handleKnotDragMouseReleased);
+        }
+    }
+
+    /**
      * Handles mouse movement within the hull view pane.
-     * Updates the vertical tracker line and checks for hull intersection to display the POI.
      */
     private void handleMouseMovedHullViewPane(MouseEvent event) {
         currentMouseX = event.getX();
@@ -1040,9 +1058,12 @@ public class HullBuilderController implements Initializable, ModuleController {
             hullViewAnchorPane.setCursor(Cursor.OPEN_HAND);
 
             // TODO lock in new geometry
+            // Implement this so that they have to have been pressing for at least x ms
+            // That way if the user clicks quickly it doesnt shift the geometry weirdly
             dragIndicatorLine.setVisible(false);
 
             // Remove these dynamic handlers for the drag knot feature
+            hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_EXITED, this::handleKnotDragMouseExited);
             hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_DRAGGED, this::handleKnotDragMouseDragged);
             hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_RELEASED, this::handleKnotDragMouseReleased);
         }
@@ -1074,6 +1095,7 @@ public class HullBuilderController implements Initializable, ModuleController {
                 initialKnotDragKnotPos = null;
                 hullViewAnchorPane.setCursor(Cursor.CROSSHAIR);
                 poiModeLabel.setText("Click and Hold to Drag");
+                hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_EXITED, this::handleKnotDragMouseExited);
                 hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_DRAGGED, this::handleKnotDragMouseDragged);
                 hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_RELEASED, this::handleKnotDragMouseReleased);
             }
@@ -1119,6 +1141,7 @@ public class HullBuilderController implements Initializable, ModuleController {
                 }
                 else {
                     isDraggingKnotPreview = true;
+                    hullViewAnchorPane.addEventHandler(MouseEvent.MOUSE_EXITED, this::handleKnotDragMouseExited);
 
                     // Hide vertical tracker and POI indicators while dragging.
                     mouseXTrackerLine.setOpacity(0);
