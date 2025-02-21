@@ -599,39 +599,38 @@ public class HullGeometryService {
      * The method shifts the knot point as well as its adjacent control points so that C1 continuity is maintained.
      * If the knot is not the minimum, the new position is assumed already clamped.
      */
-    public static Hull dragKnotPoint(@NonNull Point2D oldKnot, @NonNull Point2D newKnot) {
+    public static Hull dragKnotPoint(@NonNull Point2D knotPos, @NonNull Point2D newKnotPos) {
+        // Hull copy to avoid mutating the main hull ref
         Hull hull = getHull();
-        // Loop through sections to find the matching knot (using a tolerance)
         for (int i = 0; i < hull.getHullSections().size(); i++) {
             HullSection section = hull.getHullSections().get(i);
-            if (section.getSideProfileCurve() instanceof CubicBezierFunction bezier) {
-                Point2D knot = bezier.getKnotPoints().getFirst();
-                if (knot.distance(oldKnot) < 1e-6) {
-                    // Compute the delta movement.
-                    double deltaX = newKnot.getX() - oldKnot.getX();
-                    double deltaY = newKnot.getY() - oldKnot.getY();
-                    // Update the current section's knot.
-                    bezier.setX1(newKnot.getX());
-                    bezier.setY1(newKnot.getY());
-                    // Shift its left control point to preserve relative position.
-                    bezier.setControlX1(bezier.getControlX1() + deltaX);
-                    bezier.setControlY1(bezier.getControlY1() + deltaY);
-                    // If there is an adjacent (previous) section sharing this knot, update its end.
-                    if (i > 0) {
-                        HullSection prevSection = hull.getHullSections().get(i - 1);
-                        if (prevSection.getSideProfileCurve() instanceof CubicBezierFunction prevBezier) {
-                            prevBezier.setX2(newKnot.getX());
-                            prevBezier.setY2(newKnot.getY());
-                            prevBezier.setControlX2(prevBezier.getControlX2() + deltaX);
-                            prevBezier.setControlY2(prevBezier.getControlY2() + deltaY);
-                        }
+            if (section.getSideProfileCurve() instanceof CubicBezierFunction bezier
+                    && bezier.getKnotPoints().getFirst().distance(knotPos) < 1e-6) {
+
+                // Adjust the side view section right of the knot point being dragged
+                double adjustedNewKnotX = Math.min(Math.max(newKnotPos.getX(), section.getX()), section.getRx());
+                double deltaX = adjustedNewKnotX - knotPos.getX();
+                double deltaY = newKnotPos.getY() - knotPos.getY();
+                bezier.setX1(adjustedNewKnotX);
+                bezier.setY1(newKnotPos.getY());
+                bezier.setControlX1(bezier.getControlX1() + deltaX);
+                bezier.setControlY1(bezier.getControlY1() + deltaY);
+
+                // Adjust the side view section left of the knot point being dragged
+                if (i > 0) {
+                    HullSection prevSection = hull.getHullSections().get(i - 1);
+                    if (prevSection.getSideProfileCurve() instanceof CubicBezierFunction prevBezier) {
+                        prevBezier.setX2(adjustedNewKnotX);
+                        prevBezier.setY2(newKnotPos.getY());
+                        prevBezier.setControlX2(prevBezier.getControlX2() + deltaX);
+                        prevBezier.setControlY2(prevBezier.getControlY2() + deltaY);
                     }
-                    // (Optionally, you could add extra clamping here to enforce that no control point goes beyond the bounds.)
-                    return hull;
                 }
+
+                return hull;
             }
         }
-        return hull;
+        throw new IllegalArgumentException("Cannot drag knot, hull does not contain knot with position: " + knotPos);
     }
 
     /**
