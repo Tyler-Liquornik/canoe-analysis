@@ -107,6 +107,8 @@ public class HullBuilderController implements Initializable, ModuleController {
     @Getter @Setter
     private Point2D initialKnotDragKnotPos;
     @Getter @Setter
+    private Point2D newKnotDragKnotPos;
+    @Getter @Setter
     private Hull knotDraggingPreviewHull;
     @Getter @Setter
     private long dragStartTime;
@@ -125,8 +127,6 @@ public class HullBuilderController implements Initializable, ModuleController {
     @Getter @Setter
     private boolean knotEditingMouseButtonDown;
 
-    // Constants
-    private final long DRAG_KNOT_COMMIT_TRANSACTION_THRESHOLD_MS = 200;
     private final double HULL_VIEW_PANEL_HEIGHT = 45;
     // Note to developer: This does not have deep immutability. Do not mutate! Meant as a constant reference to SharkBait!
     private final Hull SHARK_BAIT_HULL = SharkBaitHullLibrary.generateSharkBaitHullScaledFromBezier(6);
@@ -186,7 +186,7 @@ public class HullBuilderController implements Initializable, ModuleController {
         }
         else {
             if (sectionPropertiesSelected) switchButton(null); // Always show canoe properties first when in sections editor mode
-            updateHullIntersectionPointDisplay(hull.getLength() / 2, hull.getMaxHeight());
+            updateHullIntersectionPointDisplay(new Point2D(hull.getLength() / 2, hull.getMaxHeight()), null);
             hullViewAnchorPane.setOnMousePressed(this::handleKnotEditMousePressed);
         }
 
@@ -436,7 +436,6 @@ public class HullBuilderController implements Initializable, ModuleController {
     /**
      * Highlight the next section to the right to view and edit
      */
-    @Traceable
     public void selectNextHullSection(MouseEvent e) {
         unlockKnobsOnFirstSectionSelect();
 
@@ -797,14 +796,13 @@ public class HullBuilderController implements Initializable, ModuleController {
                 setSideViewHullGraphic(hull);
                 knotDraggingPreviewHull = MarshallingService.deepCopy(hull);
             }
-
         }
 
         // State updates regardless of if the user was using the drag knot feature
         knotEditingCurrentMouseX = -1;
         knotEditingCurrentMouseY = -1;
 
-        // No longer dragging, thus no longer require handlers
+        // No longer dragging, thus no longer require dynamic handlers
         hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_DRAGGED, this::handleKnotDragMouseDragged);
         hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_RELEASED, this::handleKnotDragMouseReleased);
     }
@@ -839,14 +837,14 @@ public class HullBuilderController implements Initializable, ModuleController {
                     initialKnotDragMousePos = null;
                     initialKnotDragKnotPos = null;
 
-                    // Restore the vertical tracker and POI markers as in non-drag mode.
+                    // Restore the vertical tracker and POI markers
                     mouseXTrackerLine.setOpacity(0.7);
                     mouseXTrackerLine.setStartX(mouseX);
                     mouseXTrackerLine.setEndX(mouseX);
                     mouseXTrackerLine.setStartY(0);
                     mouseXTrackerLine.setEndY(paneHeight - 1);
                     updateHullIntersectionPoint(mouseX);
-                    poiTitleLabel.setText("Adding Knot Point");
+                    // updateHullIntersectionPointDisplay(, null);
                     poiModeLabel.setText("");
                     hullViewAnchorPane.setCursor(Cursor.CROSSHAIR);
 
@@ -871,8 +869,8 @@ public class HullBuilderController implements Initializable, ModuleController {
                 }
             }
         }
+        // When Shift is not held, update the UI for adding/deleting mode only
         else {
-            // When Shift is not held, update normally.
             mouseXTrackerLine.setOpacity(0.7);
             mouseXTrackerLine.setStartX(mouseX);
             mouseXTrackerLine.setEndX(mouseX);
@@ -899,8 +897,9 @@ public class HullBuilderController implements Initializable, ModuleController {
      * @param mouseX the x position of the mouse at which the vertical line is at
      */
     private void updateHullIntersectionPoint(double mouseX) {
-        Double functionSpaceX;
-        Double functionSpaceY;
+        double functionSpaceX;
+        double functionSpaceY;
+        Point2D pointToDisplay;
         if (mouseX >= hullGraphicPane.getLayoutX() && mouseX <= hullGraphicPane.getLayoutX() + hullGraphicPane.getWidth()) {
             double poiX = mouseX - hullGraphicPane.getLayoutX();
             functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
@@ -912,52 +911,58 @@ public class HullBuilderController implements Initializable, ModuleController {
             double poiY = (functionSpaceY / hull.getLength()) * hullGraphicPane.getWidth();
             Point2D poi = new Point2D(poiX, -poiY);
             updateMouseLinePoint(poi, isMouseInAddingKnotPointZone(mouseX));
+            pointToDisplay = new Point2D(functionSpaceX, functionSpaceY);
         }
         else {
-            functionSpaceX = null;
-            functionSpaceY = null;
+            pointToDisplay = null;
             if (intersectionPoint != null) {
                 intersectionPoint.setOpacity(0);
                 intersectionPoint = null;
             }
             if (intersectionXMark != null) intersectionXMark.setOpacity(0);
         }
-        updateHullIntersectionPointDisplay(functionSpaceX, functionSpaceY);
+        updateHullIntersectionPointDisplay(pointToDisplay, null);
     }
 
     /**
-     * Update the display for adding and deleting knot points to show where the point will be added or deleted
-     * @param functionSpaceX the x coordinate of the point, in function space (not graphics space)
-     * @param functionSpaceY the y coordinate of the point, in function space (not graphics space)
+     * Updates the knot point display label.
+     * Converts the given function-space point to a formatted string and updates poiDataLabel.
+     * If a new point is provided, the label shows the transformation as: (x: old, y: old) ⇒ (x: new, y: new)
+     * If the functionSpacePoint is null (or section editing is disabled), it shows "(x: N/A, y: N/A)".
+     * @param functionSpacePoint current function-space point (or null)
+     * @param optionalFunctionSpaceUpdatedPoint new point after the operation (or null)
      */
-    private void updateHullIntersectionPointDisplay(Double functionSpaceX, Double functionSpaceY) {
+    private void updateHullIntersectionPointDisplay(Point2D functionSpacePoint, Point2D optionalFunctionSpaceUpdatedPoint) {
         String pointData;
-
         String nullPointString = "(x: N/A, y: N/A)";
-        if (functionSpaceX != null && sectionEditorEnabled) {
-            // Convert functionSpaceX back to mouseX
-            double poiX = (functionSpaceX / hull.getLength()) * hullGraphicPane.getWidth();
-            double mouseX = poiX + hullGraphicPane.getLayoutX();
 
-            // Determine if in adding or deleting mode and display the appropriate point to add or delete
-            if (!isMouseInAddingKnotPointZone(mouseX)) {
-                Point2D deletableKnotPoint = HullGeometryService.getEditableKnotPoint(functionSpaceX);
-                if (deletableKnotPoint == null) pointData = nullPointString;
-                else pointData = String.format("(x: %.3f, y: %.3f)", deletableKnotPoint.getX(), deletableKnotPoint.getY());
+        if (functionSpacePoint != null && sectionEditorEnabled) {
+            // Convert the function-space point to a screen coordinate to decide mode.
+            double screenX = (functionSpacePoint.getX() / hull.getLength()) * hullGraphicPane.getWidth() + hullGraphicPane.getLayoutX();
+            if (!isMouseInAddingKnotPointZone(screenX)) {
+                // Deletion mode: show the existing editable knot point, if available.
+                Point2D deletableKnotPoint = HullGeometryService.getEditableKnotPoint(functionSpacePoint.getX());
+                pointData = (deletableKnotPoint == null)
+                        ? nullPointString
+                        : String.format("(x: %.3f, y: %.3f)", deletableKnotPoint.getX(), deletableKnotPoint.getY());
             } else {
-                String functionSpaceXString = String.format("%.3f", CalculusUtils.roundXDecimalDigits(functionSpaceX, 3));
-                String functionSpaceYString = functionSpaceY == null ? "N/A"
-                        : String.format("%.3f", CalculusUtils.roundXDecimalDigits(functionSpaceY, 3));
-                pointData = String.format("(x: %s, y: %s)", functionSpaceXString, functionSpaceYString);
+                // Addition mode: show the current function-space point.
+                String currentXStr = String.format("%.3f", CalculusUtils.roundXDecimalDigits(functionSpacePoint.getX(), 3));
+                String currentYStr = String.format("%.3f", CalculusUtils.roundXDecimalDigits(functionSpacePoint.getY(), 3));
+                pointData = String.format("(x: %s, y: %s)", currentXStr, currentYStr);
             }
-        }
-        else pointData = nullPointString;
+            // Append new point info if provided.
+            if (optionalFunctionSpaceUpdatedPoint != null) {
+                String newXStr = String.format("%.3f", CalculusUtils.roundXDecimalDigits(optionalFunctionSpaceUpdatedPoint.getX(), 3));
+                String newYStr = String.format("%.3f", CalculusUtils.roundXDecimalDigits(optionalFunctionSpaceUpdatedPoint.getY(), 3));
+                pointData += " ⇒ " + String.format("(x: %s, y: %s)", newXStr, newYStr);
+            }
+        } else pointData = nullPointString;
 
-        // Adjust position of the data label to keep it centered
         poiDataLabel.setText(pointData);
         double centerX = (poiTitleLabel.getWidth() / 2) + poiTitleLabel.getLayoutX();
-        double poiDataLabelX = centerX - (poiDataLabel.getWidth() / 2);
-        poiDataLabel.setLayoutX(poiDataLabelX);
+        double offset = (optionalFunctionSpaceUpdatedPoint == null) ? 0 : 55;
+        poiDataLabel.setLayoutX(centerX - (poiDataLabel.getWidth() / 2) - offset);
     }
 
     /**
@@ -1008,8 +1013,7 @@ public class HullBuilderController implements Initializable, ModuleController {
             initialKnotDragKnotPos = editableKnot;
             hullViewAnchorPane.setCursor(Cursor.CLOSED_HAND);
             initialKnotDragMousePos = new Point2D(event.getX(), event.getY());
-
-            poiModeLabel.setText("<Show height change if there is one>"); // TODO in handleKnotDragMouseDragged then remove this
+            poiModeLabel.setText("Release Shift to Cancel Dragging");
 
             // Mouse dragged/released handlers attached and will take over from here
             hullViewAnchorPane.addEventHandler(MouseEvent.MOUSE_DRAGGED, this::handleKnotDragMouseDragged);
@@ -1066,7 +1070,9 @@ public class HullBuilderController implements Initializable, ModuleController {
     private void handleKnotDragMouseDragged(MouseEvent event) {
         // isDraggingKnot should be updated before this handler is attached for use
         if (isDraggingKnot) {
-            hullViewAnchorPane.setCursor(Cursor.CLOSED_HAND);
+            // Update State
+            knotEditingCurrentMouseX = event.getX();
+            knotEditingCurrentMouseY = event.getY();
 
             // Update the drag indicator line
             double knotScreenX = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getX(), hullGraphicPane.getPrefWidth(), hull.getLength()) + hullGraphicPane.getLayoutX();
@@ -1088,12 +1094,14 @@ public class HullBuilderController implements Initializable, ModuleController {
             double modelHeight = Math.abs(hull.getMaxHeight());
             double newKnotModelX = ((newEndX - hullGraphicPane.getLayoutX()) / graphicWidth) * modelWidth;
             double newKnotModelY = ((newEndY - hullGraphicPane.getLayoutY()) / graphicHeight) * (-modelHeight);
-            Point2D newKnotDragKnotPos = new Point2D(newKnotModelX, newKnotModelY);
+            newKnotDragKnotPos = new Point2D(newKnotModelX, newKnotModelY);
 
             // Update the preview hull by calling the service.
             // This preview hull is kept separate from the original hull until the transaction commits.
             knotDraggingPreviewHull = HullGeometryService.dragKnotPoint(initialKnotDragKnotPos, newKnotDragKnotPos);
             setSideViewHullGraphic(knotDraggingPreviewHull);
+            updateHullIntersectionPointDisplay(initialKnotDragKnotPos, newKnotDragKnotPos);
+            hullViewAnchorPane.setCursor(Cursor.CLOSED_HAND);
         }
         else if (dragIndicatorLine != null) dragIndicatorLine.setVisible(false);
     }
@@ -1110,16 +1118,23 @@ public class HullBuilderController implements Initializable, ModuleController {
             // Dragging State & UI Updates
             isDraggingKnot = false;
             initialKnotDragMousePos = null;
-            initialKnotDragKnotPos = null;
             poiModeLabel.setText("Click and Hold to Drag");
             hullViewAnchorPane.setCursor(Cursor.OPEN_HAND);
             dragIndicatorLine.setVisible(false);
 
-            // Commit the transaction by updating the main hull
             // Prevent short drags which are likely a misclick from the user, reverting the drag transaction
-            long dragDurationMs = System.currentTimeMillis() - dragStartTime;
-            if (dragDurationMs >= DRAG_KNOT_COMMIT_TRANSACTION_THRESHOLD_MS) hull = knotDraggingPreviewHull;
-            else setSideViewHullGraphic(hull);
+            if (System.currentTimeMillis() - dragStartTime <= 200) updateHullIntersectionPointDisplay(initialKnotDragKnotPos, null);
+            else {
+                // Commit the transaction by updating hull
+                hull = knotDraggingPreviewHull;
+                updateHullIntersectionPointDisplay(newKnotDragKnotPos, null);
+            }
+            setSideViewHullGraphic(hull);
+
+            // More State updates
+            knotDraggingPreviewHull = null;
+            initialKnotDragKnotPos = null;
+            newKnotDragKnotPos = null;
 
             // Remove these dynamic handlers for the drag knot feature
             hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_DRAGGED, this::handleKnotDragMouseDragged);
@@ -1146,14 +1161,28 @@ public class HullBuilderController implements Initializable, ModuleController {
      */
     private void handleKeyReleased(KeyEvent event) {
         if (event.getCode() == KeyCode.SHIFT) {
-            // If a knot is currently being dragged, stop dragging immediately.
+            // If a knot is currently being dragged, releasing shift cancels the dragging
             if (isDraggingKnot) {
                 isDraggingKnot = false;
                 isDraggingKnotPreview = false;
                 initialKnotDragMousePos = null;
+                knotDraggingPreviewHull = null;
+
+                // Restore the vertical tracker and POI markers
+                double paneHeight = hullViewAnchorPane.getHeight();
+                mouseXTrackerLine.setOpacity(0.7);
+                mouseXTrackerLine.setStartX(knotEditingCurrentMouseX);
+                mouseXTrackerLine.setEndX(knotEditingCurrentMouseX);
+                mouseXTrackerLine.setStartY(0);
+                mouseXTrackerLine.setEndY(paneHeight - 1);
+                updateHullIntersectionPoint(knotEditingCurrentMouseX);
+                updateHullIntersectionPointDisplay(initialKnotDragKnotPos, null);
+
                 initialKnotDragKnotPos = null;
                 hullViewAnchorPane.setCursor(Cursor.CROSSHAIR);
                 poiModeLabel.setText("Click and Hold to Drag");
+                setSideViewHullGraphic(hull);
+
                 hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_DRAGGED, this::handleKnotDragMouseDragged);
                 hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_RELEASED, this::handleKnotDragMouseReleased);
             }
@@ -1307,6 +1336,7 @@ public class HullBuilderController implements Initializable, ModuleController {
         knotEditingMouseButtonDown = false;
         shiftKeyPressHadMouseInDeletingKnotPointZone = false;
         knotDraggingPreviewHull = MarshallingService.deepCopy(hull);
+        newKnotDragKnotPos = null;
         dragStartTime = -1;
 
         // Attach a keystroke event detection filter once the scene is available.
