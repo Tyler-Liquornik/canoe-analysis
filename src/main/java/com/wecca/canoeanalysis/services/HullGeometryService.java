@@ -608,10 +608,9 @@ public class HullGeometryService {
                     && bezier.getKnotPoints().getFirst().distance(knotPos) < 1e-6) {
 
                 // Adjust the side view section right of the knot point being dragged
-                double adjustedNewKnotX = Math.min(Math.max(newKnotPos.getX(), section.getX()), section.getRx());
-                double deltaX = adjustedNewKnotX - knotPos.getX();
+                double deltaX = newKnotPos.getX() - knotPos.getX();
                 double deltaY = newKnotPos.getY() - knotPos.getY();
-                bezier.setX1(adjustedNewKnotX);
+                bezier.setX1(newKnotPos.getX());
                 bezier.setY1(newKnotPos.getY());
                 bezier.setControlX1(bezier.getControlX1() + deltaX);
                 bezier.setControlY1(bezier.getControlY1() + deltaY);
@@ -620,10 +619,41 @@ public class HullGeometryService {
                 if (i > 0) {
                     HullSection prevSection = hull.getHullSections().get(i - 1);
                     if (prevSection.getSideProfileCurve() instanceof CubicBezierFunction prevBezier) {
-                        prevBezier.setX2(adjustedNewKnotX);
+                        prevBezier.setX2(newKnotPos.getX());
                         prevBezier.setY2(newKnotPos.getY());
                         prevBezier.setControlX2(prevBezier.getControlX2() + deltaX);
                         prevBezier.setControlY2(prevBezier.getControlY2() + deltaY);
+                    }
+                }
+
+                // ----- Update the top profile curve ----- TODO: minimize top view geometry changes
+                if (section.getTopProfileCurve() instanceof CubicBezierFunction topBezier) {
+                    // Save the old top knot point
+                    double oldTopX = topBezier.getX1();
+                    double oldTopY = topBezier.getY1();
+
+                    // Compute the new top knot y-value by evaluating the top profile curve at the new x.
+                    double newTopY = topBezier.value(newKnotPos.getX());
+                    double deltaTopX = newKnotPos.getX() - oldTopX;
+                    double deltaTopY = newTopY - oldTopY;
+                    topBezier.setX1(newKnotPos.getX());
+                    topBezier.setY1(newTopY);
+                    topBezier.setControlX1(topBezier.getControlX1() + deltaTopX);
+                    topBezier.setControlY1(topBezier.getControlY1() + deltaTopY);
+
+                    // Similarly, update the previous section's top profile curve so that its right knot matches.
+                    if (i > 0) {
+                        HullSection prevSection = hull.getHullSections().get(i - 1);
+                        if (prevSection.getTopProfileCurve() instanceof CubicBezierFunction prevTopBezier) {
+                            double oldPrevTopX = prevTopBezier.getX2();
+                            double oldPrevTopY = prevTopBezier.getY2();
+                            double deltaPrevTopX = newKnotPos.getX() - oldPrevTopX;
+                            double deltaPrevTopY = newTopY - oldPrevTopY;
+                            prevTopBezier.setX2(newKnotPos.getX());
+                            prevTopBezier.setY2(newTopY);
+                            prevTopBezier.setControlX2(prevTopBezier.getControlX2() + deltaPrevTopX);
+                            prevTopBezier.setControlY2(prevTopBezier.getControlY2() + deltaPrevTopY);
+                        }
                     }
                 }
 
