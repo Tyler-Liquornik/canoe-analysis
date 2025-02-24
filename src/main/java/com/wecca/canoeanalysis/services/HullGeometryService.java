@@ -691,7 +691,7 @@ public class HullGeometryService {
         HullSection oldSection = hull.getHullSections().get(sectionIndex);
         if (!(oldSection.getSideProfileCurve() instanceof CubicBezierFunction oldBezier)) throw new IllegalArgumentException("Cannot split a non-Bezier hull section");
         double t = oldBezier.getT(newX);
-        CubicBezierFunction[] splitCurves = splitCubicBezier(oldBezier, t);
+        CubicBezierFunction[] splitCurves = deCasteljauBezierSplit(oldBezier, t);
         CubicBezierFunction leftBezier = splitCurves[0];
         CubicBezierFunction rightBezier = splitCurves[1];
         Point2D globalMinKnot = hull.getHullSections().stream()
@@ -705,7 +705,7 @@ public class HullGeometryService {
         // Same thing for top profile
         if (!(oldSection.getTopProfileCurve() instanceof CubicBezierFunction oldTopBezier)) throw new IllegalArgumentException("Cannot split a non-Bezier hull top section");
         double tTop = oldTopBezier.getT(newX);
-        CubicBezierFunction[] splitTopCurves = splitCubicBezier(oldTopBezier, tTop);
+        CubicBezierFunction[] splitTopCurves = deCasteljauBezierSplit(oldTopBezier, tTop);
         CubicBezierFunction leftTopBezier = splitTopCurves[0];
         CubicBezierFunction rightTopBezier = splitTopCurves[1];
         Point2D globalMinKnotTop = hull.getHullSections().stream()
@@ -757,8 +757,10 @@ public class HullGeometryService {
     /**
      * Splits a cubic Bezier at parameter t in [0..1].
      * Returns an array [leftCurve, rightCurve].
+     * Implemented with de Casteljau's algorithm
      */
-    private static CubicBezierFunction[] splitCubicBezier(CubicBezierFunction original, double t) {
+    private static CubicBezierFunction[] deCasteljauBezierSplit(CubicBezierFunction original, double t) {
+        // Get the bezier's 8 parameters (the x-y pair of each of the 4 points, 2 control and 2 knot points)
         double x0 = original.getX1();
         double y0 = original.getY1();
         double cx1 = original.getControlX1();
@@ -901,4 +903,29 @@ public class HullGeometryService {
         } else throw new IllegalArgumentException("Cannot work with non-bezier top view");
         return hull;
      }
+
+    /**
+     * Extracts a subsegment of the given cubic Bézier curve between parameter values t0 and t1.
+     * This is achieved by first splitting the curve at t0 (using de Casteljau's algorithm),
+     * then splitting the resulting right segment at a normalized parameter value corresponding
+     * to t1. The resulting sub–curve exactly represents the portion of the original curve between t0 and t1.
+     * @param original the original cubic Bézier function.
+     * @param t0 the starting parameter value (in [0,1]).
+     * @param t1 the ending parameter value (in [0,1]), with t1 > t0.
+     * @return a new CubicBezierFunction representing the extracted segment.
+     */
+    public static CubicBezierFunction extractBezierSegment(@NonNull CubicBezierFunction original, double t0, double t1) {
+        // First, split the original curve at t0.
+        CubicBezierFunction[] firstSplit = deCasteljauBezierSplit(original, t0);
+        CubicBezierFunction rightCurve = firstSplit[1];
+
+        // Map t1 from the original parameter space to the parameter space of the rightCurve.
+        double newT = (t1 - t0) / (1 - t0);
+
+        // Split the rightCurve at newT to extract the subsegment.
+        CubicBezierFunction[] secondSplit = deCasteljauBezierSplit(rightCurve, newT);
+
+        // The left segment of the second split is the desired sub–curve.
+        return secondSplit[0];
+    }
 }

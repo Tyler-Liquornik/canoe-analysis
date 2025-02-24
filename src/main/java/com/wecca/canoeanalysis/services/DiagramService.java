@@ -310,7 +310,7 @@ public class DiagramService {
      * @return the configured FixedTicksNumberAxis
      */
     private static FixedTicksNumberAxis setupXAxis(Canoe canoe) {
-        TreeSet<Double> criticalPoints = canoe.getSectionEndpoints();
+        TreeSet<Double> criticalPoints = canoe.getCriticalPointSet();
         TreeSet<Double> roundedCriticalPoints = criticalPoints.stream()
                 .map(point -> CalculusUtils.roundXDecimalDigits(point, 3)).collect(TreeSet::new, TreeSet::add, TreeSet::addAll);
         FixedTicksNumberAxis xAxis = new FixedTicksNumberAxis(new ArrayList<>(roundedCriticalPoints));
@@ -332,8 +332,7 @@ public class DiagramService {
      * @param chart AreaChart to add the series to
      */
     public static void addSeriesToChart(Canoe canoe, List<Point2D> points, String yUnits, String yValName, AreaChart<Number, Number> chart) {
-
-        TreeSet<Double> criticalPoints = canoe.getSectionEndpoints();
+        TreeSet<Double> criticalPoints = canoe.getCriticalPointSet();
         TreeSet<Point2D> absoluteMaximumPoints = filterForAbsoluteMaximums(points);
 
         // Adding the sections of the pseudo piecewise function separately

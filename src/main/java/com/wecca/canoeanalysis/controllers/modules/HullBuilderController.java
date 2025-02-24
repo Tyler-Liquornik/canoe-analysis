@@ -87,49 +87,33 @@ public class HullBuilderController implements Initializable, ModuleController {
 
     // State
     @Getter @Setter
-    private boolean previousPressedBefore;
-    @Getter @Setter
-    private boolean nextPressedBefore;
-    @Getter @Setter
     private HullSection selectedHullSection;
     @Getter @Setter
     private int selectedHullSectionIndex;
     @Getter @Setter
-    private boolean sectionPropertiesSelected;
-    @Getter @Setter
-    private int graphicsViewingState;
-    @Getter @Setter
-    private boolean sectionEditorEnabled;
-    @Getter @Setter
     private List<Range> overlaySections;
-    @Getter @Setter
+    private boolean previousPressedBefore;
+    private boolean nextPressedBefore;
+    private boolean sectionPropertiesSelected;
+    private int graphicsViewingState;
+    private boolean sectionEditorEnabled;
     private Point2D initialKnotDragMousePos;
-    @Getter @Setter
     private Point2D initialKnotDragKnotPos;
-    @Getter @Setter
     private Point2D newKnotDragKnotPos;
-    @Getter @Setter
     private Hull knotDraggingPreviewHull;
-    @Getter @Setter
     private long dragStartTime;
-    @Getter @Setter
     private boolean isDraggingKnot;
-    @Getter @Setter
     private boolean isDraggingKnotPreview;
-    @Getter @Setter
     private double knotEditingCurrentMouseX;
-    @Getter @Setter
     private double knotEditingCurrentMouseY;
-    @Getter @Setter
     private boolean mousePressWasInAddingKnotPointZone;
-    @Getter @Setter
     private boolean shiftKeyPressHadMouseInDeletingKnotPointZone;
-    @Getter @Setter
     private boolean knotEditingMouseButtonDown;
 
+    // Constants
     private final double HULL_VIEW_PANEL_HEIGHT = 45;
     // Note to developer: This does not have deep immutability. Do not mutate! Meant as a constant reference to SharkBait!
-    private final Hull SHARK_BAIT_HULL = SharkBaitHullLibrary.generateSharkBaitHullScaledFromBezier(6);
+    private final Hull SHARK_BAIT_HULL = SharkBaitHullLibrary.generateSharkBaitHullScaledFromBezier(6, true);
 
     /**
      * Clears the toolbar of buttons from other modules and adds ones from this module

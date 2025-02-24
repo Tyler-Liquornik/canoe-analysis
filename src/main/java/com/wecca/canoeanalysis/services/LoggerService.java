@@ -5,7 +5,7 @@ import com.wecca.canoeanalysis.models.function.Section;
 import javafx.geometry.Point2D;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-
+import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
@@ -124,11 +124,12 @@ public class LoggerService {
      * Then paste the whole block on text into log_data in
      * util/matplotlib/scatter-plot.py and run that script to make a plot to visualize the function
      *
-     * Should not be in production code, for debugging use
+     * Note: None of the logPoints method overloads should be in production code, they're intended for internal debugging use
      *
      * @param function the function to log points for
      * @param section the section on which to log points for the function
      */
+    @SuppressWarnings("unused")
     public static void logPoints(Function<Double, Double> function, Section section, int numSamples) {
         // Sample the function over [start, end] and print x and y values
         double x = section.getX();
@@ -143,9 +144,29 @@ public class LoggerService {
     }
 
     /**
+     * Logs points for a list of CubicBezierFunction objects for debugging purposes.
+     * For each Bézier curve in the list we sample (x, y) pairs over the curve's domain.
+     * The domain is determined from the curve's left and right endpoints
+     * @param bezierFunctions the list of CubicBezierFunction objects to log.
+     * @param numSamples the number of sample points per curve.
+     */
+    @SuppressWarnings("unused")
+    public static void logBezierPoints(List<CubicBezierFunction> bezierFunctions, int numSamples) {
+        // Convert form and call existing logPoints overload
+        for (CubicBezierFunction cbf : bezierFunctions) {
+            Function<Double, Double> function = cbf::value;
+            Section domain = new Section(cbf.getX(), cbf.getRx());
+            System.out.println("Logging points for Bézier curve with domain ["
+                    + domain.getX() + ", " + domain.getRx() + "]:");
+            logPoints(function, domain, numSamples);
+        }
+    }
+
+    /**
      * See other overload of logPoints, same idea for a discrete set of points
      * @param points to log
      */
+    @SuppressWarnings("unused")
     public static void logPoints(List<Point2D> points) {
         System.out.println("Logging 2D points:");
         for (Point2D point : points) {
