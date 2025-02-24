@@ -3,14 +3,18 @@ package com.wecca.canoeanalysis.utils;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullSection;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
+import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.function.VertexFormParabolaFunction;
+import com.wecca.canoeanalysis.services.HullGeometryService;
+import com.wecca.canoeanalysis.services.LoggerService;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * 2024's Shark Bait serves as the base reference for all future canoes with respect to PADDL development
  * This library has a few different versions of shark bait to work with
+ * As new hull models develop over time, old ones should be gradually phased out and then deprecated
+ * Removing all dependencies for an old model at once is dangerous and should be done with caution
  */
 public class SharkBaitHullLibrary {
 
@@ -19,13 +23,14 @@ public class SharkBaitHullLibrary {
 
     /**
      * Note: THIS IS THE NEW MODEL
-     * Does not scale (for now) <-- TODO
      * Generate the hull for 2024's Shark Bait canoe scaled to the specified length
      * This serves as a placeholder for the user defining their own hull in the hull builder until that is developed
+     * @param length the length to scale SharkBait too (scale everything proportionally, but same thickness hull walls)
+     * @param useNewModel whether to use the new hull model (required for editing knots in HullBuilderController)
      * @return the hull
      */
     // https://www.desmos.com/calculator/waebkhsl43
-    public static Hull generateSharkBaitHullScaledFromBezier(double length) {
+    public static Hull generateSharkBaitHullScaledFromBezier(double length, boolean useNewModel) {
 
         // Scale compared to the actual length of Shark Bait
         scalingFactor = length / SHARK_BAIT_LENGTH;
@@ -37,6 +42,11 @@ public class SharkBaitHullLibrary {
         double knot2 = 2.88 * scalingFactor;
         double knot3 = 5.50 * scalingFactor;
         double scaledLength = 6.00 * scalingFactor;
+
+        // Hull wall thickness & Material densities
+        double thickness = 0.013 * scalingFactor;
+        double concreteDensity = 1056;
+        double bulkheadDensity = 28.82;
 
         // Side view Curve Construction Bezier Spline
         // Note: Redundant lines are for readability, and for synchronization with desmos model
@@ -86,6 +96,7 @@ public class SharkBaitHullLibrary {
         CubicBezierFunction midLeftCurve = new CubicBezierFunction(midLeftX1, midLeftY1, midLeftControlX1, midLeftControlY1, midLeftControlX2, midLeftControlY2, midLeftX2, midLeftY2);
         CubicBezierFunction midRightCurve = new CubicBezierFunction(midRightX1, midRightY1, midRightControlX1, midRightControlY1, midRightControlX2, midRightControlY2, midRightX2, midRightY2);
         CubicBezierFunction rightCurve = new CubicBezierFunction(rightX1, rightY1, rightControlX1, rightControlY1, rightControlX2, rightControlY2, rightX2, rightY2);
+        List<CubicBezierFunction> sideViewSegments = Arrays.asList(leftCurve, midLeftCurve, midRightCurve, rightCurve);
 
         // Top view Curve Construction Bezier Spline
         double topViewLeftX1 = knot0;
@@ -134,15 +145,43 @@ public class SharkBaitHullLibrary {
         CubicBezierFunction topViewMidLeftCurve = new CubicBezierFunction(topViewMidLeftX1, topViewMidLeftY1, topViewMidLeftControlX1, topViewMidLeftControlY1, topViewMidLeftControlX2, topViewMidLeftControlY2, topViewMidLeftX2, topViewMidLeftY2);
         CubicBezierFunction topViewMidRightCurve = new CubicBezierFunction(topViewMidRightX1, topViewMidRightY1, topViewMidRightControlX1, topViewMidRightControlY1, topViewMidRightControlX2, topViewMidRightControlY2, topViewMidRightX2, topViewMidRightY2);
         CubicBezierFunction topViewRightCurve = new CubicBezierFunction(topViewRightX1, topViewRightY1, topViewRightControlX1, topViewRightControlY1, topViewRightControlX2, topViewRightControlY2, topViewRightX2, topViewRightY2);
+        List<CubicBezierFunction> topViewSegments = Arrays.asList(topViewLeftCurve, topViewMidLeftCurve, topViewMidRightCurve, topViewRightCurve);
 
-        // Construct the hull from the hull section view curves
-        List<HullSection> sections = new ArrayList<>();
-        double thickness = 0.013 * scalingFactor;
-        sections.add(new HullSection(leftCurve, topViewLeftCurve, knot0, knot1, thickness, true));
-        sections.add(new HullSection(midLeftCurve, topViewMidLeftCurve, knot1, knot2, thickness, false));
-        sections.add(new HullSection(midRightCurve, topViewMidRightCurve, knot2, knot3, thickness, false));
-        sections.add(new HullSection(rightCurve, topViewRightCurve, knot3, scaledLength, thickness, true));
-        return new Hull(1056, 28.82, sections);
+        if (useNewModel) {
+            // Build the thickness map to construct the hull with the new model with uniform hull thickness
+            Map<Section, Double> thicknessMap = new HashMap<>();
+            for (CubicBezierFunction cbf : sideViewSegments) {
+                Section sec = new Section(cbf.getX1(), cbf.getX2());
+                thicknessMap.put(sec, thickness);
+            }
+
+            // Reform the top view curves so that their knot points (x1 and x2) exactly match those from the side view.
+            // We assume that HullGeometryService.extractBezierSegment(original, t0, t1) exists.
+            List<CubicBezierFunction> processedTopViewSegments = new ArrayList<>();
+            for (int i = 0; i < topViewSegments.size(); i++) {
+                CubicBezierFunction originalTop = topViewSegments.get(i);
+                // Desired boundaries from the side view curve:
+                double desiredLeftX = sideViewSegments.get(i).getX1();
+                double desiredRightX = sideViewSegments.get(i).getX2();
+                // Compute the parameter values for these boundaries. We assume originalTop is defined on [originalTop.getX1(), originalTop.getX2()].
+                double t0 = (desiredLeftX - originalTop.getX1()) / (originalTop.getX2() - originalTop.getX1());
+                double t1 = (desiredRightX - originalTop.getX1()) / (originalTop.getX2() - originalTop.getX1());
+                // Use de Casteljau's algorithm to extract the subsegment that exactly spans [desiredLeftX, desiredRightX]
+                CubicBezierFunction reformedTop = HullGeometryService.extractBezierSegment(originalTop, t0, t1);
+                processedTopViewSegments.add(reformedTop);
+            }
+
+            // Construct the hull using the new constructor.
+            return new Hull(concreteDensity, bulkheadDensity, sideViewSegments, processedTopViewSegments, thickness);
+        }
+        else {
+            List<HullSection> sections = new ArrayList<>();
+            sections.add(new HullSection(leftCurve, topViewLeftCurve, knot0, knot1, thickness, true));
+            sections.add(new HullSection(midLeftCurve, topViewMidLeftCurve, knot1, knot2, thickness, false));
+            sections.add(new HullSection(midRightCurve, topViewMidRightCurve, knot2, knot3, thickness, false));
+            sections.add(new HullSection(rightCurve, topViewRightCurve, knot3, scaledLength, thickness, true));
+            return new Hull(concreteDensity, bulkheadDensity, sections);
+        }
     }
 
     /**
@@ -150,7 +189,6 @@ public class SharkBaitHullLibrary {
      * Note: THIS IS A DIFFERENT VERSION OF THE OLD MODEL
      * Generate the hull for 2024's Shark Bait canoe scaled to the specified length
      * This serves as a placeholder for the user defining their own hull in the hull builder until that is developed
-     *
      * @param length the length to scale to
      * @return the scaled hull
      */

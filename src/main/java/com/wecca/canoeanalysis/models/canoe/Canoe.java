@@ -140,14 +140,14 @@ public class Canoe
     }
 
     /**
+     * Critical points are points of interest which can be visualized as points where the equation of the load distribution changes
      * @return a TreeSet of all the internal loading, external, loading, and hull sections endpoints
      */
     @JsonIgnore
-    public TreeSet<Double> getSectionEndpoints() {
+    public TreeSet<Double> getCriticalPointSet() {
         TreeSet<Double> endPoints = new TreeSet<>();
         endPoints.addAll(hull.getHullSectionEndPoints());
-        for (Load l : loads)
-        {
+        for (Load l : loads) {
             endPoints.add(l.getX());
             if (l instanceof LoadDistribution dist)
                 endPoints.add(dist.getSection().getRx());

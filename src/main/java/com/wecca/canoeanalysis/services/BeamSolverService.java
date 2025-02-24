@@ -315,12 +315,15 @@ public class BeamSolverService {
      * @return the buoyancy distribution of the canoe at the given waterline in kN/m
      */
     private static PiecewiseContinuousLoadDistribution getBuoyancyForceDistribution(double waterline, double theta, Canoe canoe) {
-        List<Section> sectionsToMapTo = CalculusUtils.sectionsFromEndpoints(canoe.getSectionEndpoints().stream().toList());
-        List<HullSection> mappedHullSections = reformHullSections(canoe.getHull(), sectionsToMapTo).getHullSections();
+        // We need to reform the hull in terms of intervals from points of interest
+        // This is mainly so that we can partition the buoyancy force to be displayed in sections in the LoadTreeView
+        List<Double> critPointList = canoe.getCriticalPointSet().stream().toList();
+        List<HullSection> mappedHullSections = canoe.getHull().getHullSectionsReformedBySegmentDuplication(critPointList);
+
+        // Build the buoyancy force distribution according to the newly mapped hull sections
+        double rotationX = canoe.getHull().getLength() / 2;
         List<BoundedUnivariateFunction> buoyancyPieces = new ArrayList<>();
         List<Section> buoyancySections = new ArrayList<>();
-
-        double rotationX = canoe.getHull().getLength() / 2;
         for (HullSection section : mappedHullSections) {
             BoundedUnivariateFunction buoyancyPiece = x -> getSubmergedCrossSectionalAreaFunction(waterline, theta, rotationX, section).value(x) * PhysicalConstants.DENSITY_OF_WATER.getValue() * PhysicalConstants.GRAVITY.getValue() / 1000.0;
             buoyancyPieces.add(buoyancyPiece);
@@ -328,46 +331,6 @@ public class BeamSolverService {
         }
 
         return new PiecewiseContinuousLoadDistribution(LoadType.BUOYANCY, buoyancyPieces, buoyancySections);
-    }
-
-    /**
-     * Redefines the same hull in terms of different critical section points
-     * @param hull the hull to redefine
-     * @param sectionsToMapTo the sections which who's individual endpoint pairs all together for the new critical points set
-     * @return the reformed hull
-     */
-    private static Hull reformHullSections(Hull hull, List<Section> sectionsToMapTo) {
-        List<HullSection> newHullSections = new ArrayList<>();
-        List<HullSection> originalSections = hull.getHullSections();
-
-        for (Section newSection : sectionsToMapTo) {
-            double newStart = newSection.getX();
-            double newEnd = newSection.getRx();
-
-            List<HullSection> overlappingSections = originalSections.stream()
-                    .filter(hs -> hs.getRx() > newStart && hs.getX() < newEnd)
-                    .toList();
-
-            for (HullSection overlappingSection : overlappingSections) {
-                double overlapStart = Math.max(newStart, overlappingSection.getX());
-                double overlapEnd = Math.min(newEnd, overlappingSection.getRx());
-
-                if (overlapEnd > overlapStart) {
-                    // Create new HullSection based on overlapping portion
-                    HullSection newHullSection = new HullSection(
-                            overlappingSection.getSideProfileCurve(),
-                            overlappingSection.getTopProfileCurve(),
-                            overlapStart,
-                            overlapEnd,
-                            overlappingSection.getThickness(),
-                            overlappingSection.isFilledBulkhead()
-                    );
-                    newHullSections.add(newHullSection);
-                }
-            }
-        }
-
-        return new Hull(hull.getConcreteDensity(), hull.getBulkheadDensity(), newHullSections);
     }
 
     /**
