@@ -88,7 +88,6 @@ public class Hull {
 //        validateNoSectionGaps(hullSections);
 //        validateFloorThickness(hullSections);
 //        validateWallThickness(hullSections);
-//
     }
 
     /**
@@ -244,7 +243,7 @@ public class Hull {
         hullSections.sort(Comparator.comparingDouble(Section::getX));
         validateBasicValuesOld(concreteDensity, bulkheadDensity, hullSections);
         validateNoSectionGaps(hullSections);
-        validateFloorThickness(hullSections);
+        // validateFloorThickness(hullSections);
         validateWallThickness(hullSections);
 
         for (HullSection hullSection : hullSections) {
@@ -277,59 +276,6 @@ public class Hull {
         this.concreteDensity = 0;
         this.bulkheadDensity = 0;
         this.isOldModel = true;
-    }
-
-    /**
-     * @return the length of the hull
-     */
-    @JsonIgnore
-    public double getLengthOldModel() {
-        return hullSections.getLast().getRx();
-    }
-
-    /**
-     * @return the hull lengthwise endpoints [0, L] as a section
-     */
-    @JsonIgnore
-    public Section getSectionOldModel() {
-        return new Section(0.0, getLength());
-    }
-
-    /**
-     * Gets the maximum hull height by checking the height of a list of sections
-     * @param sections the sections to check
-     * @return the maximum height of the given sections
-     */
-    @JsonIgnore
-    private double getMaxHeightOldModel(List<HullSection> sections) {
-        double canoeHeight = 0;
-        for (HullSection section : sections) {
-            // Find the section's minimum
-            // Function is negated as BrentOptimizer looks for the maximum
-            UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(x -> -section.getSideProfileCurve().value(x));
-            SearchInterval searchInterval = new SearchInterval(section.getX(), section.getRx());
-            UnivariatePointValuePair result = (new BrentOptimizer(1e-10, 1e-14)).optimize(
-                    MaxEval.unlimited(),
-                    objectiveFunction,
-                    searchInterval
-            );
-            double sectionHeight = -result.getValue();
-            if (sectionHeight < canoeHeight) canoeHeight = sectionHeight;
-        }
-
-        // canoe height is distance down from 0, so it must be negated
-        // rounding addresses a floating point error which is (I think?) in HullGeometryService::calculateThetaBounds
-        return CalculusUtils.roundXDecimalDigits(-canoeHeight, 10);
-    }
-
-    /**
-     * @return the maximum height of the hull
-     * Note: two separate getMaxHeight methods are provided for a specific reason
-     * one for internal validation purposes (hence, private) one for public use
-     */
-    @JsonIgnore
-    public double getMaxHeightOldModel() {
-        return getMaxHeightOldModel(this.hullSections);
     }
 
     /**
@@ -483,19 +429,19 @@ public class Hull {
         }
     }
 
-    /**
-     * As a reasonable benchmark (instead of a more complicated integral), an assumption is taken on for the floors
-     * We use wall thickness as wall and floor thickness is the same
-     * The floor should be no thicker than 25% of the canoe's height (this is already pretty generous realistically)
-     */
-    private void validateFloorThickness(List<HullSection> sections) {
-        double canoeHeight = getMaxHeightOldModel(sections);
-        for (HullSection section : sections) {
-            // This is chosen arbitrarily as a reasonable benchmark
-            if (section.getThickness() > canoeHeight / 4)
-                throw new IllegalArgumentException("Hull floor thickness must not exceed 1/4 of the canoe's max height");
-        }
-    }
+//    /**
+//     * As a reasonable benchmark (instead of a more complicated integral), an assumption is taken on for the floors
+//     * We use wall thickness as wall and floor thickness is the same
+//     * The floor should be no thicker than 25% of the canoe's height (this is already pretty generous realistically)
+//     */
+//    private void validateFloorThickness(List<HullSection> sections) {
+//        double canoeHeight = getMaxHeightOldModel(sections);
+//        for (HullSection section : sections) {
+//            // This is chosen arbitrarily as a reasonable benchmark
+//            if (section.getThickness() > canoeHeight / 4)
+//                throw new IllegalArgumentException("Hull floor thickness must not exceed 1/4 of the canoe's max height");
+//        }
+//    }
 
     /**
      * The two hull walls should not overlap and thus each hull wall can be at most half the canoes width

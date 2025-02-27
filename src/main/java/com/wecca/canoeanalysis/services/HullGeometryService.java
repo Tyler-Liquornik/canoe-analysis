@@ -628,64 +628,110 @@ public class HullGeometryService {
     }
 
     /**
-     * Adds a new knot point to the hull by splitting the relevant Bezier section at the knot's X-coordinate.
-     * Returns a new Hull instance, leaving the original unmodified.
+     * Adds a new knot point to the hull by splitting the relevant Bézier section with de Casteljau's algorithm at the knot's X-coordinate.
+     * 1. Finds the segment (by index) in which the new knot’s x–coordinate lies.
+     * 2. Splits that segment’s side view and top view curves using de Casteljau’s algorithm.
+     * 3. Updates the thickness and bulkhead maps for the split segment.
+     * 4. Rebuilds new lists of side and top segments by inserting the two new segments in place of the old one.
+     * 5. Constructs and returns a new Hull via the new model constructor.
      * @param knotPointToAdd the new knot point (x,y) on the existing curve
-     * @return a deep-copied and updated Hull with the new knot inserted as a split in its section
+     * @return a new Hull with the updated side and top segments and updated property maps
+     * @throws IllegalArgumentException if the new knot’s x–coordinate is out of range.
      */
     public static Hull addKnotPoint(@NonNull Point2D knotPointToAdd) {
+        // Get a deep copy of the current hull.
         Hull hull = getHull();
         if (hull == null) throw new RuntimeException("Marshalling error deep copying the hull");
         double newX = knotPointToAdd.getX();
 
-        // Locate the existing section that covers [section.getX(), section.getRx()] for newX
-        int sectionIndex = -1;
-        for (int i = 0; i < hull.getHullSections().size(); i++) {
-            HullSection sec = hull.getHullSections().get(i);
-            if (newX >= sec.getX() && newX <= sec.getRx()) {
-                sectionIndex = i;
+        // Get current side and top view segments and property maps.
+        List<CubicBezierFunction> oldSideSegments = hull.getSideViewSegments();
+        List<CubicBezierFunction> oldTopSegments = hull.getTopViewSegments();
+        List<SectionPropertyMapEntry> oldThicknessMap = hull.getHullProperties().getThicknessMap();
+        List<SectionPropertyMapEntry> oldBulkheadMap = hull.getHullProperties().getBulkheadMap();
+
+        // Find the segment index whose interval [x, rx] covers newX.
+        int splitIndex = -1;
+        for (int i = 0; i < oldSideSegments.size(); i++) {
+            CubicBezierFunction seg = oldSideSegments.get(i);
+            if (newX >= seg.getX1() && newX <= seg.getRx()) {
+                splitIndex = i;
                 break;
             }
         }
-        if (sectionIndex < 0) throw new IllegalArgumentException(String.format("x = %.3f is out of range for every section.", newX));
+        if (splitIndex < 0) throw new IllegalArgumentException(String.format("x = %.3f is out of range for every section.", newX));
 
-        // Solve for parameter t in [0..1] where x(t) == newX, and then split the side profile curve at t
-        HullSection oldSection = hull.getHullSections().get(sectionIndex);
-        if (!(oldSection.getSideProfileCurve() instanceof CubicBezierFunction oldBezier)) throw new IllegalArgumentException("Cannot split a non-Bezier hull section");
-        double t = oldBezier.getT(newX);
-        CubicBezierFunction[] splitCurves = deCasteljauBezierSplit(oldBezier, t);
-        CubicBezierFunction leftBezier = splitCurves[0];
-        CubicBezierFunction rightBezier = splitCurves[1];
-        Point2D globalMinKnot = hull.getHullSections().stream()
+        // Split the side–view segment
+        CubicBezierFunction oldSide = oldSideSegments.get(splitIndex);
+        double t = oldSide.getT(newX);
+        CubicBezierFunction[] splitSide = deCasteljauBezierSplit(oldSide, t);
+        CubicBezierFunction leftSide = splitSide[0];
+        CubicBezierFunction rightSide = splitSide[1];
+
+        // Clamp the control points if needed.
+        // (Assume adjustBezierWithMinKnot is already defined for the new model)
+        // Find global min among all side knots:
+        Point2D globalMinSideKnot = hull.getHullSections().stream()
                 .flatMap(hs -> ((CubicBezierFunction) hs.getSideProfileCurve()).getKnotPoints().stream())
                 .min(Comparator.comparingDouble(Point2D::getY))
-                .orElseThrow(() -> new RuntimeException("No minimum knot found"));
-        double globalMinY = globalMinKnot.getY();
-        adjustBezierWithMinKnot(leftBezier, globalMinY, sectionIndex);
-        adjustBezierWithMinKnot(rightBezier, globalMinY, sectionIndex);
+                .orElseThrow(() -> new RuntimeException("No minimum side knot found"));
+        double globalMinY = globalMinSideKnot.getY();
+        adjustBezierWithMinKnot(leftSide, globalMinY, splitIndex);
+        adjustBezierWithMinKnot(rightSide, globalMinY, splitIndex);
 
-        // Same thing for top profile
-        if (!(oldSection.getTopProfileCurve() instanceof CubicBezierFunction oldTopBezier)) throw new IllegalArgumentException("Cannot split a non-Bezier hull top section");
-        double tTop = oldTopBezier.getT(newX);
-        CubicBezierFunction[] splitTopCurves = deCasteljauBezierSplit(oldTopBezier, tTop);
-        CubicBezierFunction leftTopBezier = splitTopCurves[0];
-        CubicBezierFunction rightTopBezier = splitTopCurves[1];
-        Point2D globalMinKnotTop = hull.getHullSections().stream()
+        // Split the top–view segment
+        CubicBezierFunction oldTop = oldTopSegments.get(splitIndex);
+        double tTop = oldTop.getT(newX);
+        CubicBezierFunction[] splitTop = deCasteljauBezierSplit(oldTop, tTop);
+        CubicBezierFunction leftTop = splitTop[0];
+        CubicBezierFunction rightTop = splitTop[1];
+
+        // Find global min among all top knots:
+        Point2D globalMinTopKnot = hull.getHullSections().stream()
                 .flatMap(hs -> ((CubicBezierFunction) hs.getTopProfileCurve()).getKnotPoints().stream())
                 .min(Comparator.comparingDouble(Point2D::getY))
                 .orElseThrow(() -> new RuntimeException("No minimum top knot found"));
-        double globalMinYTop = globalMinKnotTop.getY();
-        adjustBezierWithMinKnot(leftTopBezier, globalMinYTop, sectionIndex);
-        adjustBezierWithMinKnot(rightTopBezier, globalMinYTop, sectionIndex);
+        double globalMinYTop = globalMinTopKnot.getY();
+        adjustBezierWithMinKnot(leftTop, globalMinYTop, splitIndex);
+        adjustBezierWithMinKnot(rightTop, globalMinYTop, splitIndex);
 
-        // Rebuild the hull
-        HullSection newLeftSec = new HullSection(leftBezier, leftTopBezier, oldSection.getX(), newX, oldSection.getThickness(), oldSection.isFilledBulkhead());
-        HullSection newRightSec = new HullSection(rightBezier, rightTopBezier, newX, oldSection.getRx(), oldSection.getThickness(), oldSection.isFilledBulkhead());
-        hull.getHullSections().remove(sectionIndex);
-        hull.getHullSections().add(sectionIndex, newRightSec);
-        hull.getHullSections().add(sectionIndex, newLeftSec);
-        return hull;
+        // Rebuild the lists for side segments, top segments, and maps
+        List<CubicBezierFunction> newSideSegments = new ArrayList<>(oldSideSegments.size() + 1);
+        List<CubicBezierFunction> newTopSegments = new ArrayList<>(oldTopSegments.size() + 1);
+        List<SectionPropertyMapEntry> newThicknessMap = new ArrayList<>(oldThicknessMap.size() + 1);
+        List<SectionPropertyMapEntry> newBulkheadMap = new ArrayList<>(oldBulkheadMap.size() + 1);
+
+        // Loop over the old lists, and when we reach the split index, insert the two new segments and map entries.
+        for (int i = 0; i < oldSideSegments.size(); i++) {
+            if (i == splitIndex) {
+                // For the split segment, get its original map entries.
+                SectionPropertyMapEntry oldThickness = oldThicknessMap.get(i);
+                SectionPropertyMapEntry oldBulkhead = oldBulkheadMap.get(i);
+                SectionPropertyMapEntry leftThicknessEntry = new SectionPropertyMapEntry(oldThickness.getX(), newX, oldThickness.getValue());
+                SectionPropertyMapEntry rightThicknessEntry = new SectionPropertyMapEntry(newX, oldThickness.getRx(), oldThickness.getValue());
+                SectionPropertyMapEntry leftBulkheadEntry = new SectionPropertyMapEntry(oldBulkhead.getX(), newX, oldBulkhead.getValue());
+                SectionPropertyMapEntry rightBulkheadEntry = new SectionPropertyMapEntry(newX, oldBulkhead.getRx(), oldBulkhead.getValue());
+                newSideSegments.add(leftSide);
+                newSideSegments.add(rightSide);
+                newTopSegments.add(leftTop);
+                newTopSegments.add(rightTop);
+                newThicknessMap.add(leftThicknessEntry);
+                newThicknessMap.add(rightThicknessEntry);
+                newBulkheadMap.add(leftBulkheadEntry);
+                newBulkheadMap.add(rightBulkheadEntry);
+            }
+            // Copy over unchanged segments and map entries.
+            else {
+                newSideSegments.add(oldSideSegments.get(i));
+                newTopSegments.add(oldTopSegments.get(i));
+                newThicknessMap.add(oldThicknessMap.get(i));
+                newBulkheadMap.add(oldBulkheadMap.get(i));
+            }
+        }
+        HullProperties newProps = new HullProperties(newThicknessMap, newBulkheadMap);
+        return new Hull(hull.getConcreteDensity(), hull.getBulkheadDensity(), newProps, newSideSegments, newTopSegments);
     }
+
 
     /**
      * Adjusts a given CubicBezierFunction after an operation has been done it to ensure its validity
@@ -868,13 +914,10 @@ public class HullGeometryService {
         // First, split the original curve at t0.
         CubicBezierFunction[] firstSplit = deCasteljauBezierSplit(original, t0);
         CubicBezierFunction rightCurve = firstSplit[1];
-
         // Map t1 from the original parameter space to the parameter space of the rightCurve.
         double newT = (t1 - t0) / (1 - t0);
-
         // Split the rightCurve at newT to extract the subsegment.
         CubicBezierFunction[] secondSplit = deCasteljauBezierSplit(rightCurve, newT);
-
         // The left segment of the second split is the desired sub–curve.
         return secondSplit[0];
     }

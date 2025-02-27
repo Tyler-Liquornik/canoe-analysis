@@ -10,7 +10,6 @@ import com.wecca.canoeanalysis.models.load.ContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.function.VertexFormParabolaFunction;
-import com.wecca.canoeanalysis.services.LoggerService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
@@ -20,7 +19,6 @@ import lombok.Setter;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.univariate.*;
-import java.util.function.Function;
 
 /**
  * In order ot apply calculus for precise, real-world representative modelling, we need to divide things into discrete sections
