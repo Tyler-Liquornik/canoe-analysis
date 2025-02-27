@@ -11,6 +11,7 @@ import com.wecca.canoeanalysis.models.load.DiscreteLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
+import com.wecca.canoeanalysis.utils.SectionPropertyMapEntry;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,6 +23,7 @@ import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
 import com.wecca.canoeanalysis.services.HullGeometryService;
 import java.util.*;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * You may notice there is a new hull model/API built atop the old one
@@ -33,137 +35,155 @@ import java.util.stream.IntStream;
 @Getter @Setter @EqualsAndHashCode
 public class Hull {
 
-    @JsonProperty("concreteDensity")
-    private double concreteDensity; // [kg/m^3]
-    @JsonProperty("bulkheadDensity")
-    private double bulkheadDensity; // [kg/m^3]
-
-    // Old API, this is the preferred data model for serializing and storing hull data
-    // The new constructor will still compute and store this model of the data, thus this field acts as a cache in that case
-    // When using the new model and computing this rather than passing in into the constructor there is an important caveat,
-    // the computation may produce a geometry that is very much valid but with crazy numbers for the control points
-    // which is computed from this::computeHullSection to convert from this form of the model.
-    // When in this state, this not meant to display in the UI (not a valid model state for the user to manipulate)
-    // it's only meant for internal use for calculations.
-    // The possibility of these cases arises because the new model holds valid for more geometries since the side and top view are decoupled.
-    @JsonProperty("hullSections")
+    // These fields are part of the legacy (old) API.
+    @JsonIgnore
     private List<HullSection> hullSections;
+    @JsonIgnore
+    private double concreteDensity;
+    @JsonIgnore
+    private double bulkheadDensity;
 
-    // This extra flag will be serialized
-    // it can be used as a quick check for which model was used,
-    // so you can see right away if using the new model and hullSections geometry may not be displayable
+    // New Model: encapsulated in HullProperties.
+    @JsonProperty("hullProperties")
+    private HullProperties hullProperties;
+    @JsonProperty("sideViewSegments")
+    private List<CubicBezierFunction> sideViewSegments;
+    @JsonProperty("topViewSegments")
+    private List<CubicBezierFunction> topViewSegments;
+
+    // Flag to cheaply check which model is implemented
     @JsonProperty("isOldModel")
     private boolean isOldModel;
 
-    // New API used to construct hullSections but not serialized.
-    // TODO when using the old API, we map also want to cache the data in this version of the it
-    // TODO build CubicBezierSpline to wrap List<CubicBezierFunction> and associated validations
-    @JsonIgnore
-    private Map<Section, Double> thicknessMap;
-    @JsonIgnore
-    private Map<Section, Boolean> bulkheadMap;
-    @JsonIgnore
-    private List<CubicBezierFunction> sideViewSegments;
-    @JsonIgnore
-    private List<CubicBezierFunction> topViewSegments;
-
     /**
-     * This is the new Hull API, created with the goal of decoupling the side view from the top view
-     * It is intended to build upon the old API, and both should work interchangeably ( I hope D: )
-     * @param concreteDensity the density of concrete, automatically set to be uniform across the hull
-     * @param bulkheadDensity the density of the bulkheads (typically styrofoam), automatically set to be uniform across the hull
-     * @param sideView a list of curves that makeup the spline for the side view
-     * @param topView a list of curves that makeup the spline for the top view
-     * @param thicknessMap a map of <[x, rx] : thickness> to describe the thickness per section similar to the old API
+     * The new model
+     * @param concreteDensity  the uniform concrete destiny of the hull
+     * @param bulkheadDensity the uniform bulkhead density across all bulkhead material
+     * @param hullProperties the hull properties (including densities and section maps)
+     * @param sideViewSegments the side-view Bézier curves
+     * @param topViewSegments the top-view Bézier curves
      */
-    public Hull(double concreteDensity, double bulkheadDensity,
-                List<CubicBezierFunction> sideView, List<CubicBezierFunction> topView,
-                Map<Section, Double> thicknessMap, Map<Section, Boolean> bulkheadMap) {
-        // Set fields
+    @JsonCreator
+    public Hull(@JsonProperty("concreteDensity") double concreteDensity,
+                @JsonProperty("bulkheadDensity") double bulkheadDensity,
+                @JsonProperty("hullProperties") HullProperties hullProperties,
+                @JsonProperty("sideViewSegments") List<CubicBezierFunction> sideViewSegments,
+                @JsonProperty("topViewSegments") List<CubicBezierFunction> topViewSegments) {
+        this.hullProperties = hullProperties;
+        this.sideViewSegments = sideViewSegments;
+        this.topViewSegments = topViewSegments;
         this.concreteDensity = concreteDensity;
         this.bulkheadDensity = bulkheadDensity;
         this.isOldModel = false;
-        this.thicknessMap = thicknessMap;
-        this.bulkheadMap = bulkheadMap;
-        this.sideViewSegments = sideView;
-        this.topViewSegments = topView;
-        this.hullSections = getHullSectionsReformedFromDeCasteljaus();
 
-        // Validate that the new API fields
-        validateBasicValues(thicknessMap, bulkheadMap, sideView, topView);
-        validateMaps(thicknessMap, bulkheadMap, sideView);
+        // Compute and cache the legacy hullSections from the new model.
+         this.hullSections = getHullSectionsReformedFromDeCasteljaus();
 
-        // Convert the new model to the old model and validate it
-        validateBasicValuesOld(concreteDensity, bulkheadDensity, hullSections);
-        validateNoSectionGaps(hullSections);
-        validateFloorThickness(hullSections);
-        validateWallThickness(hullSections);
+        // Validate new API fields.
+        validateBasicValues(hullProperties.getThicknessMap(), hullProperties.getBulkheadMap(), sideViewSegments, topViewSegments);
+        validateMaps(hullProperties.getThicknessMap(), hullProperties.getBulkheadMap(), sideViewSegments);
 
-        // Set densities in each section.
-        for (HullSection section : hullSections) {
-            section.setConcreteDensity(concreteDensity);
-            section.setBulkheadDensity(bulkheadDensity);
-        }
+//        // Validate legacy fields.
+//        validateBasicValuesOld(concreteDensity, bulkheadDensity, hullSections);
+//        validateNoSectionGaps(hullSections);
+//        validateFloorThickness(hullSections);
+//        validateWallThickness(hullSections);
+//
     }
 
     /**
-     * A more convenient version of the fully detailed new API constructor with uniform hull thickness and bulkheads preset on the first and last sections
-     * @param thickness the uniform hull wall thickness
+     * Convenient constructor for uniform thickness and standard bulkheads (bulkheaded edge sections).
+     * @param concreteDensity the concrete density
+     * @param bulkheadDensity the bulkhead density
+     * @param sideView the side-view Bézier curves
+     * @param topView the top-view Bézier curves
+     * @param thickness the uniform wall thickness
      */
-    public Hull(double concreteDensity, double bulkheadDensity, List<CubicBezierFunction> sideView, List<CubicBezierFunction> topView, double thickness) {
-        this(concreteDensity, bulkheadDensity, sideView, topView,
-                // Build the thickness with constant thickness across sections
-                IntStream.range(0, sideView.size())
-                        .boxed()
-                        .collect(HashMap::new,
-                                (map, i) -> map.put(new Section(sideView.get(i).getX1(), sideView.get(i).getX2()), thickness),
-                                HashMap::putAll),
-                // Build the bulkhead map so that the first and last sections are marked as true.
-                IntStream.range(0, sideView.size())
-                        .boxed()
-                        .collect(HashMap::new,
-                                (map, i) -> map.put(new Section(sideView.get(i).getX1(), sideView.get(i).getX2()),
-                                        (i == 0 || i == sideView.size() - 1)),
-                                HashMap::putAll)
-        );
+    public Hull(double concreteDensity, double bulkheadDensity, List<CubicBezierFunction> sideView,
+                List<CubicBezierFunction> topView, double thickness) {
+        this(concreteDensity, bulkheadDensity, new HullProperties(
+                buildThicknessList(sideView, thickness), buildBulkheadList(sideView)), sideView, topView);
     }
 
-    /**
-     * Validates that thicknessMap, sideView, and topView are non-null and have the same number of elements.
-     * @param thicknessMap the thickness map to validate
-     * @param bulkheadMap the bulkhead map to validate
-     * @param sideView the side view curves to validate
-     * @param topView the top view curves to validate
-     */
-    private void validateBasicValues(Map<Section, Double> thicknessMap, Map<Section, Boolean> bulkheadMap, List<CubicBezierFunction> sideView, List<CubicBezierFunction> topView) {
-        if (thicknessMap == null || thicknessMap.size() < 2 || bulkheadMap == null || bulkheadMap.size() < 2)
+    private static List<SectionPropertyMapEntry> buildThicknessList(List<CubicBezierFunction> sideView, double thickness) {
+        return IntStream.range(0, sideView.size())
+                .boxed()
+                .map(i -> new SectionPropertyMapEntry(sideView.get(i).getX1(), sideView.get(i).getX2(), String.valueOf(thickness)))
+                .toList();
+    }
+
+    private static List<SectionPropertyMapEntry> buildBulkheadList(List<CubicBezierFunction> sideView) {
+        return IntStream.range(0, sideView.size())
+                .boxed()
+                .map(i -> new SectionPropertyMapEntry(sideView.get(i).getX1(), sideView.get(i).getX2(), String.valueOf((i == 0 || i == sideView.size() - 1))))
+                .toList();
+    }
+
+    private void validateBasicValues(List<SectionPropertyMapEntry> thicknessMap, List<SectionPropertyMapEntry> bulkheadMap, List<CubicBezierFunction> sideView, List<CubicBezierFunction> topView) {
+        // Check for null in any list
+        if (Stream.of(thicknessMap, bulkheadMap, sideView, topView).anyMatch(Objects::isNull))
+            throw new IllegalArgumentException("sideView, topView, thicknessList, and bulkheadList must not be null");
+        if (thicknessMap.size() < 2 || bulkheadMap.size() < 2)
             throw new IllegalArgumentException("There must be at least two sections in the side view");
-        if (sideView == null || topView == null)
-            throw new IllegalArgumentException("sideView and topView must not be null");
         if (sideView.size() != topView.size() || thicknessMap.size() != sideView.size() || bulkheadMap.size() != sideView.size())
-            throw new IllegalArgumentException("sideView, topView, thicknessMap, and bulkheadMap must have the same number of elements");
+            throw new IllegalArgumentException("sideView, topView, thicknessList, and bulkheadList must have the same number of elements");
     }
 
-    /**
-     * Validates that each Section key in the thicknessMap has boundaries that match the corresponding side-view curve's boundaries.
-     * @param thicknessMap the thickness map whose keys (Sections) are validated
-     * @param bulkheadMap the bulkhead map whose keys (Sections) are validated
-     * @param sideView the list of side-view cubic Bézier functions
-     */
-    private void validateMaps(Map<Section, Double> thicknessMap, Map<Section, Boolean> bulkheadMap, List<CubicBezierFunction> sideView) {
-        List<Section> sections = new ArrayList<>(thicknessMap.keySet());
-        List<Section> sectionsShouldBeTheSame = new ArrayList<>(bulkheadMap.keySet());
-        if (!sections.equals(sectionsShouldBeTheSame)) throw new IllegalArgumentException("Thickness map and bulkhead map are not describing the same sections");
-        sections.sort(Comparator.comparingDouble(Section::getX));
-        for (int i = 0; i < sections.size(); i++) {
-            Section sec = sections.get(i);
-            CubicBezierFunction sideCurve = sideView.get(i);
-            if (Math.abs(sideCurve.getX1() - sec.getX()) >  1e-6 || Math.abs(sideCurve.getX2() - sec.getRx()) >  1e-6) {
-                throw new IllegalArgumentException(String.format(
-                        "Thickness map section [%.6f, %.6f] does not match the side view curve boundaries [%.6f, %.6f].",
-                        sec.getX(), sec.getRx(), sideCurve.getX1(), sideCurve.getX2()));
-            }
+    private void validateMaps(List<SectionPropertyMapEntry> thicknessMap,
+                              List<SectionPropertyMapEntry> bulkheadMap,
+                              List<CubicBezierFunction> sideView) {
+        if (!IntStream.range(0, thicknessMap.size())
+                .allMatch(i -> {
+                    Section s1 = thicknessMap.get(i);
+                    Section s2 = bulkheadMap.get(i);
+                    return s1.getX() == s2.getX() && s1.getRx() == s2.getRx();
+                }))
+            throw new IllegalArgumentException("Thickness list and bulkhead list do not describe the same sections");
+
+        // Validate that each section matches the corresponding side view curve boundaries.
+        IntStream.range(0, thicknessMap.size())
+                .forEach(i -> {
+                    Section s = thicknessMap.get(i);
+                    CubicBezierFunction side = sideView.get(i);
+                    if (Math.abs(side.getX1() - s.getX()) > 1e-6 || Math.abs(side.getX2() - s.getRx()) > 1e-6)
+                        throw new IllegalArgumentException(String.format(
+                                "Section [%.6f, %.6f] does not match side view boundaries [%.6f, %.6f].",
+                                s.getX(), s.getRx(), side.getX1(), side.getX2()));
+                });
+    }
+
+    @JsonIgnore
+    public double getMaxHeight() {
+        double globalMinY = 0;
+        BrentOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);
+
+        // Check each bezier for it's min
+        for (CubicBezierFunction bezier : sideViewSegments) {
+            double start = bezier.getX1();
+            double end = bezier.getX2();
+            UnivariateObjectiveFunction objective = new UnivariateObjectiveFunction(x -> -bezier.value(x));
+            SearchInterval interval = new SearchInterval(start, end);
+            UnivariatePointValuePair result = optimizer.optimize(MaxEval.unlimited(), objective, interval);
+            double segmentMinY = -result.getValue();
+
+            // Check for and store the global min if found
+            if (segmentMinY < globalMinY) globalMinY = segmentMinY;
         }
+
+        // The maximum height is the absolute distance from 0 down to the lowest point.
+        return CalculusUtils.roundXDecimalDigits(-globalMinY, 10);
+    }
+
+    @JsonIgnore
+    public double getLength() {
+        if (sideViewSegments == null || sideViewSegments.isEmpty()) return 0;
+        return sideViewSegments.getLast().getX2() - sideViewSegments.getFirst().getX1();
+    }
+
+    @JsonIgnore
+    public Section getSection() {
+        if (sideViewSegments == null || sideViewSegments.isEmpty()) return null;
+        return new Section(sideViewSegments.getFirst().getX1(), sideViewSegments.getLast().getX2());
     }
 
     /**
@@ -197,10 +217,11 @@ public class Hull {
         List<HullSection> computedSections = new ArrayList<>();
         for (int i = 0; i < sections.size(); i++) {
             Section section = sections.get(i);
-            double thickness = thicknessMap.get(section);
-            boolean isFilledBulkhead = bulkheadMap.get(section);
-            HullSection hs = new HullSection(sideViewSegments.get(i), convertedTopView.get(i),
-                    section.getX(), section.getRx(), thickness, isFilledBulkhead);
+            SectionPropertyMapEntry thicknessMapEntry = hullProperties.getThicknessMap().get(i);
+            SectionPropertyMapEntry bulkheadMapEntry = hullProperties.getBulkheadMap().get(i);
+            double thickness = Double.parseDouble(thicknessMapEntry.getValue());
+            boolean isFilledBulkhead = Boolean.parseBoolean(bulkheadMapEntry.getValue());
+            HullSection hs = new HullSection(sideViewSegments.get(i), convertedTopView.get(i), section.getX(), section.getRx(), thickness, isFilledBulkhead);
             computedSections.add(hs);
         }
         return computedSections;
@@ -219,11 +240,7 @@ public class Hull {
      * @param bulkheadDensity the density of the bulkheads (typically styrofoam), automatically set to be uniform across the hull
      * @param hullSections the list of sections that comprises the hull
      */
-    @JsonCreator
-    public Hull(@JsonProperty("concreteDensity") double concreteDensity,
-                @JsonProperty("bulkheadDensity") double bulkheadDensity,
-                @JsonProperty("hullSections") List<HullSection> hullSections) {
-
+    public Hull(double concreteDensity, double bulkheadDensity, List<HullSection> hullSections) {
         hullSections.sort(Comparator.comparingDouble(Section::getX));
         validateBasicValuesOld(concreteDensity, bulkheadDensity, hullSections);
         validateNoSectionGaps(hullSections);
@@ -266,7 +283,7 @@ public class Hull {
      * @return the length of the hull
      */
     @JsonIgnore
-    public double getLength() {
+    public double getLengthOldModel() {
         return hullSections.getLast().getRx();
     }
 
@@ -274,7 +291,7 @@ public class Hull {
      * @return the hull lengthwise endpoints [0, L] as a section
      */
     @JsonIgnore
-    public Section getSection() {
+    public Section getSectionOldModel() {
         return new Section(0.0, getLength());
     }
 
@@ -284,7 +301,7 @@ public class Hull {
      * @return the maximum height of the given sections
      */
     @JsonIgnore
-    private double getMaxHeight(List<HullSection> sections) {
+    private double getMaxHeightOldModel(List<HullSection> sections) {
         double canoeHeight = 0;
         for (HullSection section : sections) {
             // Find the section's minimum
@@ -311,8 +328,8 @@ public class Hull {
      * one for internal validation purposes (hence, private) one for public use
      */
     @JsonIgnore
-    public double getMaxHeight() {
-        return getMaxHeight(this.hullSections);
+    public double getMaxHeightOldModel() {
+        return getMaxHeightOldModel(this.hullSections);
     }
 
     /**
@@ -472,7 +489,7 @@ public class Hull {
      * The floor should be no thicker than 25% of the canoe's height (this is already pretty generous realistically)
      */
     private void validateFloorThickness(List<HullSection> sections) {
-        double canoeHeight = getMaxHeight(sections);
+        double canoeHeight = getMaxHeightOldModel(sections);
         for (HullSection section : sections) {
             // This is chosen arbitrarily as a reasonable benchmark
             if (section.getThickness() > canoeHeight / 4)

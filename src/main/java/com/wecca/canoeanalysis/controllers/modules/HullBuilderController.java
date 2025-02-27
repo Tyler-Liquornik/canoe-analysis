@@ -246,10 +246,7 @@ public class HullBuilderController implements Initializable, ModuleController {
         else {
             // Each section is a candidate for an overlay if there's room
             List<CurvedGraphic> overlayCurves = new ArrayList<>();
-            for (HullSection section : hull.getHullSections()) {
-                if (!(section.getSideProfileCurve() instanceof CubicBezierFunction bezier))
-                    throw new IllegalArgumentException("Can only work with Bezier Hulls");
-
+            for (CubicBezierFunction bezier : hull.getSideViewSegments()) {
                 // Determine the x-range between the control points, which acts as the free section to place a knot point
                 Range overlaySection;
                 double lControlX = bezier.getControlX1();
@@ -333,10 +330,10 @@ public class HullBuilderController implements Initializable, ModuleController {
     }
 
     /**
-     * Set the side view hull to build
+     * Render the graphic for the hull
      * @param hull to set from
      */
-    public void setSideViewHullGraphic(Hull hull) {
+    public void renderHullGraphic(Hull hull) {
         // Set and layout parent pane
         double sideViewPanelWidth = 700;
         double sideViewPanelHeight = HULL_VIEW_PANEL_HEIGHT * (hull.getMaxHeight() / SHARK_BAIT_HULL.getMaxHeight());
@@ -355,13 +352,7 @@ public class HullBuilderController implements Initializable, ModuleController {
 
         // Setup graphic
         Rectangle rect = new Rectangle(0, 0, sideViewPanelWidth, sideViewPanelHeight);
-        List<CubicBezierFunction> beziers = hull.getHullSections().stream().map(section -> {
-            BoundedUnivariateFunction sideProfileCurveFunction = section.getSideProfileCurve();
-            if (sideProfileCurveFunction instanceof CubicBezierFunction bezier)
-                return bezier;
-            else
-                throw new RuntimeException("Not a bezier hull");
-        }).toList();
+        List<CubicBezierFunction> beziers = hull.getSideViewSegments();
         hullGraphic = new CubicBezierSplineHullGraphic(beziers, rect, true);
 
         // Add graphic to pane
@@ -610,7 +601,7 @@ public class HullBuilderController implements Initializable, ModuleController {
 
         // Update UI with new hull
         hullGraphicPane.getChildren().clear();
-        setSideViewHullGraphic(hull);
+        renderHullGraphic(hull);
 
         // If section properties are selected, update the selected section using its index.
         if (sectionPropertiesSelected && selectedHullSectionIndex >= 0 && selectedHullSectionIndex < hull.getHullSections().size())
@@ -769,7 +760,7 @@ public class HullBuilderController implements Initializable, ModuleController {
             // User exited during a drag (closed hand), not a drag preview (open hand)
             // Cancel the drag transaction & restore state from before dragging
             if (!isDraggingKnotPreview) {
-                setSideViewHullGraphic(hull);
+                renderHullGraphic(hull);
                 knotDraggingPreviewHull = MarshallingService.deepCopy(hull);
             }
         }
@@ -880,10 +871,10 @@ public class HullBuilderController implements Initializable, ModuleController {
         if (mouseX >= hullGraphicPane.getLayoutX() && mouseX <= hullGraphicPane.getLayoutX() + hullGraphicPane.getWidth()) {
             double poiX = mouseX - hullGraphicPane.getLayoutX();
             functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
-            HullSection section = hull.getHullSections().stream()
-                    .filter(s -> s.getX() <= functionSpaceX && s.getRx() >= functionSpaceX)
-                    .findFirst().orElseThrow(() -> new RuntimeException("Cannot place intersection point, out of bounds"));
-            CubicBezierFunction bezier = (CubicBezierFunction) section.getSideProfileCurve();
+            CubicBezierFunction bezier = hull.getSideViewSegments().stream()
+                    .filter(s -> s.getX1() <= functionSpaceX && s.getX2() >= functionSpaceX)
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Cannot place intersection point, out of bounds"));
             functionSpaceY = bezier.value(functionSpaceX);
             double poiY = (functionSpaceY / hull.getLength()) * hullGraphicPane.getWidth();
             Point2D poi = new Point2D(poiX, -poiY);
@@ -1024,7 +1015,7 @@ public class HullBuilderController implements Initializable, ModuleController {
             nextPressedBefore = false;
             previousPressedBefore = false;
             recalculateAndDisplayHullProperties();
-            setSideViewHullGraphic(updatedHull);
+            renderHullGraphic(updatedHull);
             hull = updatedHull;
             updateSectionsEditorHullCurveOverlay();
         }
@@ -1076,7 +1067,7 @@ public class HullBuilderController implements Initializable, ModuleController {
             // Update the preview hull by calling the service.
             // This preview hull is kept separate from the original hull until the transaction commits.
             knotDraggingPreviewHull = HullGeometryService.dragKnotPoint(initialKnotDragKnotPos, newKnotDragKnotPos);
-            setSideViewHullGraphic(knotDraggingPreviewHull);
+            renderHullGraphic(knotDraggingPreviewHull);
             updateHullIntersectionPointDisplay(initialKnotDragKnotPos, newKnotDragKnotPos);
             hullViewAnchorPane.setCursor(Cursor.CLOSED_HAND);
         }
@@ -1107,7 +1098,7 @@ public class HullBuilderController implements Initializable, ModuleController {
                 updateHullIntersectionPointDisplay(newKnotDragKnotPos, null);
                 updateMouseXTrackerLine(event.getX());
             }
-            setSideViewHullGraphic(hull);
+            renderHullGraphic(hull);
 
             // More State updates
             knotDraggingPreviewHull = null;
@@ -1151,7 +1142,7 @@ public class HullBuilderController implements Initializable, ModuleController {
                 initialKnotDragKnotPos = null;
                 hullViewAnchorPane.setCursor(Cursor.CROSSHAIR);
                 poiModeLabel.setText("Click and Hold to Drag");
-                setSideViewHullGraphic(hull);
+                renderHullGraphic(hull);
 
                 hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_DRAGGED, this::handleKnotDragMouseDragged);
                 hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_RELEASED, this::handleKnotDragMouseReleased);
@@ -1243,7 +1234,7 @@ public class HullBuilderController implements Initializable, ModuleController {
         // Set default hull
         hullGraphicPane = new AnchorPane();
         hull = SHARK_BAIT_HULL;
-        setSideViewHullGraphic(hull);
+        renderHullGraphic(hull);
         setBlankSectionProperties();
 
         // Sections Editor

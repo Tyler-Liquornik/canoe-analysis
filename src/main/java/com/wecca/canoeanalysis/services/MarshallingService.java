@@ -1,6 +1,6 @@
 package com.wecca.canoeanalysis.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.wecca.canoeanalysis.aop.Traceable;
@@ -14,16 +14,16 @@ import com.wecca.canoeanalysis.models.load.Load;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Setter;
-import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 /**
  * Marshalling and unmarshalling of POJO models
- * Mostly dealing with YAML and file I/O, also Smile for binary
+ * Only dealing with YAML and file I/O so far
  */
 @Traceable
 public class MarshallingService {
@@ -43,8 +43,8 @@ public class MarshallingService {
     // Initializations, and loading state
     static {
         yamlMapper = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
-        smileMapper = new ObjectMapper(new SmileFactory());
         yamlMapper.findAndRegisterModules();
+        smileMapper = new ObjectMapper(new SmileFactory());
 
         try {
             TRACING = MarshallingService
@@ -106,7 +106,6 @@ public class MarshallingService {
     /**
      * Prompts the user to upload a YAML file representing a new canoe model and processes it.
      * The uploaded canoe is used for general beam control operations.
-     *
      * @param stage the stage to display the FileChooser dialog
      */
     public static void importCanoeFromYAML(Stage stage) {
@@ -122,7 +121,6 @@ public class MarshallingService {
     /**
      * Prompts the user to upload a YAML file representing a canoe model specifically for
      * punching shear operations and processes it.
-     *
      * @param stage the stage to display the FileChooser dialog
      */
     public static void punchingShearImportCanoeFromYAML(Stage stage) {
@@ -132,7 +130,7 @@ public class MarshallingService {
     /**
      * Handles the common logic for uploading and processing one to many canoe YAML file(s).
      * Allows custom processing logic to be applied to the parsed and adjusted Canoe object.
-     * @param stage          the stage to display the FileChooser dialog
+     * @param stage the stage to display the FileChooser dialog
      * @param canoeProcessor a Consumer function to process the adjusted Canoe object
      */
     private static void uploadAndProcessCanoe(Stage stage, Consumer<Canoe> canoeProcessor, boolean allowMultipleFiles) {
@@ -221,19 +219,36 @@ public class MarshallingService {
      * @return the demarshalled YAML file as a POJO
      */
     public static <T> T loadYamlData(Class<T> dataClass, T defaultData, String path) throws IOException {
-       try {
-           File file = new File(path);
-           if (file.exists())
-               return yamlMapper.readValue(file, dataClass);
-       }
-       catch (Exception ignored) {}
-       return defaultData;
+        try {
+            File file = new File(path);
+            if (file.exists())
+                return yamlMapper.readValue(file, dataClass);
+        }
+        catch (Exception ignored) {}
+        return defaultData;
     }
 
     /**
      * Note: type is checked, IDE is wrongly giving a warning which was suppressed
      * Deep copies an object in-memory by marshalling and unmarshalling the object such that all fields are reinitialized recursively.
-     * Deep copy is implemented using smile, jackson's binary serialization protocol to improve performance for large objects (like the canoe)
+     * @param <T> The type of the object being copied.
+     * @param marshallableObject The object to deep copy which is integrated with Jackson for YAML marshalling.
+     * @return A deep copy of the object, or null if copying fails.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T smileDeepCopy(T marshallableObject) {
+        if (marshallableObject == null) return null;
+        try {
+            byte[] data = smileMapper.writeValueAsBytes(marshallableObject);
+            return (T) smileMapper.readValue(data, marshallableObject.getClass());
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    /**
+     * Note: type is checked, IDE is wrongly giving a warning which was suppressed
+     * Deep copies an object in-memory by marshalling and unmarshalling the object such that all fields are reinitialized recursively.
      * @param <T>  The type of the object being copied.
      * @param marshallableObject The object to deep copy which is integrated with Jackson for YAML marshalling.
      * @return A deep copy of the object, or null if copying fails.
@@ -242,8 +257,11 @@ public class MarshallingService {
     public static <T> T deepCopy(T marshallableObject) {
         if (marshallableObject == null) return null;
         try {
-            byte[] data = smileMapper.writeValueAsBytes(marshallableObject);
-            return (T) smileMapper.readValue(data, marshallableObject.getClass());
+            String yamlString = yamlMapper.writeValueAsString(marshallableObject);
+            Object read = yamlMapper.readValue(yamlString, marshallableObject.getClass());
+            Class<?> classT = marshallableObject.getClass();
+            if (classT.isInstance(read)) return (T) read;
+            else throw new RuntimeException("Null read object during deep copy");
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

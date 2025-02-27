@@ -530,7 +530,7 @@ public class HullGeometryService {
         return hull;
     }
 
-    public static Point2D getEditableKnotPoint(double functionSpaceX) {
+    public static Point2D getEditableKnotPointOldModel(double functionSpaceX) {
         Hull hull = getHull();
         List<Range> overlaySections = hullBuilderController.getOverlaySections();
 
@@ -594,12 +594,74 @@ public class HullGeometryService {
         return null;
     }
 
+    public static Point2D getEditableKnotPoint(double functionSpaceX) {
+        Hull hull = getHull();
+        if (hull.isOldModel())
+            throw new IllegalStateException("getEditableKnotPointNewModel can only be used on a new–model hull.");
+
+        List<Range> overlaySections = hullBuilderController.getOverlaySections();
+        List<CubicBezierFunction> sideViewSegments = hull.getSideViewSegments();
+
+        for (int i = 0; i < overlaySections.size(); i++) {
+            Range currOverlay = overlaySections.get(i);
+
+            // Determine the "deleting section" if one exists.
+            Section deletingSection;
+            if (i != overlaySections.size() - 1) {
+                Range nextOverlay = overlaySections.get(i + 1);
+                double deletingSectionX = (currOverlay.getX() < currOverlay.getRx()) ? currOverlay.getRx() : currOverlay.getX();
+                double deletingSectionRx = (nextOverlay.getX() < nextOverlay.getRx()) ? nextOverlay.getX() : nextOverlay.getRx();
+                deletingSection = new Section(deletingSectionX, deletingSectionRx);
+            } else {
+                deletingSection = null;
+            }
+
+            // Use the new model field to extract geometry.
+            CubicBezierFunction bezier = sideViewSegments.get(i);
+            double lKnotX = bezier.getX1();
+            double rKnotX = bezier.getX2();
+
+            // Check if functionSpaceX lies within the knot interval.
+            if (currOverlay.getX() > currOverlay.getRx() && lKnotX <= functionSpaceX && functionSpaceX <= rKnotX) {
+                double lControlX = bezier.getControlX1();
+                double rControlX = bezier.getControlX2();
+                double midpoint = rControlX + ((lControlX - rControlX) / 2);
+
+                if (functionSpaceX < midpoint) {
+                    if (i == 0) return null; // Cannot delete the first knot.
+                    double knotY = bezier.value(lKnotX);
+                    return new Point2D(lKnotX, knotY);
+                } else {
+                    if (i == overlaySections.size() - 1) return null; // Cannot delete the last knot.
+                    CubicBezierFunction nextBezier = sideViewSegments.get(i + 1);
+                    double knotY = nextBezier.value(rKnotX);
+                    return new Point2D(rKnotX, knotY);
+                }
+            }
+            // Check if functionSpaceX lies within a deletion zone.
+            else if (deletingSection != null &&
+                    deletingSection.getX() <= functionSpaceX && functionSpaceX <= deletingSection.getRx()) {
+                double knotX = sideViewSegments.stream()
+                        .flatMap(seg -> seg.getKnotPoints().stream())
+                        .mapToDouble(Point2D::getX)
+                        .distinct()
+                        .filter(x -> x >= deletingSection.getX() && x <= deletingSection.getRx())
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Cannot find knot point in the section"));
+                double knotY = bezier.value(knotX);
+                return new Point2D(knotX, knotY);
+            }
+        }
+        // No matching section found.
+        return null;
+    }
+
     /**
      * Updates the hull geometry by dragging a knot point from its old position to a new position.
      * The method shifts the knot point as well as its adjacent control points so that C1 continuity is maintained.
      * If the knot is not the minimum, the new position is assumed already clamped.
      */
-    public static Hull dragKnotPoint(@NonNull Point2D knotPos, @NonNull Point2D newKnotPos) {
+    public static Hull dragKnotPointOldModel(@NonNull Point2D knotPos, @NonNull Point2D newKnotPos) {
         // Hull copy to avoid mutating the main hull ref
         Hull hull = getHull();
         for (int i = 0; i < hull.getHullSections().size(); i++) {
@@ -661,6 +723,49 @@ public class HullGeometryService {
             }
         }
         throw new IllegalArgumentException("Cannot drag knot, hull does not contain knot with position: " + knotPos);
+    }
+
+    /**
+     * Updates the hull geometry (new model) by dragging a knot point in the side view.
+     * Only the side–view Bézier curve(s) are updated; the top–view curves remain unchanged.
+     * @param knotPos the current position of the knot in the side view
+     * @param newKnotPos the new position for the knot in the side view
+     * @return a new Hull instance with updated side–view curves
+     */
+    public static Hull dragKnotPoint(@NonNull Point2D knotPos, @NonNull Point2D newKnotPos) {
+        // Obtain a deep copy of the hull using your deep copy mechanism.
+        Hull hull = getHull(); // Assume getHull() properly deep-copies the current instance.
+        if (hull.isOldModel())
+            throw new IllegalStateException("dragKnotPointNewModel can only be used on a new-model hull.");
+
+        // Find the side-view segment whose left knot equals knotPos (within tolerance).
+        for (int i = 0; i < hull.getSideViewSegments().size(); i++) {
+            CubicBezierFunction bezier = hull.getSideViewSegments().get(i);
+            if (bezier.getKnotPoints().getFirst().distance(knotPos) < 1e-6 /* Numerically Equal in R^2 */ ) {
+                double deltaX = newKnotPos.getX() - knotPos.getX();
+                double deltaY = newKnotPos.getY() - knotPos.getY();
+                // Update the left knot and control point of the current segment.
+                bezier.setX1(newKnotPos.getX());
+                hull.getHullProperties().getThicknessMap().get(i).setX(newKnotPos.getX());
+                hull.getHullProperties().getBulkheadMap().get(i).setX(newKnotPos.getX());
+                bezier.setY1(newKnotPos.getY());
+                bezier.setControlX1(bezier.getControlX1() + deltaX);
+                bezier.setControlY1(bezier.getControlY1() + deltaY);
+                // For C1 continuity, update the right knot and control point of the previous segment (if exists).
+                if (i > 0) {
+                    CubicBezierFunction prevBezier = hull.getSideViewSegments().get(i - 1);
+                    prevBezier.setX2(newKnotPos.getX());
+                    hull.getHullProperties().getThicknessMap().get(i - 1).setRx(newKnotPos.getX());
+                    hull.getHullProperties().getBulkheadMap().get(i - 1).setRx(newKnotPos.getX());
+                    prevBezier.setY2(newKnotPos.getY());
+                    prevBezier.setControlX2(prevBezier.getControlX2() + deltaX);
+                    prevBezier.setControlY2(prevBezier.getControlY2() + deltaY);
+                }
+                // Do not modify topViewSegments.
+                return hull;
+            }
+        }
+        throw new IllegalArgumentException("No side-view knot found at position: " + knotPos);
     }
 
     /**

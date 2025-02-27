@@ -6,7 +6,6 @@ import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.function.VertexFormParabolaFunction;
 import com.wecca.canoeanalysis.services.HullGeometryService;
-import com.wecca.canoeanalysis.services.LoggerService;
 
 import java.util.*;
 
