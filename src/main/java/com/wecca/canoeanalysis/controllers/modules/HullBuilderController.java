@@ -86,9 +86,9 @@ public class HullBuilderController implements Initializable, ModuleController {
 
     // State
     @Getter @Setter
-    private HullSection selectedHullSection;
+    private CubicBezierFunction selectedBezierSegment;
     @Getter @Setter
-    private int selectedHullSectionIndex;
+    private int selectedBezierSegmentIndex = -1;
     @Getter @Setter
     private List<Range> overlaySections;
     private boolean previousPressedBefore;
@@ -144,7 +144,7 @@ public class HullBuilderController implements Initializable, ModuleController {
         knotEditorEnabled = !knotEditorEnabled;
         nextPressedBefore = false;
         previousPressedBefore = false;
-        selectedHullSectionIndex = -1;
+        selectedBezierSegmentIndex = -1;
 
         toggleKnotEditingHullCurveOverlay();
         updateKnotEditingTitleLabel(isMouseInAddingKnotPointZone(mouseXTrackerLine.getStartX()));
@@ -173,7 +173,7 @@ public class HullBuilderController implements Initializable, ModuleController {
             hullViewAnchorPane.setOnMousePressed(this::handleKnotEditMousePressed);
         }
 
-        if (selectedHullSection != null) hullGraphic.recolor(!knotEditorEnabled);
+        if (selectedBezierSegment != null) hullGraphic.recolor(!knotEditorEnabled);
         hullGraphic.setColoredSectionIndex(-1);
 
         List<Button> topLeftButtons = hullViewAnchorPane.getChildren().stream().filter(node -> (node instanceof Button)).map(node -> (Button) node).toList();
@@ -182,9 +182,9 @@ public class HullBuilderController implements Initializable, ModuleController {
         sectionSelectorButtons.forEach(button -> button.setOpacity(1));
 
         for (int i = 0; i < knobs.size(); i++) {knobs.get(i).valueProperty().removeListener(knobListeners.get(i));}
-        if (selectedHullSection != null) {
+        if (selectedBezierSegment != null) {
             if (knotEditorEnabled) {
-                selectedHullSection = null;
+                selectedBezierSegment = null;
                 unboundKnobs();
                 knobs.forEach(knobs -> knobs.setKnobValue(0));
                 if (sectionPropertiesSelected) setBlankSectionProperties();
@@ -362,8 +362,8 @@ public class HullBuilderController implements Initializable, ModuleController {
         applyGraphicsViewingState();
 
         // Keep the selected hull section colored
-        if (selectedHullSection != null && selectedHullSectionIndex != -1)
-            hullGraphic.colorBezierPointGroup(selectedHullSectionIndex, true);
+        if (selectedBezierSegment != null && selectedBezierSegmentIndex != -1)
+            hullGraphic.colorBezierPointGroup(selectedBezierSegmentIndex, true);
     }
 
     /**
@@ -391,12 +391,16 @@ public class HullBuilderController implements Initializable, ModuleController {
         unlockKnobsOnFirstSectionSelect();
 
         // Use modulo to wrap index
-        if (selectedHullSectionIndex == -1) selectedHullSectionIndex++;
-        selectedHullSectionIndex = (selectedHullSectionIndex - 1 + hull.getHullSections().size()) % hull.getHullSections().size();
-        selectedHullSection = hull.getHullSections().get(selectedHullSectionIndex);
+        if (selectedBezierSegmentIndex == -1) selectedBezierSegmentIndex++;
+        selectedBezierSegmentIndex = (selectedBezierSegmentIndex - 1 + hull.getSideViewSegments().size()) % hull.getSideViewSegments().size();
+        selectedBezierSegment = hull.getSideViewSegments().get(selectedBezierSegmentIndex);
 
         hullGraphic.colorPreviousBezierPointGroup();
 
+        // This operation is not as latency sensitive, and is a good place to re-cache the old hull section model
+        hull.setHullSections(hull.getHullSectionsReformedFromDeCasteljaus());
+        HullSection selectedHullSection = hull.getHullSections().get(selectedBezierSegmentIndex);
+        selectedBezierSegment = hull.getSideViewSegments().get(selectedBezierSegmentIndex);
         if (sectionPropertiesSelected) {
             setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),
                     selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
@@ -413,18 +417,17 @@ public class HullBuilderController implements Initializable, ModuleController {
      */
     public void selectNextHullSection(MouseEvent e) {
         unlockKnobsOnFirstSectionSelect();
-
         // Use modulo to wrap index
-        selectedHullSectionIndex = (selectedHullSectionIndex + 1) % hull.getHullSections().size();
-        selectedHullSection = hull.getHullSections().get(selectedHullSectionIndex);
-
+        selectedBezierSegmentIndex = (selectedBezierSegmentIndex + 1) % hull.getSideViewSegments().size();
         hullGraphic.colorNextBezierPointGroup();
-
+        // This operation is not as latency sensitive, and is a good place to re-cache the old hull section model
+        hull.setHullSections(hull.getHullSectionsReformedFromDeCasteljaus());
+        HullSection selectedHullSection = hull.getHullSections().get(selectedBezierSegmentIndex);
+        selectedBezierSegment = hull.getSideViewSegments().get(selectedBezierSegmentIndex);
         if (sectionPropertiesSelected) {
             setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),
                     selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
         }
-
         nextPressedBefore = true;
         unboundKnobs();
         setKnobValues();
@@ -567,6 +570,9 @@ public class HullBuilderController implements Initializable, ModuleController {
         else {
             sectionPropertiesSelected = true;
             propertiesPanelTitleLabel.setText("Section Properties");
+            // This operation is not as latency sensitive, and is a good place to re-cache the old hull section model
+            hull.setHullSections(hull.getHullSectionsReformedFromDeCasteljaus());
+            HullSection selectedHullSection = hull.getHullSections().get(selectedBezierSegmentIndex);
             try {
                 setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
             } catch (Exception ex) {
@@ -590,7 +596,7 @@ public class HullBuilderController implements Initializable, ModuleController {
     @Traceable
     private void updateSystemFromKnob(int knobIndex, double oldROrThetaVal, double newROrThetaVal) {
         if (Math.abs(oldROrThetaVal - newROrThetaVal) < 1e-6) return;
-        if (selectedHullSection == null) return;
+        if (selectedBezierSegment == null) return;
 
         // Update the relevant knob value
         knobs.get(knobIndex).setKnobValue(newROrThetaVal);
@@ -604,8 +610,8 @@ public class HullBuilderController implements Initializable, ModuleController {
         renderHullGraphic(hull);
 
         // If section properties are selected, update the selected section using its index.
-        if (sectionPropertiesSelected && selectedHullSectionIndex >= 0 && selectedHullSectionIndex < hull.getHullSections().size())
-            selectedHullSection = hull.getHullSections().get(selectedHullSectionIndex);
+        if (sectionPropertiesSelected && selectedBezierSegmentIndex >= 0 && selectedBezierSegmentIndex < hull.getSideViewSegments().size())
+            selectedBezierSegment = hull.getSideViewSegments().get(selectedBezierSegmentIndex);
 
         recalculateAndDisplayHullProperties();
 
@@ -618,13 +624,13 @@ public class HullBuilderController implements Initializable, ModuleController {
      * Update the UI based on the current property selection
      */
     private void recalculateAndDisplayHullProperties() {
-        if (sectionPropertiesSelected && selectedHullSection != null) {
-            setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),
-                    selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
-        } else if (selectedHullSection != null) {
-            setSectionProperties(hull.getMaxHeight(), hull.getTotalVolume(),
-                    hull.getMass(), 0, hull.getLength());
-        }
+//        if (sectionPropertiesSelected && selectedHullSection != null) {
+//            setSectionProperties(selectedHullSection.getHeight(), selectedHullSection.getVolume(),
+//                    selectedHullSection.getMass(), selectedHullSection.getX(), selectedHullSection.getRx());
+//        } else if (selectedHullSection != null) {
+//            setSectionProperties(hull.getMaxHeight(), hull.getTotalVolume(),
+//                    hull.getMass(), 0, hull.getLength());
+//        }
     }
 
     /**
@@ -1005,12 +1011,12 @@ public class HullBuilderController implements Initializable, ModuleController {
             }
         }
         // Otherwise, if a candidate deletable knot exists and there are enough sections, delete it.
-        else if (hull.getHullSections().size() > 2) updatedHull = HullGeometryService.deleteKnotPoint(editableKnot);
+        else if (hull.getSideViewSegments().size() > 2) updatedHull = HullGeometryService.deleteKnotPoint(editableKnot);
 
         // Hull State/graphics updates if the knot edit changed the hull
         if (updatedHull != null) {
-            selectedHullSection = null;
-            selectedHullSectionIndex = -1;
+            selectedBezierSegment = null;
+            selectedBezierSegmentIndex = -1;
             nextPressedBefore = false;
             previousPressedBefore = false;
             recalculateAndDisplayHullProperties();
@@ -1274,8 +1280,8 @@ public class HullBuilderController implements Initializable, ModuleController {
         // Initialize state
         previousPressedBefore = false;
         nextPressedBefore = false;
-        selectedHullSection = null;
-        selectedHullSectionIndex = -1;
+        selectedBezierSegment = null;
+        selectedBezierSegmentIndex = -1;
         sectionPropertiesSelected = true;
         graphicsViewingState = 0;
         knotEditorEnabled = false;

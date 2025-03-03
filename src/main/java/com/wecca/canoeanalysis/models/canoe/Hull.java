@@ -192,7 +192,7 @@ public class Hull {
      * @return the list of computed HullSection objects.
      */
     @JsonIgnore
-    private List<HullSection> getHullSectionsReformedFromDeCasteljaus() {
+    public List<HullSection> getHullSectionsReformedFromDeCasteljaus() {
         List<Section> sections = sideViewSegments.stream()
                 .map(bezier -> new Section(bezier.getX1(), bezier.getX2()))
                 .toList();
