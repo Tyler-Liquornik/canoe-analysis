@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import com.jfoenix.controls.*?>
-<?import de.jensd.fx.glyphs.fontawesome.*?>
-<?import java.lang.*?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.image.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.shape.*?>
-<?import javafx.scene.text.*?>
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXColorPicker?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon?>
+<?import java.lang.String?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="500.0" prefWidth="900.0" styleClass="background" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.PercentOpenAreaController">
+<AnchorPane fx:id="moduleInjectionRoot" minHeight="0.0" minWidth="0.0" prefHeight="500.0" prefWidth="900.0" styleClass="background" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.PercentOpenAreaController">
     <children>
       <AnchorPane layoutX="60.0" layoutY="60.0" maxHeight="380.0" minHeight="380.0" prefHeight="380.0" prefWidth="450.0" styleClass="surface">
          <children>
-                <ImageView fx:id="imageview" fitHeight="316.0" fitWidth="420.0" layoutX="16.0" layoutY="9.0" pickOnBounds="true" preserveRatio="true" />
+                <ImageView fx:id="imageview" fitHeight="316.0" fitWidth="420.0" layoutX="16.0" layoutY="9.0" nodeOrientation="INHERIT" pickOnBounds="true" preserveRatio="true" />
             <Rectangle fx:id="cloudBackground" arcHeight="5.0" arcWidth="5.0" fill="WHITE" height="60.0" layoutX="190.0" layoutY="123.0" stroke="WHITE" strokeType="INSIDE" width="62.0" />
             <FontAwesomeIcon fx:id="cloud" glyphName="CLOUD_UPLOAD" layoutX="160.0" layoutY="195.0" size="10em" styleClass="action-object" />
             <Label fx:id="dragAndDropLabel" layoutX="120.0" layoutY="247.0" styleClass="title" text="Drag &amp; Drop to Upload Image" textAlignment="CENTER" AnchorPane.bottomAnchor="113.0">

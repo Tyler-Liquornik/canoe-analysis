@@ -74,7 +74,7 @@ public class PercentOpenAreaController implements Initializable {
         passLabel.setVisible(false);
         failLabel.setVisible(false);
         imageFile = null;
-        imageview.setImage(null);
+        imageview.setVisible(false);
         colorPicker.setValue(Color.web("#FFFFFF"));
         resultTextField.setText("???");
         colorPicker.setDisable(true);
@@ -90,6 +90,7 @@ public class PercentOpenAreaController implements Initializable {
         File selectedFile = fileChooser.showOpenDialog(popupStage);
 
         if (selectedFile != null) {
+            imageview.setVisible(true);
             imageFile = selectedFile; // Save the selected file
             processImageFile(imageFile);
             popupStage.close();
