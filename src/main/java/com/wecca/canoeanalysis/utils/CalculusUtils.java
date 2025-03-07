@@ -18,7 +18,10 @@ import java.util.List;
 public class CalculusUtils
 {
     // Provides integration
-    public static SimpsonIntegrator integrator = new SimpsonIntegrator();
+    // The settings on these numbers play a huge role in graphics rendering speed vs. integration accuracy
+    // This has been tweaked here to give a fair balance
+    // This is true for graphics where an animation requires many integrations at a high frequency
+    public static SimpsonIntegrator integrator = new SimpsonIntegrator(1e-4, 1e-8, 5, 16);
 
     /**
      * Returns the numerical derivative of a given function.
@@ -316,6 +319,7 @@ public class CalculusUtils
      * @param x the x–coordinate at which to evaluate.
      * @return the value of the segment covering x.
      */
+    @Traceable
     public static double getSplineY(List<CubicBezierFunction> splineSegments, double x) {
         int low = 0;
         int high = splineSegments.size() - 1;
