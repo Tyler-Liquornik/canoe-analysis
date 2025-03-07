@@ -35,7 +35,10 @@ In the first photo, we can see the user using the knob to pull on the "handles" 
 
 We model punching shear forces on our canoe as the force it experiences when a paddler's knee presses down on the bottom of the hull wall where they sit. It is important that our concrete can withstand these forces for structural integrity. The punching shear module acts as an intuitive calculator for this, making it easy to work with different load cases to find the critical case, ensuring the canoe will have structural integrity in all possible races and load cases.
 
-<img src="images/punching-shear.png" alt = "punching-shear" style="width: 66%;" />
+<div style="display: flex; flex-direction: row;">
+    <img src="images/punching-shear-ui.png" alt = "punching-shear-ui" style="width: 49%;" />
+    <img src="images/punching-shear-glossary.png" alt = "punching-shear-glossary" style="width: 49%;" />
+</div>
 
 Current work is on an intuitive glossary to lay out the equations behind the module to make its usage and purpose more clear.
 
