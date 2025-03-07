@@ -11,39 +11,60 @@ import com.wecca.canoeanalysis.models.load.DiscreteLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
+import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import com.wecca.canoeanalysis.utils.SectionPropertyMapEntry;
+import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.optim.univariate.BrentOptimizer;
-import org.apache.commons.math3.optim.univariate.SearchInterval;
-import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
-import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
-import com.wecca.canoeanalysis.services.HullGeometryService;
+import org.apache.commons.math3.optim.univariate.*;
 import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * You may notice there is a new hull model/API built atop the old one
- * The goal was to decouple the side view curve segments from the front view
- * All while ensuring backwards compatability
- * Particularly the x-coordinates of their knot points.
- * The problem this solved was that this allows the user to edit the knot points in the side view without disrupting the top view geometry.
+ * The Hull class represents a canoe’s hull using a new model that decouples the side‐view and top‐view
+ * curve segments from the legacy HullSection concept. In this design, the hull is modeled as a composite
+ * of discrete sections—each defined by a pair of Bézier curves (one for the side view and one for the top view)
+ * that capture the canoe’s vertical profile and width respectively.
+ * -----------------------------------------------------------------------------------------------------------------
+ * The following are conventions which should be used for dimensioning (see diagram of a section of the hull):
+ *         7 Z
+ *       /
+ *     /
+ *    +-----------> X
+ *   |               Length
+ *   |         <------------------->
+ *   V Y        ________-------‾‾‾‾|
+ *         |   | \                |
+ *         |   |  |`----......___|      7 Width
+ *         |   𝘓_|______------‾‾|     /
+ *         |   \|              |    /
+ *  Height V    `----......___|   /
+ * -----------------------------------------------------------------------------------------------------------------
+ * - "Length" refers to the x-direction (left/right).
+ * - "Height" refers to the y-direction (up/down) and is defined by the side profile curve.
+ * - "Width" refers to the z-direction (into/out of the screen) and is defined by the top profile curve.
+ * - "Thickness" refers to the wall thickness (or floor thickness) measured normal to the surface.
+ * -----------------------------------------------------------------------------------------------------------------
+ * In the new model:
+ * - The sideViewSegments provide the vertical profile of the hull.
+ * - The topViewSegments define the bottom half of the horizontal profile. the top half is always a symmetrical reflection about y = 0
+ * -----------------------------------------------------------------------------------------------------------------
+ * The overall hull geometry is constructed by stitching together these segments into a piecewise-smooth C1
+ * continuous curve called a spline. This is also called a bezier spline, as the curves we use here are special parametric curves called Bézier curves
+ * Utility methods are provided to compute physical properties such as volume, mass, and self‐weight
+ * by integrating across the hull’s sections.
  */
-@Getter @Setter @EqualsAndHashCode
+@Getter @Setter @EqualsAndHashCode @Traceable
 public class Hull {
 
-    // These fields are part of the legacy (old) API.
-    @JsonIgnore
-    private List<HullSection> hullSections;
-    @JsonIgnore
+    @JsonProperty("concreteDensity")
     private double concreteDensity;
-    @JsonIgnore
+    @JsonProperty("bulkheadDensity")
     private double bulkheadDensity;
-
-    // New Model: encapsulated in HullProperties.
     @JsonProperty("hullProperties")
     private HullProperties hullProperties;
     @JsonProperty("sideViewSegments")
@@ -51,12 +72,36 @@ public class Hull {
     @JsonProperty("topViewSegments")
     private List<CubicBezierFunction> topViewSegments;
 
-    // Flag to cheaply check which model is implemented
-    @JsonProperty("isOldModel")
-    private boolean isOldModel;
+    /**
+     * Note: Was "lifted" up in the inheritance tree from HullSection in the old model
+     * Adjusts for difference in area of the section's curvature of the front profile view at a given height h
+     * See: https://www.desmos.com/calculator/9ookcwgenx
+     * TLDR: Uses the front profile of 2024's Shark Bait as a rough approximation for all reasonable future front profiles
+     * The hull curve is scaled based on the length of the user's hull design compared to Shark Bait
+     * -----------------------------------------------------------------------------------------------------------------
+     * This function encodes a relationship on the difference between a hull front profile, and it's encasing rectangle
+     * This idea is then extended into a function of waterline height h to get an integral defined function
+     * This is inefficient because this function is called for every h in the iterative floating case solution algorithm
+     * Instead I have built a polynomial regression fit for it which is faster to evaluate
+     * The 7th degree polynomial has R^2 = 0.9967 for the fully accurate function and was solved on Desmos
+     */
+    @JsonIgnore @EqualsAndHashCode.Exclude
+    private final BoundedUnivariateFunction crossSectionalAreaAdjustmentFactorFunction = h -> {
+        double[] coefficients = new double[] {0, 17.771, -210.367, 1409.91, -5420.6, 11769.4, -13242.7, 5880.62};
+        for (int i = 0; i < coefficients.length; i++) {
+            coefficients[i] = coefficients[i] / Math.pow(SharkBaitHullLibrary.scalingFactor, i);
+        }
+        PolynomialFunction regressionFit = new PolynomialFunction(coefficients);
+        if (0 <= h && h <= 0.4 * SharkBaitHullLibrary.scalingFactor)
+            return regressionFit.value(h);
+        else if (h > 0.4 * SharkBaitHullLibrary.scalingFactor)
+            return regressionFit.value(0.4 * SharkBaitHullLibrary.scalingFactor);
+        else
+            throw new IllegalArgumentException("Function undefined for negative values");
+    };
 
     /**
-     * The new model
+     * The new model's constructor
      * @param concreteDensity  the uniform concrete destiny of the hull
      * @param bulkheadDensity the uniform bulkhead density across all bulkhead material
      * @param hullProperties the hull properties (including densities and section maps)
@@ -74,20 +119,14 @@ public class Hull {
         this.topViewSegments = topViewSegments;
         this.concreteDensity = concreteDensity;
         this.bulkheadDensity = bulkheadDensity;
-        this.isOldModel = false;
 
-        // Compute and cache the legacy hullSections from the new model.
-         this.hullSections = getHullSectionsReformedFromDeCasteljaus();
-
-        // Validate new API fields.
+        // New Validators
         validateBasicValues(hullProperties.getThicknessMap(), hullProperties.getBulkheadMap(), sideViewSegments, topViewSegments);
         validateMaps(hullProperties.getThicknessMap(), hullProperties.getBulkheadMap(), sideViewSegments);
-
-//        // Validate legacy fields.
-//        validateBasicValuesOld(concreteDensity, bulkheadDensity, hullSections);
-//        validateNoSectionGaps(hullSections);
-//        validateFloorThickness(hullSections);
-//        validateWallThickness(hullSections);
+        // Legacy validators from old model, remodeled for new model
+        validateC1Continuity();
+        validateFloorThickness();
+        validateWallThickness();
     }
 
     /**
@@ -102,6 +141,63 @@ public class Hull {
                 List<CubicBezierFunction> topView, double thickness) {
         this(concreteDensity, bulkheadDensity, new HullProperties(
                 buildThicknessList(sideView, thickness), buildBulkheadList(sideView)), sideView, topView);
+    }
+
+    /**
+     * Basic constructor for a simple model, useful before the user defines detailed geometry/material properties.
+     * Models the hull as a rectangular prism (beam) using a single side–view and a single top–view Bézier segment.
+     * The side–view curve is nearly constant at –height and the top–view curve is nearly constant at width/2.
+     * Control points are offset by ε = 0.001 so that the curve is a numerical approximation of a step function,
+     * and the wall thickness is fixed at 0.013.
+     * @param length the length of the hull
+     * @param height the constant height (depth) of the hull
+     * @param width  the overall width of the hull (used to compute the top–view curve at width/2)
+     * @param thickness the uniform thickness of the hull in metres
+     */
+    public Hull(double length, double height, double width, double thickness) {
+        this(
+                0, // concreteDensity
+                0, // bulkheadDensity
+                new HullProperties(
+                        Hull.buildThicknessList(
+                                List.of(
+                                        new CubicBezierFunction(
+                                                0, -height,                 // start point (x1, y1)
+                                                0.001, -height,             // control point 1 (offset by ε)
+                                                length - 0.001, -height,      // control point 2 (offset by ε)
+                                                length, -height             // end point (x2, y2)
+                                        )
+                                ),
+                                thickness
+                        ),
+                        Hull.buildBulkheadList(
+                                List.of(
+                                        new CubicBezierFunction(
+                                                0, -height,
+                                                0.001, -height,
+                                                length - 0.001, -height,
+                                                length, -height
+                                        )
+                                )
+                        )
+                ),
+                List.of(
+                        new CubicBezierFunction(
+                                0, -height,
+                                0.001, -height,
+                                length - 0.001, -height,
+                                length, -height
+                        )
+                ),
+                List.of(
+                        new CubicBezierFunction(
+                                0, width / 2.0,
+                                0.001, width / 2.0,
+                                length - 0.001, width / 2.0,
+                                length, width / 2.0
+                        )
+                )
+        );
     }
 
     private static List<SectionPropertyMapEntry> buildThicknessList(List<CubicBezierFunction> sideView, double thickness) {
@@ -122,8 +218,8 @@ public class Hull {
         // Check for null in any list
         if (Stream.of(thicknessMap, bulkheadMap, sideView, topView).anyMatch(Objects::isNull))
             throw new IllegalArgumentException("sideView, topView, thicknessList, and bulkheadList must not be null");
-        if (thicknessMap.size() < 2 || bulkheadMap.size() < 2)
-            throw new IllegalArgumentException("There must be at least two sections in the side view");
+        if (thicknessMap.isEmpty() || bulkheadMap.isEmpty())
+            throw new IllegalArgumentException("There must be at least one section in the side view");
         if (sideView.size() != topView.size() || thicknessMap.size() != sideView.size() || bulkheadMap.size() != sideView.size())
             throw new IllegalArgumentException("sideView, topView, thicknessList, and bulkheadList must have the same number of elements");
     }
@@ -150,6 +246,92 @@ public class Hull {
                                 s.getX(), s.getRx(), side.getX1(), side.getX2()));
                 });
     }
+
+    /**
+     * Validates that the floor thickness (i.e. the wall thickness, which is used as floor thickness)
+     * does not exceed 25% of the canoe's maximum height.
+     * In the new model, wall thickness is defined in the thickness map inside hullProperties.
+     */
+    private void validateFloorThickness() {
+        double canoeHeight = getMaxHeight();
+        hullProperties.getThicknessMap().forEach(entry -> {
+            double thickness = Double.parseDouble(entry.getValue());
+            if (thickness > canoeHeight / 4) {
+                throw new IllegalArgumentException("Hull floor thickness must not exceed 1/4 of the canoe's max height");
+            }
+        });
+    }
+
+    /**
+     * Validates that the side–view Bézier segments cover a continuous sub-interval of R^+ with C¹ continuity.
+     * This method checks that:
+     *  - The first segment starts at x = 0.
+     *  - Adjacent segments have matching endpoints (x and y).
+     *  - The slopes at the junction (computed from the endpoint control point of the current segment and
+     *    the starting control point of the next segment) match within a small tolerance.
+     * Note this is an "upgrade" from the old models validateNoSectionGaps which only checks C0 (C1 includes C0 too!)
+     */
+    private void validateC1Continuity() {
+        List<CubicBezierFunction> segments = this.sideViewSegments;
+        double tol = 1e-6;
+        // Ensure the first segment starts at x = 0.
+        if (Math.abs(segments.getFirst().getX1()) > tol)
+            throw new IllegalArgumentException("The hull should start at x = 0");
+
+        for (int i = 0; i < segments.size() - 1; i++) {
+            CubicBezierFunction current = segments.get(i);
+            CubicBezierFunction next = segments.get(i + 1);
+
+            // Check that the x-coordinate of current segment's end equals the next segment's start.
+            if (Math.abs(current.getX2() - next.getX1()) > tol)
+                throw new IllegalArgumentException("Hull segments do not join continuously in x: "
+                        + current.getX2() + " vs " + next.getX1());
+
+            // Check that the y-values at the boundary are continuous.
+            double currentEndY = current.value(current.getX2());
+            double nextStartY = next.value(next.getX1());
+            if (Math.abs(currentEndY - nextStartY) > tol)
+                throw new IllegalArgumentException("Hull segments do not join continuously in y: "
+                        + currentEndY + " vs " + nextStartY);
+
+            // Compute the slope at the end of the current segment.
+            double currentSlope = CalculusUtils.computeSlope(current.getControlX2(), current.getControlY2(),
+                    current.getX2(), current.getY2(), tol);
+            // Compute the slope at the start of the next segment.
+            double nextSlope = CalculusUtils.computeSlope(next.getX1(), next.getY1(),
+                    next.getControlX1(), next.getControlY1(), tol);
+            if (Math.abs(currentSlope - nextSlope) > tol)
+                throw new IllegalArgumentException("Hull segments do not join with C¹ continuity: slopes "
+                        + currentSlope + " vs " + nextSlope);
+        }
+    }
+
+    /**
+     * Validates that the hull walls (new model) do not overlap.
+     * For each section defined in the thickness map, the wall thickness must not exceed half
+     * of that section's width (computed from the corresponding top-view Bézier segment).
+     */
+    private void validateWallThickness() {
+        double tol = 1e-6;
+        List<SectionPropertyMapEntry> thicknessMap = hullProperties.getThicknessMap();
+        // Assuming thicknessMap and topViewSegments have the same ordering and length.
+        for (int i = 0; i < thicknessMap.size(); i++) {
+            SectionPropertyMapEntry entry = thicknessMap.get(i);
+            double currentThickness = Double.parseDouble(entry.getValue());
+            CubicBezierFunction topCurve = topViewSegments.get(i);
+            UnivariateObjectiveFunction obj = new UnivariateObjectiveFunction(x -> Math.abs(topCurve.value(x)));
+            double maxTop = new BrentOptimizer(1e-10, 1e-14)
+                    .optimize(MaxEval.unlimited(), obj, new SearchInterval(entry.getX(), entry.getRx()))
+                    .getValue();
+            double sectionWidth = 2 * maxTop;
+            if (currentThickness - (sectionWidth / 2) > tol) {
+                throw new IllegalArgumentException(String.format(
+                        "Hull walls would be greater than the width of the canoe. Thickness: %.4f, Allowed max: %.4f",
+                        currentThickness, sectionWidth / 2));
+            }
+        }
+    }
+
 
     @JsonIgnore
     public double getMaxHeight() {
@@ -186,113 +368,188 @@ public class Hull {
     }
 
     /**
-     * Computes the list of HullSection objects from the new API fields.
-     * For each Section from the side view, the corresponding top–view curve is reformed to match the x-coordinates of knot points
-     * De Casteljau’s algorithm is used via HullGeometryService
-     * @return the list of computed HullSection objects.
+     * Returns the maximum width of the hull computed directly from the top-view segments.
+     * For each top-view segment, it finds the maximum absolute value over its domain and doubles it,
+     * then returns the largest width among all segments.
+     *
+     * @return the maximum hull width.
      */
     @JsonIgnore
-    public List<HullSection> getHullSectionsReformedFromDeCasteljaus() {
-        List<Section> sections = sideViewSegments.stream()
-                .map(bezier -> new Section(bezier.getX1(), bezier.getX2()))
-                .toList();
-
-        // Convert top–view curves to match side view knot x-coords using de Casteljau's algorithm
-        List<CubicBezierFunction> convertedTopView = new ArrayList<>();
-        for (int i = 0; i < sections.size(); i++) {
-            Section sec = sections.get(i);
-            double desiredLeftX = sec.getX();
-            double desiredRightX = sec.getRx();
-            CubicBezierFunction originalTop = topViewSegments.get(i);
-            // Compute parameter values for the new boundaries.
-            double t0 = (desiredLeftX - originalTop.getX1()) / (originalTop.getX2() - originalTop.getX1());
-            double t1 = (desiredRightX - originalTop.getX1()) / (originalTop.getX2() - originalTop.getX1());
-            // Extract the subsegment that exactly spans [desiredLeftX, desiredRightX].
-            CubicBezierFunction newTopCurve = HullGeometryService.extractBezierSegment(originalTop, t0, t1);
-            convertedTopView.add(newTopCurve);
+    public double getMaxWidth() {
+        double maxWidth = 0;
+        UnivariateOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);
+        for (CubicBezierFunction seg : topViewSegments) {
+            double start = seg.getX1();
+            double end = seg.getX2();
+            UnivariateObjectiveFunction objective = new UnivariateObjectiveFunction(x -> Math.abs(seg.value(x)));
+            double segMax = optimizer.optimize(MaxEval.unlimited(), objective, new SearchInterval(start, end)).getValue();
+            double segWidth = 2 * segMax;
+            if (segWidth > maxWidth) {
+                maxWidth = segWidth;
+            }
         }
+        return maxWidth;
+    }
 
-        // Build HullSection objects using the side–view curves and the reformed top–view curves
-        List<HullSection> computedSections = new ArrayList<>();
-        for (int i = 0; i < sections.size(); i++) {
-            Section section = sections.get(i);
-            SectionPropertyMapEntry thicknessMapEntry = hullProperties.getThicknessMap().get(i);
-            SectionPropertyMapEntry bulkheadMapEntry = hullProperties.getBulkheadMap().get(i);
-            double thickness = Double.parseDouble(thicknessMapEntry.getValue());
-            boolean isFilledBulkhead = Boolean.parseBoolean(bulkheadMapEntry.getValue());
-            HullSection hs = new HullSection(sideViewSegments.get(i), convertedTopView.get(i), section.getX(), section.getRx(), thickness, isFilledBulkhead);
-            computedSections.add(hs);
+    /**
+     * @return the maximum wall thickness of the canoe,
+     * computed directly from the thickness map in hullProperties.
+     */
+    @JsonIgnore
+    public double getMaxThickness() {
+        return hullProperties.getThicknessMap().stream()
+                .mapToDouble(entry -> Double.parseDouble(entry.getValue()))
+                .max()
+                .orElse(0);
+    }
+
+    /**
+     * Returns a function A(x) which models the cross-sectional area of the canoe as a function of length x.
+     * where side(x) is obtained from the sideViewSegments, top(x) from topViewSegments,
+     * and the adjustment factor accounts for the difference between the actual front profile
+     * and its encasing rectangle.
+     * @return the cross-sectional area function A(x)
+     */
+    @JsonIgnore
+    public BoundedUnivariateFunction getCrossSectionalAreaFunction() {
+        return x -> {
+            double sideVal = Math.abs(CalculusUtils.getSplineY(sideViewSegments, x));
+            double topVal  = 2 * Math.abs(CalculusUtils.getSplineY(topViewSegments, x));
+            return sideVal * topVal * crossSectionalAreaAdjustmentFactorFunction.value(sideVal);
+        };
+    }
+
+    /**
+     * @return the total volume of the canoe by numerically integrating the cross-sectional area function A(x) over the full hull x-domain.
+     */
+    @JsonIgnore
+    public double getTotalVolume() {
+        Section full = getSection();
+        return CalculusUtils.integrator.integrate(
+                MaxEval.unlimited().getMaxEval(),
+                getCrossSectionalAreaFunction(),
+                full.getX(), full.getRx());
+    }
+
+    /**
+     * Defines a function A_inner(x) which models the inner (cavity) cross-sectional area
+     * of the canoe as a function of x. The inner area is computed by subtracting wall thickness
+     * from both the height and width. For each x the wall thickness and bulkhead flag are
+     * looked up from the hullProperties maps.
+     * @return the function A_inner(x)
+     */
+    @JsonIgnore
+    public BoundedUnivariateFunction getInnerCrossSectionalAreaFunction() {
+        return x -> {
+            double sideVal = Math.abs(CalculusUtils.getSplineY(sideViewSegments, x));
+            double topVal  = 2 * Math.abs(CalculusUtils.getSplineY(topViewSegments, x));
+            double t = hullProperties.getThicknessMap().stream()
+                    .filter(entry -> entry.getX() <= x && x <= entry.getRx())
+                    .findFirst()
+                    .map(entry -> Double.parseDouble(entry.getValue()))
+                    .orElseThrow(() -> new RuntimeException("No thickness entry for x = " + x));
+            boolean fillBulkhead = hullProperties.getBulkheadMap().stream()
+                    .filter(entry -> entry.getX() <= x && x <= entry.getRx())
+                    .findFirst()
+                    .map(entry -> Boolean.parseBoolean(entry.getValue()))
+                    .orElse(false);
+            int numWalls = fillBulkhead ? 2 : 1;
+            double innerSide = Math.max(sideVal - numWalls * t, 0);
+            double innerTop  = Math.max(topVal - 2 * t, 0);
+            return innerSide * innerTop * crossSectionalAreaAdjustmentFactorFunction.value(sideVal);
+        };
+    }
+
+    /**
+     * @return the bulkhead volume of the canoe by integrating the inner cross-sectional area A_inner(x) over each interval specified in the bulkhead map that is flagged true.
+     */
+    @JsonIgnore
+    public double getBulkheadVolume() {
+        double bulkVol = 0;
+        for (SectionPropertyMapEntry entry : hullProperties.getBulkheadMap()) {
+            if (Boolean.parseBoolean(entry.getValue())) {
+                double xStart = entry.getX();
+                double xEnd   = entry.getRx();
+                bulkVol += CalculusUtils.integrator.integrate(
+                        MaxEval.unlimited().getMaxEval(),
+                        getInnerCrossSectionalAreaFunction(),
+                        xStart, xEnd);
+            }
         }
-        return computedSections;
+        return bulkVol;
     }
 
-    // End New API ▲ ▲ ▲ (Please include getters / validators that work directly with Bézier curves here in the future)
-    // ==================================================================================
-    // Begin Old API ▼ ▼ ▼ (Please include getters / validators that work with the hullSections based model here in the future)
-
     /**
-     * This is the old Hull model, modelled with hull sections.
-     * It is intended to fully maintain all functionality of this API
-     * The new parts of the model should ensure this part works the same
-     * For now, this model is used for serialization and storage still
-     * @param concreteDensity the density of concrete, automatically set to be uniform across the hull
-     * @param bulkheadDensity the density of the bulkheads (typically styrofoam), automatically set to be uniform across the hull
-     * @param hullSections the list of sections that comprises the hull
+     * Defines a function A_concrete(x) which models the cross-sectional area of the concrete
+     * (i.e. the hull walls) as a function of x. This is given by subtracting the inner (cavity) area from the outer area.
+     * @return the function A_concrete(x)
      */
-    public Hull(double concreteDensity, double bulkheadDensity, List<HullSection> hullSections) {
-        hullSections.sort(Comparator.comparingDouble(Section::getX));
-        validateBasicValuesOld(concreteDensity, bulkheadDensity, hullSections);
-        validateNoSectionGaps(hullSections);
-        // validateFloorThickness(hullSections);
-        validateWallThickness(hullSections);
-
-        for (HullSection hullSection : hullSections) {
-            hullSection.setConcreteDensity(concreteDensity);
-            hullSection.setBulkheadDensity(bulkheadDensity);
-        }
-
-        this.concreteDensity = concreteDensity;
-        this.bulkheadDensity = bulkheadDensity;
-        this.hullSections = hullSections;
-        this.isOldModel = true;
-    }
-
-    private void validateBasicValuesOld(double concreteDensity, double bulkheadDensity, List<HullSection> hullSections) {
-        if (concreteDensity <= 0)
-            throw new IllegalArgumentException("concreteDensity must be greater than zero");
-        if (bulkheadDensity <= 0)
-            throw new IllegalArgumentException("bulkheadDensity must be greater than zero");
-        if (hullSections.size() <= 2)
-            throw new IllegalArgumentException("At least two hull sections required");
+    @JsonIgnore
+    public BoundedUnivariateFunction getConcreteCrossSectionalAreaFunction() {
+        BoundedUnivariateFunction outer = getCrossSectionalAreaFunction();
+        BoundedUnivariateFunction inner = getInnerCrossSectionalAreaFunction();
+        return x -> outer.value(x) - inner.value(x);
     }
 
     /**
-     * Basic constructor for a simple model, useful before the user defines geometry / material properties
-     * Models the hull as a single section which is a 1D line of the given length
-     * @param length the length
+     * @return the total concrete volume of the canoe by integrating the concrete cross-sectional area function A_concrete(x) over the full hull x-domain.
      */
-    public Hull(double length, double height, double width) {
-        this.hullSections = List.of(new HullSection(length, height, width));
-        this.concreteDensity = 0;
-        this.bulkheadDensity = 0;
-        this.isOldModel = true;
+    @JsonIgnore
+    public double getConcreteVolume() {
+        Section full = getSection();
+        return CalculusUtils.integrator.integrate(
+                MaxEval.unlimited().getMaxEval(),
+                getConcreteCrossSectionalAreaFunction(),
+                full.getX(), full.getRx());
     }
 
     /**
-     * @return the canoe hull self-weight, in kN (returns with a negative sign representing the downward load)
-     * Note: this includes bulkheads weight if specified with fillBulkhead
+     * Defines a function m(x) which models the mass distribution along the canoe (kg/m).
+     * The mass per unit length is computed from the concrete area, and if a bulkhead is present
+     * at x, the inner (cavity) mass (using bulkhead density) is also included.
+     * @return the mass distribution function m(x)
      */
-    @JsonIgnore @Traceable
-    public double getWeight() {
-        return getHullSections().stream().mapToDouble(HullSection::getWeight).sum();
+    @JsonIgnore
+    public BoundedUnivariateFunction getMassDistributionFunction() {
+        double concreteDens = concreteDensity;
+        double bulkheadDens = bulkheadDensity;
+        return x -> {
+            double concreteMass = getConcreteCrossSectionalAreaFunction().value(x) * concreteDens;
+            boolean fillBulkhead = hullProperties.getBulkheadMap().stream()
+                    .filter(entry -> entry.getX() <= x && x <= entry.getRx())
+                    .findFirst()
+                    .map(entry -> Boolean.parseBoolean(entry.getValue()))
+                    .orElse(false);
+            if (fillBulkhead) {
+                double bulkheadMass = getInnerCrossSectionalAreaFunction().value(x) * bulkheadDens;
+                return concreteMass + bulkheadMass;
+            } else return concreteMass;
+        };
     }
 
     /**
-     * @return the mass of the hull in kg
+     * @return the total mass of the canoe (in kg) by integrating the mass distribution m(x)over the full hull x-domain.
      */
     @JsonIgnore
     public double getMass() {
-        return getHullSections().stream().mapToDouble(HullSection::getMass).sum();
+        Section full = getSection();
+        return CalculusUtils.integrator.integrate(
+                MaxEval.unlimited().getMaxEval(),
+                getMassDistributionFunction(),
+                full.getX(), full.getRx());
+    }
+
+    /**
+     * @return a composite function representing the stitched-together side profile curves of all hull sections
+     * Note that this returned function has been shifted so that it's bottom is at y = 0 instead of its top at y = 0
+     */
+    @JsonIgnore
+    public BoundedUnivariateFunction getPiecedSideProfileCurveShiftedAboveYAxis() {
+        List<BoundedUnivariateFunction> functions = sideViewSegments.stream().map(seg -> (BoundedUnivariateFunction) seg).toList();
+        List<Section> sections = sideViewSegments.stream()
+                .map(seg -> new Section(seg.getX1(), seg.getX2()))
+                .toList();
+        return CalculusUtils.createCompositeFunctionShiftedPositive(functions, sections, false);
     }
 
     /**
@@ -308,154 +565,89 @@ public class Hull {
      */
     @JsonIgnore
     public DiscreteLoadDistribution getSelfWeightDistributionDiscretized() {
-        return DiscreteLoadDistribution.fromPiecewiseContinuous(LoadType.HULL, getSelfWeightDistribution(), (int) (getSection().getLength() * 100));
+        return DiscreteLoadDistribution.fromPiecewise(LoadType.HULL, getSelfWeightDistribution(), (int) (getSection().getLength() * 100));
     }
 
     /**
-     * @return the total volume of the canoe by summing up the volumes of all sections.
+     * New method in the new model
+     * Returns the mass (kg) over the specified section by integrating m(x).
+     * Validates that section.getX() > 0 and section.getRx() < getLength().
+     * @param section the section to integrate over.
+     * @return the mass of the section.
      */
-    @JsonIgnore
-    public double getTotalVolume() {
-        if (getHullSections() == null || getHullSections().isEmpty()) return 0;
-        return getHullSections().stream().mapToDouble(HullSection::getVolume).sum();
+    public double getSectionVolume(Section section) {
+        if (section.getX() < 0)
+            throw new IllegalArgumentException("Section start x (" + section.getX() + ") must be > 0.");
+        if (section.getRx() > getLength())
+            throw new IllegalArgumentException("Section end x (" + section.getRx() + ") must be < hull length (" + getLength() + ").");
+        return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(),
+                getCrossSectionalAreaFunction(), section.getX(), section.getRx());
     }
 
     /**
-     * @return the total concrete volume of the canoe by summing up the concrete volumes of all sections.
+     * New method in the new model
+     * Returns the maximum height (in m) for the specified section by optimizing the side–view function.
+     * Validates that section.getX() > 0 and section.getRx() < getLength().
+     * @param section the section over which to determine the height.
+     * @return the maximum height of the section.
      */
     @JsonIgnore
-    public double getConcreteVolume() {
-        return getHullSections().stream().mapToDouble(HullSection::getConcreteVolume).sum();
-    }
+    public double getSectionSideViewCurveHeight(Section section) {
+        if (section.getX() < 0)
+            throw new IllegalArgumentException("Section start x (" + section.getX() + ") must be > 0.");
+        if (section.getRx() > getLength())
+            throw new IllegalArgumentException("Section end x (" + section.getRx() + ") must be < hull length (" + getLength() + ").");
 
-    /**
-     * @return the total bulkhead volume of the canoe by summing up the bulkhead volumes of all sections.
-     */
-    @JsonIgnore
-    public double getBulkheadVolume() {
-        return getHullSections().stream().mapToDouble(HullSection::getBulkheadVolume).sum();
-    }
-
-    /**
-     * @return a TreeSet of endpoints for internally defined endpoints.
-     * This can be theoretically scaled to a max to approach the true accuracy of the actual canoe
-     */
-    @JsonIgnore
-    public TreeSet<Double> getHullSectionEndPoints() {
-        // Add endpoints of hull sections if they are defined
-        TreeSet<Double> s = new TreeSet<>();
-        if (!getHullSections().isEmpty()) {
-            for (HullSection section : getHullSections()) {
-                s.add(section.getX());
+        // Search for the side-view segment that covers x
+        UnivariateObjectiveFunction objective = new UnivariateObjectiveFunction(x -> {
+            for (CubicBezierFunction seg : sideViewSegments) {
+                if (seg.getX1() <= x && x <= seg.getX2()) return -seg.value(x);
             }
-            s.add(getHullSections().getLast().getRx());
-        }
-        return s;
+            throw new IllegalArgumentException("x = " + x + " is out of bounds of the side view segments.");
+        });
+
+        SearchInterval interval = new SearchInterval(section.getX(), section.getRx());
+        UnivariatePointValuePair result = new BrentOptimizer(1e-10, 1e-14).optimize(MaxEval.unlimited(), objective, interval);
+        return result.getValue();
     }
 
     /**
-     * @return a composite function representing the stitched-together side profile curves of all hull sections
-     * Note that this returned function has been shifted so that it's bottom is at y = 0 instead of its top at y = 0
+     * New method in the new model
+     * Returns the mass (kg) over the specified section by integrating m(x).
+     * Validates that section.getX() > 0 and section.getRx() < getLength().
+     * @param section the section to integrate over.
+     * @return the mass of the section.
+     */
+    public double getSectionMass(Section section) {
+        if (section.getX() < 0)
+            throw new IllegalArgumentException("Section start x (" + section.getX() + ") must be > 0.");
+        if (section.getRx() > getLength())
+            throw new IllegalArgumentException("Section end x (" + section.getRx() + ") must be < hull length (" + getLength() + ").");
+        return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(),
+                getMassDistributionFunction(), section.getX(), section.getRx());
+    }
+
+    /**
+     * Defines a function w(x) which models the load (weight) distribution along the canoe in kN/m.where g is the gravitational acceleration.
+     * @return the weight distribution function w(x)
      */
     @JsonIgnore
-    public BoundedUnivariateFunction getPiecedSideProfileCurveShiftedAboveYAxis() {
-        List<BoundedUnivariateFunction> functions = hullSections.stream().map(HullSection::getSideProfileCurve).toList();
-        List<Section> sections = hullSections.stream().map(sec -> (Section) sec).toList();
-        return CalculusUtils.createCompositeFunctionShiftedPositive(functions, sections, false);
+    public BoundedUnivariateFunction getWeightDistributionFunction() {
+        double g = PhysicalConstants.GRAVITY.getValue();
+        return x -> -getMassDistributionFunction().value(x) * g / 1000.0;
     }
 
     /**
-     * Redefines the same hull in terms of different sections from a list of critical points' x-coordinates
-     * Accomplishes this by duplicating the existing curves and splitting up intervals strategically
-     * For example, consider a side view curve segment C defined for the hull model on [x, rx]
-     * A point load (marks a critical point) is added at position k such that x < k < rx, and we want to reform the hull sections split by k
-     * This method would duplicate it and create C1 = C on [x, k], C2 = C on [k, rx] implying C = C1 ∪ C2 exactly so geometry stays consistent
-     * Note that this form of the hull is for internal use in the floating solver algorithm, and it is not intended to work when displayed textually or graphically in the frontend
-     * @param criticalPoints the points which form the intervals to reform the hull under
+     * Returns the total self-weight of the canoe (in kN) by integrating the weight distribution w(x)
+     * over the full hull x-domain. The negative sign indicates a downward load.
+     * @return the total weight.
      */
     @JsonIgnore
-    public List<HullSection> getHullSectionsReformedBySegmentDuplication(List<Double> criticalPoints) {
-        List<Section> sectionsToMapTo = CalculusUtils.sectionsFromEndpoints(criticalPoints);
-        List<HullSection> newHullSections = new ArrayList<>();
-        List<HullSection> originalSections = getHullSections();
-
-        for (Section newSection : sectionsToMapTo) {
-            double newStart = newSection.getX();
-            double newEnd = newSection.getRx();
-
-            List<HullSection> overlappingSections = originalSections.stream()
-                    .filter(hs -> hs.getRx() > newStart && hs.getX() < newEnd)
-                    .toList();
-
-            for (HullSection overlappingSection : overlappingSections) {
-                double overlapStart = Math.max(newStart, overlappingSection.getX());
-                double overlapEnd = Math.min(newEnd, overlappingSection.getRx());
-
-                // Create new HullSection based on overlapping portion
-                if (overlapEnd > overlapStart) {
-                    HullSection newHullSection = new HullSection(
-                            overlappingSection.getSideProfileCurve(),
-                            overlappingSection.getTopProfileCurve(),
-                            overlapStart,
-                            overlapEnd,
-                            overlappingSection.getThickness(),
-                            overlappingSection.isFilledBulkhead()
-                    );
-                    newHullSections.add(newHullSection);
-                }
-            }
-        }
-        return newHullSections;
-    }
-
-    /**
-     * Validates that the sections provided cover without discontinuities some sub-interval of R^+
-     * @param sections the sections to validate before forming a hull
-     */
-    // TODO: ideally this should also check that the derivative of the section endpoints at each piecewise function is equal to guarantee smoothness
-    // TODO: this and the above line's validations should be moved to a new class CubicBezierSpline which wraps List<CubicBezierFunction>
-    private void validateNoSectionGaps(List<HullSection> sections) {
-        if (sections.getFirst().getX() != 0) throw new IllegalArgumentException("The hull should start at x = 0");
-
-        for (int i = 0; i < sections.size() - 1; i++) {
-            HullSection current = sections.get(i);
-            HullSection next = sections.get(i + 1);
-            double currentEnd = current.getRx();
-            double nextStart = next.getX();
-            double currentEndDepth = current.getSideProfileCurve().value(currentEnd);
-            double nextStartDepth = next.getSideProfileCurve().value(nextStart);
-            if (Math.abs(currentEndDepth - nextStartDepth) > 1e-6) // small tolerance for discontinuities in case of floating point errors
-                throw new IllegalArgumentException("Hull shape functions must form a continuous curve at section boundaries.");
-        }
-    }
-
-//    /**
-//     * As a reasonable benchmark (instead of a more complicated integral), an assumption is taken on for the floors
-//     * We use wall thickness as wall and floor thickness is the same
-//     * The floor should be no thicker than 25% of the canoe's height (this is already pretty generous realistically)
-//     */
-//    private void validateFloorThickness(List<HullSection> sections) {
-//        double canoeHeight = getMaxHeightOldModel(sections);
-//        for (HullSection section : sections) {
-//            // This is chosen arbitrarily as a reasonable benchmark
-//            if (section.getThickness() > canoeHeight / 4)
-//                throw new IllegalArgumentException("Hull floor thickness must not exceed 1/4 of the canoe's max height");
-//        }
-//    }
-
-    /**
-     * The two hull walls should not overlap and thus each hull wall can be at most half the canoes width
-     * (Although realistically the number is way smaller this is the theoretical max)
-     */
-    private void validateWallThickness(List<HullSection> sections) {
-        for (HullSection section : sections) {
-            if (section.getThickness() > section.getMaxWidth() / 2) {
-                throw new IllegalArgumentException(String.format(
-                        "Hull walls would be greater than the width of the canoe. " +
-                                "Thickness: %.4f, Allowed max: %.4f",
-                        section.getThickness(), section.getMaxWidth() / 2
-                ));
-            }
-        }
+    public double getWeight() {
+        Section full = getSection();
+        return CalculusUtils.integrator.integrate(
+                MaxEval.unlimited().getMaxEval(),
+                getWeightDistributionFunction(),
+                full.getX(), full.getRx());
     }
 }

@@ -15,6 +15,8 @@ import java.util.List;
 @Data
 public class HullProperties {
 
+    // These are not actual maps because I could not get the jackson serialization working for the life of me with actual maps
+    // Once the new hull model is fully integrated, give it a go if you can figure it out, these should be maps lol
     @JsonProperty("thicknessMap")
     private List<SectionPropertyMapEntry> thicknessMap; // [[x, rx], thickness (mm)]
     @JsonProperty("bulkheadMap")

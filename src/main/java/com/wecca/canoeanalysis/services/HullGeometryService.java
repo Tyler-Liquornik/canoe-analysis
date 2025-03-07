@@ -4,7 +4,6 @@ import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.controllers.modules.HullBuilderController;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullProperties;
-import com.wecca.canoeanalysis.models.canoe.HullSection;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.function.Range;
 import com.wecca.canoeanalysis.models.function.Section;
@@ -54,14 +53,14 @@ public class HullGeometryService {
      * remains within the rectangular bounds defined by x = 0, x = L, y = 0, y = -h.
      * @param knot the knot point which acts as the origin
      * @param thetaKnown the known angle in degrees (relative to the origin) at which the point lies.
-     * @param selectedHullSectionIndex the index of the hullSection in the hull in which to bound the radius
+     * @param selectedBezierSegmentIndex the index of the hullSection in the hull in which to bound the radius
      *                                 (not necessarily the current state hullSectionIndex in HullBuilderController)
      * @return The maximum radius (r) such that the point stays within the bounds.
      */
-    public static double calculateMaxR(Point2D knot, double thetaKnown, int selectedHullSectionIndex) {
+    public static double calculateMaxR(Point2D knot, double thetaKnown, int selectedBezierSegmentIndex) {
         Hull hull = getHull();
         double hullHeight = -hull.getMaxHeight();
-        CubicBezierFunction bezier = hull.getSideViewSegments().get(selectedHullSectionIndex);
+        CubicBezierFunction bezier = hull.getSideViewSegments().get(selectedBezierSegmentIndex);
         double xL = bezier.getX1();
         double xR = bezier.getX2();
 
@@ -106,13 +105,13 @@ public class HullGeometryService {
      * @param currTheta The current angle (in degrees)
      * @param isLeft True if the control point is on the left side (180–360 degrees), false otherwise (0–180)
      * @param boundWithAdjacentSections True if the range should account for constraints from adjacent sections
-     * @param selectedHullSectionIndex The index of the hull section to process for bounding
+     * @param selectedBezierSegmentIndex The index of the hull section to process for bounding
      *                                  (not necessarily the current state hullSectionIndex in HullBuilderController)
      * @return A two-element array containing the minimum and maximum valid theta values
      */
-    public static double[] calculateThetaBounds(Point2D knot, double rKnown, double currTheta, boolean isLeft, boolean boundWithAdjacentSections, int selectedHullSectionIndex) {
+    public static double[] calculateThetaBounds(Point2D knot, double rKnown, double currTheta, boolean isLeft, boolean boundWithAdjacentSections, int selectedBezierSegmentIndex) {
         Hull hull = getHull();
-        CubicBezierFunction bezier = hull.getSideViewSegments().get(selectedHullSectionIndex);
+        CubicBezierFunction bezier = hull.getSideViewSegments().get(selectedBezierSegmentIndex);
         double l = bezier.getX2() - bezier.getX1();
         double h = -hull.getMaxHeight();
         Rectangle boundingRect = new Rectangle(bezier.getX1(), 0.0, l, h);
@@ -275,14 +274,14 @@ public class HullGeometryService {
      */
     public static double[] calculateAdjacentSectionThetaBounds(Point2D knot, boolean isLeft, double currTheta) {
         Hull hull = getHull();
-        int selectedHullSectionIndex = hullBuilderController.getSelectedBezierSegmentIndex();
+        int selectedBezierSegmentIndex = hullBuilderController.getSelectedBezierSegmentIndex();
         double thetaMin = isLeft ? 180 : 0;
         double thetaMax = isLeft ? 360 : 180;
 
-        int adjacentHullSectionIndex = selectedHullSectionIndex + (isLeft ? -1 : 1);
+        int adjacentHullSectionIndex = selectedBezierSegmentIndex + (isLeft ? -1 : 1);
         boolean hasAdjacentSection = isLeft
-                ? selectedHullSectionIndex > 0
-                : selectedHullSectionIndex < hull.getSideViewSegments().size() - 1;
+                ? selectedBezierSegmentIndex > 0
+                : selectedBezierSegmentIndex < hull.getSideViewSegments().size() - 1;
 
         if (hasAdjacentSection) {
             CubicBezierFunction adjacentSegment = hull.getSideViewSegments().get(adjacentHullSectionIndex);
@@ -470,10 +469,10 @@ public class HullGeometryService {
             throw new IllegalArgumentException("parameterValues must have exactly 4 elements: [rL, θL, rR, θR]");
 
         Hull hull = getHull();
-        int selectedHullSectionIndex = hullBuilderController.getSelectedBezierSegmentIndex();
+        int selectedBezierSegmentIndex = hullBuilderController.getSelectedBezierSegmentIndex();
 
         // Get knot points
-        CubicBezierFunction selectedBezier = hull.getSideViewSegments().get(selectedHullSectionIndex);
+        CubicBezierFunction selectedBezier = hull.getSideViewSegments().get(selectedBezierSegmentIndex);
         List<Point2D> selectedKnotPoints = selectedBezier.getKnotPoints();
         Point2D selectedLKnot = selectedKnotPoints.getFirst();
         Point2D selectedRKnot = selectedKnotPoints.getLast();
@@ -492,11 +491,11 @@ public class HullGeometryService {
         }
 
         // Adjust adjacent sections if needed for C1 smoothness
-        boolean adjustingLeft = parameterIndex == 1 && selectedHullSectionIndex > 0;
-        boolean adjustingRight = parameterIndex == 3 && selectedHullSectionIndex < (hull.getSideViewSegments().size() - 1);
+        boolean adjustingLeft = parameterIndex == 1 && selectedBezierSegmentIndex > 0;
+        boolean adjustingRight = parameterIndex == 3 && selectedBezierSegmentIndex < (hull.getSideViewSegments().size() - 1);
 
         if (adjustingLeft || adjustingRight) {
-            int adjacentIndex = selectedHullSectionIndex + (adjustingLeft ? -1 : 1);
+            int adjacentIndex = selectedBezierSegmentIndex + (adjustingLeft ? -1 : 1);
             CubicBezierFunction adjacentBezier = hull.getSideViewSegments().get(adjacentIndex);
             Point2D selectedKnot = adjustingLeft ? selectedLKnot : selectedRKnot;
 

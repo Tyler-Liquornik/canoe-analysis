@@ -187,7 +187,8 @@ public class BeamController implements Initializable, ModuleController {
             // Only allow lengths in the specified range
             if (length >= 2 && length <= 10) {
                 // Update model state to default simple rectangular prism geometry
-                canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(length));
+                Hull defaultScaledHull = SharkBaitHullLibrary.generateDefaultHull(length);
+                canoe.setHull(defaultScaledHull);
 
                 // Change the label on the scale
                 axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
@@ -650,7 +651,7 @@ public class BeamController implements Initializable, ModuleController {
 
         // Check if there's too much force and the canoe will sink - we know this before solving
         double rotationX = canoe.getHull().getLength() / 2;
-        double maximumPossibleBuoyancyForce = BeamSolverService.getTotalBuoyancyForce(canoe, 0, rotationX, 0);
+        double maximumPossibleBuoyancyForce = BeamSolverService.getBuoyancyForceOnHull(0, 0, rotationX, canoe.getHull());
         if (-canoe.getNetForce() > maximumPossibleBuoyancyForce) {
             mainController.showSnackbar("Cannot solve for buoyancy as there is too much load. The canoe will sink!");
             return false;

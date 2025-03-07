@@ -105,7 +105,7 @@ public class DiagramService {
         }
         else if (hasPositive) filteredPoints.addAll(maxPoints);
         else if (hasNegative) {filteredPoints.addAll(minPoints);}
-        else return new TreeSet<>(Collections.emptyList());
+        else return new TreeSet<>(Comparator.comparingDouble(Point2D::getX).thenComparing(Point2D::getY));
 
         // Package and return
         TreeSet<Point2D> ts = new TreeSet<>(Comparator.comparingDouble(Point2D::getX).thenComparing(Point2D::getY));
@@ -461,7 +461,7 @@ public class DiagramService {
         if (!canoe.getAllLoadsOfType(PiecewiseContinuousLoadDistribution.class).isEmpty()) {
 
             List<DiscreteLoadDistribution> discretizations = canoe.getAllLoadsOfType(PiecewiseContinuousLoadDistribution.class).stream()
-                    .map(piecewise -> DiscreteLoadDistribution.fromPiecewiseContinuous(LoadType.DISCRETE_SECTION, piecewise, (int) (piecewise.getSection().getLength() * 100)))
+                    .map(piecewise -> DiscreteLoadDistribution.fromPiecewise(LoadType.DISCRETE_SECTION, piecewise, (int) (piecewise.getSection().getLength() * 100)))
                     .toList();
 
             for (DiscreteLoadDistribution loadDist : discretizations) {
@@ -489,7 +489,7 @@ public class DiagramService {
         if (!canoe.getAllLoadsOfType(PiecewiseContinuousLoadDistribution.class).isEmpty()) {
 
             List<DiscreteLoadDistribution> discretizations = canoe.getAllLoadsOfType(PiecewiseContinuousLoadDistribution.class).stream()
-                    .map(piecewise -> DiscreteLoadDistribution.fromPiecewiseContinuous(LoadType.DISCRETE_SECTION, piecewise, (int) (piecewise.getSection().getLength() * 100)))
+                    .map(piecewise -> DiscreteLoadDistribution.fromPiecewise(LoadType.DISCRETE_SECTION, piecewise, (int) (piecewise.getSection().getLength() * 100)))
                     .toList();
 
             for (DiscreteLoadDistribution loadDist : discretizations) {

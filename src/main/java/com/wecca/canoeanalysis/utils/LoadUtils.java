@@ -103,12 +103,14 @@ public class LoadUtils {
 
     /**
      * @param loads the list to operate on
+     * @param bulkheadMap a map describing where bulkheads are for typing the sections with LoadType objects
      * @return a new list of loads with PiecewiseContinuousLoadDistributions as DiscreteLoadDistributions
+     * Note: discretization also separates out LoadTypes
      */
-    public static List<Load> discretizeLoads(List<Load> loads) {
+    public static List<Load> discretizeLoads(List<Load> loads, List<SectionPropertyMapEntry> bulkheadMap) {
         loads = loads.stream().map(load -> {
             if (load instanceof PiecewiseContinuousLoadDistribution piecewise)
-                return DiscreteLoadDistribution.fromPiecewiseContinuous(load.getType(), piecewise);
+                return DiscreteLoadDistribution.fromPiecewiseTyped(load.getType(), piecewise, bulkheadMap);
             else
                 return load;
         }).toList();
