@@ -319,7 +319,6 @@ public class CalculusUtils
      * @param x the x–coordinate at which to evaluate.
      * @return the value of the segment covering x.
      */
-    @Traceable
     public static double getSplineY(List<CubicBezierFunction> splineSegments, double x) {
         int low = 0;
         int high = splineSegments.size() - 1;
