@@ -10,7 +10,6 @@ import com.wecca.canoeanalysis.models.load.ContinuousLoadDistribution;
 import com.wecca.canoeanalysis.models.load.LoadType;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.function.VertexFormParabolaFunction;
-import com.wecca.canoeanalysis.services.LoggerService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
@@ -20,35 +19,10 @@ import lombok.Setter;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.univariate.*;
-import java.util.function.Function;
 
 /**
- * In order ot apply calculus for precise, real-world representative modelling, we need to divide things into discrete sections
- * This class serves to apply this principle to the canoe hull
- * A key advantage of this is that each hull section can have its own geometry, allowing the use of piecewise functions
- * This is implemented with each hull section having its own geometry defining curves
- * Validation is then required when constructing a hull from hull sections to ensure the overall hull geometry
- * Is a piecewise-smooth C^1 curve
- *
- * Let the following conventions by applied for dimensioning purposes for language consistency
- *
- *         7 Z
- *       /
- *     /
- *    +-----------> X
- *   |               Length
- *   |         <------------------->
- *   V Y        ________-------‾‾‾‾|
- *         |   | \                |
- *         |   |  |`----......___|      7 Width
- *         |   𝘓_|______------‾‾|     /
- *         |   \|              |    /
- *  Height V    `----......___|   /
- *
- * "Length" refers to the x direction (left / right)
- * "Height" refers to the y direction (up / down) (defined by sideProfileCurve)
- * "Width" refers to the z direction (into / out of the screen) (defined by topProfileCurve)
- * "Thickness" refers to the normal direction of a surface to provide thickness to (+/- orientation is context dependent)
+ * @deprecated legacy code kept as a reference to the old HullSection model.
+ * This is for a clearer picture of previous development for newer developers who may join in the future
  */
 @Getter @Setter @EqualsAndHashCode(callSuper = true)
 public class HullSection extends Section
@@ -76,18 +50,6 @@ public class HullSection extends Section
     @JsonIgnore
     private double bulkheadDensity; // [kg/m^3]
 
-    /**
-     * Adjusts for difference in area of the section's curvature of the front profile view at a given height h
-     * See: https://www.desmos.com/calculator/9ookcwgenx
-     * TLDR: Uses the front profile of 2024's Shark Bait as a rough approximation for all reasonable future front profiles
-     * The hull curve is scaled based on the length of the user's hull design compared to Shark Bait
-     *
-     * This function encodes a relationship on the difference between a hull front profile, and it's encasing rectangle
-     * This idea is then extended into a function of waterline height h to get an integral defined function
-     * This is inefficient because this function is called for every h in the iterative floating case solution algorithm
-     * Instead I have built a polynomial regression fit for it which is faster to evaluate
-     * The 7th degree polynomial has R^2 = 0.9967 for the fully accurate function and was solved on Desmos
-     */
     @JsonIgnore @EqualsAndHashCode.Exclude
     private final BoundedUnivariateFunction crossSectionalAreaAdjustmentFactorFunction = h -> {
         double[] coefficients = new double[] {0, 17.771, -210.367, 1409.91, -5420.6, 11769.4, -13242.7, 5880.62};
@@ -126,6 +88,7 @@ public class HullSection extends Section
     }
 
     /**
+     * @deprecated since the Hull counterpart constructor that calls this was deleted as the new model used the name method signature
      * Basic constructor for a simple model, useful before the user defines geometry / material properties
      * Models the hull as a rectangular prism
      * @param length the length of the hull

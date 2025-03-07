@@ -10,6 +10,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class Section extends Range {
 
+    public Section() {
+        super();
+    }
+
     @JsonCreator
     public Section(@JsonProperty("x") double x, @JsonProperty("rx") double rx) {
         super(x, rx);

@@ -4,8 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
-import com.wecca.canoeanalysis.models.canoe.Hull;
-import com.wecca.canoeanalysis.models.canoe.HullSection;
+import com.wecca.canoeanalysis.utils.SectionPropertyMapEntry;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -53,32 +52,14 @@ public class DiscreteLoadDistribution extends Load {
     }
 
     /**
-     * Factory method to create a self-weight distribution from a hull
-     * Note: Only real difference in output with piecewise fromPiecewiseContinuous is the recognition and naming of bulkhead sections
-     * @param hull the hull to get the self-weight distribution of
-     */
-    public static DiscreteLoadDistribution fromHull(Hull hull) {
-        List<HullSection> hullSections = new ArrayList<>(hull.getHullSections());
-        hullSections.sort(Comparator.comparingDouble(Section::getX));
-
-        List<UniformLoadDistribution> loads = new ArrayList<>();
-        for (HullSection section : hullSections) {
-            double mag = section.getWeight() / section.getLength();
-            double x = section.getX();
-            double rx = section.getRx();
-            LoadType type = section.isFilledBulkhead() ? LoadType.DISCRETE_HULL_SECTION_HAS_BULKHEAD : LoadType.DISCRETE_SECTION;
-            loads.add(new UniformLoadDistribution(type, mag, x, rx));
-        }
-        return new DiscreteLoadDistribution(LoadType.HULL, loads);
-    }
-
-    /**
      * Factory method to create a distribution from a univariate function
+     * Sections are typed as DISCRETE_SECTION or DISCRETE_HULL_SECTION_HAS_BULKHEAD
      * Discretization implements a midpoint-based Riemann sum with intervals lengths (deltaX_i) matching intervals for pieces of the piecewise
+     * @param type the type of the load distribution
      * @param piecewise the function to discretize with average values of piecewise intervals
      * @return a DiscreteLoadDistribution object
      */
-    public static DiscreteLoadDistribution fromPiecewiseContinuous(LoadType type, PiecewiseContinuousLoadDistribution piecewise) {
+    public static DiscreteLoadDistribution fromPiecewiseTyped(LoadType type, PiecewiseContinuousLoadDistribution piecewise, List<SectionPropertyMapEntry> bulkheadMap) {
         List<UniformLoadDistribution> loads = piecewise.getPieces().entrySet().stream()
                 .map(piece -> {
                     Section section = piece.getKey();
@@ -87,16 +68,18 @@ public class DiscreteLoadDistribution extends Load {
 
                     LoadType sectionType;
                     if (type == LoadType.HULL) {
-                        HullSection hullSection = (HullSection) section;
-                        sectionType = hullSection.isFilledBulkhead() ? LoadType.DISCRETE_HULL_SECTION_HAS_BULKHEAD : LoadType.DISCRETE_SECTION;
-                     }
-                    else
+                        boolean isFilledBulkhead = bulkheadMap.stream()
+                                .filter(entry -> entry.getX() <= section.getX() && section.getRx() <= entry.getRx())
+                                .findFirst()
+                                .map(entry -> Boolean.parseBoolean(entry.getValue()))
+                                .orElse(false);
+                        sectionType = isFilledBulkhead ? LoadType.DISCRETE_HULL_SECTION_HAS_BULKHEAD : LoadType.DISCRETE_SECTION;
+                    } else {
                         sectionType = LoadType.DISCRETE_SECTION;
-
+                    }
                     return new UniformLoadDistribution(sectionType, mag, section.getX(), section.getRx());
                 })
                 .toList();
-
         return new DiscreteLoadDistribution(type, loads);
     }
 
@@ -108,7 +91,7 @@ public class DiscreteLoadDistribution extends Load {
      * @param numIntervals the number of subsections to split the function into
      * @return a DiscreteLoadDistribution object
      */
-    public static DiscreteLoadDistribution fromPiecewiseContinuous(LoadType type, PiecewiseContinuousLoadDistribution piecewise, int numIntervals) {
+    public static DiscreteLoadDistribution fromPiecewise(LoadType type, PiecewiseContinuousLoadDistribution piecewise, int numIntervals) {
         BoundedUnivariateFunction piecedFunction = piecewise.getPiecedFunction();
         double start = piecewise.getSection().getX();
         double end = piecewise.getSection().getRx();

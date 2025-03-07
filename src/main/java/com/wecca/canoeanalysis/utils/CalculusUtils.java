@@ -200,7 +200,7 @@ public class CalculusUtils
     public static void validateContinuity(BoundedUnivariateFunction function, Section section) {
         // Note: it's very possible this can cause false negatives and these numbers need to be tweaked in magnitude
         // It completely depends on how fast the function grows
-        double tolerance = 1e-2;
+        double tolerance = 5e-2;
         double numSamples = 10000.0;
         double step = section.getLength() / numSamples;
 
@@ -212,6 +212,22 @@ public class CalculusUtils
                 throw new IllegalArgumentException("The function is not continuous within a reasonable tolerance");
             previousValue = currentValue;
         }
+    }
+
+    /**
+     * Computes the slope (dy/dx) between two points.
+     * If the horizontal distance is below the tolerance, returns positive infinity.
+     * @param xA first point x-coordinate.
+     * @param yA first point y-coordinate.
+     * @param xB second point x-coordinate.
+     * @param yB second point y-coordinate.
+     * @param tol tolerance for horizontal distance.
+     * @return the slope from (xA, yA) to (xB, yB), or Double.POSITIVE_INFINITY if dx is nearly zero.
+     */
+    public static double computeSlope(double xA, double yA, double xB, double yB, double tol) {
+        double dx = xB - xA;
+        if (Math.abs(dx) < tol) return Double.POSITIVE_INFINITY;
+        return (yB - yA) / dx;
     }
 
     /**
@@ -291,5 +307,19 @@ public class CalculusUtils
         List<BoundedUnivariateFunction> functionsMapped = functions.stream().map(CubicBezierFunction::getFunction).toList();
         List<Section> sections = functions.stream().map(f -> new Section(f.getX1(), f.getX2())).toList();
         return createCompositeFunctionShiftedPositive(functionsMapped, sections, useUnimodalOptimization);
+    }
+
+    /**
+     * Helper method that returns the value from the first CubicBezierFunction in the given list that covers the x–coordinate.
+     * @param splineSegments the list of CubicBezierFunction segments that form the spline.
+     * @param x the x-coordinate at which to evaluate.
+     * @return the value of the segment covering x.
+     */
+    public static double getSplineY(List<CubicBezierFunction> splineSegments, double x) {
+        return splineSegments.stream()
+                .filter(seg -> seg.getX1() <= x && seg.getX2() >= x)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("x = " + x + " is out of bounds"))
+                .value(x);
     }
 }

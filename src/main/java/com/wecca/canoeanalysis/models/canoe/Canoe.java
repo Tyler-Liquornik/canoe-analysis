@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis.models.canoe;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wecca.canoeanalysis.models.data.SolveType;
+import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.load.*;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.LoadUtils;
@@ -44,8 +45,8 @@ public class Canoe
     }
 
     public void setHull(Hull hull) {
-        if (hull.getLength() < 0.01)
-            throw new IllegalArgumentException("Hull must be at least 0.01m in length");
+        if (hull.getLength() < 2)
+            throw new IllegalArgumentException("Hull must be at least 2m in length");
         this.hull = hull;
     }
 
@@ -141,12 +142,17 @@ public class Canoe
 
     /**
      * Critical points are points of interest which can be visualized as points where the equation of the load distribution changes
-     * @return a TreeSet of all the internal loading, external, loading, and hull sections endpoints
+     * @return a TreeSet of all the internal loading, external loading, and hull sections endpoints
      */
     @JsonIgnore
     public TreeSet<Double> getCriticalPointSet() {
         TreeSet<Double> endPoints = new TreeSet<>();
-        endPoints.addAll(hull.getHullSectionEndPoints());
+        if (!hull.getSideViewSegments().isEmpty()) {
+            for (CubicBezierFunction section : hull.getSideViewSegments()) {
+                endPoints.add(section.getX());
+            }
+            endPoints.add(hull.getSideViewSegments().getLast().getRx());
+        }
         for (Load l : loads) {
             endPoints.add(l.getX());
             if (l instanceof LoadDistribution dist)
@@ -178,10 +184,11 @@ public class Canoe
 
     /**
      * @return all loads with piecewise continuous loads discretized
+     * Note: discretization also separates out LoadTypes
      */
     @JsonIgnore
     public List<Load> getAllLoadsDiscretized() {
-        return LoadUtils.discretizeLoads(LoadUtils.addHullAsLoad(loads, hull));
+        return LoadUtils.discretizeLoads(LoadUtils.addHullAsLoad(loads, hull), hull.getHullProperties().getBulkheadMap());
     }
 
     /**
@@ -244,21 +251,5 @@ public class Canoe
                 throw new IllegalArgumentException("Cannot process loads of type: " + lLoad.getClass());
             return false;
         });
-    }
-
-    /**
-     * @return the maximum width of the hull
-     */
-    @JsonIgnore
-    public double getMaxWidth() {
-        return hull.getHullSections().stream().max(Comparator.comparing(HullSection::getMaxWidth)).get().getMaxWidth();
-    }
-
-    /**
-     * @return the maximum thickness of the canoe
-     */
-    @JsonIgnore
-    public double getMaxThickness() {
-        return hull.getHullSections().stream().max(Comparator.comparing(HullSection::getThickness)).get().getThickness();
     }
 }

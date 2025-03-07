@@ -3,11 +3,12 @@ package com.wecca.canoeanalysis.services;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.controllers.modules.HullBuilderController;
 import com.wecca.canoeanalysis.models.canoe.Hull;
-import com.wecca.canoeanalysis.models.canoe.HullSection;
+import com.wecca.canoeanalysis.models.canoe.HullProperties;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.function.Range;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
+import com.wecca.canoeanalysis.utils.SectionPropertyMapEntry;
 import javafx.geometry.Point2D;
 import javafx.scene.shape.Rectangle;
 import lombok.NonNull;
@@ -15,6 +16,7 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * Performs geometry-related operations on the canoe's hull.
@@ -51,15 +53,14 @@ public class HullGeometryService {
      * remains within the rectangular bounds defined by x = 0, x = L, y = 0, y = -h.
      * @param knot the knot point which acts as the origin
      * @param thetaKnown the known angle in degrees (relative to the origin) at which the point lies.
-     * @param selectedHullSectionIndex the index of the hullSection in the hull in which to bound the radius
+     * @param selectedBezierSegmentIndex the index of the hullSection in the hull in which to bound the radius
      *                                 (not necessarily the current state hullSectionIndex in HullBuilderController)
      * @return The maximum radius (r) such that the point stays within the bounds.
      */
-    public static double calculateMaxR(Point2D knot, double thetaKnown, int selectedHullSectionIndex) {
+    public static double calculateMaxR(Point2D knot, double thetaKnown, int selectedBezierSegmentIndex) {
         Hull hull = getHull();
-        HullSection hullSection = hull.getHullSections().get(selectedHullSectionIndex);
         double hullHeight = -hull.getMaxHeight();
-        CubicBezierFunction bezier = (CubicBezierFunction) hullSection.getSideProfileCurve();
+        CubicBezierFunction bezier = hull.getSideViewSegments().get(selectedBezierSegmentIndex);
         double xL = bezier.getX1();
         double xR = bezier.getX2();
 
@@ -104,16 +105,16 @@ public class HullGeometryService {
      * @param currTheta The current angle (in degrees)
      * @param isLeft True if the control point is on the left side (180–360 degrees), false otherwise (0–180)
      * @param boundWithAdjacentSections True if the range should account for constraints from adjacent sections
-     * @param selectedHullSectionIndex The index of the hull section to process for bounding
+     * @param selectedBezierSegmentIndex The index of the hull section to process for bounding
      *                                  (not necessarily the current state hullSectionIndex in HullBuilderController)
      * @return A two-element array containing the minimum and maximum valid theta values
      */
-    public static double[] calculateThetaBounds(Point2D knot, double rKnown, double currTheta, boolean isLeft, boolean boundWithAdjacentSections, int selectedHullSectionIndex) {
+    public static double[] calculateThetaBounds(Point2D knot, double rKnown, double currTheta, boolean isLeft, boolean boundWithAdjacentSections, int selectedBezierSegmentIndex) {
         Hull hull = getHull();
-        HullSection hullSection = hull.getHullSections().get(selectedHullSectionIndex);
-        double l = hullSection.getLength();
+        CubicBezierFunction bezier = hull.getSideViewSegments().get(selectedBezierSegmentIndex);
+        double l = bezier.getX2() - bezier.getX1();
         double h = -hull.getMaxHeight();
-        Rectangle boundingRect = new Rectangle(hullSection.getX(), 0.0, l, h);
+        Rectangle boundingRect = new Rectangle(bezier.getX1(), 0.0, l, h);
 
         double[] rawThetaBounds = calculateRawThetaBounds(boundingRect, knot, rKnown, isLeft, currTheta);
         double minTheta = rawThetaBounds[0];
@@ -273,20 +274,20 @@ public class HullGeometryService {
      */
     public static double[] calculateAdjacentSectionThetaBounds(Point2D knot, boolean isLeft, double currTheta) {
         Hull hull = getHull();
-        int selectedHullSectionIndex = hullBuilderController.getSelectedHullSectionIndex();
+        int selectedBezierSegmentIndex = hullBuilderController.getSelectedBezierSegmentIndex();
         double thetaMin = isLeft ? 180 : 0;
         double thetaMax = isLeft ? 360 : 180;
 
-        int adjacentHullSectionIndex = selectedHullSectionIndex + (isLeft ? -1 : 1);
+        int adjacentHullSectionIndex = selectedBezierSegmentIndex + (isLeft ? -1 : 1);
         boolean hasAdjacentSection = isLeft
-                ? selectedHullSectionIndex > 0
-                : selectedHullSectionIndex < hull.getHullSections().size() - 1;
+                ? selectedBezierSegmentIndex > 0
+                : selectedBezierSegmentIndex < hull.getSideViewSegments().size() - 1;
 
         if (hasAdjacentSection) {
-            HullSection adjacentHullSection = hull.getHullSections().get(adjacentHullSectionIndex);
+            CubicBezierFunction adjacentSegment = hull.getSideViewSegments().get(adjacentHullSectionIndex);
             Point2D siblingPoint = isLeft
-                    ? ((CubicBezierFunction) adjacentHullSection.getSideProfileCurve()).getControlPoints().getLast()
-                    : ((CubicBezierFunction) adjacentHullSection.getSideProfileCurve()).getControlPoints().getFirst();
+                    ? adjacentSegment.getControlPoints().getLast()
+                    : adjacentSegment.getControlPoints().getFirst();
             double siblingPointR = CalculusUtils.toPolar(siblingPoint, knot).getX();
             double[] thetaBounds = calculateThetaBounds(knot, siblingPointR, (currTheta + 180) % 360, !isLeft, false, adjacentHullSectionIndex);
 
@@ -300,15 +301,13 @@ public class HullGeometryService {
     /**
      * Adjusts the control points of the adjacent hull sections to maintain C1 continuity.
      *
-     * @param adjacentSection      the adjacent section (either on the left or right) to adjust
-     *                             the correct section must be passed in, this logic is not in the method
+     * @param adjacentBezier the adjacent section (either on the left or right) to adjust
+     *                       the correct section must be passed in, this logic is not in the method
      * @param adjustLeftOfSelected whether to adjust the adjacent left section (otherwise right)
-     * @param deltaX               the amount by which to adjust the control point x in the adjacent section
-     * @param deltaY               the amount by which to adjust the control point y in the adjacent section
+     * @param deltaX the amount by which to adjust the control point x in the adjacent section
+     * @param deltaY the amount by which to adjust the control point y in the adjacent section
      */
-    public static void adjustAdjacentSectionControlPoint(HullSection adjacentSection, boolean adjustLeftOfSelected, double deltaX, double deltaY) {
-        CubicBezierFunction adjacentBezier = (CubicBezierFunction) adjacentSection.getSideProfileCurve();
-
+    public static void adjustAdjacentSectionControlPoint(CubicBezierFunction adjacentBezier, boolean adjustLeftOfSelected, double deltaX, double deltaY) {
         // Adjust the control point by the delta
         if (adjustLeftOfSelected) {
             adjacentBezier.setControlX2(adjacentBezier.getControlX2() + deltaX);
@@ -317,33 +316,30 @@ public class HullGeometryService {
             adjacentBezier.setControlX1(adjacentBezier.getControlX1() + deltaX);
             adjacentBezier.setControlY1(adjacentBezier.getControlY1() + deltaY);
         }
-
-        // Update the section's side profile curve
-        adjacentSection.setSideProfileCurve(adjacentBezier);
     }
 
     /**
      * Computes the new control point and deltas for adjusting the control point of an adjacent hull section
      * to maintain C1 smoothness. The computation is based on polar coordinate transformations.
      *
-     * @param adjacentHullSection       The adjacent hull section being adjusted.
-     * @param isLeftAdjacentSection     True if adjusting the left-adjacent section, false otherwise.
-     * @param newThetaVal               The new angle (theta) value for the selected control point.
-     * @param selectedKnot              The knot point used as the reference for polar transformations.
+     * @param adjacentBezier The adjacent bezier spline segment being adjusted.
+     * @param isLeftAdjacentSection True if adjusting the left-adjacent section, false otherwise.
+     * @param newThetaVal The new angle (theta) value for the selected control point.
+     * @param selectedKnot The knot point used as the reference for polar transformations.
      * @return A Point2D array where:
      *         index 0 contains the deltaX,
      *         index 1 contains the deltaY.
      */
-    public static Point2D calculateAdjacentControlDeltas(HullSection adjacentHullSection, boolean isLeftAdjacentSection, double newThetaVal, Point2D selectedKnot) {
+    public static Point2D calculateAdjacentControlDeltas(CubicBezierFunction adjacentBezier, boolean isLeftAdjacentSection, double newThetaVal, Point2D selectedKnot) {
         // Determine old control point and polar radius (r)
         Point2D adjacentSectionOldControl;
         double adjacentSectionRadius;
         double adjacentSectionNewThetaVal = (newThetaVal + 180) % 360;
 
         if (isLeftAdjacentSection)
-            adjacentSectionOldControl = ((CubicBezierFunction) adjacentHullSection.getSideProfileCurve()).getControlPoints().getLast();
+            adjacentSectionOldControl = adjacentBezier.getControlPoints().getLast();
         else
-            adjacentSectionOldControl = ((CubicBezierFunction) adjacentHullSection.getSideProfileCurve()).getControlPoints().getFirst();
+            adjacentSectionOldControl = adjacentBezier.getControlPoints().getFirst();
         adjacentSectionRadius = CalculusUtils.toPolar(adjacentSectionOldControl, selectedKnot).getX();
 
         // Compute new control point in Cartesian coordinates
@@ -365,11 +361,8 @@ public class HullGeometryService {
      */
     public static double[] calculateParameterBounds() {
         // Get hull and section details
-        HullSection selectedHullSection = hullBuilderController.getSelectedHullSection();
-        int hullSectionIndex = hullBuilderController.getSelectedHullSectionIndex();
-        if (!(selectedHullSection.getSideProfileCurve() instanceof CubicBezierFunction bezier)) {
-            throw new IllegalArgumentException("Cannot work with non-bezier hull curve");
-        }
+        CubicBezierFunction bezier = hullBuilderController.getSelectedBezierSegment();
+        int hullSectionIndex = hullBuilderController.getSelectedBezierSegmentIndex();
 
         // Get bezier knot points
         List<Point2D> knotPoints = bezier.getKnotPoints();
@@ -410,10 +403,8 @@ public class HullGeometryService {
      * @return An interval [thetaMin, thetaMax]
      */
     public static double[] calculateSiblingThetaBounds(int parameterIndex, double siblingTheta, double selectedR) {
-        HullSection selectedHullSection = hullBuilderController.getSelectedHullSection();
-        int hullSectionIndex = hullBuilderController.getSelectedHullSectionIndex();
-
-        CubicBezierFunction bezier = (CubicBezierFunction) selectedHullSection.getSideProfileCurve();
+        CubicBezierFunction bezier = hullBuilderController.getSelectedBezierSegment();
+        int hullSectionIndex = hullBuilderController.getSelectedBezierSegmentIndex();
         Point2D knot = (parameterIndex == 0) ? bezier.getKnotPoints().getFirst() : bezier.getKnotPoints().getLast();
 
         // Calculate theta bounds for the current section
@@ -442,9 +433,8 @@ public class HullGeometryService {
      */
     public static double calculateSiblingRMax(int thetaParameterIndex, double theta) {
         if (!(thetaParameterIndex == 1 || thetaParameterIndex == 3)) throw new IllegalArgumentException("thetaParameterIndex must be 1 or 3");
-        HullSection selectedHullSection = hullBuilderController.getSelectedHullSection();
-        int hullSectionIndex = hullBuilderController.getSelectedHullSectionIndex();
-        CubicBezierFunction bezier = (CubicBezierFunction) selectedHullSection.getSideProfileCurve();
+        CubicBezierFunction bezier = hullBuilderController.getSelectedBezierSegment();
+        int hullSectionIndex = hullBuilderController.getSelectedBezierSegmentIndex();
         Point2D knot = (thetaParameterIndex == 1) ? bezier.getKnotPoints().getFirst() : bezier.getKnotPoints().getLast();
         return calculateMaxR(knot, theta, hullSectionIndex);
     }
@@ -458,19 +448,12 @@ public class HullGeometryService {
      */
     public static List<Double> getPolarParameterValues() {
         // Get hull and section details
-        HullSection selectedHullSection = hullBuilderController.getSelectedHullSection();
-
-        if (!(selectedHullSection.getSideProfileCurve() instanceof CubicBezierFunction bezier))
-            throw new IllegalArgumentException("Cannot work with non-bezier hull curve");
-
-        // Get knot and control points
-        List<Point2D> knotAndControlPoints = bezier.getKnotAndControlPoints();
+        CubicBezierFunction bezier = hullBuilderController.getSelectedBezierSegment();
 
         // Convert control points to polar coordinates
+        List<Point2D> knotAndControlPoints = bezier.getKnotAndControlPoints();
         Point2D polarL = CalculusUtils.toPolar(knotAndControlPoints.get(1), knotAndControlPoints.get(0));
         Point2D polarR = CalculusUtils.toPolar(knotAndControlPoints.get(2), knotAndControlPoints.get(3));
-
-        // Return polar values as a list
         return List.of(polarL.getX(), polarL.getY(), polarR.getX(), polarR.getY());
     }
 
@@ -486,13 +469,10 @@ public class HullGeometryService {
             throw new IllegalArgumentException("parameterValues must have exactly 4 elements: [rL, θL, rR, θR]");
 
         Hull hull = getHull();
-        int selectedHullSectionIndex = hullBuilderController.getSelectedHullSectionIndex();
-        HullSection selectedHullSection = hull.getHullSections().get(selectedHullSectionIndex);
-
-        if (!(selectedHullSection.getSideProfileCurve() instanceof CubicBezierFunction selectedBezier))
-            throw new IllegalArgumentException("Cannot work with non-bezier hull curve");
+        int selectedBezierSegmentIndex = hullBuilderController.getSelectedBezierSegmentIndex();
 
         // Get knot points
+        CubicBezierFunction selectedBezier = hull.getSideViewSegments().get(selectedBezierSegmentIndex);
         List<Point2D> selectedKnotPoints = selectedBezier.getKnotPoints();
         Point2D selectedLKnot = selectedKnotPoints.getFirst();
         Point2D selectedRKnot = selectedKnotPoints.getLast();
@@ -511,219 +491,225 @@ public class HullGeometryService {
         }
 
         // Adjust adjacent sections if needed for C1 smoothness
-        boolean adjustingLeft = parameterIndex == 1 && selectedHullSectionIndex > 0;
-        boolean adjustingRight = parameterIndex == 3 && selectedHullSectionIndex < (hull.getHullSections().size() - 1);
+        boolean adjustingLeft = parameterIndex == 1 && selectedBezierSegmentIndex > 0;
+        boolean adjustingRight = parameterIndex == 3 && selectedBezierSegmentIndex < (hull.getSideViewSegments().size() - 1);
 
         if (adjustingLeft || adjustingRight) {
-            int adjacentIndex = selectedHullSectionIndex + (adjustingLeft ? -1 : 1);
-            HullSection adjacentSection = hull.getHullSections().get(adjacentIndex);
+            int adjacentIndex = selectedBezierSegmentIndex + (adjustingLeft ? -1 : 1);
+            CubicBezierFunction adjacentBezier = hull.getSideViewSegments().get(adjacentIndex);
             Point2D selectedKnot = adjustingLeft ? selectedLKnot : selectedRKnot;
 
             // Calculate deltas for the adjacent control point
             Point2D deltas = calculateAdjacentControlDeltas(
-                    adjacentSection, adjustingLeft, newParameterValue, selectedKnot);
+                    adjacentBezier, adjustingLeft, newParameterValue, selectedKnot);
 
             // Adjust the control point of the adjacent section
-            adjustAdjacentSectionControlPoint(adjacentSection, adjustingLeft, deltas.getX(), deltas.getY());
-            hull.getHullSections().set(adjacentIndex, adjacentSection);
+            adjustAdjacentSectionControlPoint(adjacentBezier, adjustingLeft, deltas.getX(), deltas.getY());
+            hull.getSideViewSegments().set(adjacentIndex, adjacentBezier);
         }
         return hull;
     }
 
     public static Point2D getEditableKnotPoint(double functionSpaceX) {
         Hull hull = getHull();
+        List<CubicBezierFunction> sideViewSegments = hull.getSideViewSegments();
         List<Range> overlaySections = hullBuilderController.getOverlaySections();
 
-        // Iterate through overlay sections to find where functionSpaceX falls
         for (int i = 0; i < overlaySections.size(); i++) {
             Range currOverlay = overlaySections.get(i);
 
-            // "Deleting Sections" are between control points
-            Range nextOverlay;
-            double deletingSectionRx;
+            // Determine the "deleting section" if one exists.
             Section deletingSection;
             if (i != overlaySections.size() - 1) {
-                nextOverlay = overlaySections.get(i + 1);
-                double deletingSectionX = currOverlay.getX() < currOverlay.getRx() ? currOverlay.getRx() : currOverlay.getX();
-                deletingSectionRx = nextOverlay.getX() < nextOverlay.getRx() ? nextOverlay.getX() : nextOverlay.getRx();
+                Range nextOverlay = overlaySections.get(i + 1);
+                double deletingSectionX = (currOverlay.getX() < currOverlay.getRx()) ? currOverlay.getRx() : currOverlay.getX();
+                double deletingSectionRx = (nextOverlay.getX() < nextOverlay.getRx()) ? nextOverlay.getX() : nextOverlay.getRx();
                 deletingSection = new Section(deletingSectionX, deletingSectionRx);
             } else deletingSection = null;
 
-
-            // Left control point further to the right than the right support point
-            // Split deletable zone between the left and right knot point about the midpoint of the overlapping range
-            HullSection hullSection = hull.getHullSections().get(i);
-            CubicBezierFunction bezier = (CubicBezierFunction) hullSection.getSideProfileCurve();
+            // Use the new model field to extract geometry.
+            CubicBezierFunction bezier = sideViewSegments.get(i);
             double lKnotX = bezier.getX1();
             double rKnotX = bezier.getX2();
+
+            // Check if functionSpaceX lies within the knot interval.
             if (currOverlay.getX() > currOverlay.getRx() && lKnotX <= functionSpaceX && functionSpaceX <= rKnotX) {
-                // Midpoint determines in which zones each knot point is deletable
                 double lControlX = bezier.getControlX1();
                 double rControlX = bezier.getControlX2();
                 double midpoint = rControlX + ((lControlX - rControlX) / 2);
+
                 if (functionSpaceX < midpoint) {
-                    if (i == 0) return null;
+                    if (i == 0) return null; // Cannot delete the first knot.
                     double knotY = bezier.value(lKnotX);
                     return new Point2D(lKnotX, knotY);
                 } else {
-                    if (i == overlaySections.size() - 1) return null;
-                    HullSection nextHullSection = hull.getHullSections().get(i + 1);
-                    CubicBezierFunction nextBezier = (CubicBezierFunction) nextHullSection.getSideProfileCurve();
+                    if (i == overlaySections.size() - 1) return null; // Cannot delete the last knot.
+                    CubicBezierFunction nextBezier = sideViewSegments.get(i + 1);
                     double knotY = nextBezier.value(rKnotX);
                     return new Point2D(rKnotX, knotY);
                 }
             }
-            else if (deletingSection != null && deletingSection.getX() <= functionSpaceX && deletingSection.getRx() >= functionSpaceX) {
-                // Find the knot point corresponding to deletingSection's rx
-                double knotX = hull.getHullSections().stream()
-                        .flatMap(hs -> ((CubicBezierFunction) hs.getSideProfileCurve()).getKnotPoints().stream())
+            // Check if functionSpaceX lies within a deletion zone.
+            else if (deletingSection != null &&
+                    deletingSection.getX() <= functionSpaceX && functionSpaceX <= deletingSection.getRx()) {
+                double knotX = sideViewSegments.stream()
+                        .flatMap(seg -> seg.getKnotPoints().stream())
                         .mapToDouble(Point2D::getX)
                         .distinct()
                         .filter(x -> x >= deletingSection.getX() && x <= deletingSection.getRx())
                         .findFirst()
                         .orElseThrow(() -> new RuntimeException("Cannot find knot point in the section"));
-
-                // Get the y-coordinate of the knot point from the corresponding Bezier curve
-                double knotY = hull.getHullSections().get(i).getSideProfileCurve().value(knotX);
-
+                double knotY = bezier.value(knotX);
                 return new Point2D(knotX, knotY);
             }
         }
-
-        // No matching section found
+        // No matching section found.
         return null;
     }
 
     /**
-     * Updates the hull geometry by dragging a knot point from its old position to a new position.
-     * The method shifts the knot point as well as its adjacent control points so that C1 continuity is maintained.
-     * If the knot is not the minimum, the new position is assumed already clamped.
+     * Updates the hull geometry (new model) by dragging a knot point in the side view.
+     * Only the side–view Bézier curve(s) are updated; the top–view curves remain unchanged.
+     * @param knotPos the current position of the knot in the side view
+     * @param newKnotPos the new position for the knot in the side view
+     * @return a new Hull instance with updated side–view curves
      */
     public static Hull dragKnotPoint(@NonNull Point2D knotPos, @NonNull Point2D newKnotPos) {
-        // Hull copy to avoid mutating the main hull ref
         Hull hull = getHull();
-        for (int i = 0; i < hull.getHullSections().size(); i++) {
-            HullSection section = hull.getHullSections().get(i);
-            if (section.getSideProfileCurve() instanceof CubicBezierFunction bezier
-                    && bezier.getKnotPoints().getFirst().distance(knotPos) < 1e-6) {
-
-                // Adjust the side view section right of the knot point being dragged
+        for (int i = 0; i < hull.getSideViewSegments().size(); i++) {
+            CubicBezierFunction bezier = hull.getSideViewSegments().get(i);
+            if (bezier.getKnotPoints().getFirst().distance(knotPos) < 1e-6 /* Numerically Equal in R^2 */ ) {
                 double deltaX = newKnotPos.getX() - knotPos.getX();
                 double deltaY = newKnotPos.getY() - knotPos.getY();
+                // Update the left knot and control point of the current segment.
                 bezier.setX1(newKnotPos.getX());
+                hull.getHullProperties().getThicknessMap().get(i).setX(newKnotPos.getX());
+                hull.getHullProperties().getBulkheadMap().get(i).setX(newKnotPos.getX());
                 bezier.setY1(newKnotPos.getY());
                 bezier.setControlX1(bezier.getControlX1() + deltaX);
                 bezier.setControlY1(bezier.getControlY1() + deltaY);
-
-                // Adjust the side view section left of the knot point being dragged
+                // For C1 continuity, update the right knot and control point of the previous segment (if exists).
                 if (i > 0) {
-                    HullSection prevSection = hull.getHullSections().get(i - 1);
-                    if (prevSection.getSideProfileCurve() instanceof CubicBezierFunction prevBezier) {
-                        prevBezier.setX2(newKnotPos.getX());
-                        prevBezier.setY2(newKnotPos.getY());
-                        prevBezier.setControlX2(prevBezier.getControlX2() + deltaX);
-                        prevBezier.setControlY2(prevBezier.getControlY2() + deltaY);
-                    }
+                    CubicBezierFunction prevBezier = hull.getSideViewSegments().get(i - 1);
+                    prevBezier.setX2(newKnotPos.getX());
+                    hull.getHullProperties().getThicknessMap().get(i - 1).setRx(newKnotPos.getX());
+                    hull.getHullProperties().getBulkheadMap().get(i - 1).setRx(newKnotPos.getX());
+                    prevBezier.setY2(newKnotPos.getY());
+                    prevBezier.setControlX2(prevBezier.getControlX2() + deltaX);
+                    prevBezier.setControlY2(prevBezier.getControlY2() + deltaY);
                 }
-
-                // ----- Update the top profile curve ----- TODO: minimize top view geometry changes
-                if (section.getTopProfileCurve() instanceof CubicBezierFunction topBezier) {
-                    // Save the old top knot point
-                    double oldTopX = topBezier.getX1();
-                    double oldTopY = topBezier.getY1();
-
-                    // Compute the new top knot y-value by evaluating the top profile curve at the new x.
-                    double newTopY = topBezier.value(newKnotPos.getX());
-                    double deltaTopX = newKnotPos.getX() - oldTopX;
-                    double deltaTopY = newTopY - oldTopY;
-                    topBezier.setX1(newKnotPos.getX());
-                    topBezier.setY1(newTopY);
-                    topBezier.setControlX1(topBezier.getControlX1() + deltaTopX);
-                    topBezier.setControlY1(topBezier.getControlY1() + deltaTopY);
-
-                    // Similarly, update the previous section's top profile curve so that its right knot matches.
-                    if (i > 0) {
-                        HullSection prevSection = hull.getHullSections().get(i - 1);
-                        if (prevSection.getTopProfileCurve() instanceof CubicBezierFunction prevTopBezier) {
-                            double oldPrevTopX = prevTopBezier.getX2();
-                            double oldPrevTopY = prevTopBezier.getY2();
-                            double deltaPrevTopX = newKnotPos.getX() - oldPrevTopX;
-                            double deltaPrevTopY = newTopY - oldPrevTopY;
-                            prevTopBezier.setX2(newKnotPos.getX());
-                            prevTopBezier.setY2(newTopY);
-                            prevTopBezier.setControlX2(prevTopBezier.getControlX2() + deltaPrevTopX);
-                            prevTopBezier.setControlY2(prevTopBezier.getControlY2() + deltaPrevTopY);
-                        }
-                    }
-                }
-
+                // Do not modify topViewSegments.
                 return hull;
             }
         }
-        throw new IllegalArgumentException("Cannot drag knot, hull does not contain knot with position: " + knotPos);
+        throw new IllegalArgumentException("No side-view knot found at position: " + knotPos);
     }
 
     /**
-     * Adds a new knot point to the hull by splitting the relevant Bezier section at the knot's X-coordinate.
-     * Returns a new Hull instance, leaving the original unmodified.
+     * Adds a new knot point to the hull by splitting the relevant Bézier section with de Casteljau's algorithm at the knot's X-coordinate.
+     * 1. Finds the segment (by index) in which the new knot’s x–coordinate lies.
+     * 2. Splits that segment’s side view and top view curves using de Casteljau’s algorithm.
+     * 3. Updates the thickness and bulkhead maps for the split segment.
+     * 4. Rebuilds new lists of side and top segments by inserting the two new segments in place of the old one.
+     * 5. Constructs and returns a new Hull via the new model constructor.
      * @param knotPointToAdd the new knot point (x,y) on the existing curve
-     * @return a deep-copied and updated Hull with the new knot inserted as a split in its section
+     * @return a new Hull with the updated side and top segments and updated property maps
+     * @throws IllegalArgumentException if the new knot’s x–coordinate is out of range.
      */
     public static Hull addKnotPoint(@NonNull Point2D knotPointToAdd) {
-        // Copy the current hull, so we don’t alter the original in place
-        Hull currHull = getHull();
-        Hull hull = MarshallingService.deepCopy(currHull);
+        // Get a deep copy of the current hull.
+        Hull hull = getHull();
         if (hull == null) throw new RuntimeException("Marshalling error deep copying the hull");
         double newX = knotPointToAdd.getX();
 
-        // Locate the existing section that covers [section.getX(), section.getRx()] for newX
-        int sectionIndex = -1;
-        for (int i = 0; i < hull.getHullSections().size(); i++) {
-            HullSection sec = hull.getHullSections().get(i);
-            if (newX >= sec.getX() && newX <= sec.getRx()) {
-                sectionIndex = i;
+        // Get current side and top view segments and property maps.
+        List<CubicBezierFunction> oldSideSegments = hull.getSideViewSegments();
+        List<CubicBezierFunction> oldTopSegments = hull.getTopViewSegments();
+        List<SectionPropertyMapEntry> oldThicknessMap = hull.getHullProperties().getThicknessMap();
+        List<SectionPropertyMapEntry> oldBulkheadMap = hull.getHullProperties().getBulkheadMap();
+
+        // Find the segment index whose interval [x, rx] covers newX.
+        int splitIndex = -1;
+        for (int i = 0; i < oldSideSegments.size(); i++) {
+            CubicBezierFunction seg = oldSideSegments.get(i);
+            if (newX >= seg.getX1() && newX <= seg.getRx()) {
+                splitIndex = i;
                 break;
             }
         }
-        if (sectionIndex < 0) throw new IllegalArgumentException(String.format("x = %.3f is out of range for every section.", newX));
+        if (splitIndex < 0) throw new IllegalArgumentException(String.format("x = %.3f is out of range for every section.", newX));
 
-        // Solve for parameter t in [0..1] where x(t) == newX, and then split the side profile curve at t
-        HullSection oldSection = hull.getHullSections().get(sectionIndex);
-        if (!(oldSection.getSideProfileCurve() instanceof CubicBezierFunction oldBezier)) throw new IllegalArgumentException("Cannot split a non-Bezier hull section");
-        double t = oldBezier.getT(newX);
-        CubicBezierFunction[] splitCurves = deCasteljauBezierSplit(oldBezier, t);
-        CubicBezierFunction leftBezier = splitCurves[0];
-        CubicBezierFunction rightBezier = splitCurves[1];
-        Point2D globalMinKnot = hull.getHullSections().stream()
-                .flatMap(hs -> ((CubicBezierFunction) hs.getSideProfileCurve()).getKnotPoints().stream())
+        // Split the side–view segment
+        CubicBezierFunction oldSide = oldSideSegments.get(splitIndex);
+        double t = oldSide.getT(newX);
+        CubicBezierFunction[] splitSide = deCasteljauBezierSplit(oldSide, t);
+        CubicBezierFunction leftSide = splitSide[0];
+        CubicBezierFunction rightSide = splitSide[1];
+
+        // Clamp the control points if needed.
+        // (Assume adjustBezierWithMinKnot is already defined for the new model)
+        // Find global min among all side knots:
+        Point2D globalMinSideKnot = hull.getSideViewSegments().stream()
+                .flatMap(cbf -> cbf.getKnotPoints().stream())
                 .min(Comparator.comparingDouble(Point2D::getY))
-                .orElseThrow(() -> new RuntimeException("No minimum knot found"));
-        double globalMinY = globalMinKnot.getY();
-        adjustBezierWithMinKnot(leftBezier, globalMinY, sectionIndex);
-        adjustBezierWithMinKnot(rightBezier, globalMinY, sectionIndex);
+                .orElseThrow(() -> new RuntimeException("No minimum side knot found"));
+        double globalMinY = globalMinSideKnot.getY();
+        adjustBezierWithMinKnot(leftSide, globalMinY, splitIndex);
+        adjustBezierWithMinKnot(rightSide, globalMinY, splitIndex);
 
-        // Same thing for top profile
-        if (!(oldSection.getTopProfileCurve() instanceof CubicBezierFunction oldTopBezier)) throw new IllegalArgumentException("Cannot split a non-Bezier hull top section");
-        double tTop = oldTopBezier.getT(newX);
-        CubicBezierFunction[] splitTopCurves = deCasteljauBezierSplit(oldTopBezier, tTop);
-        CubicBezierFunction leftTopBezier = splitTopCurves[0];
-        CubicBezierFunction rightTopBezier = splitTopCurves[1];
-        Point2D globalMinKnotTop = hull.getHullSections().stream()
-                .flatMap(hs -> ((CubicBezierFunction) hs.getTopProfileCurve()).getKnotPoints().stream())
+        // Split the top–view segment
+        CubicBezierFunction oldTop = oldTopSegments.get(splitIndex);
+        double tTop = oldTop.getT(newX);
+        CubicBezierFunction[] splitTop = deCasteljauBezierSplit(oldTop, tTop);
+        CubicBezierFunction leftTop = splitTop[0];
+        CubicBezierFunction rightTop = splitTop[1];
+
+        // Find global min among all top knots:
+        Point2D globalMinTopKnot = hull.getSideViewSegments().stream()
+                .flatMap(cbf -> cbf.getKnotPoints().stream())
                 .min(Comparator.comparingDouble(Point2D::getY))
                 .orElseThrow(() -> new RuntimeException("No minimum top knot found"));
-        double globalMinYTop = globalMinKnotTop.getY();
-        adjustBezierWithMinKnot(leftTopBezier, globalMinYTop, sectionIndex);
-        adjustBezierWithMinKnot(rightTopBezier, globalMinYTop, sectionIndex);
+        double globalMinYTop = globalMinTopKnot.getY();
+        adjustBezierWithMinKnot(leftTop, globalMinYTop, splitIndex);
+        adjustBezierWithMinKnot(rightTop, globalMinYTop, splitIndex);
 
-        // Rebuild the hull
-        HullSection newLeftSec = new HullSection(leftBezier, leftTopBezier, oldSection.getX(), newX, oldSection.getThickness(), oldSection.isFilledBulkhead());
-        HullSection newRightSec = new HullSection(rightBezier, rightTopBezier, newX, oldSection.getRx(), oldSection.getThickness(), oldSection.isFilledBulkhead());
-        hull.getHullSections().remove(sectionIndex);
-        hull.getHullSections().add(sectionIndex, newRightSec);
-        hull.getHullSections().add(sectionIndex, newLeftSec);
-        return hull;
+        // Rebuild the lists for side segments, top segments, and maps
+        List<CubicBezierFunction> newSideSegments = new ArrayList<>(oldSideSegments.size() + 1);
+        List<CubicBezierFunction> newTopSegments = new ArrayList<>(oldTopSegments.size() + 1);
+        List<SectionPropertyMapEntry> newThicknessMap = new ArrayList<>(oldThicknessMap.size() + 1);
+        List<SectionPropertyMapEntry> newBulkheadMap = new ArrayList<>(oldBulkheadMap.size() + 1);
+
+        // Loop over the old lists, and when we reach the split index, insert the two new segments and map entries.
+        for (int i = 0; i < oldSideSegments.size(); i++) {
+            if (i == splitIndex) {
+                // For the split segment, get its original map entries.
+                SectionPropertyMapEntry oldThickness = oldThicknessMap.get(i);
+                SectionPropertyMapEntry oldBulkhead = oldBulkheadMap.get(i);
+                SectionPropertyMapEntry leftThicknessEntry = new SectionPropertyMapEntry(oldThickness.getX(), newX, oldThickness.getValue());
+                SectionPropertyMapEntry rightThicknessEntry = new SectionPropertyMapEntry(newX, oldThickness.getRx(), oldThickness.getValue());
+                SectionPropertyMapEntry leftBulkheadEntry = new SectionPropertyMapEntry(oldBulkhead.getX(), newX, oldBulkhead.getValue());
+                SectionPropertyMapEntry rightBulkheadEntry = new SectionPropertyMapEntry(newX, oldBulkhead.getRx(), oldBulkhead.getValue());
+                newSideSegments.add(leftSide);
+                newSideSegments.add(rightSide);
+                newTopSegments.add(leftTop);
+                newTopSegments.add(rightTop);
+                newThicknessMap.add(leftThicknessEntry);
+                newThicknessMap.add(rightThicknessEntry);
+                newBulkheadMap.add(leftBulkheadEntry);
+                newBulkheadMap.add(rightBulkheadEntry);
+            }
+            // Copy over unchanged segments and map entries.
+            else {
+                newSideSegments.add(oldSideSegments.get(i));
+                newTopSegments.add(oldTopSegments.get(i));
+                newThicknessMap.add(oldThicknessMap.get(i));
+                newBulkheadMap.add(oldBulkheadMap.get(i));
+            }
+        }
+        HullProperties newProps = new HullProperties(newThicknessMap, newBulkheadMap);
+        return new Hull(hull.getConcreteDensity(), hull.getBulkheadDensity(), newProps, newSideSegments, newTopSegments);
     }
+
 
     /**
      * Adjusts a given CubicBezierFunction after an operation has been done it to ensure its validity
@@ -756,19 +742,20 @@ public class HullGeometryService {
 
     /**
      * Splits a cubic Bezier at parameter t in [0..1].
-     * Returns an array [leftCurve, rightCurve].
-     * Implemented with de Casteljau's algorithm
+     * @param bezier the curve to split with de Casteljau's algorithm
+     * @param t the parameter in [0, 1] which parameterize the Bézier curve at which to split it at
+     * @return  an array [leftCurve, rightCurve].
      */
-    private static CubicBezierFunction[] deCasteljauBezierSplit(CubicBezierFunction original, double t) {
+    private static CubicBezierFunction[] deCasteljauBezierSplit(CubicBezierFunction bezier, double t) {
         // Get the bezier's 8 parameters (the x-y pair of each of the 4 points, 2 control and 2 knot points)
-        double x0 = original.getX1();
-        double y0 = original.getY1();
-        double cx1 = original.getControlX1();
-        double cy1 = original.getControlY1();
-        double cx2 = original.getControlX2();
-        double cy2 = original.getControlY2();
-        double x3 = original.getX2();
-        double y3 = original.getY2();
+        double x0 = bezier.getX1();
+        double y0 = bezier.getY1();
+        double cx1 = bezier.getControlX1();
+        double cy1 = bezier.getControlY1();
+        double cx2 = bezier.getControlX2();
+        double cy2 = bezier.getControlY2();
+        double x3 = bezier.getX2();
+        double y3 = bezier.getY2();
 
         // Execute De Casteljau's algorithm for bezier curve splitting
         // For more: https://en.wikipedia.org/wiki/De_Casteljau%27s_algorithm
@@ -809,100 +796,87 @@ public class HullGeometryService {
     public static Hull deleteKnotPoint(Point2D knotPointToDelete) {
         Hull hull = getHull();
         if (knotPointToDelete == null) return null;
-        for (int i = 0; i < hull.getHullSections().size(); i++) {
-            HullSection section = hull.getHullSections().get(i);
-            if (section.getSideProfileCurve() instanceof CubicBezierFunction bezier) {
-                Point2D knotPoint = bezier.getKnotPoints().getFirst();
-                double knotX = knotPoint.getX();
-                double knotY = knotPoint.getY();
-                if (Math.abs(knotX - knotPointToDelete.getX()) < 1e-6 && Math.abs(knotY - knotPointToDelete.getY()) < 1e-6) {
-                    if (i > 0) return getHullWithMergedAdjacentSections(i);
-                    else return null;
-                }
-            } else throw new IllegalArgumentException("Cannot work with non-bezier hull");
+        for (int i = 0; i < hull.getSideViewSegments().size(); i++) {
+            CubicBezierFunction bezier = hull.getSideViewSegments().get(i);
+            Point2D knotPoint = bezier.getKnotPoints().getFirst();
+            double knotX = knotPoint.getX();
+            double knotY = knotPoint.getY();
+            if (Math.abs(knotX - knotPointToDelete.getX()) < 1e-6 && Math.abs(knotY - knotPointToDelete.getY()) < 1e-6) {
+                if (i > 0) return getHullWithMergedAdjacentSections(i);
+                else return null;
+            }
         }
         throw new RuntimeException("Failed to delete knot.");
     }
 
     /**
-     * Merges two adjacent hull sections to maintain continuity after a knot point is deleted.
-     * The aim of this is to minimize changing geometry as much as possible
-     * @param rightIndex the index of the right section of the two adjacent hull sections
-     * @return the updated Hull
+     * Merges two adjacent hull sections (new model) to maintain continuity after a knot point is deleted.
+     * This method updates the side–view segments, top–view segments, and the associated thickness and bulkhead maps.
+     * It assumes that the lists in hullProperties match the size of the side–view and top–view segment lists.
+     * @param rightIndex the index of the right section (in the side–view list) of the two sections to merge. Must be >= 1.
+     * @return the updated Hull with merged segments.
+     * @throws IllegalArgumentException if rightIndex is less than 1 or if any segment is non–Bezier.
      */
-     private static Hull getHullWithMergedAdjacentSections(int rightIndex) {
-        // Do not change the model from the service, pass the hull back up and set it in the controller
-        Hull currHull = getHull();
-        Hull hull = MarshallingService.deepCopy(currHull);
-        if (rightIndex <= 0 ) throw new IllegalArgumentException("index must be at least 1");
+    private static Hull getHullWithMergedAdjacentSections(int rightIndex) {
+        Hull hull = getHull();
+
+        if (rightIndex <= 0) throw new IllegalArgumentException("Index must be at least 1");
         int leftIndex = rightIndex - 1;
-        HullSection leftSection = hull.getHullSections().get(leftIndex);
-        HullSection rightSection = hull.getHullSections().get(rightIndex);
 
-        if (leftSection.getSideProfileCurve() instanceof CubicBezierFunction leftBezier &&
-                rightSection.getSideProfileCurve() instanceof CubicBezierFunction rightBezier) {
+        // Retrieve the new-model lists.
+        List<CubicBezierFunction> sideSegments = hull.getSideViewSegments();
+        List<CubicBezierFunction> topSegments = hull.getTopViewSegments();
+        HullProperties props = hull.getHullProperties();
+        List<SectionPropertyMapEntry> thicknessMap = props.getThicknessMap();
+        List<SectionPropertyMapEntry> bulkheadMap = props.getBulkheadMap();
 
-            // Get the updated hull model
-            Point2D rightKnot = rightBezier.getKnotPoints().getLast();
-            Point2D rightControl = rightBezier.getControlPoints().getLast();
-            leftBezier.setX2(rightKnot.getX());
-            leftBezier.setY2(rightKnot.getY());
-            leftBezier.setControlX2(rightControl.getX());
-            leftBezier.setControlY2(rightControl.getY());
-            leftSection.setRx(rightSection.getRx());
+        // Merge side–view segments
+        CubicBezierFunction leftBezier = sideSegments.get(leftIndex);
+        CubicBezierFunction rightBezier = sideSegments.get(rightIndex);
+        Point2D rightKnot = rightBezier.getKnotPoints().getLast();
+        Point2D rightControl = rightBezier.getControlPoints().getLast();
+        leftBezier.setX2(rightKnot.getX());
+        leftBezier.setY2(rightKnot.getY());
+        leftBezier.setControlX2(rightControl.getX());
+        leftBezier.setControlY2(rightControl.getY());
+        thicknessMap.get(leftIndex).setRx(rightKnot.getX());
+        bulkheadMap.get(leftIndex).setRx(rightKnot.getX());
 
-            // Replace the updated left section and remove the right section
-            // Note that this intermediary hull is not valid is it violates C1 continuity
-            // This is because out of bounds points are not handled and shift unpredictably
-            hull.getHullSections().set(leftIndex, leftSection);
-            hull.getHullSections().remove(rightIndex);
+        // Merge top–view segments
+        CubicBezierFunction leftTopBezier = topSegments.get(leftIndex);
+        CubicBezierFunction rightTopBezier = topSegments.get(rightIndex);
+        Point2D rightKnotTop = rightTopBezier.getKnotPoints().getLast();
+        Point2D rightControlTop = rightTopBezier.getControlPoints().getLast();
+        leftTopBezier.setX2(rightKnotTop.getX());
+        leftTopBezier.setY2(rightKnotTop.getY());
+        leftTopBezier.setControlX2(rightControlTop.getX());
+        leftTopBezier.setControlY2(rightControlTop.getY());
+        sideSegments.remove(rightIndex);
+        topSegments.remove(rightIndex);
+        thicknessMap.remove(rightIndex);
+        bulkheadMap.remove(rightIndex);
 
-            // At this point, if we have deleted the minimum knot point, we need to adjust the geometry
-            // This is because the min knot point acts as a minimum bound
-            // After deleting, we might have points below the new minimum bound and need to fix that
+        // Update the hull
+        hull.setSideViewSegments(sideSegments);
+        hull.setTopViewSegments(topSegments);
+        props.setThicknessMap(thicknessMap);
+        props.setBulkheadMap(bulkheadMap);
 
-            // "Flatten" new min knot control points (set adjacent section control point thetas to make 180-degree angle across the bezier handle)
-            Point2D minKnot = hull.getHullSections().stream()
-                    .flatMap(hs -> ((CubicBezierFunction) hs.getSideProfileCurve()).getKnotPoints().stream())
-                    .min(Comparator.comparingDouble(Point2D::getY))
-                    .orElseThrow(() -> new RuntimeException("No minimum knot point found"));
-            for (int i = 1; i < hull.getHullSections().size(); i++) {
-                HullSection prevSection = hull.getHullSections().get(i - 1);
-                HullSection section = hull.getHullSections().get(i);
-                // Adjust control points for the two sections sharing the minKnot
-                if (prevSection.getSideProfileCurve() instanceof CubicBezierFunction prevBezier &&
-                        section.getSideProfileCurve() instanceof CubicBezierFunction bezier) {
-                    if (prevBezier.getKnotPoints().getLast().equals(minKnot) && bezier.getKnotPoints().getFirst().equals(minKnot)) {
-                        prevBezier.setControlY2(minKnot.getY());
-                        bezier.setControlY1(minKnot.getY());
-                    }
-                }
-            }
-            double minY = minKnot.getY();
-            for (int i = 0; i < hull.getHullSections().size(); i++) {
-                HullSection section = hull.getHullSections().get(i);
-                if (section.getSideProfileCurve() instanceof CubicBezierFunction bezier) adjustBezierWithMinKnot(bezier, minY, i);
-            }
-        } else throw new IllegalArgumentException("Cannot work with non-bezier side view");
+        // Compute the global minimum knot (by y-value) across all side–view segments.
+        Point2D globalMinKnot = sideSegments.stream()
+                .flatMap(seg -> seg.getKnotPoints().stream())
+                .min(Comparator.comparingDouble(Point2D::getY))
+                .orElseThrow(() -> new RuntimeException("No minimum knot found"));
+        double minY = globalMinKnot.getY();
 
-        if (leftSection.getTopProfileCurve() instanceof CubicBezierFunction leftTopBezier &&
-             rightSection.getTopProfileCurve() instanceof CubicBezierFunction rightTopBezier) {
+        // Adjust all side–view segments in one loop.
+        IntStream.range(0, sideSegments.size()).forEach(i -> {
+            CubicBezierFunction seg = sideSegments.get(i);
+            adjustBezierWithMinKnot(seg, minY, i);
+        });
 
-            // Get right knot & control point from right section
-            Point2D rightKnotTop = rightTopBezier.getKnotPoints().getLast();
-            Point2D rightControlTop = rightTopBezier.getControlPoints().getLast();
-
-            // Set right knot as the new end of the left section
-            leftTopBezier.setX2(rightKnotTop.getX());
-            leftTopBezier.setY2(rightKnotTop.getY());
-            leftTopBezier.setControlX2(rightControlTop.getX());
-            leftTopBezier.setControlY2(rightControlTop.getY());
-
-            // Update hull section
-            leftSection.setTopProfileCurve(leftTopBezier);
-        } else throw new IllegalArgumentException("Cannot work with non-bezier top view");
         return hull;
-     }
+    }
 
     /**
      * Extracts a subsegment of the given cubic Bézier curve between parameter values t0 and t1.
@@ -918,13 +892,10 @@ public class HullGeometryService {
         // First, split the original curve at t0.
         CubicBezierFunction[] firstSplit = deCasteljauBezierSplit(original, t0);
         CubicBezierFunction rightCurve = firstSplit[1];
-
         // Map t1 from the original parameter space to the parameter space of the rightCurve.
         double newT = (t1 - t0) / (1 - t0);
-
         // Split the rightCurve at newT to extract the subsegment.
         CubicBezierFunction[] secondSplit = deCasteljauBezierSplit(rightCurve, newT);
-
         // The left segment of the second split is the desired sub–curve.
         return secondSplit[0];
     }

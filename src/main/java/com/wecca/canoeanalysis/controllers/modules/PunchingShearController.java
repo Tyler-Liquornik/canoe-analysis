@@ -230,30 +230,24 @@ public class PunchingShearController implements Initializable, ModuleController 
      * @param canoe
      * This method sets the values in the punching shear module necessary to test
      * session max shear is given in kN so must be converted to N
-     * thickenss and width are given in m and must be converted to mm
+     * thickness and width are given in m and must be converted to mm
      */
     public void setValues(Canoe canoe){
+        maxShearTextField.setText(String.format("%.2f", canoe.getSessionMaxShear() * 1000));
+        oneWayVfTextField.setText(String.format("%.2f", canoe.getSessionMaxShear() * 1000));
+        hullThicknessTextField.setText(String.format("%.2f", canoe.getHull().getMaxThickness() * 1000));
+        hullWidthTextField.setText(String.format("%.2f", canoe.getHull().getMaxWidth() * 1000));
 
-
-        maxShearTextField.setText(String.format("%.2f",canoe.getSessionMaxShear()*1000));
-        oneWayVfTextField.setText(String.format("%.2f",canoe.getSessionMaxShear()*1000));
-        hullThicknessTextField.setText(String.format("%.2f",canoe.getMaxThickness()*1000));
-        hullWidthTextField.setText(String.format("%.2f",canoe.getMaxWidth()*1000));
-
-        // need to account for floating
+        // Account for floating
         if(canoe.getSolveType().equals(SolveType.FLOATING)){
             FloatingSolution solution = BeamSolverService.solveFloatingSystem(canoe);
-            if (solution == null) {
-                mainController.showSnackbar("Error, buoyancy solver could not converge to a solution");
-
-            }
-
+            if (solution == null) mainController.showSnackbar("Error, buoyancy solver could not converge to a solution");
             // Proceed with floating system solve if no tipping or sinking is detected
             PiecewiseContinuousLoadDistribution buoyancy = solution.getSolvedBuoyancy();
+            if (buoyancy == null) throw new RuntimeException("Solution has no solved buoyancy to set");
             if (buoyancy.getForce() != 0) canoe.addLoad(buoyancy);
         }
         displayChart(canoe);
-
     }
 
     /**

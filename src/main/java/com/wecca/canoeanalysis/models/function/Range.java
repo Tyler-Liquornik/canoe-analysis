@@ -17,6 +17,8 @@ public class Range {
     @JsonProperty("rx")
     protected double rx;
 
+    public Range() {}
+
     @JsonCreator
     public Range(@JsonProperty("x") double x, @JsonProperty("rx") double rx) {
         if (x == rx || x < 0 || rx < 0)

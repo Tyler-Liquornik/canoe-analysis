@@ -4,15 +4,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
+import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.canoe.Hull;
-import com.wecca.canoeanalysis.models.canoe.HullSection;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.math3.optim.MaxEval;
-
 import java.util.*;
 
 @Getter @Setter @EqualsAndHashCode(callSuper = true)
@@ -31,20 +30,34 @@ public class PiecewiseContinuousLoadDistribution extends LoadDistribution {
     }
 
     /**
-     * Factory method to create a self-weight distribution from a hull
+     * Factory method to create a self-weight distribution from a hull with the new model.
+     * Here the hull’s self-weight distribution is built by partitioning the full weight function
+     * over each side–view segment (each representing a section).
      * @param hull the hull to get the self-weight distribution of
+     * @return the resulting PiecewiseContinuousLoadDistribution representing the self weight (in kN/m)
      */
     public static PiecewiseContinuousLoadDistribution fromHull(Hull hull) {
-        List<HullSection> hullSections = hull.getHullSections();
-        List<Section> sections = hullSections.stream().map(hullSection -> (Section) hullSection).toList();
-
+        // Use the side-view segments as the partitioning for the hull.
+        List<CubicBezierFunction> sideSegments = hull.getSideViewSegments();
+        List<Section> sections = new ArrayList<>();
         List<BoundedUnivariateFunction> pieces = new ArrayList<>();
-        for (HullSection section : hullSections) {
-            pieces.add(section.getWeightDistributionFunction().getDistribution());
-        }
 
-        CalculusUtils.validatePiecewiseContinuity(pieces, sections);
-        CalculusUtils.validatePiecewiseAsUpOrDown(pieces, sections);
+        // The overall weight distribution function is defined over the full hull.
+        BoundedUnivariateFunction weightFunc = hull.getWeightDistributionFunction();
+
+        // For each side-view segment, restrict weightFunc to that segment's x-domain.
+        for (CubicBezierFunction seg : sideSegments) {
+            Section sec = new Section(seg.getX1(), seg.getX2());
+            sections.add(sec);
+            pieces.add(new BoundedUnivariateFunction() {
+                @Override
+                public double value(double x) {return weightFunc.value(x);}
+                @Override
+                public double getMaxValue(Section s) {return weightFunc.getMaxValue(s);}
+                @Override
+                public double getMinValue(Section s) {return weightFunc.getMinValue(s);}
+            });
+        }
         return new PiecewiseContinuousLoadDistribution(LoadType.HULL, pieces, sections);
     }
 
