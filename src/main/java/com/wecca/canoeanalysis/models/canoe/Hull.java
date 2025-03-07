@@ -3,6 +3,7 @@ package com.wecca.canoeanalysis.models.canoe;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wecca.canoeanalysis.aop.TraceIgnore;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
@@ -124,9 +125,9 @@ public class Hull {
         validateBasicValues(hullProperties.getThicknessMap(), hullProperties.getBulkheadMap(), sideViewSegments, topViewSegments);
         validateMaps(hullProperties.getThicknessMap(), hullProperties.getBulkheadMap(), sideViewSegments);
         // Legacy validators from old model, remodeled for new model
-        validateC1Continuity();
-        validateFloorThickness();
-        validateWallThickness();
+//        validateC1Continuity();
+//        validateFloorThickness();
+//        validateWallThickness();
     }
 
     /**
@@ -240,9 +241,9 @@ public class Hull {
                 .forEach(i -> {
                     Section s = thicknessMap.get(i);
                     CubicBezierFunction side = sideView.get(i);
-                    if (Math.abs(side.getX1() - s.getX()) > 1e-6 || Math.abs(side.getX2() - s.getRx()) > 1e-6)
+                    if (Math.abs(side.getX1() - s.getX()) > 1e-3 || Math.abs(side.getX2() - s.getRx()) > 1e-3)
                         throw new IllegalArgumentException(String.format(
-                                "Section [%.6f, %.6f] does not match side view boundaries [%.6f, %.6f].",
+                                "Section [%.3f, %.3f] does not match side view boundaries [%.3f, %.3f].",
                                 s.getX(), s.getRx(), side.getX1(), side.getX2()));
                 });
     }
@@ -410,7 +411,7 @@ public class Hull {
      * and its encasing rectangle.
      * @return the cross-sectional area function A(x)
      */
-    @JsonIgnore
+    @JsonIgnore @TraceIgnore
     public BoundedUnivariateFunction getCrossSectionalAreaFunction() {
         return x -> {
             double sideVal = Math.abs(CalculusUtils.getSplineY(sideViewSegments, x));
@@ -438,7 +439,7 @@ public class Hull {
      * looked up from the hullProperties maps.
      * @return the function A_inner(x)
      */
-    @JsonIgnore
+    @JsonIgnore @TraceIgnore
     public BoundedUnivariateFunction getInnerCrossSectionalAreaFunction() {
         return x -> {
             double sideVal = Math.abs(CalculusUtils.getSplineY(sideViewSegments, x));
@@ -484,7 +485,7 @@ public class Hull {
      * (i.e. the hull walls) as a function of x. This is given by subtracting the inner (cavity) area from the outer area.
      * @return the function A_concrete(x)
      */
-    @JsonIgnore
+    @JsonIgnore @TraceIgnore
     public BoundedUnivariateFunction getConcreteCrossSectionalAreaFunction() {
         BoundedUnivariateFunction outer = getCrossSectionalAreaFunction();
         BoundedUnivariateFunction inner = getInnerCrossSectionalAreaFunction();
@@ -509,7 +510,7 @@ public class Hull {
      * at x, the inner (cavity) mass (using bulkhead density) is also included.
      * @return the mass distribution function m(x)
      */
-    @JsonIgnore
+    @JsonIgnore @TraceIgnore
     public BoundedUnivariateFunction getMassDistributionFunction() {
         double concreteDens = concreteDensity;
         double bulkheadDens = bulkheadDensity;

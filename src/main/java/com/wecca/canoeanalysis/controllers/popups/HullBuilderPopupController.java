@@ -35,14 +35,7 @@ public class HullBuilderPopupController implements Initializable {
     }
 
     public void setHullScaledSharkBait(ActionEvent e) {
-        // Legacy Models
-        // Hull hull = SharkBaitHullLibrary.generateSharkBaitHullScaledFromParabolasC1Smooth(canoe.getHull().getLength());
-        // Hull hull = SharkBaitHullLibrary.generateSharkBaitHullScaledFromParabolasC0Smooth(canoe.getHull().getLength());
-        // Hull hull = SharkBaitHullLibrary.generateSharkBaitHullScaledFromBezier(canoe.getHull().getLength(), false);
-
-        // Current Model
-        Hull hull = SharkBaitHullLibrary.generateSharkBaitHullScaledFromBezier(canoe.getHull().getLength(), true);
-
+        Hull hull = SharkBaitHullLibrary.generateSharkBaitHullScaledFromBezier(canoe.getHull().getLength());
         canoe.setHull(hull);
         beamController.setCanoe(canoe);
         mainController.showSnackbar("Successfully set hull to Shark Bait");

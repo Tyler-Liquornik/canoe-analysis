@@ -18,7 +18,10 @@ import java.util.List;
 public class CalculusUtils
 {
     // Provides integration
-    public static SimpsonIntegrator integrator = new SimpsonIntegrator();
+    // The settings on these numbers play a huge role in graphics rendering speed vs. integration accuracy
+    // This has been tweaked here to give a fair balance
+    // This is true for graphics where an animation requires many integrations at a high frequency
+    public static SimpsonIntegrator integrator = new SimpsonIntegrator(1e-4, 1e-8, 5, 16);
 
     /**
      * Returns the numerical derivative of a given function.
@@ -311,15 +314,22 @@ public class CalculusUtils
 
     /**
      * Helper method that returns the value from the first CubicBezierFunction in the given list that covers the x–coordinate.
-     * @param splineSegments the list of CubicBezierFunction segments that form the spline.
-     * @param x the x-coordinate at which to evaluate.
+     * This optimized version uses binary search rather than a stream.
+     * @param splineSegments the list of CubicBezierFunction segments that form the spline (assumed to be sorted by x1)
+     * @param x the x–coordinate at which to evaluate.
      * @return the value of the segment covering x.
      */
+    @Traceable
     public static double getSplineY(List<CubicBezierFunction> splineSegments, double x) {
-        return splineSegments.stream()
-                .filter(seg -> seg.getX1() <= x && seg.getX2() >= x)
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("x = " + x + " is out of bounds"))
-                .value(x);
+        int low = 0;
+        int high = splineSegments.size() - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1; // unsigned right shift for division by 2
+            CubicBezierFunction seg = splineSegments.get(mid);
+            if (x < seg.getX1()) high = mid - 1;
+            else if (x > seg.getX2()) low = mid + 1;
+            else return seg.value(x);
+        }
+        throw new RuntimeException("x = " + x + " is out of bounds");
     }
 }
