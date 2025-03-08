@@ -313,22 +313,34 @@ public class CalculusUtils
     }
 
     /**
-     * Helper method that returns the value from the first CubicBezierFunction in the given list that covers the x–coordinate.
-     * This optimized version uses binary search rather than a stream.
-     * @param splineSegments the list of CubicBezierFunction segments that form the spline (assumed to be sorted by x1)
-     * @param x the x–coordinate at which to evaluate.
-     * @return the value of the segment covering x.
+     * Returns the CubicBezierFunction segment from the given list that covers the provided x–coordinate.
+     * This version uses binary search for improved performance. Assumes the segments are sorted by getX1().
+     * @param splineSegments the list of CubicBezierFunction segments forming the spline.
+     * @param x the x–coordinate for which to find the covering segment.
+     * @return the CubicBezierFunction segment covering x.
+     * @throws RuntimeException if no segment covers the provided x.
      */
-    public static double getSplineY(List<CubicBezierFunction> splineSegments, double x) {
+    public static CubicBezierFunction getSegmentForX(List<CubicBezierFunction> splineSegments, double x) {
         int low = 0;
         int high = splineSegments.size() - 1;
         while (low <= high) {
-            int mid = (low + high) >>> 1; // unsigned right shift for division by 2
+            int mid = (low + high) >>> 1;
             CubicBezierFunction seg = splineSegments.get(mid);
             if (x < seg.getX1()) high = mid - 1;
             else if (x > seg.getX2()) low = mid + 1;
-            else return seg.value(x);
+            else return seg;
         }
         throw new RuntimeException("x = " + x + " is out of bounds");
+    }
+
+    /**
+     * Returns the y–value of the spline at the given x–coordinate.
+     * This method calls getSegmentForX() to locate the segment covering x and then evaluates it.
+     * @param splineSegments the list of CubicBezierFunction segments forming the spline.
+     * @param x the x–coordinate at which to evaluate the spline.
+     * @return the y–value of the spline at x.
+     */
+    public static double getSplineY(List<CubicBezierFunction> splineSegments, double x) {
+        return getSegmentForX(splineSegments, x).value(x);
     }
 }

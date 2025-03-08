@@ -4,6 +4,7 @@ import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.services.HullGeometryService;
 import java.util.*;
+import java.util.stream.IntStream;
 
 /**
  * 2024's Shark Bait serves as the base reference for all future canoes with respect to PADDL development
@@ -172,5 +173,29 @@ public class SharkBaitHullLibrary {
         scalingFactor = length / SHARK_BAIT_LENGTH;
         double thickness = 0.013 * scalingFactor;
         return new Hull(length, 0.4 * scalingFactor, 0.7 * scalingFactor, thickness);
+    }
+
+    /**
+     * @param sideView the side view which provides the section information to build the bulkhead list with
+     * @param thickness the thickens which is to be spread uniformly across the hull in the returned model
+     * @return a uniform hull thickness setup for HullProperties (the same thickness in every section)
+     */
+    public static List<SectionPropertyMapEntry> buildUniformThicknessList(List<CubicBezierFunction> sideView, double thickness) {
+        return IntStream.range(0, sideView.size())
+                .boxed()
+                .map(i -> new SectionPropertyMapEntry(sideView.get(i).getX1(), sideView.get(i).getX2(), String.valueOf(thickness)))
+                .toList();
+    }
+
+    /**
+     * Convenient helper for the constructors for the bulkhead list (or "map")
+     * @param sideView the side view which provides the section information to build the bulkhead list with
+     * @return the default bulkhead setup for HullProperties, which is the edge sections (fist and last) with bulkheads present
+     */
+    public static List<SectionPropertyMapEntry> buildDefaultBulkheadList(List<CubicBezierFunction> sideView) {
+        return IntStream.range(0, sideView.size())
+                .boxed()
+                .map(i -> new SectionPropertyMapEntry(sideView.get(i).getX1(), sideView.get(i).getX2(), String.valueOf((i == 0 || i == sideView.size() - 1))))
+                .toList();
     }
 }

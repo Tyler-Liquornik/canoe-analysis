@@ -102,7 +102,7 @@ public class Hull {
     };
 
     /**
-     * The new model's constructor
+     * The new model's constructor for serialization and storage
      * @param concreteDensity  the uniform concrete destiny of the hull
      * @param bulkheadDensity the uniform bulkhead density across all bulkhead material
      * @param hullProperties the hull properties (including densities and section maps)
@@ -121,13 +121,12 @@ public class Hull {
         this.concreteDensity = concreteDensity;
         this.bulkheadDensity = bulkheadDensity;
 
-        // New Validators
-        validateBasicValues(hullProperties.getThicknessMap(), hullProperties.getBulkheadMap(), sideViewSegments, topViewSegments);
-        validateMaps(hullProperties.getThicknessMap(), hullProperties.getBulkheadMap(), sideViewSegments);
-        // Legacy validators from old model, remodeled for new model
-//        validateC1Continuity();
-//        validateFloorThickness();
-//        validateWallThickness();
+        // Validators
+        validateBasicValues();
+        validateMaps();
+        validateFloorThickness();
+        validateWallThickness();
+        validateC1Continuity();
     }
 
     /**
@@ -141,7 +140,7 @@ public class Hull {
     public Hull(double concreteDensity, double bulkheadDensity, List<CubicBezierFunction> sideView,
                 List<CubicBezierFunction> topView, double thickness) {
         this(concreteDensity, bulkheadDensity, new HullProperties(
-                buildThicknessList(sideView, thickness), buildBulkheadList(sideView)), sideView, topView);
+                SharkBaitHullLibrary.buildUniformThicknessList(sideView, thickness), SharkBaitHullLibrary.buildDefaultBulkheadList(sideView)), sideView, topView);
     }
 
     /**
@@ -160,7 +159,7 @@ public class Hull {
                 0, // concreteDensity
                 0, // bulkheadDensity
                 new HullProperties(
-                        Hull.buildThicknessList(
+                        SharkBaitHullLibrary.buildUniformThicknessList(
                                 List.of(
                                         new CubicBezierFunction(
                                                 0, -height,                 // start point (x1, y1)
@@ -171,7 +170,7 @@ public class Hull {
                                 ),
                                 thickness
                         ),
-                        Hull.buildBulkheadList(
+                        SharkBaitHullLibrary.buildDefaultBulkheadList(
                                 List.of(
                                         new CubicBezierFunction(
                                                 0, -height,
@@ -201,46 +200,36 @@ public class Hull {
         );
     }
 
-    private static List<SectionPropertyMapEntry> buildThicknessList(List<CubicBezierFunction> sideView, double thickness) {
-        return IntStream.range(0, sideView.size())
-                .boxed()
-                .map(i -> new SectionPropertyMapEntry(sideView.get(i).getX1(), sideView.get(i).getX2(), String.valueOf(thickness)))
-                .toList();
-    }
-
-    private static List<SectionPropertyMapEntry> buildBulkheadList(List<CubicBezierFunction> sideView) {
-        return IntStream.range(0, sideView.size())
-                .boxed()
-                .map(i -> new SectionPropertyMapEntry(sideView.get(i).getX1(), sideView.get(i).getX2(), String.valueOf((i == 0 || i == sideView.size() - 1))))
-                .toList();
-    }
-
-    private void validateBasicValues(List<SectionPropertyMapEntry> thicknessMap, List<SectionPropertyMapEntry> bulkheadMap, List<CubicBezierFunction> sideView, List<CubicBezierFunction> topView) {
+    /**
+     * Validates basic non-null and size conditions for hull properties and curve segments.
+     */
+    private void validateBasicValues() {
         // Check for null in any list
-        if (Stream.of(thicknessMap, bulkheadMap, sideView, topView).anyMatch(Objects::isNull))
+        if (Stream.of(hullProperties.getThicknessMap(), hullProperties.getBulkheadMap(), sideViewSegments, topViewSegments).anyMatch(Objects::isNull))
             throw new IllegalArgumentException("sideView, topView, thicknessList, and bulkheadList must not be null");
-        if (thicknessMap.isEmpty() || bulkheadMap.isEmpty())
+        if (hullProperties.getThicknessMap().isEmpty() || hullProperties.getBulkheadMap().isEmpty())
             throw new IllegalArgumentException("There must be at least one section in the side view");
-        if (sideView.size() != topView.size() || thicknessMap.size() != sideView.size() || bulkheadMap.size() != sideView.size())
+        if (sideViewSegments.size() != topViewSegments.size() || hullProperties.getThicknessMap().size() != sideViewSegments.size() || hullProperties.getBulkheadMap().size() != sideViewSegments.size())
             throw new IllegalArgumentException("sideView, topView, thicknessList, and bulkheadList must have the same number of elements");
     }
 
-    private void validateMaps(List<SectionPropertyMapEntry> thicknessMap,
-                              List<SectionPropertyMapEntry> bulkheadMap,
-                              List<CubicBezierFunction> sideView) {
-        if (!IntStream.range(0, thicknessMap.size())
+    /**
+     * Validates that the thickness and bulkhead maps define the same sections and match the boundaries of the side view curves.
+     */
+    private void validateMaps() {
+        if (!IntStream.range(0, hullProperties.getThicknessMap().size())
                 .allMatch(i -> {
-                    Section s1 = thicknessMap.get(i);
-                    Section s2 = bulkheadMap.get(i);
+                    Section s1 = hullProperties.getThicknessMap().get(i);
+                    Section s2 = hullProperties.getBulkheadMap().get(i);
                     return s1.getX() == s2.getX() && s1.getRx() == s2.getRx();
                 }))
             throw new IllegalArgumentException("Thickness list and bulkhead list do not describe the same sections");
 
         // Validate that each section matches the corresponding side view curve boundaries.
-        IntStream.range(0, thicknessMap.size())
+        IntStream.range(0, hullProperties.getThicknessMap().size())
                 .forEach(i -> {
-                    Section s = thicknessMap.get(i);
-                    CubicBezierFunction side = sideView.get(i);
+                    Section s = hullProperties.getThicknessMap().get(i);
+                    CubicBezierFunction side = sideViewSegments.get(i);
                     if (Math.abs(side.getX1() - s.getX()) > 1e-3 || Math.abs(side.getX2() - s.getRx()) > 1e-3)
                         throw new IllegalArgumentException(String.format(
                                 "Section [%.3f, %.3f] does not match side view boundaries [%.3f, %.3f].",
@@ -315,17 +304,16 @@ public class Hull {
     private void validateWallThickness() {
         double tol = 1e-6;
         List<SectionPropertyMapEntry> thicknessMap = hullProperties.getThicknessMap();
-        // Assuming thicknessMap and topViewSegments have the same ordering and length.
         for (int i = 0; i < thicknessMap.size(); i++) {
             SectionPropertyMapEntry entry = thicknessMap.get(i);
             double currentThickness = Double.parseDouble(entry.getValue());
             CubicBezierFunction topCurve = topViewSegments.get(i);
             UnivariateObjectiveFunction obj = new UnivariateObjectiveFunction(x -> Math.abs(topCurve.value(x)));
             double maxTop = new BrentOptimizer(1e-10, 1e-14)
-                    .optimize(MaxEval.unlimited(), obj, new SearchInterval(entry.getX(), entry.getRx()))
+                    .optimize(MaxEval.unlimited(), obj, new SearchInterval(topCurve.getX1(), topCurve.getX2()))
                     .getValue();
             double sectionWidth = 2 * maxTop;
-            if (currentThickness - (sectionWidth / 2) > tol) {
+            if (currentThickness > (sectionWidth / 2) + tol) {
                 throw new IllegalArgumentException(String.format(
                         "Hull walls would be greater than the width of the canoe. Thickness: %.4f, Allowed max: %.4f",
                         currentThickness, sectionWidth / 2));
@@ -333,7 +321,10 @@ public class Hull {
         }
     }
 
-
+    /**
+     * Max canoe height Computed by finding the minimum y-value across all side-view segments (the lowest point), then converting it to a positive height value.
+     * @return the maximum height (in meters) of the canoe.
+     */
     @JsonIgnore
     public double getMaxHeight() {
         double globalMinY = 0;
@@ -356,12 +347,18 @@ public class Hull {
         return CalculusUtils.roundXDecimalDigits(-globalMinY, 10);
     }
 
+    /**
+     * @return the length (in meters) of the canoe hull.
+     */
     @JsonIgnore
     public double getLength() {
         if (sideViewSegments == null || sideViewSegments.isEmpty()) return 0;
         return sideViewSegments.getLast().getX2() - sideViewSegments.getFirst().getX1();
     }
 
+    /**
+     * @return a Section with start equal to the first segment's x1 and end equal to the last segment's x2.
+     */
     @JsonIgnore
     public Section getSection() {
         if (sideViewSegments == null || sideViewSegments.isEmpty()) return null;
@@ -372,7 +369,6 @@ public class Hull {
      * Returns the maximum width of the hull computed directly from the top-view segments.
      * For each top-view segment, it finds the maximum absolute value over its domain and doubles it,
      * then returns the largest width among all segments.
-     *
      * @return the maximum hull width.
      */
     @JsonIgnore

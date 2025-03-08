@@ -89,13 +89,14 @@ public class HullBuilderController implements Initializable, ModuleController {
     private int selectedBezierSegmentIndex = -1;
     @Getter @Setter
     private List<Range> overlaySections;
+    @Getter @Setter
+    private Point2D initialKnotDragKnotPos;
     private boolean previousPressedBefore;
     private boolean nextPressedBefore;
     private boolean sectionPropertiesSelected;
     private int graphicsViewingState;
     private boolean knotEditorEnabled;
     private Point2D initialKnotDragMousePos;
-    private Point2D initialKnotDragKnotPos;
     private Point2D newKnotDragKnotPos;
     private Hull knotDraggingPreviewHull;
     private long dragStartTime;
@@ -447,7 +448,7 @@ public class HullBuilderController implements Initializable, ModuleController {
      * Display section properties with corresponding attributes
      */
     public void setSectionProperties(double height, double volume, double mass, double x, double rx) {
-        String heightInfo = String.format("%.4f m", height);
+        String heightInfo = String.format("%.4f m", Math.abs(height));
         this.heightLabel.setText(heightInfo);
         String interval = String.format("(%.4f m, %.4f m)", x, rx);
         this.intervalLabel.setText(interval);
@@ -1089,6 +1090,14 @@ public class HullBuilderController implements Initializable, ModuleController {
             knotDraggingPreviewHull = HullGeometryService.dragKnotPoint(initialKnotDragKnotPos, newKnotDragKnotPos);
             renderHullGraphic(knotDraggingPreviewHull);
             updateHullIntersectionPointDisplay(initialKnotDragKnotPos, newKnotDragKnotPos);
+            if (sectionPropertiesSelected)
+                setBlankSectionProperties();
+            else
+                setSectionProperties(knotDraggingPreviewHull.getMaxHeight(),
+                        knotDraggingPreviewHull.getTotalVolume(),
+                        knotDraggingPreviewHull.getMass(),
+                        0,
+                        knotDraggingPreviewHull.getLength());
             hullViewAnchorPane.setCursor(Cursor.CLOSED_HAND);
         }
         else if (dragIndicatorLine != null) dragIndicatorLine.setVisible(false);
@@ -1119,6 +1128,9 @@ public class HullBuilderController implements Initializable, ModuleController {
                 updateMouseXTrackerLine(event.getX());
             }
             renderHullGraphic(hull);
+            if (sectionPropertiesSelected) setBlankSectionProperties();
+            else setSectionProperties(hull.getMaxHeight(), hull.getTotalVolume(), hull.getMass(), 0, hull.getLength());
+            toggleKnotEditingHullCurveOverlay();
 
             // More State updates
             knotDraggingPreviewHull = null;
