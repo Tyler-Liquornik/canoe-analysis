@@ -590,7 +590,7 @@ public class HullGeometryService {
         double adjacentSectionPointX = knotPos.getX() + plusMinusEps;
         CubicBezierFunction adjacentBezier = CalculusUtils.getSegmentForX(hull.getSideViewSegments(), adjacentSectionPointX);
         double outerXBoundary = isDraggingLeft ? adjacentBezier.getControlX1() : adjacentBezier.getControlX2(); // boundary against which the user might be dragging
-        outerXBoundary -= hull.getLength() *  plusMinusEps; // Create a buffer a few epsilon thick
+        outerXBoundary -= 2 * plusMinusEps;
 
         // Clamp new knot position vertically using global vertical bounds.
         // For horizontal, we allow the new knot to be any value (it might be moved by the user)

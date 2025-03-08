@@ -15,6 +15,7 @@ import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import com.wecca.canoeanalysis.utils.SectionPropertyMapEntry;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
+import javafx.geometry.Point2D;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -646,5 +647,19 @@ public class Hull {
                 MaxEval.unlimited().getMaxEval(),
                 getWeightDistributionFunction(),
                 full.getX(), full.getRx());
+    }
+
+    /**
+     * @return a lst of all the knot points in the hull
+     */
+    @JsonIgnore
+    public List<Point2D> getSideViewKnotPoints() {
+        List<Point2D> knots = new ArrayList<>();
+        for (CubicBezierFunction segment : sideViewSegments) {
+            knots.add(new Point2D(segment.getX1(), segment.getY1()));
+        }
+        CubicBezierFunction lastSegment = sideViewSegments.getLast();
+        knots.add(new Point2D(lastSegment.getX2(), lastSegment.getY2()));
+        return knots;
     }
 }
