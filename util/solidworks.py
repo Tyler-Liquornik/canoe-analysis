@@ -90,7 +90,7 @@ def compute_convex_hull(points2d: np.ndarray) -> np.ndarray:
     sorted_pts = sorted(points2d.tolist(), key=lambda p: (p[0], p[1]))
     return np.array(sorted_pts)
 
-def sample_polyline(polyline: np.ndarray, num_samples: int = 200) -> np.ndarray:
+def sample_polyline(polyline: np.ndarray, num_samples: int = 500) -> np.ndarray:
     """
     Densely samples a closed polyline using cumulative distance interpolation.
 
@@ -139,25 +139,43 @@ def process_projection(vertices: List[Tuple[float, float, float]], plane: str) -
 
 def plot_projections(projections: Dict[str, np.ndarray]) -> None:
     """
-    Plots projection curves for multiple planes in subplots.
+    Plots projection curves for each view in a 1x3 subplot layout.
+    1. Rotates each set of 2D points 90° counterclockwise.
+    2. Shifts them so min x == 0.
+    3. Plots the result.
 
     Args:
-        projections: Dictionary with keys as plane names and values as 2D point arrays.
+        projections: Dictionary mapping view names to 2D point arrays.
     """
+    # Rotation matrix for 90° CCW: [[0, -1], [1, 0]]
+    R = np.array([[0, -1],
+                  [1,  0]])
+
     num_plots = len(projections)
     fig, axs = plt.subplots(1, num_plots, figsize=(6*num_plots, 6))
     if num_plots == 1:
         axs = [axs]
-    for ax, (plane, pts) in zip(axs, projections.items()):
-        ax.plot(pts[:, 0], pts[:, 1], '-o', markersize=4, linewidth=2, label=f'{plane} Projection')
-        ax.set_title(f"{plane} Projection", fontsize=16)
+
+    for ax, (view, pts) in zip(axs, projections.items()):
+        # 1) Rotate 90° CCW
+        rot_pts = np.dot(pts, R.T)
+
+        # 2) Shift so min x == 0
+        min_x = np.min(rot_pts[:, 0])
+        rot_pts[:, 0] -= min_x
+
+        # 3) Plot
+        ax.plot(rot_pts[:, 0], rot_pts[:, 1], '-o', markersize=0.1, linewidth=2, label=view)
+        ax.set_title(view, fontsize=16)
         ax.set_xlabel('x', fontsize=14)
         ax.set_ylabel('y', fontsize=14)
         ax.grid(True)
         ax.legend()
         ax.axis('equal')
+
     plt.tight_layout()
     plt.show()
+
 
 def print_projections(projections: Dict[str, np.ndarray]) -> None:
     """
