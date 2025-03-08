@@ -572,37 +572,83 @@ public class HullGeometryService {
      * Only the side–view Bézier curve(s) are updated; the top–view curves remain unchanged.
      * @param knotPos the current position of the knot in the side view
      * @param newKnotPos the new position for the knot in the side view
-     * @return a new Hull instance with updated side–view curves
+     * @return a new Hull instance with updated side–view curves and refreshed hull properties
      */
     public static Hull dragKnotPoint(@NonNull Point2D knotPos, @NonNull Point2D newKnotPos) {
         Hull hull = getHull();
+
+        // Define vertical bounds in function space.
+        double buffer = 1e-3;
+        double maxYAllowed = -buffer;
+        double minYAllowed = -hull.getMaxHeight() + buffer;
+
         for (int i = 0; i < hull.getSideViewSegments().size(); i++) {
+
+            // Identify the knot to drag by comparing the first knot of the segment.
             CubicBezierFunction bezier = hull.getSideViewSegments().get(i);
-            if (bezier.getKnotPoints().getFirst().distance(knotPos) < 1e-6 /* Numerically Equal in R^2 */ ) {
+            if (bezier.getKnotPoints().getFirst().distance(knotPos) < 1e-6) {
                 double deltaX = newKnotPos.getX() - knotPos.getX();
                 double deltaY = newKnotPos.getY() - knotPos.getY();
-                // Update the left knot and control point of the current segment.
+
+                // Update current segment's left knot and control point.
                 bezier.setX1(newKnotPos.getX());
-                hull.getHullProperties().getThicknessMap().get(i).setX(newKnotPos.getX());
-                hull.getHullProperties().getBulkheadMap().get(i).setX(newKnotPos.getX());
                 bezier.setY1(newKnotPos.getY());
-                bezier.setControlX1(bezier.getControlX1() + deltaX);
-                bezier.setControlY1(bezier.getControlY1() + deltaY);
-                // For C1 continuity, update the right knot and control point of the previous segment (if exists).
+
+                // Calculate new control point for the current segment.
+                double newControlX1 = bezier.getControlX1() + deltaX;
+                double maxAllowedRight = bezier.getControlX2() - buffer; // ensure controlX1 doesn't cross controlX2
+                if (newControlX1 > maxAllowedRight) newControlX1 = maxAllowedRight;
+                double newControlY1 = bezier.getControlY1() + deltaY;
+                if (newControlY1 > maxYAllowed) newControlY1 = maxYAllowed;
+                if (newControlY1 < minYAllowed) newControlY1 = minYAllowed;
+                bezier.setControlX1(newControlX1);
+                bezier.setControlY1(newControlY1);
+
+                // If a left-adjacent segment exists, update its right knot and control point.
                 if (i > 0) {
                     CubicBezierFunction prevBezier = hull.getSideViewSegments().get(i - 1);
                     prevBezier.setX2(newKnotPos.getX());
-                    hull.getHullProperties().getThicknessMap().get(i - 1).setRx(newKnotPos.getX());
-                    hull.getHullProperties().getBulkheadMap().get(i - 1).setRx(newKnotPos.getX());
                     prevBezier.setY2(newKnotPos.getY());
-                    prevBezier.setControlX2(prevBezier.getControlX2() + deltaX);
-                    prevBezier.setControlY2(prevBezier.getControlY2() + deltaY);
+                    double newControlX2 = prevBezier.getControlX2() + deltaX;
+                    double minAllowedLeft = prevBezier.getControlX1() + buffer; // ensure controlX2 doesn't cross controlX1
+                    if (newControlX2 < minAllowedLeft) newControlX2 = minAllowedLeft;
+                    double newControlY2 = prevBezier.getControlY2() + deltaY;
+                    if (newControlY2 > maxYAllowed) newControlY2 = maxYAllowed;
+                    if (newControlY2 < minYAllowed) newControlY2 = minYAllowed;
+                    prevBezier.setControlX2(newControlX2);
+                    prevBezier.setControlY2(newControlY2);
                 }
-                // Do not modify topViewSegments.
-                return hull;
+
+                // Update the hull properties using helper methods.
+                return updateHullProperties(hull);
             }
         }
         throw new IllegalArgumentException("No side-view knot found at position: " + knotPos);
+    }
+
+    /**
+     * Helper method to update the hull properties when the x coordinates of the side view knots change
+     * Note: This is fine to not dopy the hull because it's a helper (i.e. it's private!)
+     * @param hull the hull to update
+     * @return the updated hull
+     */
+    public static Hull updateHullProperties(Hull hull) {
+        List<CubicBezierFunction> sideView = hull.getSideViewSegments();
+        // Thickness is the previous hull thickness average across map entries or 13mm as a fallback
+        double thickness = 0.013; // default value in meters
+        if (!hull.getHullProperties().getThicknessMap().isEmpty()) {
+            try {
+                thickness = hull.getHullProperties().getThicknessMap().stream()
+                        .mapToDouble(tm ->
+                                Double.parseDouble(tm.getValue()))
+                        .average()
+                        .orElseThrow(() -> new RuntimeException("Error calculating average hull thickness"));
+            } catch (Exception e) {e.printStackTrace();}
+        }
+        // Update the maps using helper methods
+        hull.getHullProperties().setThicknessMap(Hull.buildUniformThicknessList(sideView, thickness));
+        hull.getHullProperties().setBulkheadMap(Hull.buildDefaultBulkheadList(sideView));
+        return hull;
     }
 
     /**

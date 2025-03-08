@@ -9,6 +9,7 @@ import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.components.graphics.hull.CubicBezierSplineHullGraphic;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Hull;
+import com.wecca.canoeanalysis.models.canoe.HullProperties;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.function.Range;
 import com.wecca.canoeanalysis.models.function.Section;
@@ -17,6 +18,7 @@ import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.GraphicsUtils;
+import com.wecca.canoeanalysis.utils.SectionPropertyMapEntry;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import javafx.beans.value.ChangeListener;
 import javafx.event.EventHandler;
@@ -447,7 +449,7 @@ public class HullBuilderController implements Initializable, ModuleController {
      * Display section properties with corresponding attributes
      */
     public void setSectionProperties(double height, double volume, double mass, double x, double rx) {
-        String heightInfo = String.format("%.4f m", height);
+        String heightInfo = String.format("%.4f m", Math.abs(height));
         this.heightLabel.setText(heightInfo);
         String interval = String.format("(%.4f m, %.4f m)", x, rx);
         this.intervalLabel.setText(interval);
@@ -1089,6 +1091,14 @@ public class HullBuilderController implements Initializable, ModuleController {
             knotDraggingPreviewHull = HullGeometryService.dragKnotPoint(initialKnotDragKnotPos, newKnotDragKnotPos);
             renderHullGraphic(knotDraggingPreviewHull);
             updateHullIntersectionPointDisplay(initialKnotDragKnotPos, newKnotDragKnotPos);
+            if (sectionPropertiesSelected)
+                setBlankSectionProperties();
+            else
+                setSectionProperties(knotDraggingPreviewHull.getMaxHeight(),
+                        knotDraggingPreviewHull.getTotalVolume(),
+                        knotDraggingPreviewHull.getMass(),
+                        0,
+                        knotDraggingPreviewHull.getLength());
             hullViewAnchorPane.setCursor(Cursor.CLOSED_HAND);
         }
         else if (dragIndicatorLine != null) dragIndicatorLine.setVisible(false);
@@ -1119,6 +1129,8 @@ public class HullBuilderController implements Initializable, ModuleController {
                 updateMouseXTrackerLine(event.getX());
             }
             renderHullGraphic(hull);
+            if (sectionPropertiesSelected) setBlankSectionProperties();
+            else setSectionProperties(hull.getMaxHeight(), hull.getTotalVolume(), hull.getMass(), 0, hull.getLength());
             toggleKnotEditingHullCurveOverlay();
 
             // More State updates
