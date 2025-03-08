@@ -9,7 +9,6 @@ import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.components.graphics.hull.CubicBezierSplineHullGraphic;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Hull;
-import com.wecca.canoeanalysis.models.canoe.HullProperties;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.function.Range;
 import com.wecca.canoeanalysis.models.function.Section;
@@ -18,7 +17,6 @@ import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.GraphicsUtils;
-import com.wecca.canoeanalysis.utils.SectionPropertyMapEntry;
 import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
 import javafx.beans.value.ChangeListener;
 import javafx.event.EventHandler;
@@ -91,13 +89,14 @@ public class HullBuilderController implements Initializable, ModuleController {
     private int selectedBezierSegmentIndex = -1;
     @Getter @Setter
     private List<Range> overlaySections;
+    @Getter @Setter
+    private Point2D initialKnotDragKnotPos;
     private boolean previousPressedBefore;
     private boolean nextPressedBefore;
     private boolean sectionPropertiesSelected;
     private int graphicsViewingState;
     private boolean knotEditorEnabled;
     private Point2D initialKnotDragMousePos;
-    private Point2D initialKnotDragKnotPos;
     private Point2D newKnotDragKnotPos;
     private Hull knotDraggingPreviewHull;
     private long dragStartTime;

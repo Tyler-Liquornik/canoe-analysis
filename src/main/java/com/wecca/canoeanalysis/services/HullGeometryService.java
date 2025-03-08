@@ -576,105 +576,71 @@ public class HullGeometryService {
      * The control point is repositioned to preserve its original polar offset (distance and angle) relative to the knot.
      * If the candidate control point falls outside its allowed horizontal (from control points) or vertical (global)
      * envelope, it is retracted along its ray until it lies on the boundary.
-     *
-     * @param knotPos    the original position of the knot in the side view
+     * @param knotPos the original position of the knot in the side view
      * @param newKnotPos the new (requested) position for the knot in the side view
      * @return a new Hull instance with updated side–view curves and refreshed hull properties
      */
     public static Hull dragKnotPoint(@NonNull Point2D knotPos, @NonNull Point2D newKnotPos) {
         Hull hull = getHull();
-        double buffer = 1e-3;
-        double globalMaxY = -buffer;                  // vertical top: y ≤ 0
-        double globalMinY = -hull.getMaxHeight() + buffer; // vertical bottom
-
-        // For horizontal boundaries, use per–segment values.
-        // For the current segment's left control point, allowed x-range: [knotX, controlX2 - buffer].
-        // For the left-adjacent segment's right control point, allowed x-range: [prevControlX1 + buffer, newKnotX].
+        double eps = OPEN_INTERVAL_TOLERANCE;
+        double globalMaxY = -eps;
+        double globalMinY = -hull.getMaxHeight() + eps;
+        boolean isDraggingLeft = newKnotPos.getX() < knotPos.getX();
+        double plusMinusEps = !isDraggingLeft ? eps : -eps;
+        double adjacentSectionPointX = knotPos.getX() + plusMinusEps;
+        CubicBezierFunction adjacentBezier = CalculusUtils.getSegmentForX(hull.getSideViewSegments(), adjacentSectionPointX);
+        double outerXBoundary = isDraggingLeft ? adjacentBezier.getControlX1() : adjacentBezier.getControlX2();
+        outerXBoundary -= hull.getLength() *  plusMinusEps;
 
         // Clamp new knot position vertically using global vertical bounds.
         // For horizontal, we allow the new knot to be any value (it might be moved by the user)
-        double newKnotX = newKnotPos.getX();
-        double newKnotY = Math.max(globalMinY, Math.min(newKnotPos.getY(), globalMaxY));
-        Point2D clampedKnotPos = new Point2D(newKnotX, newKnotY);
+        double clampedNewKnotX;
+        if (isDraggingLeft) clampedNewKnotX = Math.max(newKnotPos.getX(), outerXBoundary);
+        else clampedNewKnotX = Math.min(newKnotPos.getX(), outerXBoundary);
+        double clampedNewKnotY = Math.max(globalMinY, Math.min(newKnotPos.getY(), globalMaxY));
+        Point2D clampedNewKnot = new Point2D(clampedNewKnotX, clampedNewKnotY);
 
-        // Locate the segment whose first knot matches the one being dragged.
+        // This should in theory trigger when a knot drag collides with a wall
+        if (!clampedNewKnot.equals(newKnotPos)) {
+            System.out.println("*");
+        }
+
+        // Locate the segment whose left knot matches the one being dragged.
         for (int i = 0; i < hull.getSideViewSegments().size(); i++) {
             CubicBezierFunction bezier = hull.getSideViewSegments().get(i);
             if (bezier.getKnotPoints().getFirst().distance(knotPos) < 1e-6) {
                 // Update the current segment's knot to the new clamped position.
-                bezier.setX1(clampedKnotPos.getX());
-                bezier.setY1(clampedKnotPos.getY());
+                bezier.setX1(clampedNewKnot.getX());
+                bezier.setY1(clampedNewKnot.getY());
 
                 // Compute the original offset vector from the old knot to its control point.
                 Point2D oldControl = new Point2D(bezier.getControlX1(), bezier.getControlY1());
                 Point2D offset = oldControl.subtract(knotPos); // original polar offset
 
                 // Candidate new control point preserving the same offset.
-                Point2D candidateControl = clampedKnotPos.add(offset);
+                Point2D candidateControl = clampedNewKnot.add(offset);
 
                 // Determine allowed horizontal bounds for the current segment's left control point.
                 double allowedMinX = bezier.getKnotPoints().getFirst().getX();
-                double allowedMaxX = bezier.getControlX2() - buffer; // from this segment’s right control point
+                double allowedMaxX = bezier.getControlX2() - eps; // from this segment’s right control point
 
-                // Compute horizontal scale factor based on candidateControl.x relative to allowed bounds.
-                double scaleX = 1.0;
-                if (offset.getX() != 0) {
-                    if (candidateControl.getX() < allowedMinX) {
-                        scaleX = (allowedMinX - clampedKnotPos.getX()) / offset.getX();
-                    } else if (candidateControl.getX() > allowedMaxX) {
-                        scaleX = (allowedMaxX - clampedKnotPos.getX()) / offset.getX();
-                    }
-                }
-
-                // For vertical, allowed bounds are global.
-                double scaleY = 1.0;
-                if (offset.getY() != 0) {
-                    if (candidateControl.getY() < globalMinY) {
-                        scaleY = (globalMinY - clampedKnotPos.getY()) / offset.getY();
-                    } else if (candidateControl.getY() > globalMaxY) {
-                        scaleY = (globalMaxY - clampedKnotPos.getY()) / offset.getY();
-                    }
-                }
-
-                double scale = Math.min(scaleX, scaleY);
-                if (scale < 1.0) {
-                    candidateControl = clampedKnotPos.add(offset.multiply(scale));
-                }
+                // Compute horizontal & vertical scale factor
+                candidateControl = adjustCandidateControl(globalMaxY, globalMinY, clampedNewKnot, offset, candidateControl, allowedMinX, allowedMaxX);
                 bezier.setControlX1(candidateControl.getX());
                 bezier.setControlY1(candidateControl.getY());
 
                 // Update left-adjacent segment if it exists.
                 if (i > 0) {
                     CubicBezierFunction prevBezier = hull.getSideViewSegments().get(i - 1);
-                    prevBezier.setX2(clampedKnotPos.getX());
-                    prevBezier.setY2(clampedKnotPos.getY());
+                    prevBezier.setX2(clampedNewKnot.getX());
+                    prevBezier.setY2(clampedNewKnot.getY());
                     Point2D oldControlPrev = new Point2D(prevBezier.getControlX2(), prevBezier.getControlY2());
                     Point2D offsetPrev = oldControlPrev.subtract(knotPos);
-                    Point2D candidateControlPrev = clampedKnotPos.add(offsetPrev);
+                    Point2D candidateControlPrev = clampedNewKnot.add(offsetPrev);
                     // Allowed horizontal bounds for the left-adjacent segment's right control point:
-                    double prevAllowedMinX = prevBezier.getControlX1() + buffer;
-                    double prevAllowedMaxX = clampedKnotPos.getX(); // new knot x becomes upper bound
-
-                    double scaleXPrev = 1.0;
-                    if (offsetPrev.getX() != 0) {
-                        if (candidateControlPrev.getX() < prevAllowedMinX) {
-                            scaleXPrev = (prevAllowedMinX - clampedKnotPos.getX()) / offsetPrev.getX();
-                        } else if (candidateControlPrev.getX() > prevAllowedMaxX) {
-                            scaleXPrev = (prevAllowedMaxX - clampedKnotPos.getX()) / offsetPrev.getX();
-                        }
-                    }
-                    double scaleYPrev = 1.0;
-                    if (offsetPrev.getY() != 0) {
-                        if (candidateControlPrev.getY() < globalMinY) {
-                            scaleYPrev = (globalMinY - clampedKnotPos.getY()) / offsetPrev.getY();
-                        } else if (candidateControlPrev.getY() > globalMaxY) {
-                            scaleYPrev = (globalMaxY - clampedKnotPos.getY()) / offsetPrev.getY();
-                        }
-                    }
-                    double scalePrev = Math.min(scaleXPrev, scaleYPrev);
-                    if (scalePrev < 1.0) {
-                        candidateControlPrev = clampedKnotPos.add(offsetPrev.multiply(scalePrev));
-                    }
+                    double prevAllowedMinX = prevBezier.getControlX1() + eps;
+                    double prevAllowedMaxX = clampedNewKnot.getX(); // new knot x becomes upper bound
+                    candidateControlPrev = adjustCandidateControl(globalMaxY, globalMinY, clampedNewKnot, offsetPrev, candidateControlPrev, prevAllowedMinX, prevAllowedMaxX);
                     prevBezier.setControlX2(candidateControlPrev.getX());
                     prevBezier.setControlY2(candidateControlPrev.getY());
                 }
@@ -686,8 +652,24 @@ public class HullGeometryService {
         throw new IllegalArgumentException("No side-view knot found at position: " + knotPos);
     }
 
-
-
+    /**
+     * This got factored out by IntelliJ for duped code. No idea what it is.
+     */
+    private static Point2D adjustCandidateControl(double globalMaxY, double globalMinY, Point2D clampedKnotPos, Point2D offsetPrev, Point2D candidateControlPrev, double prevAllowedMinX, double prevAllowedMaxX) {
+        double scaleXPrev = 1.0;
+        if (offsetPrev.getX() != 0) {
+            if (candidateControlPrev.getX() < prevAllowedMinX) scaleXPrev = (prevAllowedMinX - clampedKnotPos.getX()) / offsetPrev.getX();
+            else if (candidateControlPrev.getX() > prevAllowedMaxX) scaleXPrev = (prevAllowedMaxX - clampedKnotPos.getX()) / offsetPrev.getX();
+        }
+        double scaleYPrev = 1.0;
+        if (offsetPrev.getY() != 0) {
+            if (candidateControlPrev.getY() < globalMinY) scaleYPrev = (globalMinY - clampedKnotPos.getY()) / offsetPrev.getY();
+            else if (candidateControlPrev.getY() > globalMaxY) scaleYPrev = (globalMaxY - clampedKnotPos.getY()) / offsetPrev.getY();
+        }
+        double scalePrev = Math.min(scaleXPrev, scaleYPrev);
+        if (scalePrev < 1.0) candidateControlPrev = clampedKnotPos.add(offsetPrev.multiply(scalePrev));
+        return candidateControlPrev;
+    }
 
     /**
      * Helper method to update the hull properties when the x coordinates of the side view knots change
