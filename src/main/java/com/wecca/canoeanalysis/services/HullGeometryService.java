@@ -589,21 +589,16 @@ public class HullGeometryService {
         double plusMinusEps = !isDraggingLeft ? eps : -eps;
         double adjacentSectionPointX = knotPos.getX() + plusMinusEps;
         CubicBezierFunction adjacentBezier = CalculusUtils.getSegmentForX(hull.getSideViewSegments(), adjacentSectionPointX);
-        double outerXBoundary = isDraggingLeft ? adjacentBezier.getControlX1() : adjacentBezier.getControlX2();
-        outerXBoundary -= hull.getLength() *  plusMinusEps;
+        double outerXBoundary = isDraggingLeft ? adjacentBezier.getControlX1() : adjacentBezier.getControlX2(); // boundary against which the user might be dragging
+        outerXBoundary -= hull.getLength() *  plusMinusEps; // Create a buffer a few epsilon thick
 
         // Clamp new knot position vertically using global vertical bounds.
         // For horizontal, we allow the new knot to be any value (it might be moved by the user)
         double clampedNewKnotX;
         if (isDraggingLeft) clampedNewKnotX = Math.max(newKnotPos.getX(), outerXBoundary);
         else clampedNewKnotX = Math.min(newKnotPos.getX(), outerXBoundary);
-        double clampedNewKnotY = Math.max(globalMinY, Math.min(newKnotPos.getY(), globalMaxY));
+        double clampedNewKnotY = Math.max(hull.getLength() * eps + globalMinY, Math.min(newKnotPos.getY(), hull.getLength() * globalMaxY));
         Point2D clampedNewKnot = new Point2D(clampedNewKnotX, clampedNewKnotY);
-
-        // This should in theory trigger when a knot drag collides with a wall
-        if (!clampedNewKnot.equals(newKnotPos)) {
-            System.out.println("*");
-        }
 
         // Locate the segment whose left knot matches the one being dragged.
         for (int i = 0; i < hull.getSideViewSegments().size(); i++) {
@@ -652,8 +647,13 @@ public class HullGeometryService {
         throw new IllegalArgumentException("No side-view knot found at position: " + knotPos);
     }
 
+
     /**
-     * This got factored out by IntelliJ for duped code. No idea what it is.
+     * This helper method ensures that the candidate control point, computed as
+     * (clampedKnotPos + offsetPrev), falls within the allowed horizontal range [prevAllowedMinX, prevAllowedMaxX]
+     * and within the global vertical bounds [globalMinY, globalMaxY]. If the candidate is out-of-bounds
+     * along the offset vector, scale factors for the x and y components are computed, and the candidate
+     * is retracted along its ray (using the smaller scale factor) so that it lies exactly on the boundary.
      */
     private static Point2D adjustCandidateControl(double globalMaxY, double globalMinY, Point2D clampedKnotPos, Point2D offsetPrev, Point2D candidateControlPrev, double prevAllowedMinX, double prevAllowedMaxX) {
         double scaleXPrev = 1.0;
