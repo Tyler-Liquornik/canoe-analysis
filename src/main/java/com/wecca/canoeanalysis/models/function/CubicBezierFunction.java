@@ -51,15 +51,6 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
     @JsonIgnore @Getter(AccessLevel.NONE)
     private final double T_MAX = 1.0;
 
-    //--- Fast inversion support fields ---
-    @JsonIgnore
-    private double[] tLookup;
-    @JsonIgnore
-    private double[] xLookup;
-    @JsonIgnore
-    private static final int LOOKUP_SIZE = 250;
-    //--------------------------------------
-
 
     // Constructor for JSON deserialization
     @JsonCreator
@@ -89,7 +80,6 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
         this.y2 = params[7];
 
         // validateAsFunction();
-        buildLookupTable();
     }
 
     @JsonIgnore
@@ -107,38 +97,12 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
 
     /**
      * Returns the y value for a given x.
-     * If fast inversion is enabled (via setFastInversion(true)), uses a lookup table;
-     * otherwise, it uses a BrentOptimizer–based inversion.
      * @param x the x value
      * @return the corresponding y value on the curve.
      */
     @Override
     public double value(double x) {
-        double xMin = xLookup[0];
-        double xMax = xLookup[LOOKUP_SIZE - 1];
-        if (x <= xMin) return getCubicBezierCurve2D().point(T_MIN).y();
-        if (x >= xMax) return getCubicBezierCurve2D().point(T_MAX).y();
-
-        // Binary search for the first index with xLookup[index] >= x
-        int low = 0, high = LOOKUP_SIZE - 1;
-        while (low <= high) {
-            int mid = (low + high) >>> 1;
-            if (xLookup[mid] < x) low = mid + 1;
-            else high = mid - 1;
-        }
-
-        int i1 = Math.max(0, high);
-        int i2 = Math.min(LOOKUP_SIZE - 1, low);
-        double x1 = xLookup[i1];
-        double x2 = xLookup[i2];
-        double t1 = tLookup[i1];
-        double t2 = tLookup[i2];
-
-        double t;
-        if (Math.abs(x2 - x1) < 1e-12) t = t1;
-        else t = t1 + (x - x1) * (t2 - t1) / (x2 - x1);
-
-        return getCubicBezierCurve2D().point(t).y();
+        return getFunction().value(x);
     }
 
     /**
@@ -263,18 +227,5 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
         Point2D p1 = new Point2D(controlX1, controlY1);
         Point2D p2 = new Point2D(controlX2, controlY2);
         return Arrays.asList(p1, p2);
-    }
-
-    /**
-     * Builds the lookup table for t and corresponding x(t) values over [0,1].
-     */
-    private void buildLookupTable() {
-        tLookup = new double[LOOKUP_SIZE];
-        xLookup = new double[LOOKUP_SIZE];
-        for (int i = 0; i < LOOKUP_SIZE; i++) {
-            double t = T_MIN + i * (T_MAX - T_MIN) / (LOOKUP_SIZE - 1);
-            tLookup[i] = t;
-            xLookup[i] = getCubicBezierCurve2D().point(t).x();
-        }
     }
 }
