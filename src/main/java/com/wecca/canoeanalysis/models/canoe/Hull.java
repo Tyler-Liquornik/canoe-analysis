@@ -140,7 +140,7 @@ public class Hull {
     public Hull(double concreteDensity, double bulkheadDensity, List<CubicBezierFunction> sideView,
                 List<CubicBezierFunction> topView, double thickness) {
         this(concreteDensity, bulkheadDensity, new HullProperties(
-                buildUniformThicknessList(sideView, thickness), buildDefaultBulkheadList(sideView)), sideView, topView);
+                SharkBaitHullLibrary.buildUniformThicknessList(sideView, thickness), SharkBaitHullLibrary.buildDefaultBulkheadList(sideView)), sideView, topView);
     }
 
     /**
@@ -159,7 +159,7 @@ public class Hull {
                 0, // concreteDensity
                 0, // bulkheadDensity
                 new HullProperties(
-                        Hull.buildUniformThicknessList(
+                        SharkBaitHullLibrary.buildUniformThicknessList(
                                 List.of(
                                         new CubicBezierFunction(
                                                 0, -height,                 // start point (x1, y1)
@@ -170,7 +170,7 @@ public class Hull {
                                 ),
                                 thickness
                         ),
-                        Hull.buildDefaultBulkheadList(
+                        SharkBaitHullLibrary.buildDefaultBulkheadList(
                                 List.of(
                                         new CubicBezierFunction(
                                                 0, -height,
@@ -198,30 +198,6 @@ public class Hull {
                         )
                 )
         );
-    }
-
-    /**
-     * @param sideView the side view which provides the section information to build the bulkhead list with
-     * @param thickness the thickens which is to be spread uniformly across the hull in the returned model
-     * @return a uniform hull thickness setup for HullProperties (the same thickness in every section)
-     */
-    public static List<SectionPropertyMapEntry> buildUniformThicknessList(List<CubicBezierFunction> sideView, double thickness) {
-        return IntStream.range(0, sideView.size())
-                .boxed()
-                .map(i -> new SectionPropertyMapEntry(sideView.get(i).getX1(), sideView.get(i).getX2(), String.valueOf(thickness)))
-                .toList();
-    }
-
-    /**
-     * Convenient helper for the constructors for the bulkhead list (or "map")
-     * @param sideView the side view which provides the section information to build the bulkhead list with
-     * @return the default bulkhead setup for HullProperties, which is the edge sections (fist and last) with bulkheads present
-     */
-    public static List<SectionPropertyMapEntry> buildDefaultBulkheadList(List<CubicBezierFunction> sideView) {
-        return IntStream.range(0, sideView.size())
-                .boxed()
-                .map(i -> new SectionPropertyMapEntry(sideView.get(i).getX1(), sideView.get(i).getX2(), String.valueOf((i == 0 || i == sideView.size() - 1))))
-                .toList();
     }
 
     /**
