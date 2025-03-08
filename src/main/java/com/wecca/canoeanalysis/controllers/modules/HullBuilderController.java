@@ -1119,6 +1119,7 @@ public class HullBuilderController implements Initializable, ModuleController {
                 updateMouseXTrackerLine(event.getX());
             }
             renderHullGraphic(hull);
+            toggleKnotEditingHullCurveOverlay();
 
             // More State updates
             knotDraggingPreviewHull = null;
