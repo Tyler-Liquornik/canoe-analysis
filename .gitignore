@@ -4,7 +4,7 @@ target/
 !**/src/test/**/target/
 /src/main/resources/com/wecca/canoeanalysis/settings/settings.yaml
 venv/
-util/matplotlib/scatter-plot.py
+util/scatter-plot.py
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
