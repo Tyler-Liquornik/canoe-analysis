@@ -14,7 +14,8 @@ import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import com.wecca.canoeanalysis.utils.SectionPropertyMapEntry;
-import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
+import com.wecca.canoeanalysis.utils.HullLibrary;
+import javafx.geometry.Point2D;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -90,13 +91,13 @@ public class Hull {
     private final BoundedUnivariateFunction crossSectionalAreaAdjustmentFactorFunction = h -> {
         double[] coefficients = new double[] {0, 17.771, -210.367, 1409.91, -5420.6, 11769.4, -13242.7, 5880.62};
         for (int i = 0; i < coefficients.length; i++) {
-            coefficients[i] = coefficients[i] / Math.pow(SharkBaitHullLibrary.scalingFactor, i);
+            coefficients[i] = coefficients[i] / Math.pow(HullLibrary.scalingFactor, i);
         }
         PolynomialFunction regressionFit = new PolynomialFunction(coefficients);
-        if (0 <= h && h <= 0.4 * SharkBaitHullLibrary.scalingFactor)
+        if (0 <= h && h <= 0.4 * HullLibrary.scalingFactor)
             return regressionFit.value(h);
-        else if (h > 0.4 * SharkBaitHullLibrary.scalingFactor)
-            return regressionFit.value(0.4 * SharkBaitHullLibrary.scalingFactor);
+        else if (h > 0.4 * HullLibrary.scalingFactor)
+            return regressionFit.value(0.4 * HullLibrary.scalingFactor);
         else
             throw new IllegalArgumentException("Function undefined for negative values");
     };
@@ -140,7 +141,7 @@ public class Hull {
     public Hull(double concreteDensity, double bulkheadDensity, List<CubicBezierFunction> sideView,
                 List<CubicBezierFunction> topView, double thickness) {
         this(concreteDensity, bulkheadDensity, new HullProperties(
-                SharkBaitHullLibrary.buildUniformThicknessList(sideView, thickness), SharkBaitHullLibrary.buildDefaultBulkheadList(sideView)), sideView, topView);
+                HullLibrary.buildUniformThicknessList(sideView, thickness), HullLibrary.buildDefaultBulkheadList(sideView)), sideView, topView);
     }
 
     /**
@@ -159,7 +160,7 @@ public class Hull {
                 0, // concreteDensity
                 0, // bulkheadDensity
                 new HullProperties(
-                        SharkBaitHullLibrary.buildUniformThicknessList(
+                        HullLibrary.buildUniformThicknessList(
                                 List.of(
                                         new CubicBezierFunction(
                                                 0, -height,                 // start point (x1, y1)
@@ -170,7 +171,7 @@ public class Hull {
                                 ),
                                 thickness
                         ),
-                        SharkBaitHullLibrary.buildDefaultBulkheadList(
+                        HullLibrary.buildDefaultBulkheadList(
                                 List.of(
                                         new CubicBezierFunction(
                                                 0, -height,
@@ -646,5 +647,19 @@ public class Hull {
                 MaxEval.unlimited().getMaxEval(),
                 getWeightDistributionFunction(),
                 full.getX(), full.getRx());
+    }
+
+    /**
+     * @return a lst of all the knot points in the hull
+     */
+    @JsonIgnore
+    public List<Point2D> getSideViewKnotPoints() {
+        List<Point2D> knots = new ArrayList<>();
+        for (CubicBezierFunction segment : sideViewSegments) {
+            knots.add(new Point2D(segment.getX1(), segment.getY1()));
+        }
+        CubicBezierFunction lastSegment = sideViewSegments.getLast();
+        knots.add(new Point2D(lastSegment.getX2(), lastSegment.getY2()));
+        return knots;
     }
 }

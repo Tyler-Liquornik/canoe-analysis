@@ -22,7 +22,9 @@ public class Range {
     @JsonCreator
     public Range(@JsonProperty("x") double x, @JsonProperty("rx") double rx) {
         if (x == rx || x < 0 || rx < 0)
-            throw new IllegalArgumentException("Invalid values: x and rx must be positive and not equal or the range would collapse");
+            throw new IllegalArgumentException(
+                    String.format("Invalid values: x = %f, rx = %f. Both must be positive and not equal, or the range would collapse.", x, rx)
+            );
         this.x = x;
         this.rx = rx;
     }

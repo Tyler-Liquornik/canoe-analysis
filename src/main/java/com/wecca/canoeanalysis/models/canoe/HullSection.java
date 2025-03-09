@@ -11,7 +11,7 @@ import com.wecca.canoeanalysis.models.load.LoadType;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.models.function.VertexFormParabolaFunction;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
-import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
+import com.wecca.canoeanalysis.utils.HullLibrary;
 import com.wecca.canoeanalysis.utils.PhysicalConstants;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -54,13 +54,13 @@ public class HullSection extends Section
     private final BoundedUnivariateFunction crossSectionalAreaAdjustmentFactorFunction = h -> {
         double[] coefficients = new double[] {0, 17.771, -210.367, 1409.91, -5420.6, 11769.4, -13242.7, 5880.62};
         for (int i = 0; i < coefficients.length; i++) {
-            coefficients[i] = coefficients[i] / Math.pow(SharkBaitHullLibrary.scalingFactor, i);
+            coefficients[i] = coefficients[i] / Math.pow(HullLibrary.scalingFactor, i);
         }
         PolynomialFunction regressionFit = new PolynomialFunction(coefficients);
-        if (0 <= h && h <= 0.4 * SharkBaitHullLibrary.scalingFactor)
+        if (0 <= h && h <= 0.4 * HullLibrary.scalingFactor)
             return regressionFit.value(h);
-        else if (h > 0.4 * SharkBaitHullLibrary.scalingFactor)
-            return regressionFit.value(0.4 * SharkBaitHullLibrary.scalingFactor);
+        else if (h > 0.4 * HullLibrary.scalingFactor)
+            return regressionFit.value(0.4 * HullLibrary.scalingFactor);
         else
             throw new IllegalArgumentException("Function undefined for negative values");
     };

@@ -9,7 +9,7 @@ import com.wecca.canoeanalysis.models.function.Range;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SectionPropertyMapEntry;
-import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
+import com.wecca.canoeanalysis.utils.HullLibrary;
 import javafx.geometry.Point2D;
 import javafx.scene.shape.Rectangle;
 import lombok.NonNull;
@@ -37,7 +37,7 @@ public class HullGeometryService {
 
     // Numerical 'dx' used at bounds to prevent unpredictable boundary behaviour
     public static final double OPEN_INTERVAL_TOLERANCE = 1e-3;
-    public static final double THICKNESS = SharkBaitHullLibrary.generateDefaultHull(SharkBaitHullLibrary.SHARK_BAIT_LENGTH).getMaxThickness();
+    public static final double THICKNESS = HullLibrary.generateDefaultHull(HullLibrary.SHARK_BAIT_LENGTH).getMaxThickness();
 
     /**
      * In this service, we will prefer to only process and return data for the hull model
@@ -590,7 +590,7 @@ public class HullGeometryService {
         double adjacentSectionPointX = knotPos.getX() + plusMinusEps;
         CubicBezierFunction adjacentBezier = CalculusUtils.getSegmentForX(hull.getSideViewSegments(), adjacentSectionPointX);
         double outerXBoundary = isDraggingLeft ? adjacentBezier.getControlX1() : adjacentBezier.getControlX2(); // boundary against which the user might be dragging
-        outerXBoundary -= hull.getLength() *  plusMinusEps; // Create a buffer a few epsilon thick
+        outerXBoundary -= 2 * plusMinusEps;
 
         // Clamp new knot position vertically using global vertical bounds.
         // For horizontal, we allow the new knot to be any value (it might be moved by the user)
@@ -691,8 +691,8 @@ public class HullGeometryService {
             } catch (Exception e) {e.printStackTrace();}
         }
         // Update the maps using helper methods
-        hull.getHullProperties().setThicknessMap(SharkBaitHullLibrary.buildUniformThicknessList(sideView, thickness));
-        hull.getHullProperties().setBulkheadMap(SharkBaitHullLibrary.buildDefaultBulkheadList(sideView));
+        hull.getHullProperties().setThicknessMap(HullLibrary.buildUniformThicknessList(sideView, thickness));
+        hull.getHullProperties().setBulkheadMap(HullLibrary.buildDefaultBulkheadList(sideView));
         return hull;
     }
 

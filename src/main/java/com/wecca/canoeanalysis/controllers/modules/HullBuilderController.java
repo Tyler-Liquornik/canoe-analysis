@@ -17,7 +17,7 @@ import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.GraphicsUtils;
-import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
+import com.wecca.canoeanalysis.utils.HullLibrary;
 import javafx.beans.value.ChangeListener;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -107,11 +107,12 @@ public class HullBuilderController implements Initializable, ModuleController {
     private boolean mousePressWasInAddingKnotPointZone;
     private boolean shiftKeyPressHadMouseInDeletingKnotPointZone;
     private boolean knotEditingMouseButtonDown;
+    private double hullGraphicPaneHeight;
 
     // Constants
-    private final double HULL_VIEW_PANEL_HEIGHT = 45;
     // Note to developer: This does not have deep immutability. Do not mutate! Meant as a constant reference to SharkBait!
-    private final Hull SHARK_BAIT_HULL = SharkBaitHullLibrary.generateSharkBaitHullScaledFromBezier(6);
+    private final Hull SHARKBAIT_HULL = HullLibrary.generateSharkBaitHullScaledFromBezier(HullLibrary.SHARK_BAIT_LENGTH);
+    private final Hull ON_LOAD_HULL = HullLibrary.generateGirraftScaledFromBezier(HullLibrary.GIRRAFT_LENGTH);
 
     /**
      * Clears the toolbar of buttons from other modules and adds ones from this module
@@ -258,9 +259,9 @@ public class HullBuilderController implements Initializable, ModuleController {
                     double minY = bezier.getMinValue(new Section(lControlX, rControlX));
                     Rectangle validAddKnotRectangle = new Rectangle(
                             (lControlX / hull.getLength()) * hullGraphicPane.getWidth(),
-                            (minY / -hull.getMaxHeight()) * (HULL_VIEW_PANEL_HEIGHT * (hull.getMaxHeight() / SHARK_BAIT_HULL.getMaxHeight())),
+                            (minY / -hull.getMaxHeight()) * (hullGraphicPaneHeight * (hull.getMaxHeight() / ON_LOAD_HULL.getMaxHeight())),
                             ((rControlX - lControlX) / hull.getLength()) * hullGraphicPane.getWidth(),
-                            ((Math.abs(maxY - minY)) / -hull.getMaxHeight()) * (HULL_VIEW_PANEL_HEIGHT * (hull.getMaxHeight() / SHARK_BAIT_HULL.getMaxHeight()))
+                            ((Math.abs(maxY - minY)) / -hull.getMaxHeight()) * (hullGraphicPaneHeight * (hull.getMaxHeight() / ON_LOAD_HULL.getMaxHeight()))
                     );
                     CurvedGraphic overlayCurve = new CurvedGraphic(bezier, new Section(lControlX, rControlX), validAddKnotRectangle, false);
                     overlayCurve.getLinePath().setStrokeWidth(2.0);
@@ -335,9 +336,9 @@ public class HullBuilderController implements Initializable, ModuleController {
     public void renderHullGraphic(Hull hull) {
         // Set and layout parent pane
         double sideViewPanelWidth = 700;
-        double sideViewPanelHeight = HULL_VIEW_PANEL_HEIGHT * (hull.getMaxHeight() / SHARK_BAIT_HULL.getMaxHeight());
+        double sideViewPanelHeight = hullGraphicPaneHeight * (hull.getMaxHeight() / ON_LOAD_HULL.getMaxHeight());
         double paneX = hullViewAnchorPane.prefWidth(-1) / 2 - sideViewPanelWidth / 2;
-        double paneY = hullViewAnchorPane.prefHeight(-1) / 2 - HULL_VIEW_PANEL_HEIGHT / 2;
+        double paneY = hullViewAnchorPane.prefHeight(-1) / 2 - hullGraphicPaneHeight / 2;
         hullGraphicPane.setPrefSize(sideViewPanelWidth, sideViewPanelHeight);
         hullGraphicPane.setMaxSize(sideViewPanelWidth, sideViewPanelHeight);
         hullGraphicPane.setMinSize(sideViewPanelWidth, sideViewPanelHeight);
@@ -898,7 +899,7 @@ public class HullBuilderController implements Initializable, ModuleController {
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Cannot place intersection point, out of bounds"));
             functionSpaceY = bezier.value(functionSpaceX);
-            double poiY = (functionSpaceY / hull.getLength()) * hullGraphicPane.getWidth();
+            double poiY = (functionSpaceY / hull.getMaxHeight()) * hullGraphicPane.getPrefHeight();
             Point2D poi = new Point2D(poiX, -poiY);
             updateMouseLinePoint(poi, isMouseInAddingKnotPointZone(mouseX));
             pointToDisplay = new Point2D(functionSpaceX, functionSpaceY);
@@ -1265,7 +1266,11 @@ public class HullBuilderController implements Initializable, ModuleController {
 
         // Set default hull
         hullGraphicPane = new AnchorPane();
-        hull = SHARK_BAIT_HULL;
+        hull = ON_LOAD_HULL;
+        hullGraphicPaneHeight = Math.ceil(45 * (hull.getMaxHeight() / SHARKBAIT_HULL.getMaxHeight()));
+        hullGraphicPane.setPrefHeight(hullGraphicPaneHeight);
+        hullGraphicPane.setMaxHeight(hullGraphicPaneHeight);
+        hullGraphicPane.setMinHeight(hullGraphicPaneHeight);
         renderHullGraphic(hull);
         setBlankSectionProperties();
 
