@@ -9,7 +9,7 @@ import com.wecca.canoeanalysis.models.function.Range;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SectionPropertyMapEntry;
-import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
+import com.wecca.canoeanalysis.utils.HullLibrary;
 import javafx.geometry.Point2D;
 import javafx.scene.shape.Rectangle;
 import lombok.NonNull;
@@ -37,7 +37,7 @@ public class HullGeometryService {
 
     // Numerical 'dx' used at bounds to prevent unpredictable boundary behaviour
     public static final double OPEN_INTERVAL_TOLERANCE = 1e-3;
-    public static final double THICKNESS = SharkBaitHullLibrary.generateDefaultHull(SharkBaitHullLibrary.SHARK_BAIT_LENGTH).getMaxThickness();
+    public static final double THICKNESS = HullLibrary.generateDefaultHull(HullLibrary.SHARK_BAIT_LENGTH).getMaxThickness();
 
     /**
      * In this service, we will prefer to only process and return data for the hull model
@@ -691,8 +691,8 @@ public class HullGeometryService {
             } catch (Exception e) {e.printStackTrace();}
         }
         // Update the maps using helper methods
-        hull.getHullProperties().setThicknessMap(SharkBaitHullLibrary.buildUniformThicknessList(sideView, thickness));
-        hull.getHullProperties().setBulkheadMap(SharkBaitHullLibrary.buildDefaultBulkheadList(sideView));
+        hull.getHullProperties().setThicknessMap(HullLibrary.buildUniformThicknessList(sideView, thickness));
+        hull.getHullProperties().setBulkheadMap(HullLibrary.buildDefaultBulkheadList(sideView));
         return hull;
     }
 

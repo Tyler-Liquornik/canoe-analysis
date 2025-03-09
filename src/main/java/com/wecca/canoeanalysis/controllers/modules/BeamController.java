@@ -187,7 +187,7 @@ public class BeamController implements Initializable, ModuleController {
             // Only allow lengths in the specified range
             if (length >= 2 && length <= 10) {
                 // Update model state to default simple rectangular prism geometry
-                Hull defaultScaledHull = SharkBaitHullLibrary.generateDefaultHull(length);
+                Hull defaultScaledHull = HullLibrary.generateDefaultHull(length);
                 canoe.setHull(defaultScaledHull);
 
                 // Change the label on the scale
@@ -777,7 +777,7 @@ public class BeamController implements Initializable, ModuleController {
         // Only enable the hull builder if a custom hull hasn't yet been set
         if (canoe.getHull() != null) {
             boolean disableHullBuilder = !canoe.getHull().equals(
-                    SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
+                    HullLibrary.generateDefaultHull(canoe.getHull().getLength()));
             mainController.disableModuleToolBarButton(disableHullBuilder, 2);
         }
     }
@@ -814,7 +814,7 @@ public class BeamController implements Initializable, ModuleController {
             // Deleting the hull is a special case
             if (selectedItem.getLoad() != null && selectedItem.getLoad().getType() != null &&
                     selectedItem.getLoad().getType() == LoadType.HULL) {
-                canoe.setHull(SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength()));
+                canoe.setHull(HullLibrary.generateDefaultHull(canoe.getHull().getLength()));
                 resetHullGraphic();
                 mainController.disableModuleToolBarButton(false, 2);
             }
@@ -871,7 +871,7 @@ public class BeamController implements Initializable, ModuleController {
     public void clearAllCanoeModels() {
         loadContainer.getChildren().clear();
         canoe.getLoads().clear();
-        Hull hull = SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength());
+        Hull hull = HullLibrary.generateDefaultHull(canoe.getHull().getLength());
         canoe.setHull(hull);
         LoadTreeManagerService.buildLoadTreeView(canoe);
         checkAndSetEmptyLoadTreeSettings();
@@ -955,7 +955,7 @@ public class BeamController implements Initializable, ModuleController {
             // Update the canoe model
             this.canoe = canoe;
 
-            Hull defaultHull = SharkBaitHullLibrary.generateDefaultHull(canoe.getHull().getLength());
+            Hull defaultHull = HullLibrary.generateDefaultHull(canoe.getHull().getLength());
             boolean isBeam = canoe.getHull().equals(defaultHull);
             mainController.disableModuleToolBarButton(!isBeam, 2);
 

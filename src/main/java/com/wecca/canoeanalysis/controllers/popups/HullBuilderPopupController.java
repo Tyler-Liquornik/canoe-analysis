@@ -6,7 +6,7 @@ import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.services.LoadTreeManagerService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
-import com.wecca.canoeanalysis.utils.SharkBaitHullLibrary;
+import com.wecca.canoeanalysis.utils.HullLibrary;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -35,7 +35,7 @@ public class HullBuilderPopupController implements Initializable {
     }
 
     public void setHullScaledSharkBait(ActionEvent e) {
-        Hull hull = SharkBaitHullLibrary.generateSharkBaitHullScaledFromBezier(canoe.getHull().getLength());
+        Hull hull = HullLibrary.generateGirraftScaledFromBezier(canoe.getHull().getLength());
         canoe.setHull(hull);
         beamController.setCanoe(canoe);
         mainController.showSnackbar("Successfully set hull to Shark Bait");

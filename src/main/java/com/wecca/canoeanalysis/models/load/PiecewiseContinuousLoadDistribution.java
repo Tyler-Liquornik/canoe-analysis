@@ -21,7 +21,7 @@ public class PiecewiseContinuousLoadDistribution extends LoadDistribution {
     private TreeMap<Section, BoundedUnivariateFunction> pieces;
 
     public PiecewiseContinuousLoadDistribution(LoadType type, List<BoundedUnivariateFunction> pieces, List<Section> subSections) {
-        super(type, new Section(subSections.getFirst().getX(), subSections.getLast().getRx()));
+        super(type, new Section(CalculusUtils.roundXDecimalDigits(subSections.getFirst().getX(), 10), subSections.getLast().getRx()));
         CalculusUtils.validatePiecewiseContinuity(pieces, subSections);
         this.pieces = new TreeMap<>(Comparator.comparingDouble(Section::getX));
         for (int i = 0; i < pieces.size(); i++) {
@@ -66,11 +66,14 @@ public class PiecewiseContinuousLoadDistribution extends LoadDistribution {
      */
     @JsonIgnore
     public BoundedUnivariateFunction getPiecedFunction() {
-        return x -> pieces.entrySet().stream()
-                .filter(piece -> x >= piece.getKey().getX() && x <= piece.getKey().getRx())
-                .findFirst()
-                .map(piece -> piece.getValue().value(x))
-                .orElseThrow(() -> new IllegalArgumentException("x value out of bounds"));
+        return x -> {
+            double tolerance = 1e-10;
+            for (Map.Entry<Section, BoundedUnivariateFunction> entry : pieces.entrySet()) {
+                Section interval = entry.getKey();
+                if (x >= interval.getX() - tolerance && x <= interval.getRx() + tolerance) return entry.getValue().value(x);
+            }
+            throw new IllegalArgumentException("x value: " + x + " is out of bounds for the distribution");
+        };
     }
 
     /**
