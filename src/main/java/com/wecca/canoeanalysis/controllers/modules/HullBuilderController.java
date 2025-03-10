@@ -13,6 +13,7 @@ import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.function.Range;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.HullGeometryService;
+import com.wecca.canoeanalysis.services.LoggerService;
 import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
@@ -133,6 +134,7 @@ public class HullBuilderController implements Initializable, ModuleController {
 
     public void dummyOnClick(MouseEvent event) {
         mainController.showSnackbar("WIP");
+        LoggerService.logPoints(x -> -hull.getWeightDistributionFunction().value(x), hull.getSection(), 1000);
     }
 
     /**
