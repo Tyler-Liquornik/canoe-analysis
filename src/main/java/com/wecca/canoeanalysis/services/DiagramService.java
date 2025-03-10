@@ -15,6 +15,7 @@ import com.google.common.collect.Multimap;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.shape.Circle;
+import javafx.scene.text.Font;
 import javafx.util.Duration;
 import java.util.*;
 import java.util.List;
@@ -301,6 +302,9 @@ public class DiagramService {
     private static NumberAxis setupYAxis(String yUnits, String yValName) {
         NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel(String.format("%s [%s]", yValName, yUnits));
+        yAxis.setTickLabelFont(new Font("Georgia", 14));
+        yAxis.setMinorTickVisible(false);
+        yAxis.setTickUnit(1.0);
         return yAxis;
     }
 
@@ -316,6 +320,7 @@ public class DiagramService {
         FixedTicksNumberAxis xAxis = new FixedTicksNumberAxis(new ArrayList<>(roundedCriticalPoints));
         xAxis.setAutoRanging(false);
         xAxis.setLabel("Distance [m]");
+        xAxis.setTickLabelFont(new Font("Georgia", 14));
         xAxis.setLowerBound(0);
         xAxis.setUpperBound(canoe.getHull().getLength());
         return xAxis;
