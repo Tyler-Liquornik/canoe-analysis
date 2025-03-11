@@ -48,7 +48,7 @@
             </JFXTextField>
             <Label layoutX="210.0" layoutY="111.0" text="\%" />
             <Label layoutX="45.0" layoutY="110.0" text="Passing POA:" />
-            <Label layoutX="50.0" layoutY="180.0" text="Mesh Color: " />
+            <Label layoutX="27.0" layoutY="181.0" text="Open Area Color: " />
             <Label fx:id="passLabel" layoutX="119.0" layoutY="292.0" text="Pass" visible="false">
                <font>
                   <Font name="Roboto" size="12.0" />
