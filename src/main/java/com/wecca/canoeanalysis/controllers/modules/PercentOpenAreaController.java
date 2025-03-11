@@ -253,6 +253,7 @@ public class PercentOpenAreaController implements Initializable {
                 imageFile = file; // Set the image file
                 processImageFile(imageFile); // Process the image
                 success = true;
+                imageview.setVisible(true);
             }
         }
 
