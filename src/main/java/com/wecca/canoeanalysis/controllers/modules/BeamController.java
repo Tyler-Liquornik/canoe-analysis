@@ -590,26 +590,16 @@ public class BeamController implements Initializable, ModuleController {
         clearLoadsButton.setDisable(true);
         mainController.disableModuleToolBarButton(true, 1);
         mainController.disableModuleToolBarButton(true, 2);
-
-
-        addMaxShearToCanoe();
-
         updateViewOrder();
-    }
-    /**
-     *Used to add max shear to canoe
-     * max shear needed for punching shear
-     *
-     */
-    private void addMaxShearToCanoe(){
+
+        // TODO whole process for this needs to be optimized cause its slowing down the floating solve button
+        // Add the max shear in the solved system to the canoe
         List<Point2D> sfdPoints = DiagramService.generateSfdPoints(canoe);
         canoe.setSessionMaxShear(sfdPoints.stream()
                 .mapToDouble(point -> Math.abs(point.getY()))
                 .max()
                 .orElseThrow(() -> new IllegalArgumentException("List of points is empty")));
-
     }
-
 
     /**
      * Solve and display the result of the "stand" system load case.

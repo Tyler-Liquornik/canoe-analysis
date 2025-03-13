@@ -178,6 +178,8 @@ public class MarshallingService {
 
                         Canoe canoe = yamlMapper.readValue(fileToUpload, Canoe.class);
 
+                        // TODO fix sessionMaxShear resetting uninentionally to 0 after some combo of buttons after
+
                         // Rebuild the canoe to trigger validations and data restructuring
                         Canoe adjustedCanoe = new Canoe();
                         if (canoe.getSessionMaxShear() > 0) adjustedCanoe.setSessionMaxShear(canoe.getSessionMaxShear());
@@ -195,7 +197,7 @@ public class MarshallingService {
                             canoeProcessor.accept(adjustedCanoe);
                         }
                     }
-                    mainController.showSnackbar(String.format("Success. File with name \"%s\" has max absolute shear of %.2f N.", fileName, maxSessionShear * 1000));
+                    mainController.showSnackbar(String.format("Success. File \"%s\" uploaded with an absolute max shear of %.2f N.", fileName, maxSessionShear * 1000));
                 } catch (IOException ex) {
                     mainController.showSnackbar("Could not parse files.");
                 }

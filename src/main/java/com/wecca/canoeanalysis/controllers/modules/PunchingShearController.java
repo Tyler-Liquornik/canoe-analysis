@@ -20,10 +20,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import lombok.Setter;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.function.Consumer;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.services.MarshallingService;
@@ -39,7 +36,7 @@ public class PunchingShearController implements Initializable, ModuleController 
     private JFXTextField hullThicknessTextField, hullWidthTextField, compressiveStrengthTextField,
             maxShearTextField, oneWayVfTextField, oneWayVcTextField, twoWayPCritTextField,
             twoWayACritTextField, twoWayVfTextField, twoWayVc1TextField, twoWayVc2TextField,
-            twoWayVc3TextField, vcMinTextField;
+            twoWayVc3TextField, twoWayVcMinTextField;
     @FXML
     private Label oneWaySafeLabel, oneWayUnsafeLabel, twoWaySafeLabel, twoWayUnsafeLabel;
     @FXML
@@ -61,6 +58,9 @@ public class PunchingShearController implements Initializable, ModuleController 
     private double hullWidth;
     private double compressiveStrength;
 
+    /**
+     * Sets one-way Vf to equal max shear value
+     */
     public void maxShearToVf(){
         oneWayVfTextField.setText(maxShearTextField.getText());
     }
@@ -80,7 +80,7 @@ public class PunchingShearController implements Initializable, ModuleController 
      * to show whether the structure is safe or unsafe.
      */
     public void safetyTest2() {
-        safetyTest(twoWayVfTextField, vcMinTextField, twoWaySafeLabel, twoWayUnsafeLabel);
+        safetyTest(twoWayVfTextField, twoWayVcMinTextField, twoWaySafeLabel, twoWayUnsafeLabel);
     }
 
     /**
@@ -88,7 +88,6 @@ public class PunchingShearController implements Initializable, ModuleController 
      * If the value in the second text field (checkForSafetyTextField) exceeds the value in the first 
      * text field (safetyBaselineTextField), the safeLabel is highlighted, indicating a safe condition.
      * Otherwise, the unsafeLabel is highlighted.
-     *
      * @param safetyBaselineTextField the text field containing the baseline value to compare against.
      * @param checkForSafetyTextField the text field containing the value to check for safety.
      * @param safeLabel the label to indicate a safe condition if the check passes.
@@ -98,7 +97,6 @@ public class PunchingShearController implements Initializable, ModuleController 
         if (InputParsingUtils.allTextFieldsAreDouble(Arrays.asList(safetyBaselineTextField, checkForSafetyTextField))) {
             double baselineValue = Double.parseDouble(safetyBaselineTextField.getText());
             double checkForSafetyValue = Double.parseDouble(checkForSafetyTextField.getText());
-
             if (checkForSafetyValue > baselineValue) {
                 safeLabel.setOpacity(1);
                 unsafeLabel.setOpacity(0.5);
@@ -107,8 +105,7 @@ public class PunchingShearController implements Initializable, ModuleController 
                 unsafeLabel.setOpacity(1);
             }
         }
-        else
-            mainController.showSnackbar("Please fill all the fields with valid numeric values.");
+        else mainController.showSnackbar("Please fill all the fields with valid numeric values.");
     }
 
     /**
@@ -122,10 +119,10 @@ public class PunchingShearController implements Initializable, ModuleController 
             compressiveStrength = Double.parseDouble(compressiveStrengthTextField.getText());
             double vc = concrete * lowDensityConcrete * squareColumn * Math.sqrt(compressiveStrength) * hullWidth * canoeThickness;
             oneWayVcTextField.setText(String.format("%.2f", vc));
+            oneWayVcTextField.setStyle(oneWayVcTextField.getStyle() + " -fx-opacity: 1");
             safetyTest1();
         }
-        else
-            mainController.showSnackbar("Please fill all the fields with valid numeric values.");
+        else mainController.showSnackbar("Please fill all the fields with valid numeric values.");
     }
 
     /**
@@ -147,23 +144,36 @@ public class PunchingShearController implements Initializable, ModuleController 
             canoeThickness = Double.parseDouble(hullThicknessTextField.getText());
             compressiveStrength = Double.parseDouble(compressiveStrengthTextField.getText());
 
+            // Calculate and set two-way shear output values
+            List<TextField> tfs = new ArrayList<>();
             double pCrit = 4 * (kneeDiameter + (2 * (canoeThickness / 2)));
             twoWayPCritTextField.setText(String.format("%.2f", pCrit));
+            tfs.add(twoWayPCritTextField);
             double aCrit = pCrit * canoeThickness;
             twoWayACritTextField.setText(String.format("%.2f", aCrit));
+            tfs.add(twoWayACritTextField);
             double vf = punchingShearForce / aCrit;
             twoWayVfTextField.setText(String.format("%.2f", vf));
+            tfs.add(twoWayVfTextField);
             double vc1 = ((1 + (2 / squareColumn)) * 0.19 * lowDensityConcrete * concrete * Math.sqrt(compressiveStrength));
             twoWayVc1TextField.setText(String.format("%.4f", vc1));
+            tfs.add(twoWayVc1TextField);
             double vc2 = (0.19 + ((internalColumn * canoeThickness) / pCrit)) * lowDensityConcrete * concrete * Math.sqrt(compressiveStrength);
             twoWayVc2TextField.setText(String.format("%.4f", vc2));
-            double vc3 = 0.38 * lowDensityConcrete * concrete * Math.sqrt(compressiveStrength);
+            tfs.add(twoWayVc2TextField);
+            double vc3 = 2 * 0.19 * lowDensityConcrete * concrete * Math.sqrt(compressiveStrength);
             twoWayVc3TextField.setText(String.format("%.4f", vc3));
-            vcMinTextField.setText(String.format("%.4f", Math.min(vc1, Math.min(vc2, vc3))));
+            tfs.add(twoWayVc3TextField);
+            twoWayVcMinTextField.setText(String.format("%.4f", Math.min(vc1, Math.min(vc2, vc3))));
+            tfs.add(twoWayVcMinTextField);
             safetyTest2();
+
+            // Fix opacity for all text fields
+            for (TextField tf : tfs) {
+                tf.setStyle(tf.getStyle() + " -fx-opacity: 1");
+            }
         }
-        else
-            mainController.showSnackbar("Please fill all the fields with valid numeric values.");
+        else mainController.showSnackbar("Please fill all the fields with valid numeric values.");
     }
 
     /**
@@ -176,7 +186,7 @@ public class PunchingShearController implements Initializable, ModuleController 
         twoWayVc1TextField.setText("");
         twoWayVc2TextField.setText("");
         twoWayVc3TextField.setText("");
-        vcMinTextField.setText("");
+        twoWayVcMinTextField.setText("");
         twoWaySafeLabel.setOpacity(0.5);
         twoWayUnsafeLabel.setOpacity(0.5);
     }
@@ -193,6 +203,7 @@ public class PunchingShearController implements Initializable, ModuleController 
         clearOneWay();
         clearTwoWay();
     }
+
     /**
      * Clears the toolbar of buttons from other modules and adds ones from this module
      * Currently, this provides buttons to download and upload the Canoe object as JSON
@@ -203,30 +214,20 @@ public class PunchingShearController implements Initializable, ModuleController 
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.BOOK, e -> openGlossary());
         iconGlyphToFunctionMap.put(IconGlyphType.RESET, e -> reset());
-
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
     }
 
-    @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
-        setMainController(CanoeAnalysisApplication.getMainController());
-
-        initModuleToolBarButtons();
-    }
     /**
      * Upload a YAML file representing the Canoe object model
      * This populates the list view and beam graphic with the new model
      */
     public void uploadCanoe() {
         MarshallingService.setPunchingShearController(this);
-
         MarshallingService.punchingShearImportCanoeFromYAML(mainController.getPrimaryStage());
-
     }
 
     /**
-     *
      * @param canoe
      * This method sets the values in the punching shear module necessary to test
      * session max shear is given in kN so must be converted to N
@@ -235,6 +236,7 @@ public class PunchingShearController implements Initializable, ModuleController 
     public void setValues(Canoe canoe){
         maxShearTextField.setText(String.format("%.2f", canoe.getSessionMaxShear() * 1000));
         oneWayVfTextField.setText(String.format("%.2f", canoe.getSessionMaxShear() * 1000));
+        oneWayVfTextField.setStyle(oneWayVcTextField.getStyle() + " -fx-opacity: 1");
         hullThicknessTextField.setText(String.format("%.2f", canoe.getHull().getMaxThickness() * 1000));
         hullWidthTextField.setText(String.format("%.2f", canoe.getHull().getMaxWidth() * 1000));
 
@@ -242,10 +244,12 @@ public class PunchingShearController implements Initializable, ModuleController 
         if(canoe.getSolveType().equals(SolveType.FLOATING)){
             FloatingSolution solution = BeamSolverService.solveFloatingSystem(canoe);
             if (solution == null) mainController.showSnackbar("Error, buoyancy solver could not converge to a solution");
-            // Proceed with floating system solve if no tipping or sinking is detected
-            PiecewiseContinuousLoadDistribution buoyancy = solution.getSolvedBuoyancy();
-            if (buoyancy == null) throw new RuntimeException("Solution has no solved buoyancy to set");
-            if (buoyancy.getForce() != 0) canoe.addLoad(buoyancy);
+            else {
+                // Proceed with floating system solve if no tipping or sinking is detected
+                PiecewiseContinuousLoadDistribution buoyancy = solution.getSolvedBuoyancy();
+                if (buoyancy == null) throw new RuntimeException("Solution has no solved buoyancy to set");
+                if (buoyancy.getForce() != 0) canoe.addLoad(buoyancy);
+            }
         }
         displayChart(canoe);
     }
@@ -272,8 +276,16 @@ public class PunchingShearController implements Initializable, ModuleController 
         chartContainer.getChildren().add(chart);
     }
 
+    /**
+     * Open the glossary window
+     */
     public void openGlossary() {
         WindowManagerService.openUtilityWindow("Glossary", "/com/wecca/canoeanalysis/view/shear-equations-view.fxml", 800, 550);
     }
 
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        setMainController(CanoeAnalysisApplication.getMainController());
+        initModuleToolBarButtons();
+    }
 }

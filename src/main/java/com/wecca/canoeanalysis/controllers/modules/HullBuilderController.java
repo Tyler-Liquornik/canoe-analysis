@@ -134,7 +134,6 @@ public class HullBuilderController implements Initializable, ModuleController {
 
     public void dummyOnClick(MouseEvent event) {
         mainController.showSnackbar("WIP");
-        LoggerService.logPoints(x -> -hull.getWeightDistributionFunction().value(x), hull.getSection(), 1000);
     }
 
     /**

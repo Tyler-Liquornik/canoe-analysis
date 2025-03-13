@@ -25,7 +25,7 @@ public class HullLibrary {
      * @return the hull
      */
     // https://www.desmos.com/calculator/88rzkpirvn: Top View
-    // https://www.desmos.com/calculator/3iffi66sra: Side View
+    // https://www.desmos.com/calculator/bucl5qgj9r: Side View
     public static Hull generateGirraftScaledFromBezier(double length) {
 
         // Scale compared to the actual length of Girraft
@@ -36,7 +36,7 @@ public class HullLibrary {
         double top = 0.00;
         double knot0 = 0.00;
         double knot1 = 0.37 * scalingFactor;
-        double knot2 = 2.81 * scalingFactor;
+        double knot2 = 2.57 * scalingFactor;
         double knot3 = 4.99 * scalingFactor;
         double scaledLength = GIRRAFT_LENGTH * scalingFactor;
 

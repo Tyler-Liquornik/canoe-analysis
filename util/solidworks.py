@@ -8,15 +8,13 @@ from win32com.client import VARIANT
 from typing import List, Optional, Tuple, Any, Dict
 
 
-# Not working yet , in progress to upload hull from solid works
-
 # =============================================================================
 # SolidWorks Part & Geometry Extraction
 # =============================================================================
 
 def find_part_file(directory: str) -> Optional[str]:
     """
-    Returns the first .sldprt (Solidworks part) file found in the specified directory.
+    Returns the first .sldprt (SolidWorks part) file found in the specified directory.
     """
     for f_name in os.listdir(directory):
         if f_name.lower().endswith(".sldprt"):
@@ -49,10 +47,10 @@ def get_all_vertices(solidworks_model: Any) -> List[Tuple[float, float, float]]:
     if bodies is None:
         return vertices
     for body in bodies:
-        vertices = body.GetVertices()
-        if vertices is None:
+        body_vertices = body.GetVertices()
+        if body_vertices is None:
             continue
-        for v in vertices:
+        for v in body_vertices:
             # GetPoint is exposed as a property returning a tuple [x, y, z]
             pt = v.GetPoint
             if pt is not None and len(pt) >= 3:

@@ -117,7 +117,7 @@
                <Insets top="20.0" />
             </padding>
          </JFXTextField>
-         <JFXTextField fx:id="vcMinTextField" alignment="CENTER" disable="true" layoutX="304.0" layoutY="145.0" prefHeight="25.0" prefWidth="75.0">
+         <JFXTextField fx:id="twoWayVcMinTextField" alignment="CENTER" disable="true" layoutX="304.0" layoutY="145.0" prefHeight="25.0" prefWidth="75.0">
             <padding>
                <Insets top="20.0" />
             </padding>
