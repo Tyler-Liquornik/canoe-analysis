@@ -41,7 +41,7 @@ public class HullLibrary {
         double scaledLength = GIRRAFT_LENGTH * scalingFactor;
 
         // Hull wall thickness & Material densities
-        double thickness = 0.013 * scalingFactor;
+        double thickness = 0.011 * scalingFactor;
         double concreteDensity = 850;
         double bulkheadDensity = 28.82;
 
