@@ -125,6 +125,7 @@ public class LoadUtils {
      * @param hullLength the length of the hull
      * @return the flipped list of loads
      */
+    @Deprecated
     public static List<Load> flipLoadsFromRightHalf(List<Load> rightHalf, double hullLength) {
         List<Load> flippedRightHalf = new ArrayList<>();
         for (int i = rightHalf.size() - 1; i >= 0; i--) {

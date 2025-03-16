@@ -132,17 +132,18 @@ public class BeamSolverService {
         return x -> {
             // Look up the side-view segment covering x.
             CubicBezierFunction side = hull.getSideViewSegments().stream()
-                    .filter(seg -> seg.getX1() <= x && seg.getX2() >= x)
+                    .filter(seg -> x + 1e-9 >= seg.getX1() && x - 1e-9 <= seg.getX2())
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("x = " + x + " is out of hull bounds"));
+                    .orElseThrow(() -> new IllegalArgumentException("No side-view segment covering x = " + x));
             double y = side.value(x);
             double adjustment = hull.getCrossSectionalAreaAdjustmentFactorFunction().value(Math.abs(y));
 
             // Look up the top-view segment covering x.
             CubicBezierFunction top = hull.getTopViewSegments().stream()
-                    .filter(seg -> seg.getX1() <= x && seg.getX2() >= x)
+                    .filter(seg -> x + 1e-9 >= seg.getX1() && x - 1e-9 <= seg.getX2())
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("x = " + x + " is out of hull top-view bounds"));
+                    .orElseThrow(() -> new IllegalArgumentException("No top-view segment covers x = " + x));
+
             double w = 2 * top.value(x);
             double tiltedWaterline = h + (x - rotationX) * Math.tan(thetaRadians);
             double hSubmerged = tiltedWaterline - Math.min(y, tiltedWaterline);

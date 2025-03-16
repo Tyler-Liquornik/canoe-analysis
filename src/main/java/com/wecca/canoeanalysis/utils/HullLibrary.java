@@ -37,11 +37,11 @@ public class HullLibrary {
         double knot0 = 0.00;
         double knot1 = 0.37 * scalingFactor;
         double knot2 = 2.57 * scalingFactor;
-        double knot3 = 4.99 * scalingFactor;
+        double knot3 = 5.26 * scalingFactor;
         double scaledLength = GIRRAFT_LENGTH * scalingFactor;
 
         // Hull wall thickness & Material densities
-        double thickness = 0.011 * scalingFactor;
+        double thickness = 0.013 * scalingFactor;
         double concreteDensity = 850;
         double bulkheadDensity = 28.82;
 
@@ -76,7 +76,7 @@ public class HullLibrary {
         double midRightControlX2 = 3.770 * scalingFactor;
         double midRightControlY2 = -0.370 * scalingFactor;
         double midRightX2 = knot3;
-        double rightY1 = -0.348 * scalingFactor;
+        double rightY1 = -0.339 * scalingFactor;
         double midRightY2 = rightY1;
         double midRightSlope2 = (midRightY2 - midRightControlY2) / (midRightX2 - midRightControlX2);
 
@@ -122,10 +122,10 @@ public class HullLibrary {
         double topViewMidRightSlope1 = topViewMidLeftSlope2;
         double topViewMidRightControlX1 = 3.496 * scalingFactor;
         double topViewMidRightControlY1 = topViewMidRightSlope1 * (topViewMidRightControlX1 - topViewMidRightX1) + topViewMidRightY1;
-        double topViewMidRightControlX2 = 3.890 * scalingFactor;
-        double topViewMidRightControlY2 = -0.270 * scalingFactor;
+        double topViewMidRightControlX2 = 4.020 * scalingFactor;
+        double topViewMidRightControlY2 = -0.280 * scalingFactor;
         double topViewMidRightX2 = knot3;
-        double topViewRightY1 = -0.120 * scalingFactor;
+        double topViewRightY1 = -0.081 * scalingFactor;
         double topViewMidRightY2 = topViewRightY1;
         double topViewMidRightSlope2 = (topViewMidRightY2 - topViewMidRightControlY2) / (topViewMidRightX2 - topViewMidRightControlX2);
 

@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 public class Canoe
 {
     @JsonProperty("loads")
-    private ArrayList<Load> loads;
+    private List<Load> loads;
     @JsonProperty("hull")
     private Hull hull;
 
@@ -213,7 +213,7 @@ public class Canoe
      * @deprecated by new floating solver algorithm which can solve asymmetrical load cases so we no longer need to check for symmetry
      * @return if the canoe, including the hull self-weight and external loads are symmetrical about the canoes lengthwise midpoints
      */
-    @JsonIgnore
+    @Deprecated @JsonIgnore
     public boolean isSymmetricallyLoaded() {
         // Check if the hull's self-weight distribution is symmetrical
         double hullLength = hull.getLength();

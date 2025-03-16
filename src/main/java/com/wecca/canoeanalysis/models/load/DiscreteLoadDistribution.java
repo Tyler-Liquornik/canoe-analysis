@@ -12,12 +12,11 @@ import java.util.*;
 
 /**
  * Represents a more complex loading with a distribution over some sub-interval of the hull [x, rx]
- *
  * Note: Written with the factory pattern as multiple constructor with a single list as a parameter is not allowed
  * This is due to the type erasure implementation of Java generics
  */
 @Getter @EqualsAndHashCode(callSuper = true)
-public class DiscreteLoadDistribution extends Load {
+public class DiscreteLoadDistribution extends LoadDistribution {
     @JsonProperty("loads")
     private final List<UniformLoadDistribution> loads;
 
@@ -26,7 +25,7 @@ public class DiscreteLoadDistribution extends Load {
      * Note: the constructor is private as it is used by factory methods
      */
     public DiscreteLoadDistribution(LoadType type, List<UniformLoadDistribution> loads) {
-        super(type);
+        super(type, new Section(loads.getFirst().getX(), loads.getLast().getRx()));
         this.loads = loads;
     }
 

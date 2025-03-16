@@ -24,7 +24,7 @@ import org.apache.commons.math3.optim.univariate.*;
  * @deprecated legacy code kept as a reference to the old HullSection model.
  * This is for a clearer picture of previous development for newer developers who may join in the future
  */
-@Getter @Setter @EqualsAndHashCode(callSuper = true)
+@Deprecated @Getter @Setter @EqualsAndHashCode(callSuper = true)
 public class HullSection extends Section
 {
     @JsonProperty("sideProfileCurve")
@@ -95,6 +95,7 @@ public class HullSection extends Section
      * @param height the constant height of the hull
      * @param width the constant width of the hull
      */
+    @Deprecated
     public HullSection(double length, double height, double width) {
         super(0, length);
         this.sideProfileCurve = new VertexFormParabolaFunction(0, 0, -height);
@@ -202,7 +203,7 @@ public class HullSection extends Section
      */
     @JsonIgnore
     public double getWeight() {
-        return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getWeightDistributionFunction().getDistribution(), x, rx);
+        return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), getWeightDistributionFunction().getPieces().get(this), x, rx);
     }
 
     /**

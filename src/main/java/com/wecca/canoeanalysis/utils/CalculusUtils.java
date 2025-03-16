@@ -86,6 +86,7 @@ public class CalculusUtils
      * @param piecewise the function to check for symmetry on its section
      * @return if the function is symmetrical or not
      */
+    @Deprecated
     public static boolean isSymmetrical(PiecewiseContinuousLoadDistribution piecewise) {
         BoundedUnivariateFunction f = piecewise.getPiecedFunction();
         double startX = piecewise.getX();
@@ -287,8 +288,8 @@ public class CalculusUtils
             for (int i = 0; i < functions.size(); i++) {
                 BoundedUnivariateFunction func = functions.get(i);
                 Section section = sections.get(i);
-                if (section.getX() <= x && x <= section.getRx())
-                    return func.value(x);
+                if (x + 1e-9 >= section.getX() && x - 1e-9 <= section.getRx())
+                    return functions.get(i).value(x);
             }
             throw new IllegalArgumentException("x = + " + x + " is out of bounds of the provided functions.");
         };

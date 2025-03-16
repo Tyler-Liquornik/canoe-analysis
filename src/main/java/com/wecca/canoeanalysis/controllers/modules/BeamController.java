@@ -26,7 +26,6 @@ import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.*;
 import javafx.animation.*;
-import javafx.application.Platform;
 import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.control.*;
@@ -169,10 +168,32 @@ public class BeamController implements Initializable, ModuleController {
         deleteLoadButton.setDisable(true);
         clearLoadsButton.setDisable(true);
         disableLoadingControls(true);
-        //mainController.disableModuleToolBarButton(true, 2);
+        // mainController.disableModuleToolBarButton(true, 2);
         mainController.disableAllModuleToolbarButtons(true);
         setCanoeLengthButton.setText("Set Length");
         setCanoeLengthButton.setOnAction(e -> setLength());
+        resetInputFields();
+    }
+
+    /**
+     * Resets the input text fields to their default values and removes any error styling.
+     */
+    private void resetInputFields() {
+        // Reset text values to defaults (as set in initialize)
+        pointLocationTextField.setText("0.00");
+        distributedIntervalTextFieldL.setText("0.00");
+        pointMagnitudeTextField.setText("1.00");
+        distributedMagnitudeTextField.setText("1.00");
+        distributedIntervalTextFieldR.setText("1.00");
+        canoeLengthTextField.setText("5.00");
+
+        // Remove "invalid-input" style from all text fields
+        pointLocationTextField.getStyleClass().removeAll("invalid-input");
+        pointMagnitudeTextField.getStyleClass().removeAll("invalid-input");
+        distributedIntervalTextFieldL.getStyleClass().removeAll("invalid-input");
+        distributedMagnitudeTextField.getStyleClass().removeAll("invalid-input");
+        distributedIntervalTextFieldR.getStyleClass().removeAll("invalid-input");
+        canoeLengthTextField.getStyleClass().removeAll("invalid-input");
     }
 
     /**
@@ -192,7 +213,7 @@ public class BeamController implements Initializable, ModuleController {
 
                 // Change the label on the scale
                 axisLabelR.setText(String.format("%.2f m", canoe.getHull().getLength()));
-                axisLabelR.setLayoutX(565); // TODO: this will not be hard coded anymore once axis labels are implemented
+                axisLabelR.setLayoutX(565);
 
                 // Clear potential alert and reset access to controls
                 mainController.closeSnackBar(mainController.getSnackbar());
@@ -208,139 +229,27 @@ public class BeamController implements Initializable, ModuleController {
                 setCanoeLengthButton.setText("Reset Canoe");
                 setCanoeLengthButton.setOnAction(e -> resetCanoe());
 
-                //Validation Highlighting for Point Load Magnitude
-                pointMagnitudeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(pointMagnitudeComboBox, pointMagnitudeTextField, 0.01, 5, 'l'); // Automatically highlight invalid input
-                });
+                // TextField Validation Highlighting for PointLoad Load
+                pointMagnitudeTextField.textProperty().addListener((observable, oldValue, newValue) -> ControlUtils.validateNumericInput(pointMagnitudeComboBox, pointMagnitudeTextField, 0.01, 5, false, false));
+                pointMagnitudeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> ControlUtils.validateNumericInput(pointMagnitudeComboBox, pointMagnitudeTextField, 0.01, 5, false, false));
+                pointLocationTextField.textProperty().addListener((observable, oldValue, newValue) -> ControlUtils.validateNumericInput(pointLocationComboBox, pointLocationTextField, 0, length, true, false));
+                pointLocationComboBox.valueProperty().addListener((observable, oldValue, newValue) -> ControlUtils.validateNumericInput(pointLocationComboBox, pointLocationTextField, 0, length, true, false));
 
-                pointMagnitudeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(pointMagnitudeComboBox, pointMagnitudeTextField, 0.01, 5, 'l'); // Automatically highlight invalid input
-                });
-
-                //Validation Highlighting for Point Load Location
-                pointLocationTextField.textProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(pointLocationComboBox, pointLocationTextField, 0, length, 'd'); // Automatically highlight invalid input
-                });
-
-                pointLocationComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(pointLocationComboBox, pointLocationTextField, 0, length, 'd'); // Automatically highlight invalid input
-                });
-
-                //Validation Highlighting for Distributed Load Magnitude
-                distributedMagnitudeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(distributedMagnitudeComboBox, distributedMagnitudeTextField, 0.01, 5, 'l'); // Automatically highlight invalid input
-                });
-
-                distributedMagnitudeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(distributedMagnitudeComboBox, distributedMagnitudeTextField, 0.01, 5, 'l'); // Automatically highlight invalid input
-                });
-
-                //Validation Highlighting for Distributed Load Location
-
-                //Left Interval
-                distributedIntervalTextFieldL.textProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldL, 0, distributedIntervalTextFieldR, 'd'); // Automatically highlight invalid input
-                });
-
-                distributedIntervalTextFieldR.textProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldL, 0, distributedIntervalTextFieldR, 'd'); // Automatically highlight invalid input
-                });
-
-                //Right Interval
-                distributedIntervalTextFieldR.textProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldR, distributedIntervalTextFieldL, length, 'd'); // Automatically highlight invalid input
-                });
-
-                distributedIntervalTextFieldL.textProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldR, distributedIntervalTextFieldL, length, 'd'); // Automatically highlight invalid input
-                });
-
-                distributedIntervalComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-                    highlightInvalidInput(distributedIntervalComboBox, distributedIntervalTextFieldR, distributedIntervalTextFieldL, length, 'd'); // Automatically highlight invalid input
-                });
+                // TextField Validation Highlighting for Distributed Load
+                distributedMagnitudeTextField.textProperty().addListener((observable, oldValue, newValue) -> ControlUtils.validateNumericInput(distributedMagnitudeComboBox, distributedMagnitudeTextField, 0.01, 5, false, false));
+                distributedMagnitudeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> ControlUtils.validateNumericInput(distributedMagnitudeComboBox, distributedMagnitudeTextField, 0.01, 5, false, false));
+                distributedIntervalTextFieldL.textProperty().addListener((observable, oldValue, newValue) -> ControlUtils.validateSectionFields(distributedIntervalComboBox, distributedIntervalTextFieldL, distributedIntervalTextFieldR, 0, length, true));
+                distributedIntervalTextFieldR.textProperty().addListener((observable, oldValue, newValue) -> ControlUtils.validateSectionFields(distributedIntervalComboBox, distributedIntervalTextFieldL, distributedIntervalTextFieldR, 0, length, true));
+                distributedIntervalTextFieldR.textProperty().addListener((observable, oldValue, newValue) -> ControlUtils.validateSectionFields(distributedIntervalComboBox, distributedIntervalTextFieldL, distributedIntervalTextFieldR, 0, length, true));
+                distributedIntervalTextFieldL.textProperty().addListener((observable, oldValue, newValue) -> ControlUtils.validateSectionFields(distributedIntervalComboBox, distributedIntervalTextFieldL, distributedIntervalTextFieldR, 0, length, true));
+                distributedIntervalComboBox.valueProperty().addListener((observable, oldValue, newValue) -> ControlUtils.validateSectionFields(distributedIntervalComboBox, distributedIntervalTextFieldL, distributedIntervalTextFieldR, 0, length, true));
 
                 checkAndSetEmptyLoadTreeSettings();
             }
             // Populate the alert telling the user the length they've entered is out of the allowed range
-            else
-                mainController.showSnackbar("Length must be at between 2m and 10m");
+            else mainController.showSnackbar("Length must be at between 2m and 10m");
         }
-        else
-            mainController.showSnackbar("One or more entered values are not valid numbers");
-    }
-
-    public void highlightInvalidInput(ComboBox<String> comboBox, JFXTextField textField, double min, double max, Character type) {
-        if (InputParsingUtils.validateTextAsDouble(textField.getText())) {
-            // Convert to metric
-            double value = 0;
-            if (type.equals('d'))
-                value = InputParsingUtils.getDistanceConverted(comboBox, textField);
-            else if (type.equals('l'))
-                value = InputParsingUtils.getLoadConverted(comboBox, textField);
-            else
-                System.out.println("Invalid Type");
-
-            // Only allow lengths in the specified range
-            if (!(value >= min && value <= max) && !(textField.getStyleClass().contains("invalid-input"))) {
-                textField.getStyleClass().add("invalid-input"); // Add invalid style
-                triggerAnimation(textField);
-            }
-
-            else if (value >= min && value <= max && textField.getStyleClass().contains("invalid-input")){
-                textField.getStyleClass().removeAll("invalid-input"); // Remove invalid style
-                triggerAnimation(textField);
-            }
-        }
-        else if (!(textField.getStyleClass().contains("invalid-input"))){
-            textField.getStyleClass().add("invalid-input"); // Add invalid style
-            triggerAnimation(textField);
-        }
-    }
-
-    public void highlightInvalidInput(ComboBox<String> comboBox, JFXTextField textField, JFXTextField min, double max, Character type) {
-        if (InputParsingUtils.validateTextAsDouble(min.getText())) {
-            double minConverted = InputParsingUtils.getDistanceConverted(comboBox, min);
-            highlightInvalidInput(comboBox, textField, minConverted, max, type);
-        }
-        else {
-            textField.getStyleClass().add("invalid-input"); // Add invalid style
-        }
-    }
-
-    public void highlightInvalidInput(ComboBox<String> comboBox, JFXTextField textField, double min, JFXTextField max, Character type) {
-        if (InputParsingUtils.validateTextAsDouble(max.getText())) {
-            double maxConverted = InputParsingUtils.getDistanceConverted(comboBox, max);
-            highlightInvalidInput(comboBox, textField, min, maxConverted, type);
-        }
-        else {
-            textField.getStyleClass().add("invalid-input"); // Add invalid style
-        }
-    }
-
-    private void triggerAnimation(JFXTextField textField) {
-        //Store the current focused node
-        Node focusedNode = textField.getScene().getFocusOwner();
-
-        if (focusedNode != textField)
-            return;
-
-        // Trigger the slide animation
-        textField.getParent().requestFocus(); // Temporarily move focus away
-        Platform.runLater(() -> {
-            // Restore focus to trigger the animation
-            textField.requestFocus();
-
-            // Set the caret position to the end of the text
-            textField.positionCaret(textField.getText().length());
-        });
-    }
-
-    public void restrictPrecision(JFXTextField textField) {
-        textField.textProperty().addListener((observable, oldValue, newValue) -> {
-            //Regex allows for any number of digits before an optional decimal then up to two digits after the decimal
-            if (!(newValue.matches("^\\d*\\.?\\d{0,2}$")))
-                textField.setText(oldValue);
-        });
+        else mainController.showSnackbar("One or more entered values are not valid numbers");
     }
 
     /**
@@ -359,29 +268,24 @@ public class BeamController implements Initializable, ModuleController {
             // Apply direction
             if (Objects.equals(direction, "Down")) {mag *= -1;}
 
-            // Validate the load is being added within the length of the canoe
-            if (!(0 <= x && x <= canoe.getHull().getLength()))
-                mainController.showSnackbar("Load must be contained within the canoe's length");
-            // Validate the load is in the accepted magnitude range
-            else if (Math.abs(mag) < 0.01)
-                mainController.showSnackbar("Load magnitude must be at least 0.01kN");
-
+            // Validation Guards
+            if (!(0 <= x && x <= canoe.getHull().getLength())) mainController.showSnackbar("Load must be contained within the canoe's length");
+            else if (Math.abs(mag) < 0.01) mainController.showSnackbar("Load magnitude must be at least 0.01kN");
+            else if (Math.abs(mag) > 5) mainController.showSnackbar("Load magnitude must not exceed 5kN");
+            // Add the load if validation passed
             else {
                 // Add the load to canoe, and the load arrow on the GUI
                 PointLoad p = new PointLoad(mag, x, false);
                 AddLoadResult addResult = canoe.addLoad(p);
                 displayAddResults(p, addResult);
-                if (p.isSupport())
-                    renderSupportGraphic(p.getX());
-                else
-                    renderGraphics();
+                if (p.isSupport()) renderSupportGraphic(p.getX());
+                else renderGraphics();
                 LoadTreeManagerService.buildLoadTreeView(canoe);
                 checkAndSetEmptyLoadTreeSettings();
             }
 
         }
-        else
-            mainController.showSnackbar("One or more entered values are not valid numbers");
+        else mainController.showSnackbar("One or more entered values are not valid numbers");
     }
 
     /**
@@ -402,14 +306,12 @@ public class BeamController implements Initializable, ModuleController {
             // Apply direction
             if (Objects.equals(direction, "Down")) {mag *= -1;}
 
-            // User entry validations
-            if (!(0 <= x && xR <= canoe.getHull().getLength()))
-                mainController.showSnackbar("Load must be contained within the canoe's length");
-            else if (!(xR > x))
-                mainController.showSnackbar("Right interval bound must be greater than the left bound");
-            else if (Math.abs(mag) < 0.01)
-                mainController.showSnackbar("Load magnitude must be at least 0.01kN");
-
+            // Validation Guards
+            if (!(0 <= x && xR <= canoe.getHull().getLength())) mainController.showSnackbar("Load must be contained within the canoe's length");
+            else if (!(xR > x)) mainController.showSnackbar("Right interval bound must be greater than the left bound");
+            else if (Math.abs(mag) < 0.01) mainController.showSnackbar("Load magnitude must be at least 0.01kN");
+            else if (Math.abs(mag) > 5) mainController.showSnackbar("Load magnitude must not exceed 5kN");
+            // Add the load if validation passed
             else {
                 // Add the load to canoe, and update UI state
                 UniformLoadDistribution d = new UniformLoadDistribution(mag, x, xR);
@@ -420,8 +322,7 @@ public class BeamController implements Initializable, ModuleController {
                 checkAndSetEmptyLoadTreeSettings();
             }
         }
-        else
-            mainController.showSnackbar("One or more entered values are not valid numbers");
+        else mainController.showSnackbar("One or more entered values are not valid numbers");
     }
 
     /**
@@ -762,7 +663,7 @@ public class BeamController implements Initializable, ModuleController {
         for (Control control : controls) {
             control.setDisable(b);
         }
-        //mainController.disableAllModuleToolbarButtons(b);
+        // mainController.disableAllModuleToolbarButtons(b);
 
         // Only enable the hull builder if a custom hull hasn't yet been set
         if (canoe.getHull() != null) {
@@ -815,16 +716,14 @@ public class BeamController implements Initializable, ModuleController {
                     canoe.getLoads().remove(--selectedIndex);
                     selectedIndex++;
                 }
-                else
-                    canoe.getLoads().remove(selectedIndex);
+                else canoe.getLoads().remove(selectedIndex);
             }
         }
         loadContainer.getChildren().remove(selectedIndex);
         LoadTreeManagerService.buildLoadTreeView(canoe);
         renderGraphics();
 
-        if (loadContainer.getChildren().isEmpty())
-            checkAndSetEmptyLoadTreeSettings();
+        if (loadContainer.getChildren().isEmpty()) checkAndSetEmptyLoadTreeSettings();
     }
 
     /**
@@ -850,7 +749,6 @@ public class BeamController implements Initializable, ModuleController {
             }
         }
     }
-
 
     /**
      * Clears all 3 canoe models
@@ -932,8 +830,7 @@ public class BeamController implements Initializable, ModuleController {
             UploadAlertController.setBeamController(this);
             WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view.fxml", 350, 230);
         }
-        else
-            MarshallingService.importCanoeFromYAML(mainController.getPrimaryStage());
+        else MarshallingService.importCanoeFromYAML(mainController.getPrimaryStage());
     }
 
     /**
@@ -981,10 +878,8 @@ public class BeamController implements Initializable, ModuleController {
      */
     public void downloadCanoe() {
         File downloadedFile = MarshallingService.exportCanoeToYAML(canoe, mainController.getPrimaryStage());
-
         String message = downloadedFile != null ? "Successfully downloaded canoe as \"" + downloadedFile.getName()
                 + "\" to " + downloadedFile.getParentFile().getName() : "Download cancelled";
-
         mainController.showSnackbar(message);
     }
 
@@ -1057,31 +952,15 @@ public class BeamController implements Initializable, ModuleController {
         ControlUtils.initComboBoxesWithDefaultSelected(distributedMagnitudeComboBox, distributedLoadUnits, 0);
         ControlUtils.initComboBoxesWithDefaultSelected(canoeLengthComboBox, distanceUnits, 0);
 
-        TextField[] zeroTextFields = new TextField[]{pointLocationTextField, distributedIntervalTextFieldL};
-        for (TextField tf : zeroTextFields) {tf.setText("0.00");}
+        resetInputFields();
+        canoeLengthTextField.textProperty().addListener((observable, oldValue, newValue) -> ControlUtils.validateNumericInput(canoeLengthComboBox, canoeLengthTextField, 2, 10, true, false));
+        canoeLengthComboBox.valueProperty().addListener((observable, oldValue, newValue) -> ControlUtils.validateNumericInput(canoeLengthComboBox, canoeLengthTextField, 2, 10, true, false));
 
-        TextField[] oneTextFields = new TextField[]{pointMagnitudeTextField, distributedMagnitudeTextField, distributedIntervalTextFieldR};
-        for (TextField tf : oneTextFields) {tf.setText("1.00");}
-
-        canoeLengthTextField.setText("5.00");
-
-        //Validation Highlighting for Canoe Length
-        canoeLengthTextField.textProperty().addListener((observable, oldValue, newValue) -> {
-            highlightInvalidInput(canoeLengthComboBox, canoeLengthTextField, 2, 10, 'd'); // Automatically highlight invalid input
-        });
-
-        canoeLengthComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-            highlightInvalidInput(canoeLengthComboBox, canoeLengthTextField, 2, 10, 'd'); // Automatically highlight invalid input
-        });
-
-        //Precision Restricting Init
-        restrictPrecision(canoeLengthTextField);
-        restrictPrecision(pointMagnitudeTextField);
-        restrictPrecision(pointLocationTextField);
-        restrictPrecision(distributedMagnitudeTextField);
-        restrictPrecision(distributedIntervalTextFieldL);
-        restrictPrecision(distributedIntervalTextFieldR);
-
-
+        ControlUtils.restrictDecimalTypingPrecision(canoeLengthTextField, 2);
+        ControlUtils.restrictDecimalTypingPrecision(pointMagnitudeTextField, 2);
+        ControlUtils.restrictDecimalTypingPrecision(pointLocationTextField, 2);
+        ControlUtils.restrictDecimalTypingPrecision(distributedMagnitudeTextField, 2);
+        ControlUtils.restrictDecimalTypingPrecision(distributedIntervalTextFieldL, 2);
+        ControlUtils.restrictDecimalTypingPrecision(distributedIntervalTextFieldR, 2);
     }
 }

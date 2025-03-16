@@ -1,22 +1,16 @@
 package com.wecca.canoeanalysis.models.load;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wecca.canoeanalysis.models.function.BoundedUnivariateFunction;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.commons.math3.optim.MaxEval;
-import java.util.List;
+import java.util.*;
 
 @Getter @EqualsAndHashCode(callSuper = true)
 public class ContinuousLoadDistribution extends PiecewiseContinuousLoadDistribution {
-
-    @JsonProperty("distribution")
-    private final BoundedUnivariateFunction distribution; // in kN/m by default
-    @JsonProperty("section")
-    private final Section section;
 
     /**
      * @param distribution defines the distribution
@@ -26,13 +20,15 @@ public class ContinuousLoadDistribution extends PiecewiseContinuousLoadDistribut
     public ContinuousLoadDistribution(LoadType type, BoundedUnivariateFunction distribution, Section section) {
         super(type, List.of(distribution), List.of(section));
         CalculusUtils.validateContinuity(distribution, section);
-        this.distribution = distribution;
+        TreeMap<Section, BoundedUnivariateFunction> pieces = new TreeMap<>(Comparator.comparingDouble(Section::getX));
+        pieces.put(section, distribution);
+        this.pieces = pieces;
         this.section = section;
     }
 
     @Override
     public double getForce() {
-        return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), distribution, section.getX(), section.getRx());
+        return CalculusUtils.integrator.integrate(MaxEval.unlimited().getMaxEval(), pieces.get(section), section.getX(), section.getRx());
     }
 
     @Override
@@ -46,6 +42,6 @@ public class ContinuousLoadDistribution extends PiecewiseContinuousLoadDistribut
      */
     @JsonIgnore
     public double getValue(double v) {
-        return distribution.value(v);
+        return pieces.get(section).value(v);
     }
 }

@@ -18,7 +18,7 @@ import java.util.*;
 public class PiecewiseContinuousLoadDistribution extends LoadDistribution {
 
     @JsonProperty("pieces")
-    private TreeMap<Section, BoundedUnivariateFunction> pieces;
+    protected TreeMap<Section, BoundedUnivariateFunction> pieces;
 
     public PiecewiseContinuousLoadDistribution(LoadType type, List<BoundedUnivariateFunction> pieces, List<Section> subSections) {
         super(type, new Section(CalculusUtils.roundXDecimalDigits(subSections.getFirst().getX(), 10), subSections.getLast().getRx()));
