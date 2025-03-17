@@ -109,13 +109,7 @@ public class MarshallingService {
      * @param stage the stage to display the FileChooser dialog
      */
     public static void importCanoeFromYAML(Stage stage) {
-        uploadAndProcessCanoe(stage, adjustedCanoe -> {
-            // Custom processing for the general canoe import
-            adjustedCanoe.setHull(adjustedCanoe.getHull());
-            for (Load load : adjustedCanoe.getLoads())
-                adjustedCanoe.addLoad(load);
-            beamController.setCanoe(adjustedCanoe);
-        },false);
+        uploadAndProcessCanoe(stage, adjustedCanoe -> beamController.setCanoe(adjustedCanoe),false);
     }
 
     /**
