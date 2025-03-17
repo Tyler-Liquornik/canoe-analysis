@@ -13,7 +13,6 @@ import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.function.Range;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.HullGeometryService;
-import com.wecca.canoeanalysis.services.LoggerService;
 import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
@@ -112,8 +111,8 @@ public class HullBuilderController implements Initializable, ModuleController {
 
     // Constants
     // Note to developer: This does not have deep immutability. Do not mutate! Meant as a constant reference to SharkBait!
-    private final Hull SHARKBAIT_HULL = HullLibrary.generateSharkBaitHullScaledFromBezier(HullLibrary.SHARK_BAIT_LENGTH);
-    private final Hull ON_LOAD_HULL = HullLibrary.generateGirraftScaledFromBezier(HullLibrary.GIRRAFT_LENGTH);
+    private final Hull SHARKBAIT_HULL = HullLibrary.generateSharkBaitHullScaled(HullLibrary.SHARK_BAIT_LENGTH);
+    private final Hull ON_LOAD_HULL = HullLibrary.generateGirRaftHullScaled(HullLibrary.GIRRAFT_LENGTH);
 
     /**
      * Clears the toolbar of buttons from other modules and adds ones from this module

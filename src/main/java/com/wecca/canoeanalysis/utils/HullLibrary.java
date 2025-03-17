@@ -8,7 +8,7 @@ import java.util.stream.IntStream;
 
 /**
  * 2024's Shark Bait serves as the base reference for all future canoes with respect to PADDL development
- * This library has a few different versions of shark bait to work with
+ * This library has a few different versions of hull models to work with
  * As new hull models develop over time, old ones should be gradually phased out and then deprecated
  * Removing all dependencies for an old model at once is dangerous and should be done with caution
  */
@@ -26,7 +26,7 @@ public class HullLibrary {
      */
     // https://www.desmos.com/calculator/88rzkpirvn: Top View
     // https://www.desmos.com/calculator/bucl5qgj9r: Side View
-    public static Hull generateGirraftScaledFromBezier(double length) {
+    public static Hull generateGirRaftHullScaled(double length) {
 
         // Scale compared to the actual length of Girraft
         scalingFactor = length / GIRRAFT_LENGTH;
@@ -172,7 +172,7 @@ public class HullLibrary {
      * @return the hull
      */
     // https://www.desmos.com/calculator/waebkhsl43
-    public static Hull generateSharkBaitHullScaledFromBezier(double length) {
+    public static Hull generateSharkBaitHullScaled(double length) {
 
         // Scale compared to the actual length of Shark Bait
         scalingFactor = length / SHARK_BAIT_LENGTH;
@@ -310,7 +310,7 @@ public class HullLibrary {
     }
 
     /**
-     * Returns a hull with the geometry of the rectangular prism that encases the scaled Shark Bait Hull
+     * Returns a hull with the geometry of the rectangular prism that encases the scaled hull
      * This hull has no mass or weight, and a self weight distribution of f(x) = 0
      * @param length the length to scale to
      * @return the scaled hull

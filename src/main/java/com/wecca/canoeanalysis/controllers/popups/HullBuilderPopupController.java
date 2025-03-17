@@ -35,10 +35,10 @@ public class HullBuilderPopupController implements Initializable {
     }
 
     public void setHullScaledSharkBait(ActionEvent e) {
-        Hull hull = HullLibrary.generateGirraftScaledFromBezier(canoe.getHull().getLength());
+        Hull hull = HullLibrary.generateGirRaftHullScaled(canoe.getHull().getLength());
         canoe.setHull(hull);
         beamController.setCanoe(canoe);
-        mainController.showSnackbar("Successfully set hull to Shark Bait");
+        mainController.showSnackbar("Successfully set hull to Gir-raft");
         beamController.checkAndSetEmptyLoadTreeSettings();
         LoadTreeManagerService.buildLoadTreeView(canoe);
         mainController.disableModuleToolBarButton(true, 2);

@@ -363,17 +363,14 @@ public class DiagramService {
     }
 
     /**
-     * Consider the list of points is a "pseudo piecewise function"
-     * This method breaks it into a set of "pseudo functions"
-     * Pseudo because it's just a set of points rather with no clear partitions by their definition only
-     * @param points act together as a piecewise function
-     * @param partitions the locations where the form of the piecewise changes
-     * @return a list containing each section of the piecewise pseudo functions with unique form
+     * @param points define a piecewise function in point-wise form
+     * @param piecewisePartitions the locations where the form of the piecewise changes
+     * @return a list containing each section of the point-wise piecewise
      */
-    private static List<List<Point2D>> partitionPoints(List<Point2D> points, TreeSet<Double> partitions) {
+    private static List<List<Point2D>> partitionPoints(List<Point2D> points, TreeSet<Double> piecewisePartitions) {
         // Initializing lists
         List<List<Point2D>> partitionedIntervals = new ArrayList<>();
-        List<Double> partitionsList = new ArrayList<>(partitions);
+        List<Double> partitionsList = new ArrayList<>(piecewisePartitions);
 
         // If the first point is doubled up due to a jump discontinuity then throw away the first point (0, 0)
         // By "doubled up" I mean two points at the same x coordinate
@@ -401,7 +398,7 @@ public class DiagramService {
 
             // Keep adding points to the interval until the partition index reached
             // Empty interval means this is the first point to be included
-            if (!(point.getX() >= partition && nextPoint != null && nextPoint.getX() >= partition) || interval.isEmpty())
+            if (!(point.getX() >= partition - 1e-10 && nextPoint != null && nextPoint.getX() >= partition - 1e-10) || interval.isEmpty())
                 interval.add(point);
 
             // Add the interval to the list of partitioned intervals and prepare for the next interval

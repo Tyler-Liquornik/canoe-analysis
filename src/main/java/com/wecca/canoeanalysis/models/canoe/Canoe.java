@@ -158,6 +158,7 @@ public class Canoe
             if (l instanceof LoadDistribution dist)
                 endPoints.add(dist.getSection().getRx());
         }
+        endPoints.forEach(x -> CalculusUtils.roundXDecimalDigits(x, 10));
         return endPoints;
     }
 
