@@ -8,6 +8,7 @@ import com.jfoenix.controls.JFXSnackbarLayout;
 import com.wecca.canoeanalysis.components.controls.IconButton;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.controllers.modules.ModuleController;
+import com.wecca.canoeanalysis.controllers.popups.UploadAlertController;
 import com.wecca.canoeanalysis.services.ResourceManagerService;
 import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
@@ -341,5 +342,6 @@ public class MainController implements Initializable {
 
         // Pass references to services that require it
         MarshallingService.setMainController(this);
+        UploadAlertController.setMainController(this);
     }
 }

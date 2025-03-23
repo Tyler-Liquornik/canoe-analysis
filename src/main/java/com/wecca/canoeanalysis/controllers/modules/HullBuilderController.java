@@ -14,6 +14,7 @@ import com.wecca.canoeanalysis.models.function.Range;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.HullGeometryService;
 import com.wecca.canoeanalysis.services.MarshallingService;
+import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.GraphicsUtils;
@@ -33,9 +34,11 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import javafx.geometry.Point2D;
 import javafx.scene.input.KeyEvent;
+import java.io.File;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
@@ -45,11 +48,9 @@ import java.util.stream.IntStream;
 /**
  * To whoever is coding here:
  * You need to be extremely careful that everything here is very performant!
- * As the user turns the knobs, they fire off a high frequency of events (picture like a machine gun but instead of bullets it shoots events XD)
- * These events must be handled with low latency
- * Because you might have to calculate several integrals or something PER EVENT!!!!
- * Be smart with good DS&A knowledge, do not write slow code
- * Otherwise animations and UI controls become choppy and the UX is ruined
+ * Be smart with good DS&A knowledge, and DO NOT WRITE SLOW CODE
+ * ----------------------------------------------------------------------------
+ * UI Controls for modifying the hull's geometry, primarily relying on HullGeometryService on the backend.
  */
 @Traceable
 public class HullBuilderController implements Initializable, ModuleController {
@@ -63,7 +64,7 @@ public class HullBuilderController implements Initializable, ModuleController {
             poiTitleLabel, poiDataLabel, poiModeLabel;
 
     // Refs
-    @Getter @Setter
+    @Getter
     private Hull hull;
     @Setter
     private static MainController mainController;
@@ -119,16 +120,11 @@ public class HullBuilderController implements Initializable, ModuleController {
      */
     public void initModuleToolBarButtons() {
         LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
-        // TODO: add functions to buttons
-        iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> dummy());
-        iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> dummy());
+        iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadHull());
+        iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadHull());
         iconGlyphToFunctionMap.put(IconGlyphType.PENCIL, this::toggleKnotEditorMode);
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
-    }
-
-    public void dummy() {
-        mainController.showSnackbar("WIP");
     }
 
     public void dummyOnClick(MouseEvent event) {
@@ -367,6 +363,17 @@ public class HullBuilderController implements Initializable, ModuleController {
     }
 
     /**
+     * Custom logic to set the hull
+     * @param hull the hull to set
+     */
+    public void setHull(@NonNull Hull hull) {
+        this.hull = hull;
+        renderHullGraphic(hull);
+        setHullProperties(hull);
+        toggleKnotEditingHullCurveOverlay();
+    }
+
+    /**
      * Set the side view hull to build
      *
      * @param hull to set from
@@ -403,17 +410,11 @@ public class HullBuilderController implements Initializable, ModuleController {
             hullGraphic.colorNextBezierPointGroup();
             nextPressedBefore = true;
         }
+
         selectedBezierSegment = hull.getSideViewSegments().get(selectedBezierSegmentIndex);
         Section selectedSection = new Section(selectedBezierSegment.getX1(), selectedBezierSegment.getX2());
-        if (sectionPropertiesSelected) {
-            setSectionProperties(
-                    hull.getSectionSideViewCurveHeight(selectedSection),
-                    hull.getSectionVolume(selectedSection),
-                    hull.getSectionMass(selectedSection),
-                    selectedBezierSegment.getX1(),
-                    selectedBezierSegment.getX2()
-            );
-        }
+        if (sectionPropertiesSelected) setHullSectionProperties(hull, selectedSection);
+
         unboundKnobs();
         setKnobValues();
         setKnobBounds();
@@ -446,9 +447,9 @@ public class HullBuilderController implements Initializable, ModuleController {
     }
 
     /**
-     * Display section properties with corresponding attributes
+     * Display properties in the bottom right panel with corresponding attributes
      */
-    public void setSectionProperties(double height, double volume, double mass, double x, double rx) {
+    public void setHullPropertiesPaneValues(double height, double volume, double mass, double x, double rx) {
         String heightInfo = String.format("%.4f m", Math.abs(height));
         this.heightLabel.setText(heightInfo);
         String interval = String.format("(%.4f m, %.4f m)", x, rx);
@@ -457,6 +458,36 @@ public class HullBuilderController implements Initializable, ModuleController {
         this.volumeLabel.setText(volumeFormated);
         String massFormated = String.format("%.4f kg", mass);
         this.massLabel.setText(massFormated);
+    }
+
+    /**
+     * Shortcut to update the properties panel with the overall Canoe properties.
+     * Uses the Canoe’s hull overall values.
+     * @param hull the hull object from which to set properties in the bottom right pane
+     */
+    public void setHullProperties(Hull hull) {
+        setHullPropertiesPaneValues(
+                hull.getMaxHeight(),
+                hull.getTotalVolume(),
+                hull.getMass(),
+                0,
+                hull.getLength());
+    }
+
+    /**
+     * Shortcut to update the properties panel with a selected hull section’s values.
+     * Uses the provided Section to compute section-specific properties.
+     * @param hull the hull object from which to set properties in the bottom right pane
+     * @param section the Section representing the selected hull segment
+     */
+    public void setHullSectionProperties(Hull hull, Section section) {
+        setHullPropertiesPaneValues(
+                hull.getSectionSideViewCurveHeight(section),
+                hull.getSectionVolume(section),
+                hull.getSectionMass(section),
+                section.getX(),
+                section.getRx()
+        );
     }
 
     /**
@@ -565,7 +596,7 @@ public class HullBuilderController implements Initializable, ModuleController {
         if (sectionPropertiesSelected) {
             sectionPropertiesSelected = false;
             propertiesPanelTitleLabel.setText("Canoe Properties");
-            setSectionProperties(hull.getMaxHeight(), hull.getTotalVolume(),hull.getMass(), 0, hull.getLength());
+            setHullProperties(hull);
         }
         else {
             sectionPropertiesSelected = true;
@@ -580,10 +611,7 @@ public class HullBuilderController implements Initializable, ModuleController {
             // Set the properties if a hull section is selected
             CubicBezierFunction bezier = hull.getSideViewSegments().get(selectedBezierSegmentIndex);
             Section section = new Section(bezier.getX1(), bezier.getX2());
-            setSectionProperties(hull.getSectionSideViewCurveHeight(section),
-                    hull.getSectionVolume(section),
-                    hull.getSectionMass(section),
-                    bezier.getX1(), bezier.getX2());
+            setHullSectionProperties(hull, section);
         }
     }
 
@@ -634,22 +662,8 @@ public class HullBuilderController implements Initializable, ModuleController {
     private void recalculateAndDisplayHullProperties() {
         if (sectionPropertiesSelected && selectedBezierSegment != null) {
             Section selectedSection = new Section(selectedBezierSegment.getX1(), selectedBezierSegment.getX2());
-            setSectionProperties(
-                    hull.getSectionSideViewCurveHeight(selectedSection),
-                    hull.getSectionVolume(selectedSection),
-                    hull.getSectionMass(selectedSection),
-                    selectedBezierSegment.getX1(),
-                    selectedBezierSegment.getX2()
-            );
-        } else {
-            setSectionProperties(
-                    hull.getMaxHeight(),
-                    hull.getTotalVolume(),
-                    hull.getMass(),
-                    0,
-                    hull.getLength()
-            );
-        }
+            setHullSectionProperties(hull, selectedSection);
+        } else setHullProperties(hull);
     }
 
     /**
@@ -1104,14 +1118,8 @@ public class HullBuilderController implements Initializable, ModuleController {
             knotDraggingPreviewHull = HullGeometryService.dragKnotPoint(initialKnotDragKnotPos, newKnotDragKnotPos, minKnotOrNull);
             renderHullGraphic(knotDraggingPreviewHull);
             updateHullIntersectionPointDisplay(initialKnotDragKnotPos, newKnotDragKnotPos);
-            if (sectionPropertiesSelected)
-                setBlankSectionProperties();
-            else
-                setSectionProperties(knotDraggingPreviewHull.getMaxHeight(),
-                        knotDraggingPreviewHull.getTotalVolume(),
-                        knotDraggingPreviewHull.getMass(),
-                        0,
-                        knotDraggingPreviewHull.getLength());
+            if (sectionPropertiesSelected) setBlankSectionProperties();
+            else setHullProperties(knotDraggingPreviewHull);
             hullViewAnchorPane.setCursor(Cursor.CLOSED_HAND);
         }
         else if (dragIndicatorLine != null) dragIndicatorLine.setVisible(false);
@@ -1143,7 +1151,7 @@ public class HullBuilderController implements Initializable, ModuleController {
             }
             renderHullGraphic(hull);
             if (sectionPropertiesSelected) setBlankSectionProperties();
-            else setSectionProperties(hull.getMaxHeight(), hull.getTotalVolume(), hull.getMass(), 0, hull.getLength());
+            else setHullProperties(hull);
             toggleKnotEditingHullCurveOverlay();
 
             // More State updates
@@ -1168,6 +1176,23 @@ public class HullBuilderController implements Initializable, ModuleController {
         double height = hullViewAnchorPane.getHeight();
         return knotEditingCurrentMouseX >= layoutX && knotEditingCurrentMouseX <= (layoutX + width)
                 && knotEditingCurrentMouseY >= layoutY && knotEditingCurrentMouseY <= (layoutY + height);
+    }
+
+    /**
+     * Downloads the current Hull object as a YAML file using the generic exporter.
+     */
+    public void downloadHull() {
+        File downloadedFile = MarshallingService.exportObjectToYAML(hull, mainController.getPrimaryStage(), "hull");
+        if (downloadedFile != null) mainController.showSnackbar("Successfully downloaded hull as \"" + downloadedFile.getName() + "\"");
+        else mainController.showSnackbar("Download cancelled");
+    }
+
+    /**
+     * Upload a YAML file representing the Hull object model
+     * This populates the list view and beam graphic with the new model
+     */
+    public void uploadHull() {
+        WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view.fxml", 350, 230);
     }
 
     /**
@@ -1271,6 +1296,7 @@ public class HullBuilderController implements Initializable, ModuleController {
         // Set controller instances
         setMainController(CanoeAnalysisApplication.getMainController());
         HullGeometryService.setHullBuilderController(this);
+        MarshallingService.setHullBuilderController(this);
         HullGeometryService.setAbsMaxAllowedHullHeight(0.5);
 
         // Layout

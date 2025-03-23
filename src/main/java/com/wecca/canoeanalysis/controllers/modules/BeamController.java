@@ -823,39 +823,33 @@ public class BeamController implements Initializable, ModuleController {
      * This populates the list view and beam graphic with the new model
      */
     public void uploadCanoe() {
-        MarshallingService.setBeamController(this);
-
         // Alert the user they will be overriding the current loads on the canoe by uploading a new one
-        if (!canoe.getAllLoads().isEmpty()) {
-            UploadAlertController.setBeamController(this);
+        if (!canoe.getAllLoads().isEmpty())
             WindowManagerService.openUtilityWindow("Alert", "view/upload-alert-view.fxml", 350, 230);
-        }
-        else MarshallingService.importCanoeFromYAML(mainController.getPrimaryStage());
+        else MarshallingService.beamImportCanoeFromYAML(mainController.getPrimaryStage());
     }
 
     /**
      * Set the canoe and sync with graphics and tree view models
      * @param canoe the canoe to set
      */
-    public void setCanoe(Canoe canoe) {
-        if (canoe != null) {
-            // Update the canoe model
-            this.canoe = canoe;
+    public void setCanoe(@NonNull Canoe canoe) {
+        // Update the canoe model
+        this.canoe = canoe;
 
-            Hull defaultHull = HullLibrary.generateDefaultHull(canoe.getHull().getLength());
-            boolean isBeam = canoe.getHull().equals(defaultHull);
-            mainController.disableModuleToolBarButton(!isBeam, 2);
+        Hull defaultHull = HullLibrary.generateDefaultHull(canoe.getHull().getLength());
+        boolean isBeam = canoe.getHull().equals(defaultHull);
+        mainController.disableModuleToolBarButton(!isBeam, 2);
 
-            // Update UI to new canoe
-            renderGraphics();
-            if (isBeam)
-                resetHullGraphic();
-            else
-                setHullGraphicFromHull(canoe.getHull());
-            LoadTreeManagerService.buildLoadTreeView(this.canoe);
-            axisLabelR.setText(String.format("%.2f m", this.canoe.getHull().getLength()));
-            checkAndSetEmptyLoadTreeSettings();
-        }
+        // Update UI to new canoe
+        renderGraphics();
+        if (isBeam)
+            resetHullGraphic();
+        else
+            setHullGraphicFromHull(canoe.getHull());
+        LoadTreeManagerService.buildLoadTreeView(this.canoe);
+        axisLabelR.setText(String.format("%.2f m", this.canoe.getHull().getLength()));
+        checkAndSetEmptyLoadTreeSettings();
     }
 
     /**
@@ -916,6 +910,7 @@ public class BeamController implements Initializable, ModuleController {
         // Module init
         setMainController(CanoeAnalysisApplication.getMainController());
         initModuleToolBarButtons();
+        MarshallingService.setBeamController(this);
         canoe = new Canoe();
 
         // Load tree init

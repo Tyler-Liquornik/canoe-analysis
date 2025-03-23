@@ -6,8 +6,10 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.controllers.modules.BeamController;
 import com.wecca.canoeanalysis.controllers.MainController;
+import com.wecca.canoeanalysis.controllers.modules.HullBuilderController;
 import com.wecca.canoeanalysis.controllers.modules.PunchingShearController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
+import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.data.DevConfig;
 import com.wecca.canoeanalysis.models.data.Settings;
 import com.wecca.canoeanalysis.models.load.Load;
@@ -33,9 +35,13 @@ public class MarshallingService {
     @Setter
     private static BeamController beamController;
     @Setter
+    private static HullBuilderController hullBuilderController;
+    @Setter
     private static PunchingShearController punchingShearController;
+
     private static final ObjectMapper yamlMapper;
     private static final ObjectMapper smileMapper;
+
     public static final String SETTINGS_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/settings.yaml", true);
     public static final String DEV_CONFIG_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/dev-config.yaml", true);
     public static final boolean TRACING;
@@ -51,6 +57,14 @@ public class MarshallingService {
                     .loadYamlData(DevConfig.class, new DevConfig(false),
                             MarshallingService.DEV_CONFIG_FILE_PATH).isTracing();
         } catch (IOException e) {throw new RuntimeException(e);}
+    }
+
+    /**
+     * Write the current state of settings to a file
+     * @param settings the POJO containing all settings information
+     */
+    public static void saveSettings(Settings settings) throws IOException {
+        yamlMapper.writeValue(new File(SETTINGS_FILE_PATH), settings);
     }
 
     /**
@@ -104,28 +118,38 @@ public class MarshallingService {
     }
 
     /**
-     * Prompts the user to upload a YAML file representing a new canoe model and processes it.
-     * The uploaded canoe is used for general beam control operations.
+     * For Use in the Beam module
+     * Prompts the user to upload a YAML file representing a Canoe model and processes it.
      * @param stage the stage to display the FileChooser dialog
      */
-    public static void importCanoeFromYAML(Stage stage) {
-        uploadAndProcessCanoe(stage, adjustedCanoe -> beamController.setCanoe(adjustedCanoe),false);
+    public static void beamImportCanoeFromYAML(Stage stage) {
+        uploadAndProcessCanoe(stage, canoe -> beamController.setCanoe(canoe),false);
     }
 
     /**
-     * Prompts the user to upload a YAML file representing a canoe model specifically for
-     * punching shear operations and processes it.
+     * For Use in the Hull Builder module
+     * Prompts the user to upload a YAML file representing a Hull model and processes it.
+     * @param stage the stage to display the FileChooser dialog
+     */
+    public static void hullBuilderImportHullFromYAML(Stage stage) {
+        uploadAndProcessHull(stage, hull -> hullBuilderController.setHull(hull));
+    }
+
+    /**
+     * For Use in the punching shear module
+     * Prompts the user to upload a YAML file representing a Canoe model to extract key values from
      * @param stage the stage to display the FileChooser dialog
      */
     public static void punchingShearImportCanoeFromYAML(Stage stage) {
-        uploadAndProcessCanoe(stage, adjustedCanoe -> punchingShearController.setValues(adjustedCanoe),true);
+        uploadAndProcessCanoe(stage, canoe -> punchingShearController.setValues(canoe),true);
     }
 
     /**
-     * Handles the common logic for uploading and processing one to many canoe YAML file(s).
+     * Handles logic for uploading and processing one to many canoe YAML file(s).
      * Allows custom processing logic to be applied to the parsed and adjusted Canoe object.
-     * @param stage the stage to display the FileChooser dialog
+     * @param stage the stage on which to display the FileChooser dialog
      * @param canoeProcessor a Consumer function to process the adjusted Canoe object
+     * @param allowMultipleFiles triggers an alternate flow for multi file upload
      */
     private static void uploadAndProcessCanoe(Stage stage, Consumer<Canoe> canoeProcessor, boolean allowMultipleFiles) {
         // Create a file chooser
@@ -200,19 +224,86 @@ public class MarshallingService {
     }
 
     /**
-     * Write the current state of settings to a file
-     * @param settings the POJO containing all settings information
+     * Handles logic for uploading and processing a Hull YAML file.
+     * Allows custom processing logic to be applied to the parsed Hanoe object.
+     * @param stage the stage on which to display the FileChooser dialog
+     * @param hullProcessor a Consumer function to process the Hull object
      */
-    public static void saveSettings(Settings settings) throws IOException {
-        yamlMapper.writeValue(new File(SETTINGS_FILE_PATH), settings);
+    private static void uploadAndProcessHull(Stage stage, Consumer<Hull> hullProcessor) {
+        // We are not handling multiple file upload for Hull at this time.
+        FileChooser fileChooser = new FileChooser();
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("YAML files (*.yaml, *.yml)", "*.yaml", "*.yml");
+        fileChooser.getExtensionFilters().add(extFilter);
+        fileChooser.setTitle("Upload Hull");
+
+        // Single file upload (ignore allowMultipleFiles for now)
+        File fileToUpload = fileChooser.showOpenDialog(stage);
+        if (fileToUpload != null) {
+            try {
+                Hull hull = yamlMapper.readValue(fileToUpload, Hull.class);
+                hullProcessor.accept(hull);
+                mainController.showSnackbar("Successfully uploaded " + fileToUpload.getName());
+            } catch (IOException ex) {
+                mainController.showSnackbar("Could not parse \"" + fileToUpload.getName() + "\".");
+            }
+        }
+    }
+
+    /**
+     * Generic YAML Object Marshaller
+     */
+    public static <T> File exportObjectToYAML(T object, Stage stage, String defaultFileName) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Download " + defaultFileName);
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("YAML (*.yaml)", "*.yaml");
+        fileChooser.getExtensionFilters().add(extFilter);
+        fileChooser.setInitialFileName(defaultFileName);
+
+        File fileToDownload = fileChooser.showSaveDialog(stage);
+        if (fileToDownload != null) {
+            try {
+                String yamlString = yamlMapper.writeValueAsString(object);
+                // Add a warning comment to the top of the YAML file
+                String comment = "# Please do not manually modify the contents of this file before uploading, it may result in unexpected results\n";
+                yamlString = comment + yamlString;
+                try (FileWriter writer = new FileWriter(fileToDownload)) {
+                    writer.write(yamlString);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return fileToDownload;
+    }
+
+    /**
+     * Generic YAML Object Unmarshaller
+     */
+    public static <T> T importObjectFromYAML(Stage stage, Class<T> clazz) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Upload " + clazz.getSimpleName());
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("YAML files (*.yaml, *.yml)", "*.yaml", "*.yml");
+        fileChooser.getExtensionFilters().add(extFilter);
+
+        File fileToUpload = fileChooser.showOpenDialog(stage);
+        if (fileToUpload != null) {
+            try {
+                T object = yamlMapper.readValue(fileToUpload, clazz);
+                mainController.showSnackbar("Successfully uploaded " + fileToUpload.getName());
+                return object;
+            } catch (IOException ex) {
+                mainController.showSnackbar("Could not parse \"" + fileToUpload.getName() + "\".");
+            }
+        }
+        return null;
     }
 
     /**
      *
      * @param dataClass the POJO representing the structure of the data to load
      * @param defaultData the data to upload if the file does not exist
-     * @param path to the YAML file to demarshall
-     * @return the demarshalled YAML file as a POJO
+     * @param path to the YAML file to unmarshall
+     * @return the unmarshalled YAML file as a POJO
      */
     public static <T> T loadYamlData(Class<T> dataClass, T defaultData, String path) throws IOException {
         try {

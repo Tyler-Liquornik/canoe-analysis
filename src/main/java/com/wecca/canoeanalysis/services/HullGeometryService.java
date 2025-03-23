@@ -20,6 +20,10 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 /**
+ * To whoever is coding here:
+ * You need to be extremely careful that everything here is very performant!
+ * Be smart with good DS&A knowledge, and DO NOT WRITE SLOW CODE
+ * --------------------------------------------------------------------------------------
  * Performs geometry-related operations on the canoe's hull.
  * This is the main engine for driving simple user interactions to modify hull geometry
  * This class is responsible for updating and managing control points, knot points,
@@ -27,7 +31,6 @@ import java.util.stream.IntStream;
  * and the bounds on what the user can do the keep the geometry reasonable for a hull
  * (one central theme for "reasonable" geometry is C1 continuity between adjacent hull sections).
  * This ultimately operates as a bridge between the data model (hull and sections) and the UI
- *
  */
 @Traceable
 public class HullGeometryService {
