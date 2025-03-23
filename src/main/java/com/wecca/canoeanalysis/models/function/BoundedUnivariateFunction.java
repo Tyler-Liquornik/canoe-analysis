@@ -103,6 +103,8 @@ public interface BoundedUnivariateFunction extends UnivariateFunction {
 
     /**
      * Optimizes the function using a hybrid manual search (10 steps) plus Brent's method.
+     * Learn More: https://people.math.wisc.edu/~chr/am205/g_act/am205_workshop_optimization.pdf
+     * This optimization might work for multimodal functions but is not guaranteed thus this is not recommended in that case.
      * @param section  the section within which to perform the optimization
      * @param goalType the optimization goal (minimize or maximize)
      * @return the optimum point (x, y)

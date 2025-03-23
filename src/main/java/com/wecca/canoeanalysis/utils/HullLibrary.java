@@ -50,7 +50,7 @@ public class HullLibrary {
         double leftX1 = knot0;
         double leftY1 = top;
         double leftControlX1 = 0.040 * scalingFactor;
-        double leftControlY1 = -0.396 * scalingFactor;
+        double leftControlY1 = -0.390 * scalingFactor;
         double leftControlX2 = 0.002 * scalingFactor;
         double leftControlY2 = -0.340 * scalingFactor;
         double leftX2 = knot1;
@@ -85,7 +85,7 @@ public class HullLibrary {
         double rightControlX1 = 5.705 * scalingFactor;
         double rightControlY1 = rightSlope1 * (rightControlX1 - rightX1) + rightY1;
         double rightControlX2 = 5.708 * scalingFactor;
-        double rightControlY2 = -0.394 * scalingFactor;
+        double rightControlY2 = -0.390 * scalingFactor;
         double rightX2 = scaledLength;
         double rightY2 = top;
 

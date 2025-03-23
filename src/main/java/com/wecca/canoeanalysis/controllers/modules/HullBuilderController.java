@@ -110,7 +110,7 @@ public class HullBuilderController implements Initializable, ModuleController {
     private double hullGraphicPaneHeight;
 
     // Constants
-    // Note to developer: This does not have deep immutability. Do not mutate! Meant as a constant reference to SharkBait!
+    // Note to developer: This does not have deep immutability. Do not mutate!
     private final Hull SHARKBAIT_HULL = HullLibrary.generateSharkBaitHullScaled(HullLibrary.SHARK_BAIT_LENGTH);
     private final Hull ON_LOAD_HULL = HullLibrary.generateGirRaftHullScaled(HullLibrary.GIRRAFT_LENGTH);
 
@@ -464,7 +464,7 @@ public class HullBuilderController implements Initializable, ModuleController {
       */
     private void setKnobValues() {
         // Batch update values, add back listeners
-        List<Double> knobValues = HullGeometryService.getPolarParameterValues();
+        List<Double> knobValues = HullGeometryService.getPolarParameterValues(selectedBezierSegment);
         for (int i = 0; i < knobs.size(); i++) {knobs.get(i).valueProperty().removeListener(knobListeners.get(i));}
         for (int i = 0; i < knobs.size(); i++) {knobs.get(i).setKnobValue(knobValues.get(i));}
         for (int i = 0; i < knobs.size(); i++) {knobs.get(i).valueProperty().addListener(knobListeners.get(i));}
@@ -609,7 +609,7 @@ public class HullBuilderController implements Initializable, ModuleController {
 
         // Update the model
         double[] knobValues = knobs.stream().mapToDouble(Knob::getValue).toArray();
-        hull = HullGeometryService.updateHullParameter(knobIndex, newROrThetaVal, knobValues);
+        hull = HullGeometryService.updateHullParameter(knobIndex, newROrThetaVal, knobValues, -1);
 
         // Update UI with new hull
         hullGraphicPane.getChildren().clear();
@@ -1065,8 +1065,9 @@ public class HullBuilderController implements Initializable, ModuleController {
             knotEditingCurrentMouseY = event.getY();
 
             // Update the drag indicator line
+            double minusAbsHeight = -Math.abs(hull.getMaxHeight());
             double knotScreenX = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getX(), hullGraphicPane.getPrefWidth(), hull.getLength()) + hullGraphicPane.getLayoutX();
-            double knotScreenY = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getY(), hullGraphicPane.getPrefHeight(), -Math.abs(hull.getMaxHeight())) + hullGraphicPane.getLayoutY();
+            double knotScreenY = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getY(), hullGraphicPane.getPrefHeight(), minusAbsHeight) + hullGraphicPane.getLayoutY();
             double offsetX = knotScreenX - initialKnotDragMousePos.getX();
             double offsetY = knotScreenY - initialKnotDragMousePos.getY();
             double newEndX = event.getX() + offsetX;
@@ -1081,14 +1082,26 @@ public class HullBuilderController implements Initializable, ModuleController {
             double graphicWidth = hullGraphicPane.getPrefWidth();
             double graphicHeight = hullGraphicPane.getPrefHeight();
             double modelWidth = hull.getLength();
-            double modelHeight = Math.abs(hull.getMaxHeight());
             double newKnotModelX = ((newEndX - hullGraphicPane.getLayoutX()) / graphicWidth) * modelWidth;
-            double newKnotModelY = ((newEndY - hullGraphicPane.getLayoutY()) / graphicHeight) * (-modelHeight);
+            double newKnotModelY = ((newEndY - hullGraphicPane.getLayoutY()) / graphicHeight) * minusAbsHeight;
             newKnotDragKnotPos = new Point2D(newKnotModelX, newKnotModelY);
 
             // Update the preview hull by calling the service.
             // This preview hull is kept separate from the original hull until the transaction commits.
-            knotDraggingPreviewHull = HullGeometryService.dragKnotPoint(initialKnotDragKnotPos, newKnotDragKnotPos);
+            // Adjust other points if the min changes
+            Point2D minKnotOrNull = CalculusUtils.getSplineKnots(hull.getSideViewSegments()).stream()
+                    .min(Comparator.comparingDouble(Point2D::getY))
+                    .orElseThrow(() -> new IllegalStateException("No points found"));
+            boolean isDraggingMinKnot = (minKnotOrNull.distance(initialKnotDragKnotPos) < 1e-6);
+            if (isDraggingMinKnot) {
+                double sideViewPanelHeight = hullGraphicPaneHeight * (newKnotDragKnotPos.getY() / ON_LOAD_HULL.getMaxHeight());
+                hullGraphicPane.setPrefHeight(sideViewPanelHeight);
+                hullGraphicPane.setMaxHeight(sideViewPanelHeight);
+                hullGraphicPane.setMinHeight(sideViewPanelHeight);
+            }
+            else minKnotOrNull = null;
+
+            knotDraggingPreviewHull = HullGeometryService.dragKnotPoint(initialKnotDragKnotPos, newKnotDragKnotPos, minKnotOrNull);
             renderHullGraphic(knotDraggingPreviewHull);
             updateHullIntersectionPointDisplay(initialKnotDragKnotPos, newKnotDragKnotPos);
             if (sectionPropertiesSelected)
@@ -1258,6 +1271,7 @@ public class HullBuilderController implements Initializable, ModuleController {
         // Set controller instances
         setMainController(CanoeAnalysisApplication.getMainController());
         HullGeometryService.setHullBuilderController(this);
+        HullGeometryService.setAbsMaxAllowedHullHeight(0.5);
 
         // Layout
         initModuleToolBarButtons();

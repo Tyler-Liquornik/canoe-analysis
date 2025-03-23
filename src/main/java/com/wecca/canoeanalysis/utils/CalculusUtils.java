@@ -344,4 +344,16 @@ public class CalculusUtils
     public static double getSplineY(List<CubicBezierFunction> splineSegments, double x) {
         return getSegmentForX(splineSegments, x).value(x);
     }
+
+    public static List<Point2D> getSplineKnots(List<CubicBezierFunction> splineSegments) {
+        List<Point2D> knots = new ArrayList<>(splineSegments.size() + 1);
+        for (CubicBezierFunction bezier : splineSegments) {
+            knots.add(new Point2D(bezier.getX1(), bezier.getY1()));
+        }
+        if (!splineSegments.isEmpty()) {
+            CubicBezierFunction last = splineSegments.getLast();
+            knots.add(new Point2D(last.getX2(), last.getY2()));
+        }
+        return knots;
+    }
 }

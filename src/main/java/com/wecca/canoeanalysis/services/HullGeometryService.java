@@ -35,6 +35,10 @@ public class HullGeometryService {
     @Setter
     private static HullBuilderController hullBuilderController;
 
+    // Refs
+    @Setter
+    private static double absMaxAllowedHullHeight; // TODO would need to be updated with length scale once that's in HullBuilder
+
     // Numerical 'dx' used at bounds to prevent unpredictable boundary behaviour
     public static final double OPEN_INTERVAL_TOLERANCE = 1e-3;
     public static final double THICKNESS = HullLibrary.generateDefaultHull(HullLibrary.SHARK_BAIT_LENGTH).getMaxThickness();
@@ -445,13 +449,10 @@ public class HullGeometryService {
      * Converts the knot and control points of the selected hull section into polar coordinates.
      * Returns a list of polar coordinate values for the control points in the format:
      * [rL, θL, rR, θR].
-     *
+     * @param bezier the Bézier curve segment to get the parameter values of
      * @return A list of polar coordinate values for the control points.
      */
-    public static List<Double> getPolarParameterValues() {
-        // Get hull and section details
-        CubicBezierFunction bezier = hullBuilderController.getSelectedBezierSegment();
-
+    public static List<Double> getPolarParameterValues(CubicBezierFunction bezier) {
         // Convert control points to polar coordinates
         List<Point2D> knotAndControlPoints = bezier.getKnotAndControlPoints();
         Point2D polarL = CalculusUtils.toPolar(knotAndControlPoints.get(1), knotAndControlPoints.get(0));
@@ -465,13 +466,14 @@ public class HullGeometryService {
      * @param parameterIndex The index of the parameter being adjusted (0-3 for rL, θL, rR, θR).
      * @param newParameterValue The new value for the parameter after user interaction.
      * @param parameterValues Array of current parameter values: [rL, θL, rR, θR]
+     * @param optionalBezierSegmentIndex the index of the bezier segment to update, or the selected segment if -1 (or any invalid index)
      */
-    public static Hull updateHullParameter(int parameterIndex, double newParameterValue, double[] parameterValues) {
+    public static Hull updateHullParameter(int parameterIndex, double newParameterValue, double[] parameterValues, int optionalBezierSegmentIndex) {
         if (parameterValues.length != 4)
             throw new IllegalArgumentException("parameterValues must have exactly 4 elements: [rL, θL, rR, θR]");
 
         Hull hull = getHull();
-        int selectedBezierSegmentIndex = hullBuilderController.getSelectedBezierSegmentIndex();
+        int selectedBezierSegmentIndex = optionalBezierSegmentIndex < 0 ? hullBuilderController.getSelectedBezierSegmentIndex() : optionalBezierSegmentIndex;
 
         // Get knot points
         CubicBezierFunction selectedBezier = hull.getSideViewSegments().get(selectedBezierSegmentIndex);
@@ -580,11 +582,12 @@ public class HullGeometryService {
      * @param newKnotPos the new (requested) position for the knot in the side view
      * @return a new Hull instance with updated side–view curves and refreshed hull properties
      */
-    public static Hull dragKnotPoint(@NonNull Point2D knotPos, @NonNull Point2D newKnotPos) {
+    public static Hull dragKnotPoint(@NonNull Point2D knotPos, @NonNull Point2D newKnotPos, Point2D optionalMinKnot) {
         Hull hull = getHull();
         double eps = OPEN_INTERVAL_TOLERANCE;
         double globalMaxY = -eps;
-        double globalMinY = -hull.getMaxHeight() + eps;
+        boolean isDraggingMinKnot = optionalMinKnot != null;
+        double globalMinY = isDraggingMinKnot ? -absMaxAllowedHullHeight + eps : -hull.getMaxHeight() + eps;
         boolean isDraggingLeft = newKnotPos.getX() < knotPos.getX();
         double plusMinusEps = !isDraggingLeft ? eps : -eps;
         double adjacentSectionPointX = knotPos.getX() + plusMinusEps;
@@ -593,11 +596,11 @@ public class HullGeometryService {
         outerXBoundary -= 2 * plusMinusEps;
 
         // Clamp new knot position vertically using global vertical bounds.
-        // For horizontal, we allow the new knot to be any value (it might be moved by the user)
+        // For horizontal bounding, we allow the new knot to be any value (it might be moved by the user)
         double clampedNewKnotX;
         if (isDraggingLeft) clampedNewKnotX = Math.max(newKnotPos.getX(), outerXBoundary);
         else clampedNewKnotX = Math.min(newKnotPos.getX(), outerXBoundary);
-        double clampedNewKnotY = Math.max(hull.getLength() * eps + globalMinY, Math.min(newKnotPos.getY(), hull.getLength() * globalMaxY));
+        double clampedNewKnotY = Math.max(2 * eps + globalMinY, Math.min(newKnotPos.getY(), 2 * globalMaxY));
         Point2D clampedNewKnot = new Point2D(clampedNewKnotX, clampedNewKnotY);
 
         // Locate the segment whose left knot matches the one being dragged.
@@ -640,11 +643,85 @@ public class HullGeometryService {
                     prevBezier.setControlY2(candidateControlPrev.getY());
                 }
 
+                // Adjust other points if the min changes
+                if (isDraggingMinKnot) clampBezierPointsToMinY(hull, optionalMinKnot, newKnotPos);
+
                 // Refresh hull properties (bulkhead and thickness maps) using helper methods.
                 return updateHullProperties(hull);
             }
         }
         throw new IllegalArgumentException("No side-view knot found at position: " + knotPos);
+    }
+
+    /**
+     * Update the knots and control points of every segment if they fall below the min (with a buffer)
+     * by “rotating” them via updateHullParameter.
+     * @param hull the current Hull model.
+     * @param minKnot the min knot before it was dragged.
+     * @param newMinKnot the new min knot (after being dragged).
+     */
+    private static void clampBezierPointsToMinY(Hull hull, Point2D minKnot, Point2D newMinKnot) {
+        double eps = 1e-3;
+        double targetY = newMinKnot.getY() + 2 * eps;
+        List<CubicBezierFunction> segments = hull.getSideViewSegments();
+
+        boolean rotated = false;
+        for (int i = 0; i < segments.size(); i++) {
+            CubicBezierFunction seg = segments.get(i);
+            Point2D startKnot = seg.getKnotPoints().getFirst();
+            Point2D endKnot = seg.getKnotPoints().getLast();
+
+            // For the left control point (attached to the starting knot):
+            if (seg.getControlY1() < targetY) {
+                List<Double> polarValues = getPolarParameterValues(seg);
+                double flatTheta = 270;
+                double currR = polarValues.get(0);
+                double currTheta = polarValues.get(1);
+                if (i != 0 && Math.abs(currTheta - flatTheta) > eps) {
+                    double deltaTheta = Math.toDegrees(Math.asin((targetY - seg.getControlY1()) / currR));
+                    double newTheta = currTheta + deltaTheta;
+                    double[] newParams = new double[] {polarValues.get(0), newTheta, polarValues.get(2), polarValues.get(3)};
+                    updateHullParameter(1, newTheta, newParams, i);
+                    rotated = true;
+                }
+            }
+
+            // For the right control point (attached to the ending knot):
+            if (seg.getControlY2() < targetY) {
+                List<Double> polarValues = getPolarParameterValues(seg);
+                double flatTheta = 90;
+                double currR = polarValues.get(2);
+                double currTheta = polarValues.get(3);
+                if (i != segments.size() - 1 && Math.abs(currTheta - flatTheta) > eps) {
+                    double deltaTheta = Math.toDegrees(Math.asin((targetY - seg.getControlY2()) / currR));
+                    double newTheta = currTheta + deltaTheta;
+                    double[] newParams = new double[] {polarValues.get(0), polarValues.get(1), polarValues.get(2), newTheta};
+                    updateHullParameter(3, newTheta, newParams, i);
+                    rotated = true;
+                }
+            }
+
+            boolean isStartMin = Math.abs(startKnot.getY() - minKnot.getY()) <= 2 * eps;
+            boolean isEndMin = Math.abs(endKnot.getY() - minKnot.getY()) <= 2 * eps;
+            double leftKnotOrControlYToCompare = i == 0 ? seg.getControlY1() : startKnot.getY();
+            if (!isStartMin && leftKnotOrControlYToCompare < targetY) {
+                if (i != 0) {
+                    seg.setY1(targetY);
+                    segments.get(i - 1).setY2(targetY);
+                    segments.get(i - 1).setControlY2(targetY);
+                }
+                seg.setControlY1(targetY);
+            }
+            double rightKnotOrControlYToCompare = i == segments.size() - 1 ? seg.getControlY2() : endKnot.getY();
+            if (!isEndMin && rightKnotOrControlYToCompare < targetY) {
+                if (i != segments.size() - 1) {
+                    seg.setY2(targetY);
+                    segments.get(i + 1).setY1(targetY);
+                    segments.get(i + 1).setControlY1(targetY);
+                }
+                seg.setControlY2(targetY);
+            }
+        }
     }
 
 

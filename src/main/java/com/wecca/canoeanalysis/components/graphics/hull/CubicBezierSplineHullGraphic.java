@@ -46,23 +46,26 @@ public class CubicBezierSplineHullGraphic extends HullGraphic {
         draw(beziers);
     }
 
-    public void draw(List<CubicBezierFunction> beziers) {
+    private void draw(List<CubicBezierFunction> beziers) {
         // Collect all control points from all Bézier curves, removing duplicated knot points
-        List<Point2D> allBezierCurveConstructionPoints = getAllKnotAndControlPoints(beziers);
+        List<Point2D> knotAndControlPoints = beziers.stream()
+                .flatMap(bezier -> bezier.getKnotAndControlPoints().stream())
+                .distinct()
+                .toList();
 
         // Create the function space rectangle to map to based on the Bézier curve control points
         double functionMinX = beziers.getFirst().getX();
         double functionMaxX = beziers.getLast().getRx();
-        double functionMinY = allBezierCurveConstructionPoints.stream().mapToDouble(Point2D::getY).min().orElse(0);
-        double functionMaxY = allBezierCurveConstructionPoints.stream().mapToDouble(Point2D::getY).max().orElse(0);
+        double functionMinY = knotAndControlPoints.stream().mapToDouble(Point2D::getY).min().orElse(0);
+        double functionMaxY = knotAndControlPoints.stream().mapToDouble(Point2D::getY).max().orElse(0);
         Rectangle functionSpace = new Rectangle(functionMinX, functionMinY, functionMaxX - functionMinX, functionMaxY - functionMinY);
         Rectangle graphicSpace = getCurvedGraphic().getEncasingRectangle();
 
         // Loop through the control points and create slope graphics for each join point
-        for (int i = 0; i < allBezierCurveConstructionPoints.size(); i += 3) {
-            Point2D knotPoint = allBezierCurveConstructionPoints.get(i);
-            Point2D lControlPoint = i > 0 ? allBezierCurveConstructionPoints.get(i - 1) : null;
-            Point2D rControlPoint = i + 1 < allBezierCurveConstructionPoints.size() ? allBezierCurveConstructionPoints.get(i + 1) : null;
+        for (int i = 0; i < knotAndControlPoints.size(); i += 3) {
+            Point2D knotPoint = knotAndControlPoints.get(i);
+            Point2D lControlPoint = i > 0 ? knotAndControlPoints.get(i - 1) : null;
+            Point2D rControlPoint = i + 1 < knotAndControlPoints.size() ? knotAndControlPoints.get(i + 1) : null;
 
             // Map knot and control points from function space to graphic space using Rectangles
             Point2D mappedKnotPoint = GraphicsUtils.mapToGraphicSpace(knotPoint, functionSpace, graphicSpace);
@@ -74,28 +77,6 @@ public class CubicBezierSplineHullGraphic extends HullGraphic {
             slopeGraphics.add(slopeGraphic);
             this.getChildren().add(slopeGraphic.getNode());
         }
-    }
-
-    /**
-     * @param beziers the curves that make up a spline
-     * @return all the construction points of the bezier in L to R order ([knot, control, control, knot] order for each bezier)
-     */
-    public List<Point2D> getAllKnotPoints(List<CubicBezierFunction> beziers) {
-        return beziers.stream()
-                .flatMap(bezier -> bezier.getKnotPoints().stream())
-                .distinct()
-                .toList();
-    }
-
-    /**
-     * @param beziers the curves that make up a spline
-     * @return all the construction points of the bezier in L to R order ([knot, control, control, knot] order for each bezier)
-     */
-    public List<Point2D> getAllKnotAndControlPoints(List<CubicBezierFunction> beziers) {
-        return beziers.stream()
-                .flatMap(bezier -> bezier.getKnotAndControlPoints().stream())
-                .distinct()
-                .toList();
     }
 
     /**
