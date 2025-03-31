@@ -637,7 +637,7 @@ public class HullBuilderController implements Initializable, ModuleController {
 
         // Update the model
         double[] knobValues = knobs.stream().mapToDouble(Knob::getValue).toArray();
-        hull = HullGeometryService.updateHullParameter(knobIndex, newROrThetaVal, knobValues, -1);
+        hull = HullGeometryService.updatePolarHullParameter(knobIndex, newROrThetaVal, knobValues);
 
         // Update UI with new hull
         hullGraphicPane.getChildren().clear();

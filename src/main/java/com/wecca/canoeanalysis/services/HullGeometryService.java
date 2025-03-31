@@ -464,22 +464,20 @@ public class HullGeometryService {
     }
 
     /**
-     * Updates the control points of the selected hull section based on the parameter index in the list of parameters and new value.
+     * Note: not for use outside the service because this modifies the hull passed in!
+     * Updates the control points of the selected hull section based on the parameter index in the list of polar parameters and new value for that parameter.
      * Also adjusts the adjacent section's control points if necessary to maintain C1 smoothness.
      * @param parameterIndex The index of the parameter being adjusted (0-3 for rL, θL, rR, θR).
      * @param newParameterValue The new value for the parameter after user interaction.
      * @param parameterValues Array of current parameter values: [rL, θL, rR, θR]
-     * @param optionalBezierSegmentIndex the index of the bezier segment to update, or the selected segment if -1 (or any invalid index)
+     * @param bezierSegmentIndex the index of the bezier segment to update, or the selected segment if -1 (or any invalid index)
      */
-    public static Hull updateHullParameter(int parameterIndex, double newParameterValue, double[] parameterValues, int optionalBezierSegmentIndex) {
+    private static Hull updatePolarHullParameter(Hull hull, int parameterIndex, double newParameterValue, double[] parameterValues, int bezierSegmentIndex) {
         if (parameterValues.length != 4)
             throw new IllegalArgumentException("parameterValues must have exactly 4 elements: [rL, θL, rR, θR]");
 
-        Hull hull = getHull();
-        int selectedBezierSegmentIndex = optionalBezierSegmentIndex < 0 ? hullBuilderController.getSelectedBezierSegmentIndex() : optionalBezierSegmentIndex;
-
         // Get knot points
-        CubicBezierFunction selectedBezier = hull.getSideViewSegments().get(selectedBezierSegmentIndex);
+        CubicBezierFunction selectedBezier = hull.getSideViewSegments().get(bezierSegmentIndex);
         List<Point2D> selectedKnotPoints = selectedBezier.getKnotPoints();
         Point2D selectedLKnot = selectedKnotPoints.getFirst();
         Point2D selectedRKnot = selectedKnotPoints.getLast();
@@ -498,11 +496,11 @@ public class HullGeometryService {
         }
 
         // Adjust adjacent sections if needed for C1 smoothness
-        boolean adjustingLeft = parameterIndex == 1 && selectedBezierSegmentIndex > 0;
-        boolean adjustingRight = parameterIndex == 3 && selectedBezierSegmentIndex < (hull.getSideViewSegments().size() - 1);
+        boolean adjustingLeft = parameterIndex == 1 && bezierSegmentIndex > 0;
+        boolean adjustingRight = parameterIndex == 3 && bezierSegmentIndex < (hull.getSideViewSegments().size() - 1);
 
         if (adjustingLeft || adjustingRight) {
-            int adjacentIndex = selectedBezierSegmentIndex + (adjustingLeft ? -1 : 1);
+            int adjacentIndex = bezierSegmentIndex + (adjustingLeft ? -1 : 1);
             CubicBezierFunction adjacentBezier = hull.getSideViewSegments().get(adjacentIndex);
             Point2D selectedKnot = adjustingLeft ? selectedLKnot : selectedRKnot;
 
@@ -515,6 +513,15 @@ public class HullGeometryService {
             hull.getSideViewSegments().set(adjacentIndex, adjacentBezier);
         }
         return hull;
+    }
+
+    /**
+     * A publicly accessible overload of updateHullParameter
+     */
+    public static Hull updatePolarHullParameter(int parameterIndex, double newParameterValue, double[] parameterValues) {
+        int selectedBezierSegmentIndex = hullBuilderController.getSelectedBezierSegmentIndex();
+        Hull hull = getHull();
+        return updatePolarHullParameter(hull, parameterIndex, newParameterValue, parameterValues, selectedBezierSegmentIndex);
     }
 
     public static Point2D getEditableKnotPoint(double functionSpaceX) {
@@ -646,8 +653,9 @@ public class HullGeometryService {
                     prevBezier.setControlY2(candidateControlPrev.getY());
                 }
 
-                // Adjust other points if the min changes
-                if (isDraggingMinKnot) clampBezierPointsToMinY(hull, optionalMinKnot, newKnotPos);
+                // Adjust other points if the global min changes
+                boolean isDraggingMinKnotUp = isDraggingMinKnot && newKnotPos.getY() > knotPos.getY();
+                if (isDraggingMinKnotUp) clampBezierPointsToMinY(hull, optionalMinKnot, newKnotPos, i);
 
                 // Refresh hull properties (bulkhead and thickness maps) using helper methods.
                 return updateHullProperties(hull);
@@ -662,8 +670,9 @@ public class HullGeometryService {
      * @param hull the current Hull model.
      * @param minKnot the min knot before it was dragged.
      * @param newMinKnot the new min knot (after being dragged).
+     * @param knotIndex the index of the knot being dragged (in the list of all knot points)
      */
-    private static void clampBezierPointsToMinY(Hull hull, Point2D minKnot, Point2D newMinKnot) {
+    private static void clampBezierPointsToMinY(Hull hull, Point2D minKnot, Point2D newMinKnot, int knotIndex) {
         double eps = 1e-3;
         double targetY = newMinKnot.getY() + 2 * eps;
         List<CubicBezierFunction> segments = hull.getSideViewSegments();
@@ -671,62 +680,75 @@ public class HullGeometryService {
         boolean rotated = false;
         for (int i = 0; i < segments.size(); i++) {
             CubicBezierFunction seg = segments.get(i);
-            Point2D startKnot = seg.getKnotPoints().getFirst();
-            Point2D endKnot = seg.getKnotPoints().getLast();
+            if (i != knotIndex) {
+                Point2D startKnot = seg.getKnotPoints().getFirst();
+                boolean isStartMin = Math.abs(startKnot.getY() - minKnot.getY()) <= 2 * eps;
 
-            // For the left control point (attached to the starting knot):
-            if (seg.getControlY1() < targetY) {
-                List<Double> polarValues = getPolarParameterValues(seg);
-                double flatTheta = 270;
-                double currR = polarValues.get(0);
-                double currTheta = polarValues.get(1);
-                if (i != 0 && Math.abs(currTheta - flatTheta) > eps) {
-                    double deltaTheta = Math.toDegrees(Math.asin((targetY - seg.getControlY1()) / currR));
-                    double newTheta = currTheta + deltaTheta;
-                    double[] newParams = new double[] {polarValues.get(0), newTheta, polarValues.get(2), polarValues.get(3)};
-                    updateHullParameter(1, newTheta, newParams, i);
-                    rotated = true;
+                // For the left control point (attached to the starting knot):
+                if (!isStartMin && seg.getControlY1() < targetY) {
+                    List<Double> polarValues = getPolarParameterValues(seg);
+                    double flatTheta = 270;
+                    double currR = polarValues.get(0);
+                    double currTheta = polarValues.get(1);
+                    if (i != 0 && Math.abs(currTheta - flatTheta) > eps) {
+                        double alpha = Math.toDegrees(Math.asin((Math.abs(targetY) - Math.abs(startKnot.getY())) / currR));
+                        double newTheta = flatTheta - alpha;
+                        newTheta = Math.min(newTheta, flatTheta - 5 * eps);
+                        if (Math.abs(currTheta - newTheta) > eps) {
+                            double[] newParams = new double[] {polarValues.get(0), newTheta, polarValues.get(2), polarValues.get(3)};
+                            updatePolarHullParameter(hull, 1, newTheta, newParams, i);
+                            rotated = true;
+                        }
+                    }
+                }
+
+                startKnot = seg.getKnotPoints().getFirst();
+                isStartMin = Math.abs(startKnot.getY() - newMinKnot.getY()) <= 2 * eps;
+                double leftKnotOrControlYToCompare = i == 0 ? seg.getControlY1() : startKnot.getY();
+                if (leftKnotOrControlYToCompare < targetY) {
+                    if ((i != 0 && !isStartMin) || !rotated) {
+                        seg.setY1(targetY);
+                        seg.setControlY1(targetY);
+                        segments.get(i - 1).setY2(targetY);
+                        segments.get(i - 1).setControlY2(targetY);
+                    }
                 }
             }
+            if (i + 1 != knotIndex) {
+                Point2D endKnot = seg.getKnotPoints().getLast();
+                boolean isEndMin = Math.abs(endKnot.getY() - minKnot.getY()) <= 2 * eps;
+                // For the right control point (attached to the ending knot):
+                if (!isEndMin && seg.getControlY2() < targetY) {
+                    List<Double> polarValues = getPolarParameterValues(seg);
+                    double flatTheta = 90;
+                    double currR = polarValues.get(2);
+                    double currTheta = polarValues.get(3);
+                    if (i != segments.size() - 1 && Math.abs(currTheta - flatTheta) > eps) {
+                        double alpha = -Math.toDegrees(Math.asin((Math.abs(targetY) - Math.abs(endKnot.getY())) / currR));
+                        double newTheta = flatTheta - alpha;
+                        newTheta = Math.max(newTheta, flatTheta + 5 * eps);
+                        if (Math.abs(currTheta - newTheta) > eps) {
+                            double[] newParams = new double[] {polarValues.get(0), polarValues.get(1), polarValues.get(2), newTheta};
+                            updatePolarHullParameter(hull, 3, newTheta, newParams, i);
+                            rotated = true;
+                        }
+                    }
+                }
 
-            // For the right control point (attached to the ending knot):
-            if (seg.getControlY2() < targetY) {
-                List<Double> polarValues = getPolarParameterValues(seg);
-                double flatTheta = 90;
-                double currR = polarValues.get(2);
-                double currTheta = polarValues.get(3);
-                if (i != segments.size() - 1 && Math.abs(currTheta - flatTheta) > eps) {
-                    double deltaTheta = Math.toDegrees(Math.asin((targetY - seg.getControlY2()) / currR));
-                    double newTheta = currTheta + deltaTheta;
-                    double[] newParams = new double[] {polarValues.get(0), polarValues.get(1), polarValues.get(2), newTheta};
-                    updateHullParameter(3, newTheta, newParams, i);
-                    rotated = true;
+                endKnot = seg.getKnotPoints().getLast();
+                isEndMin = Math.abs(endKnot.getY() - newMinKnot.getY()) <= 2 * eps;
+                double rightKnotOrControlYToCompare = i == segments.size() - 1 ? seg.getControlY2() : endKnot.getY();
+                if (rightKnotOrControlYToCompare < targetY) {
+                    if ((i != segments.size() - 1 && !isEndMin) || !rotated) {
+                        seg.setY2(targetY);
+                        seg.setControlY2(targetY);
+                        segments.get(i + 1).setY1(targetY);
+                        segments.get(i + 1).setControlY1(targetY);
+                    }
                 }
-            }
-
-            boolean isStartMin = Math.abs(startKnot.getY() - minKnot.getY()) <= 2 * eps;
-            boolean isEndMin = Math.abs(endKnot.getY() - minKnot.getY()) <= 2 * eps;
-            double leftKnotOrControlYToCompare = i == 0 ? seg.getControlY1() : startKnot.getY();
-            if (!isStartMin && leftKnotOrControlYToCompare < targetY) {
-                if (i != 0) {
-                    seg.setY1(targetY);
-                    segments.get(i - 1).setY2(targetY);
-                    segments.get(i - 1).setControlY2(targetY);
-                }
-                seg.setControlY1(targetY);
-            }
-            double rightKnotOrControlYToCompare = i == segments.size() - 1 ? seg.getControlY2() : endKnot.getY();
-            if (!isEndMin && rightKnotOrControlYToCompare < targetY) {
-                if (i != segments.size() - 1) {
-                    seg.setY2(targetY);
-                    segments.get(i + 1).setY1(targetY);
-                    segments.get(i + 1).setControlY1(targetY);
-                }
-                seg.setControlY2(targetY);
             }
         }
     }
-
 
     /**
      * This helper method ensures that the candidate control point, computed as
@@ -1034,8 +1056,7 @@ public class HullGeometryService {
         props.setBulkheadMap(bulkheadMap);
 
         // Compute the global minimum knot (by y-value) across all side–view segments.
-        Point2D globalMinKnot = sideSegments.stream()
-                .flatMap(seg -> seg.getKnotPoints().stream())
+        Point2D globalMinKnot = CalculusUtils.getSplineKnots(sideSegments).stream()
                 .min(Comparator.comparingDouble(Point2D::getY))
                 .orElseThrow(() -> new RuntimeException("No minimum knot found"));
         double minY = globalMinKnot.getY();
