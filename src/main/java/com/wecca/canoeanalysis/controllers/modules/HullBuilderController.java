@@ -87,7 +87,7 @@ public class HullBuilderController implements Initializable, ModuleController {
     @Getter @Setter
     private CubicBezierFunction selectedBezierSegment;
     @Getter @Setter
-    private int selectedBezierSegmentIndex = -1;
+    private int selectedBezierSegmentIndex;
     @Getter @Setter
     private List<Range> overlaySections;
     @Getter @Setter
@@ -931,8 +931,8 @@ public class HullBuilderController implements Initializable, ModuleController {
 
     /**
      * Updates the knot point display label.
-     * Converts the given function-space point to a formatted string and updates poiDataLabel.
-     * If a new point is provided, the label shows the transformation as: (x: old, y: old) ⇒ (x: new, y: new)
+     * Converts the given function-space point to a formatted string (x: xVal, y: yVal) and updates poiDataLabel.
+     * If a new point is provided, the label shows the transformation as: (x: oldVal, y: oldVal) ⇒ (x: newVal, y: newVal)
      * If the functionSpacePoint is null (or knot editing mode is disabled), it shows "(x: N/A, y: N/A)".
      * @param functionSpacePoint current function-space point (or null)
      * @param optionalFunctionSpaceUpdatedPoint new point after the operation (or null)
@@ -1080,12 +1080,12 @@ public class HullBuilderController implements Initializable, ModuleController {
 
             // Update the drag indicator line
             double minusAbsHeight = -Math.abs(hull.getMaxHeight());
-            double knotScreenX = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getX(), hullGraphicPane.getPrefWidth(), hull.getLength()) + hullGraphicPane.getLayoutX();
-            double knotScreenY = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getY(), hullGraphicPane.getPrefHeight(), minusAbsHeight) + hullGraphicPane.getLayoutY();
-            double offsetX = knotScreenX - initialKnotDragMousePos.getX();
-            double offsetY = knotScreenY - initialKnotDragMousePos.getY();
-            double newEndX = event.getX() + offsetX;
-            double newEndY = event.getY() + offsetY;
+            double initialKnotScreenX = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getX(), hullGraphicPane.getPrefWidth(), hull.getLength()) + hullGraphicPane.getLayoutX();
+            double initialKnotScreenY = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getY(), hullGraphicPaneHeight, minusAbsHeight) + hullGraphicPane.getLayoutY();
+            double offsetX = initialKnotScreenX - initialKnotDragMousePos.getX();
+            double offsetY = initialKnotScreenY - initialKnotDragMousePos.getY();
+            double newEndX = knotEditingCurrentMouseX + offsetX;
+            double newEndY = knotEditingCurrentMouseY + offsetY;
             dragIndicatorLine.setStartX(event.getX());
             dragIndicatorLine.setStartY(event.getY() - 1);
             dragIndicatorLine.setEndX(newEndX);
@@ -1093,11 +1093,9 @@ public class HullBuilderController implements Initializable, ModuleController {
             dragIndicatorLine.setVisible(true);
 
             // Get the new knot position after dragging
-            double graphicWidth = hullGraphicPane.getPrefWidth();
-            double graphicHeight = hullGraphicPane.getPrefHeight();
             double modelWidth = hull.getLength();
-            double newKnotModelX = ((newEndX - hullGraphicPane.getLayoutX()) / graphicWidth) * modelWidth;
-            double newKnotModelY = ((newEndY - hullGraphicPane.getLayoutY()) / graphicHeight) * minusAbsHeight;
+            double newKnotModelX = ((newEndX - hullGraphicPane.getLayoutX()) / hullGraphicPane.getPrefWidth()) * modelWidth;
+            double newKnotModelY = ((newEndY - hullGraphicPane.getLayoutY()) / hullGraphicPaneHeight) * minusAbsHeight;
             newKnotDragKnotPos = new Point2D(newKnotModelX, newKnotModelY);
 
             // Update the preview hull by calling the service.
