@@ -617,7 +617,7 @@ public class HullGeometryService {
                 Point2D candidateControl = newKnotPos.add(offset);
 
                 // Determine allowed horizontal bounds for the current segment's left control point.
-                double allowedMinX = bezier.getKnotPoints().getFirst().getX();
+                double allowedMinX = bezier.getKnotPoints().getFirst().getX() + eps;
                 double allowedMaxX = bezier.getKnotPoints().getLast().getX() - eps;
 
                 // Compute horizontal & vertical scale factor
@@ -635,7 +635,7 @@ public class HullGeometryService {
                     Point2D candidateControlPrev = newKnotPos.add(offsetPrev);
                     // Allowed horizontal bounds for the left-adjacent segment's right control point:
                     double prevAllowedMinX = prevBezier.getX() + eps;
-                    double prevAllowedMaxX = newKnotPos.getX(); // new knot x becomes upper bound
+                    double prevAllowedMaxX = newKnotPos.getX() - eps; // new knot x becomes upper bound
                     candidateControlPrev = adjustCandidateControl(top, globalMinY, newKnotPos, offsetPrev, candidateControlPrev, prevAllowedMinX, prevAllowedMaxX);
                     prevBezier.setControlX2(candidateControlPrev.getX());
                     prevBezier.setControlY2(candidateControlPrev.getY());
