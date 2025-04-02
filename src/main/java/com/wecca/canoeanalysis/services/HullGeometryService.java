@@ -599,14 +599,13 @@ public class HullGeometryService {
         double eps = OPEN_INTERVAL_TOLERANCE;
         boolean isDraggingMinKnot = optionalMinKnot != null;
         double top = -eps;
-        double globalMaxY = isDraggingMinKnot ? -topMostAllowedHullHeight -eps: top;
         double globalMinY = isDraggingMinKnot ? -bottomMostAllowedHullHeight + eps : -hull.getMaxHeight() + eps;
 
         // Locate the segment whose left knot matches the one being dragged.
         for (int i = 0; i < hull.getSideViewSegments().size(); i++) {
             CubicBezierFunction bezier = hull.getSideViewSegments().get(i);
             if (bezier.getKnotPoints().getFirst().distance(knotPos) < 1e-6) {
-                // Update the current segment's knot to the new clamped position.
+                // Update the current segment's knot to the new position.
                 bezier.setX1(newKnotPos.getX());
                 bezier.setY1(newKnotPos.getY());
 
@@ -619,7 +618,7 @@ public class HullGeometryService {
 
                 // Determine allowed horizontal bounds for the current segment's left control point.
                 double allowedMinX = bezier.getKnotPoints().getFirst().getX();
-                double allowedMaxX = bezier.getControlX2() - eps; // from this segment’s right control point
+                double allowedMaxX = bezier.getKnotPoints().getLast().getX() - eps;
 
                 // Compute horizontal & vertical scale factor
                 candidateControl = adjustCandidateControl(top, globalMinY, newKnotPos, offset, candidateControl, allowedMinX, allowedMaxX);
@@ -635,7 +634,7 @@ public class HullGeometryService {
                     Point2D offsetPrev = oldControlPrev.subtract(knotPos);
                     Point2D candidateControlPrev = newKnotPos.add(offsetPrev);
                     // Allowed horizontal bounds for the left-adjacent segment's right control point:
-                    double prevAllowedMinX = prevBezier.getControlX1() + eps;
+                    double prevAllowedMinX = prevBezier.getX() + eps;
                     double prevAllowedMaxX = newKnotPos.getX(); // new knot x becomes upper bound
                     candidateControlPrev = adjustCandidateControl(top, globalMinY, newKnotPos, offsetPrev, candidateControlPrev, prevAllowedMinX, prevAllowedMaxX);
                     prevBezier.setControlX2(candidateControlPrev.getX());
