@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.controllers.modules;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.aop.Debounce;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.components.controls.IconButton;
 import com.wecca.canoeanalysis.components.controls.Knob;
@@ -111,7 +112,9 @@ public class HullBuilderController implements Initializable, ModuleController {
     private double hullGraphicPaneHeight;
 
     // Constants
-    // Note to developer: This does not have deep immutability. Do not mutate!
+    private final double TOP_ALLOWED_HULL_HEIGHT = 0.2;
+    private final double BOTTOM_ALLOWED_MAX_HULL_HEIGHT = 0.5;
+    // Note to developer: These hulls do not have deep immutability. Do not mutate!
     private final Hull SHARKBAIT_HULL = HullLibrary.generateSharkBaitHullScaled(HullLibrary.SHARK_BAIT_LENGTH);
     private final Hull ON_LOAD_HULL = HullLibrary.generateGirRaftHullScaled(HullLibrary.GIRRAFT_LENGTH);
 
@@ -1032,7 +1035,7 @@ public class HullBuilderController implements Initializable, ModuleController {
                 .findFirst().orElseThrow(() -> new RuntimeException("Cannot place intersection point, out of bounds"));
         double functionSpaceY = bezier.value(functionSpaceX);
 
-        // If no candidate deletable knot to deletes exists, that means we should add a knot point
+        // If no candidate deletable knot to delete exists, that means we should add a knot point
         Hull updatedHull = null;
         boolean isAddOperation = false;
         if (editableKnot == null) {
@@ -1074,44 +1077,68 @@ public class HullBuilderController implements Initializable, ModuleController {
     private void handleKnotDragMouseDragged(MouseEvent event) {
         // isDraggingKnot should be updated before this handler is attached for use
         if (isDraggingKnot) {
+
             // Update State
             knotEditingCurrentMouseX = event.getX();
             knotEditingCurrentMouseY = event.getY();
 
-            // Update the drag indicator line
-            double minusAbsHeight = -Math.abs(hull.getMaxHeight());
-            double initialKnotScreenX = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getX(), hullGraphicPane.getPrefWidth(), hull.getLength()) + hullGraphicPane.getLayoutX();
-            double initialKnotScreenY = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getY(), hullGraphicPaneHeight, minusAbsHeight) + hullGraphicPane.getLayoutY();
-            double offsetX = initialKnotScreenX - initialKnotDragMousePos.getX();
-            double offsetY = initialKnotScreenY - initialKnotDragMousePos.getY();
-            double newEndX = knotEditingCurrentMouseX + offsetX;
-            double newEndY = knotEditingCurrentMouseY + offsetY;
-            dragIndicatorLine.setStartX(event.getX());
-            dragIndicatorLine.setStartY(event.getY() - 1);
-            dragIndicatorLine.setEndX(newEndX);
-            dragIndicatorLine.setEndY(newEndY);
-            dragIndicatorLine.setVisible(true);
-
-            // Get the new knot position after dragging
-            double modelWidth = hull.getLength();
-            double newKnotModelX = ((newEndX - hullGraphicPane.getLayoutX()) / hullGraphicPane.getPrefWidth()) * modelWidth;
-            double newKnotModelY = ((newEndY - hullGraphicPane.getLayoutY()) / hullGraphicPaneHeight) * minusAbsHeight;
-            newKnotDragKnotPos = new Point2D(newKnotModelX, newKnotModelY);
-
-            // Update the preview hull by calling the service.
-            // This preview hull is kept separate from the original hull until the transaction commits.
-            // Adjust other points if the min changes
+            // Get the min knot if it is the one being dragged
             Point2D minKnotOrNull = CalculusUtils.getSplineKnots(hull.getSideViewSegments()).stream()
                     .min(Comparator.comparingDouble(Point2D::getY))
                     .orElseThrow(() -> new IllegalStateException("No points found"));
             boolean isDraggingMinKnot = (minKnotOrNull.distance(initialKnotDragKnotPos) < 1e-6);
+            if (!isDraggingMinKnot) minKnotOrNull = null;
+
+            double eps = 1e-3;
+            double top = -eps;
+            double globalMaxY = isDraggingMinKnot ? -TOP_ALLOWED_HULL_HEIGHT -eps: top;
+            double globalMinY = isDraggingMinKnot ? -BOTTOM_ALLOWED_MAX_HULL_HEIGHT + eps : -hull.getMaxHeight() + eps;
+
+            // Get the new knot position after dragging
+            double minusAbsHeight = -Math.abs(hull.getMaxHeight());
+            double initialKnotScreenX = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getX(), hullGraphicPane.getPrefWidth(), hull.getLength()) + hullGraphicPane.getLayoutX();
+            double initialKnotScreenY = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getY(), hullGraphicPaneHeight, minusAbsHeight) + hullGraphicPane.getLayoutY();
+            double knotToMouseDistX = initialKnotScreenX - initialKnotDragMousePos.getX();
+            double knotToMouseDistY = initialKnotScreenY - initialKnotDragMousePos.getY();
+            double newKnotScreenX = knotEditingCurrentMouseX + knotToMouseDistX;
+            double newKnotScreenY = knotEditingCurrentMouseY + knotToMouseDistY;
+            double modelWidth = hull.getLength();
+            double newKnotModelX = ((newKnotScreenX - hullGraphicPane.getLayoutX()) / hullGraphicPane.getPrefWidth()) * modelWidth;
+            double newKnotModelY = ((newKnotScreenY - hullGraphicPane.getLayoutY()) / hullGraphicPaneHeight) * minusAbsHeight;
+            newKnotDragKnotPos = new Point2D(newKnotModelX, newKnotModelY);
+
+            // Clamp new knot position vertically using global vertical bounds.
+            // For horizontal bounding, we allow the new knot to be any value (it might be moved by the user)
+            double clampedNewKnotX;
+            double clampedNewKnotY;
+            boolean isDraggingLeft = newKnotDragKnotPos.getX() < initialKnotDragKnotPos.getX();
+            double plusMinusEps = !isDraggingLeft ? eps : -eps;
+            double adjacentSectionPointX = initialKnotDragKnotPos.getX() + plusMinusEps;
+            CubicBezierFunction adjacentBezier = CalculusUtils.getSegmentForX(hull.getSideViewSegments(), adjacentSectionPointX);
+            double outerXBoundary = isDraggingLeft ? adjacentBezier.getControlX1() : adjacentBezier.getControlX2(); // boundary against which the user might be dragging
+            outerXBoundary -= 2 * plusMinusEps;
+
+            if (isDraggingLeft) clampedNewKnotX = Math.max(newKnotDragKnotPos.getX(), outerXBoundary);
+            else clampedNewKnotX = Math.min(newKnotDragKnotPos.getX(), outerXBoundary);
+            if (isDraggingMinKnot) clampedNewKnotY = Math.max(2 * eps + globalMinY, Math.min(newKnotDragKnotPos.getY(), -TOP_ALLOWED_HULL_HEIGHT + 2 * eps));
+            else clampedNewKnotY = Math.max(2 * eps + globalMinY, Math.min(newKnotDragKnotPos.getY(), 2 * globalMaxY));
+
+            newKnotDragKnotPos = new Point2D(clampedNewKnotX, clampedNewKnotY);
+
+            // Update the drag indicator line
+            dragIndicatorLine.setStartX(knotEditingCurrentMouseX);
+            dragIndicatorLine.setStartY(knotEditingCurrentMouseY - 1);
+            dragIndicatorLine.setEndX(newKnotScreenX);// TODO recalc clampedNewKnotScreenX
+            dragIndicatorLine.setEndY(newKnotScreenY);
+            dragIndicatorLine.setVisible(true);
+
+            // Update the size of the hull pane since it scales with the min knot, acting as a height scale for the hull
             if (isDraggingMinKnot) {
                 double sideViewPanelHeight = hullGraphicPaneHeight * (newKnotDragKnotPos.getY() / ON_LOAD_HULL.getMaxHeight());
                 hullGraphicPane.setPrefHeight(sideViewPanelHeight);
                 hullGraphicPane.setMaxHeight(sideViewPanelHeight);
                 hullGraphicPane.setMinHeight(sideViewPanelHeight);
             }
-            else minKnotOrNull = null;
 
             knotDraggingPreviewHull = HullGeometryService.dragKnotPoint(initialKnotDragKnotPos, newKnotDragKnotPos, minKnotOrNull);
             renderHullGraphic(knotDraggingPreviewHull);
@@ -1295,7 +1322,8 @@ public class HullBuilderController implements Initializable, ModuleController {
         setMainController(CanoeAnalysisApplication.getMainController());
         HullGeometryService.setHullBuilderController(this);
         MarshallingService.setHullBuilderController(this);
-        HullGeometryService.setAbsMaxAllowedHullHeight(0.5);
+        HullGeometryService.setTopMostAllowedHullHeight(0.2);
+        HullGeometryService.setBottomMostAllowedHullHeight(0.5);
 
         // Layout
         initModuleToolBarButtons();
