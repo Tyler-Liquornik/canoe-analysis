@@ -468,6 +468,7 @@ public class HullBuilderController implements Initializable, ModuleController {
      * Uses the Canoe’s hull overall values.
      * @param hull the hull object from which to set properties in the bottom right pane
      */
+    @Debounce(ms = 16) @Traceable
     public void setHullProperties(Hull hull) {
         setHullPropertiesPaneValues(
                 hull.getMaxHeight(),
@@ -483,6 +484,7 @@ public class HullBuilderController implements Initializable, ModuleController {
      * @param hull the hull object from which to set properties in the bottom right pane
      * @param section the Section representing the selected hull segment
      */
+    @Debounce(ms = 16) @Traceable
     public void setHullSectionProperties(Hull hull, Section section) {
         setHullPropertiesPaneValues(
                 hull.getSectionSideViewCurveHeight(section),
