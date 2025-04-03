@@ -986,6 +986,13 @@ public class HullGeometryService {
     public static Hull deleteKnotPoint(Point2D knotPointToDelete) {
         Hull hull = getHull();
         if (knotPointToDelete == null) return null;
+
+        // Prevent deleting the min knot
+        Point2D globalMinKnot = CalculusUtils.getSplineKnots(hull.getSideViewSegments()).stream()
+                .min(Comparator.comparingDouble(Point2D::getY))
+                .orElseThrow(() -> new RuntimeException("No minimum knot found"));
+        if (knotPointToDelete.distance(globalMinKnot) < 1e-6) return null;
+
         for (int i = 0; i < hull.getSideViewSegments().size(); i++) {
             CubicBezierFunction bezier = hull.getSideViewSegments().get(i);
             Point2D knotPoint = bezier.getKnotPoints().getFirst();

@@ -1,3 +1,3 @@
 # Recommended: don't enable both at the same time, as trace logs can hinder the performance gains from a well-used debounce
 tracing: false
-debouncing: false
+debouncing: true

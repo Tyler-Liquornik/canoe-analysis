@@ -1067,6 +1067,7 @@ public class HullBuilderController implements Initializable, ModuleController {
         // Display the appropriate snackbar message to the user
         if (updatedHull == null) {
             if (editableKnot == null) mainController.showSnackbar("Cannot delete knot point");
+            else if (Math.abs(editableKnot.getY()) - Math.abs(hull.getMaxHeight()) < 1e-6) mainController.showSnackbar("Cannot delete the minimum knot point");
             else mainController.showSnackbar(String.format("Cannot delete knot point: (x = %.3f, y = %.3f), too few sections", editableKnot.getX(), editableKnot.getY()));
         }
         else {
