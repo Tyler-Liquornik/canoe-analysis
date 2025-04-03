@@ -1,5 +1,6 @@
 package com.wecca.canoeanalysis.aop;
 
+import com.wecca.canoeanalysis.services.MarshallingService;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -12,16 +13,24 @@ public class DebounceAspect {
      */
     @Around("execution(@com.wecca.canoeanalysis.aop.Debounce * *(..)) && @annotation(debounceAnnotation)")
     public Object debounceAdvice(ProceedingJoinPoint pjp, Debounce debounceAnnotation) {
-        int delayMs = debounceAnnotation.ms();
         final Object[] args = pjp.getArgs();
-        Debouncer.debounceConsumer((Object[] latestArgs) -> {
+        if (MarshallingService.DEBOUNCING) {
+            int delayMs = debounceAnnotation.ms();
+            Debouncer.debounceConsumer((Object[] latestArgs) -> {
+                try {
+                    pjp.proceed(latestArgs);
+                } catch (Throwable t) {
+                    throw new RuntimeException("Exception in debounced method", t);
+                }
+            }, args, delayMs);
+        }
+        else {
             try {
-                pjp.proceed(latestArgs);
+                pjp.proceed(args);
             } catch (Throwable t) {
                 throw new RuntimeException("Exception in debounced method", t);
             }
-        }, args, delayMs);
-
+        }
         return null;
     }
 }

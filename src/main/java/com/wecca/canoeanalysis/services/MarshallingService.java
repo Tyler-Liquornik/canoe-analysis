@@ -45,6 +45,7 @@ public class MarshallingService {
     public static final String SETTINGS_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/settings.yaml", true);
     public static final String DEV_CONFIG_FILE_PATH = ResourceManagerService.getResourceFilePathString("settings/dev-config.yaml", true);
     public static final boolean TRACING;
+    public static final boolean DEBOUNCING;
 
     // Initializations, and loading state
     static {
@@ -53,9 +54,13 @@ public class MarshallingService {
         smileMapper = new ObjectMapper(new SmileFactory());
 
         try {
+            // These have to be separated out because objects cannot be created in static initializers
             TRACING = MarshallingService
-                    .loadYamlData(DevConfig.class, new DevConfig(false),
+                    .loadYamlData(DevConfig.class, new DevConfig(false, true),
                             MarshallingService.DEV_CONFIG_FILE_PATH).isTracing();
+            DEBOUNCING = MarshallingService
+                    .loadYamlData(DevConfig.class, new DevConfig(false, true),
+                            MarshallingService.DEV_CONFIG_FILE_PATH).isDebouncing();
         } catch (IOException e) {throw new RuntimeException(e);}
     }
 

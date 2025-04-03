@@ -219,6 +219,8 @@ public class HullBuilderController implements Initializable, ModuleController {
             hullViewAnchorPane.setOnMousePressed(null);
             hullViewAnchorPane.setOnMouseDragged(null);
             hullViewAnchorPane.setOnMouseReleased(null);
+            selectNextHullSection(null);
+            if (!sectionPropertiesSelected) switchButton(null);
         }
 
         // Notify the user
@@ -1242,7 +1244,6 @@ public class HullBuilderController implements Initializable, ModuleController {
             if (isDraggingKnot) {
                 // UI & State Updates
                 isDraggingKnot = false;
-                isDraggingKnotPreview = false;
                 initialKnotDragMousePos = null;
                 knotDraggingPreviewHull = null;
                 updateMouseXTrackerLine(knotEditingCurrentMouseX);
@@ -1255,6 +1256,7 @@ public class HullBuilderController implements Initializable, ModuleController {
                 hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_DRAGGED, this::handleKnotDragMouseDragged);
                 hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_RELEASED, this::handleKnotDragMouseReleased);
             }
+            isDraggingKnotPreview = false;
 
             // Then update label and cursor based on the current mouse position.
             if (isMouseOverHullViewAnchorPane()) {
@@ -1422,5 +1424,7 @@ public class HullBuilderController implements Initializable, ModuleController {
                 newScene.addEventFilter(KeyEvent.KEY_PRESSED, keyPressedHandler);
             }
         });
+
+        selectNextHullSection(null);
     }
 }

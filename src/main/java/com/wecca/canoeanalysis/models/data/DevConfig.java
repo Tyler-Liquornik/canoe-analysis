@@ -8,9 +8,12 @@ import lombok.Data;
 public class DevConfig {
     @JsonProperty("tracing")
     private boolean tracing;
+    @JsonProperty("debouncing")
+    private boolean debouncing;
 
     @JsonCreator
-    public DevConfig(@JsonProperty("tracing") boolean tracing) {
+    public DevConfig(@JsonProperty("tracing") boolean tracing, @JsonProperty("debouncing") boolean debouncing) {
         this.tracing = tracing;
+        this.debouncing = debouncing;
     }
 }
