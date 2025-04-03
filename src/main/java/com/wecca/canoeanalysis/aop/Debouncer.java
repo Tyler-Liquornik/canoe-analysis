@@ -1,7 +1,6 @@
 package com.wecca.canoeanalysis.aop;
 
 import javafx.application.Platform;
-
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;

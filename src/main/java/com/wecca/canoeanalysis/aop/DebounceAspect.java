@@ -8,8 +8,7 @@ import org.aspectj.lang.annotation.Aspect;
 public class DebounceAspect {
 
     /**
-     * Intercepts any execution of a method annotated with @Debounce.
-     * We assume it returns void and has any number of arguments.
+     * Intercepts any execution of a method annotated with @Debounce, wrapped the executive with a debouncer
      */
     @Around("execution(@com.wecca.canoeanalysis.aop.Debounce * *(..)) && @annotation(debounceAnnotation)")
     public Object debounceAdvice(ProceedingJoinPoint pjp, Debounce debounceAnnotation) {

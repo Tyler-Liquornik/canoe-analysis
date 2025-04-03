@@ -109,14 +109,15 @@ public class HullBuilderController implements Initializable, ModuleController {
     private boolean mousePressWasInAddingKnotPointZone;
     private boolean shiftKeyPressHadMouseInDeletingKnotPointZone;
     private boolean knotEditingMouseButtonDown;
-    private double hullGraphicPaneHeight;
 
     // Constants
     private final double TOP_ALLOWED_HULL_HEIGHT = 0.2;
     private final double BOTTOM_ALLOWED_MAX_HULL_HEIGHT = 0.5;
+
     // Note to developer: These hulls do not have deep immutability. Do not mutate!
     private final Hull SHARKBAIT_HULL = HullLibrary.generateSharkBaitHullScaled(HullLibrary.SHARK_BAIT_LENGTH);
     private final Hull ON_LOAD_HULL = HullLibrary.generateGirRaftHullScaled(HullLibrary.GIRRAFT_LENGTH);
+    private final double ON_LOAD_SIDE_VIEW_PANE_HEIGHT = Math.ceil(45 * (ON_LOAD_HULL.getMaxHeight() / SHARKBAIT_HULL.getMaxHeight()));
 
     /**
      * Clears the toolbar of buttons from other modules and adds ones from this module
@@ -258,9 +259,9 @@ public class HullBuilderController implements Initializable, ModuleController {
                     double minY = bezier.getMinValue(new Section(lControlX, rControlX));
                     Rectangle validAddKnotRectangle = new Rectangle(
                             (lControlX / hull.getLength()) * hullGraphicPane.getWidth(),
-                            (minY / -hull.getMaxHeight()) * (hullGraphicPaneHeight * (hull.getMaxHeight() / ON_LOAD_HULL.getMaxHeight())),
+                            (minY / -hull.getMaxHeight()) * (ON_LOAD_SIDE_VIEW_PANE_HEIGHT * (hull.getMaxHeight() / ON_LOAD_HULL.getMaxHeight())),
                             ((rControlX - lControlX) / hull.getLength()) * hullGraphicPane.getWidth(),
-                            ((Math.abs(maxY - minY)) / -hull.getMaxHeight()) * (hullGraphicPaneHeight * (hull.getMaxHeight() / ON_LOAD_HULL.getMaxHeight()))
+                            ((Math.abs(maxY - minY)) / -hull.getMaxHeight()) * (ON_LOAD_SIDE_VIEW_PANE_HEIGHT * (hull.getMaxHeight() / ON_LOAD_HULL.getMaxHeight()))
                     );
                     CurvedGraphic overlayCurve = new CurvedGraphic(bezier, new Section(lControlX, rControlX), validAddKnotRectangle, false);
                     overlayCurve.getLinePath().setStrokeWidth(2.0);
@@ -335,9 +336,9 @@ public class HullBuilderController implements Initializable, ModuleController {
     public void renderHullGraphic(Hull hull) {
         // Set and layout parent pane
         double sideViewPanelWidth = 700;
-        double sideViewPanelHeight = hullGraphicPaneHeight * (hull.getMaxHeight() / ON_LOAD_HULL.getMaxHeight());
+        double sideViewPanelHeight = ON_LOAD_SIDE_VIEW_PANE_HEIGHT * (hull.getMaxHeight() / ON_LOAD_HULL.getMaxHeight());
         double paneX = hullViewAnchorPane.prefWidth(-1) / 2 - sideViewPanelWidth / 2;
-        double paneY = hullViewAnchorPane.prefHeight(-1) / 2 - hullGraphicPaneHeight / 2;
+        double paneY = hullViewAnchorPane.prefHeight(-1) / 2 - ON_LOAD_SIDE_VIEW_PANE_HEIGHT / 2;
         hullGraphicPane.setPrefSize(sideViewPanelWidth, sideViewPanelHeight);
         hullGraphicPane.setMaxSize(sideViewPanelWidth, sideViewPanelHeight);
         hullGraphicPane.setMinSize(sideViewPanelWidth, sideViewPanelHeight);
@@ -468,7 +469,7 @@ public class HullBuilderController implements Initializable, ModuleController {
      * Uses the Canoe’s hull overall values.
      * @param hull the hull object from which to set properties in the bottom right pane
      */
-    @Debounce(ms = 16) @Traceable
+    @Debounce(ms = 12)
     public void setHullProperties(Hull hull) {
         setHullPropertiesPaneValues(
                 hull.getMaxHeight(),
@@ -484,7 +485,7 @@ public class HullBuilderController implements Initializable, ModuleController {
      * @param hull the hull object from which to set properties in the bottom right pane
      * @param section the Section representing the selected hull segment
      */
-    @Debounce(ms = 16) @Traceable
+    @Debounce(ms = 12)
     public void setHullSectionProperties(Hull hull, Section section) {
         setHullPropertiesPaneValues(
                 hull.getSectionSideViewCurveHeight(section),
@@ -1099,18 +1100,17 @@ public class HullBuilderController implements Initializable, ModuleController {
             // Get the new knot position after dragging
             double minusAbsHeight = -Math.abs(hull.getMaxHeight());
             double initialKnotScreenX = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getX(), hullGraphicPane.getPrefWidth(), hull.getLength()) + hullGraphicPane.getLayoutX();
-            double initialKnotScreenY = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getY(), hullGraphicPaneHeight, minusAbsHeight) + hullGraphicPane.getLayoutY();
+            double initialKnotScreenY = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getY(), ON_LOAD_SIDE_VIEW_PANE_HEIGHT, minusAbsHeight) + hullGraphicPane.getLayoutY();
             double knotToMouseDistX = initialKnotScreenX - initialKnotDragMousePos.getX();
             double knotToMouseDistY = initialKnotScreenY - initialKnotDragMousePos.getY();
             double newKnotScreenX = knotEditingCurrentMouseX + knotToMouseDistX;
             double newKnotScreenY = knotEditingCurrentMouseY + knotToMouseDistY;
             double modelWidth = hull.getLength();
             double newKnotModelX = ((newKnotScreenX - hullGraphicPane.getLayoutX()) / hullGraphicPane.getPrefWidth()) * modelWidth;
-            double newKnotModelY = ((newKnotScreenY - hullGraphicPane.getLayoutY()) / hullGraphicPaneHeight) * minusAbsHeight;
+            double newKnotModelY = ((newKnotScreenY - hullGraphicPane.getLayoutY()) / ON_LOAD_SIDE_VIEW_PANE_HEIGHT) * minusAbsHeight;
             newKnotDragKnotPos = new Point2D(newKnotModelX, newKnotModelY);
 
-            // Clamp new knot position vertically using global vertical bounds.
-            // For horizontal bounding, we allow the new knot to be any value (it might be moved by the user)
+            // Clamp new knot position in its box
             double clampedNewKnotX;
             double clampedNewKnotY;
             boolean isDraggingLeft = newKnotDragKnotPos.getX() < initialKnotDragKnotPos.getX();
@@ -1125,18 +1125,28 @@ public class HullBuilderController implements Initializable, ModuleController {
             if (isDraggingMinKnot) clampedNewKnotY = Math.max(2 * eps + globalMinY, Math.min(newKnotDragKnotPos.getY(), -TOP_ALLOWED_HULL_HEIGHT + 2 * eps));
             else clampedNewKnotY = Math.max(2 * eps + globalMinY, Math.min(newKnotDragKnotPos.getY(), 2 * globalMaxY));
 
-            newKnotDragKnotPos = new Point2D(clampedNewKnotX, clampedNewKnotY);
+            Point2D clampedNewKnotDragKnotPos = new Point2D(clampedNewKnotX, clampedNewKnotY);
+            newKnotDragKnotPos = clampedNewKnotDragKnotPos;
+
+            // From the clamped knot position, convert back to screen coordinates space with reversed math for the drag indicator line end point
+            double clampedNewKnotModelX = clampedNewKnotDragKnotPos.getX();
+            double clampedNewKnotModelY = clampedNewKnotDragKnotPos.getY();
+            double layoutX = hullGraphicPane.getLayoutX();
+            double layoutY = hullGraphicPane.getLayoutY();
+            double prefWidth = hullGraphicPane.getPrefWidth();
+            double clampedNewKnotScreenX = layoutX + (clampedNewKnotModelX / modelWidth) * prefWidth;
+            double clampedNewKnotScreenY = layoutY + (clampedNewKnotModelY / minusAbsHeight) * (ON_LOAD_SIDE_VIEW_PANE_HEIGHT * (hull.getMaxHeight() / ON_LOAD_HULL.getMaxHeight()));
 
             // Update the drag indicator line
             dragIndicatorLine.setStartX(knotEditingCurrentMouseX);
             dragIndicatorLine.setStartY(knotEditingCurrentMouseY - 1);
-            dragIndicatorLine.setEndX(newKnotScreenX);// TODO recalc clampedNewKnotScreenX
-            dragIndicatorLine.setEndY(newKnotScreenY);
+            dragIndicatorLine.setEndX(clampedNewKnotScreenX);
+            dragIndicatorLine.setEndY(clampedNewKnotScreenY);
             dragIndicatorLine.setVisible(true);
 
             // Update the size of the hull pane since it scales with the min knot, acting as a height scale for the hull
             if (isDraggingMinKnot) {
-                double sideViewPanelHeight = hullGraphicPaneHeight * (newKnotDragKnotPos.getY() / ON_LOAD_HULL.getMaxHeight());
+                double sideViewPanelHeight = ON_LOAD_SIDE_VIEW_PANE_HEIGHT * (newKnotDragKnotPos.getY() / ON_LOAD_HULL.getMaxHeight());
                 hullGraphicPane.setPrefHeight(sideViewPanelHeight);
                 hullGraphicPane.setMaxHeight(sideViewPanelHeight);
                 hullGraphicPane.setMinHeight(sideViewPanelHeight);
@@ -1335,10 +1345,9 @@ public class HullBuilderController implements Initializable, ModuleController {
         // Set default hull
         hullGraphicPane = new AnchorPane();
         hull = ON_LOAD_HULL;
-        hullGraphicPaneHeight = Math.ceil(45 * (hull.getMaxHeight() / SHARKBAIT_HULL.getMaxHeight()));
-        hullGraphicPane.setPrefHeight(hullGraphicPaneHeight);
-        hullGraphicPane.setMaxHeight(hullGraphicPaneHeight);
-        hullGraphicPane.setMinHeight(hullGraphicPaneHeight);
+        hullGraphicPane.setPrefHeight(ON_LOAD_SIDE_VIEW_PANE_HEIGHT);
+        hullGraphicPane.setMaxHeight(ON_LOAD_SIDE_VIEW_PANE_HEIGHT);
+        hullGraphicPane.setMinHeight(ON_LOAD_SIDE_VIEW_PANE_HEIGHT);
         renderHullGraphic(hull);
         setBlankSectionProperties();
 
