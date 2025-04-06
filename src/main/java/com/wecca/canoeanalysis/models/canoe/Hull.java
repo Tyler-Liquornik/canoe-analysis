@@ -148,8 +148,7 @@ public class Hull {
      * Basic constructor for a simple model, useful before the user defines detailed geometry/material properties.
      * Models the hull as a rectangular prism (beam) using a single side–view and a single top–view Bézier segment.
      * The side–view curve is nearly constant at –height and the top–view curve is nearly constant at width/2.
-     * Control points are offset by ε = 0.001 so that the curve is a numerical approximation of a step function,
-     * and the wall thickness is fixed at 0.013.
+     * Control points are offset by ε = 0.001 so that the curve is a numerical approximation of a step function.
      * @param length the length of the hull
      * @param height the constant height (depth) of the hull
      * @param width  the overall width of the hull (used to compute the top–view curve at width/2)

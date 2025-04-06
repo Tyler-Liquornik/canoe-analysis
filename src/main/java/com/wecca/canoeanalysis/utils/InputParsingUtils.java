@@ -1,9 +1,7 @@
 package com.wecca.canoeanalysis.utils;
 
-import com.wecca.canoeanalysis.controllers.modules.PunchingShearController;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
-
 import java.util.List;
 import java.util.Objects;
 

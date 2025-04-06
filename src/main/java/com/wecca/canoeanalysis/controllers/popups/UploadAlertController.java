@@ -1,8 +1,8 @@
 package com.wecca.canoeanalysis.controllers.popups;
 
 import com.wecca.canoeanalysis.controllers.MainController;
-import com.wecca.canoeanalysis.controllers.util.ModuleSelectorController;
-import com.wecca.canoeanalysis.controllers.util.ModuleSelectorController.Module;
+import com.wecca.canoeanalysis.controllers.modules.ModuleSelectorController;
+import com.wecca.canoeanalysis.controllers.modules.ModuleSelectorController.Module;
 import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import javafx.event.ActionEvent;

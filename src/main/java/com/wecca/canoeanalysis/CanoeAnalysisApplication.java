@@ -1,7 +1,7 @@
 package com.wecca.canoeanalysis;
 
 import com.wecca.canoeanalysis.controllers.MainController;
-import com.wecca.canoeanalysis.controllers.util.ModuleSelectorController;
+import com.wecca.canoeanalysis.controllers.modules.ModuleSelectorController;
 import com.wecca.canoeanalysis.models.data.Settings;
 import com.wecca.canoeanalysis.services.LoggerService;
 import com.wecca.canoeanalysis.services.ResourceManagerService;

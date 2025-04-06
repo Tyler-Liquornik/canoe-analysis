@@ -526,6 +526,11 @@ public class HullGeometryService {
         return updatePolarHullParameter(hull, parameterIndex, newParameterValue, parameterValues, selectedBezierSegmentIndex);
     }
 
+    /**
+     * Returns an editable knot point for a given function-space x coordinate.
+     * @param functionSpaceX the x coordinate in function space
+     * @return the editable knot point as a Point2D or null for the first and last ("edge") knots since they are locked (i.e. not editable)
+     */
     public static Point2D getEditableKnotPoint(double functionSpaceX) {
         Hull hull = getHull();
         List<CubicBezierFunction> sideViewSegments = hull.getSideViewSegments();
@@ -593,6 +598,7 @@ public class HullGeometryService {
      * @param knotPos the original position of the knot in the side view
      * @param newKnotPos the new (requested) position for the knot in the side view
      * @return a new Hull instance with updated side–view curves and refreshed hull properties
+     *         or null if the user dragged the first or last knot point which are anchored in place
      */
     public static Hull dragKnotPoint(@NonNull Point2D knotPos, @NonNull Point2D newKnotPos, Point2D optionalMinKnot) {
         Hull hull = getHull();
@@ -605,6 +611,9 @@ public class HullGeometryService {
         for (int i = 0; i < hull.getSideViewSegments().size(); i++) {
             CubicBezierFunction bezier = hull.getSideViewSegments().get(i);
             if (bezier.getKnotPoints().getFirst().distance(knotPos) < 1e-6) {
+                // User tried to drag the left endpoint
+                if (i == 0) return null;
+
                 // Update the current segment's knot to the new position.
                 bezier.setX1(newKnotPos.getX());
                 bezier.setY1(newKnotPos.getY());
@@ -626,30 +635,31 @@ public class HullGeometryService {
                 bezier.setControlY1(candidateControl.getY());
 
                 // Update left-adjacent segment if it exists.
-                if (i > 0) {
-                    CubicBezierFunction prevBezier = hull.getSideViewSegments().get(i - 1);
-                    prevBezier.setX2(newKnotPos.getX());
-                    prevBezier.setY2(newKnotPos.getY());
-                    Point2D oldControlPrev = new Point2D(prevBezier.getControlX2(), prevBezier.getControlY2());
-                    Point2D offsetPrev = oldControlPrev.subtract(knotPos);
-                    Point2D candidateControlPrev = newKnotPos.add(offsetPrev);
-                    // Allowed horizontal bounds for the left-adjacent segment's right control point:
-                    double prevAllowedMinX = prevBezier.getX() + eps;
-                    double prevAllowedMaxX = newKnotPos.getX() - eps; // new knot x becomes upper bound
-                    candidateControlPrev = adjustCandidateControl(top, globalMinY, newKnotPos, offsetPrev, candidateControlPrev, prevAllowedMinX, prevAllowedMaxX);
-                    prevBezier.setControlX2(candidateControlPrev.getX());
-                    prevBezier.setControlY2(candidateControlPrev.getY());
-                }
+                CubicBezierFunction prevBezier = hull.getSideViewSegments().get(i - 1);
+                prevBezier.setX2(newKnotPos.getX());
+                prevBezier.setY2(newKnotPos.getY());
+                Point2D oldControlPrev = new Point2D(prevBezier.getControlX2(), prevBezier.getControlY2());
+                Point2D offsetPrev = oldControlPrev.subtract(knotPos);
+                Point2D candidateControlPrev = newKnotPos.add(offsetPrev);
+                // Allowed horizontal bounds for the left-adjacent segment's right control point:
+                double prevAllowedMinX = prevBezier.getX() + eps;
+                double prevAllowedMaxX = newKnotPos.getX() - eps; // new knot x becomes upper bound
+                candidateControlPrev = adjustCandidateControl(top, globalMinY, newKnotPos, offsetPrev, candidateControlPrev, prevAllowedMinX, prevAllowedMaxX);
+                prevBezier.setControlX2(candidateControlPrev.getX());
+                prevBezier.setControlY2(candidateControlPrev.getY());
 
                 // Adjust other points if the global min changes
                 boolean isDraggingMinKnotUp = isDraggingMinKnot && newKnotPos.getY() > knotPos.getY();
                 if (isDraggingMinKnotUp) clampBezierPointsToMinY(hull, optionalMinKnot, newKnotPos, i);
 
-                // Refresh hull properties (bulkhead and thickness maps) using helper methods.
-                return updateHullProperties(hull);
+                // Return the updated hull after the drag
+                updateHullProperties(hull);
+                return hull;
             }
         }
-        throw new IllegalArgumentException("No side-view knot found at position: " + knotPos);
+
+        // User tried to drag the right endpoint
+        return null;
     }
 
     /**
@@ -694,7 +704,7 @@ public class HullGeometryService {
                     }
                 }
 
-                // If the control point is still out of bounds are being rotated flat, it must need to be lifted to stay in bounds
+                // If the control point is still out of bounds after being rotated flat, it must need to be lifted to stay in bounds
                 double leftKnotOrControlYToCompare = i == 0 ? seg.getControlY1() : startKnot.getY();
                 if (leftKnotOrControlYToCompare < targetY) {
                     if ((i != 0) && (!isStartMin || !rotated)) {
@@ -732,7 +742,7 @@ public class HullGeometryService {
                     }
                 }
 
-                // If the control point is still out of bounds are being rotated flat, it must need to be lifted to stay in bounds
+                // If the control point is still out of bounds after being rotated flat, it must need to be lifted to stay in bounds
                 double rightKnotOrControlYToCompare = i == segments.size() - 1 ? seg.getControlY2() : endKnot.getY();
                 if (rightKnotOrControlYToCompare < targetY) {
                     if ((i != segments.size() - 1) && (!isEndMin || !rotated)) {
@@ -772,11 +782,10 @@ public class HullGeometryService {
 
     /**
      * Helper method to update the hull properties when the x coordinates of the side view knots change
-     * Note: This is fine to not dopy the hull because it's a helper (i.e. it's private!)
+     * Note: This is fine to not copy the hull here because it's a helper (i.e. it's private!)
      * @param hull the hull to update
-     * @return the updated hull
      */
-    public static Hull updateHullProperties(Hull hull) {
+    private static void updateHullProperties(Hull hull) {
         List<CubicBezierFunction> sideView = hull.getSideViewSegments();
         // Thickness is the previous hull thickness average across map entries or 13mm as a fallback
         double thickness = THICKNESS;
@@ -792,7 +801,6 @@ public class HullGeometryService {
         // Update the maps using helper methods
         hull.getHullProperties().setThicknessMap(HullLibrary.buildUniformThicknessList(sideView, thickness));
         hull.getHullProperties().setBulkheadMap(HullLibrary.buildDefaultBulkheadList(sideView));
-        return hull;
     }
 
     /**

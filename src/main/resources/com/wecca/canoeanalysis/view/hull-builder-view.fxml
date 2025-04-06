@@ -10,8 +10,8 @@
             <Label styleClass="title" text="Hull View" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="19.0" />
             <Label layoutX="653.0" layoutY="19.0" styleClass="subtitle" text="Select Section:" />
             <Label fx:id="poiDataLabel" layoutX="749.0" layoutY="269.0" text="(x = N/A, y = N/A)" />
-            <Label fx:id="poiTitleLabel" layoutX="751.0" layoutY="250.0" text="Add Knot Point" />
-            <Label fx:id="poiModeLabel" layoutX="17.0" layoutY="269.0" text="Hold Shift to Drag" AnchorPane.leftAnchor="15.0" />
+            <Label fx:id="poiModeLabel" layoutX="751.0" layoutY="250.0" text="Add Knot Point" />
+            <Label fx:id="poiInfoLabel" layoutX="17.0" layoutY="269.0" text="Hold Shift to Drag" AnchorPane.leftAnchor="15.0" />
          </children></AnchorPane>
       <AnchorPane fx:id="curveParameterizationAnchorPane" layoutX="84.0" layoutY="193.0" prefHeight="220.0" prefWidth="545.0" styleClass="surface" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="15.0">
          <children>

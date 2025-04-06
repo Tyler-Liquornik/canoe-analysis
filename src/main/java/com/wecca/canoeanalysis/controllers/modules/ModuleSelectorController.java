@@ -1,10 +1,8 @@
-package com.wecca.canoeanalysis.controllers.util;
+package com.wecca.canoeanalysis.controllers.modules;
 
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.aop.Traceable;
 import com.wecca.canoeanalysis.controllers.MainController;
-import com.wecca.canoeanalysis.controllers.modules.HullBuilderController;
-import com.wecca.canoeanalysis.controllers.modules.ModuleController;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.fxml.FXML;

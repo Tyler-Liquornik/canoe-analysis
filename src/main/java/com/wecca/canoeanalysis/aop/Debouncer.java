@@ -25,7 +25,7 @@ public class Debouncer {
     public static <T> void debounceConsumer(Consumer<T> consumer, T arg, int delayMs) {
         lastConsumerArg = arg;
 
-        // Cancel any existing task
+        // Cancel the scheduled task if it has not yet started running, otherwise let the task finish (i.e. don't interrupt it)
         if (scheduledTask != null && !scheduledTask.isDone())
             scheduledTask.cancel(false);
 
@@ -33,13 +33,5 @@ public class Debouncer {
         scheduledTask = scheduler.schedule(() ->
                 Platform.runLater(() -> consumer.accept((T) lastConsumerArg)),
                 delayMs, TimeUnit.MILLISECONDS);
-    }
-
-    /**
-     * Shutdown the scheduler.
-     * Call this when your application is closing.
-     */
-    public static void shutdown() {
-        scheduler.shutdown();
     }
 }

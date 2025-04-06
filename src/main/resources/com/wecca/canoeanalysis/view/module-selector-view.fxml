@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.shape.Line?>
 
-<AnchorPane fx:id="drawerRoot" maxHeight="565.0" maxWidth="175.0" minHeight="565.0" minWidth="175.0" prefHeight="565.0" prefWidth="175.0" stylesheets="@../css/drawer.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.util.ModuleSelectorController">
+<AnchorPane fx:id="drawerRoot" maxHeight="565.0" maxWidth="175.0" minHeight="565.0" minWidth="175.0" prefHeight="565.0" prefWidth="175.0" stylesheets="@../css/drawer.css" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.wecca.canoeanalysis.controllers.modules.ModuleSelectorController">
    <children>
       <AnchorPane maxHeight="35.0" minHeight="35.0" prefHeight="35.0" prefWidth="175.0" styleClass="bar" />
       <AnchorPane maxHeight="510.0" maxWidth="175.0" minHeight="510.0" minWidth="175.0" prefHeight="510.0" prefWidth="175.0" styleClass="background" AnchorPane.topAnchor="35.0">
