@@ -931,7 +931,10 @@ public class HullBuilderController implements Initializable, ModuleController {
                 double poiX = knotEditingCurrentMouseX - hullGraphicPane.getLayoutX();
                 double functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
                 Point2D editableKnotPoint = HullGeometryService.getEditableKnotPoint(functionSpaceX);
+
                 if (editableKnotPoint != null) {
+                    if (Math.abs(Math.abs(editableKnotPoint.getY()) - Math.abs(hull.getMaxHeight())) < 1e-6)
+                        poiModeLabel.setText("Minimum Knot Point");
                     if (!isShiftKeyPressed || shiftKeyPressHadMouseInDraggableKnotPointZone)
                         poiInfoLabel.setText("Hold Shift to Drag Knot Point");
                 }
@@ -1323,6 +1326,13 @@ public class HullBuilderController implements Initializable, ModuleController {
                     poiInfoLabel.setText("");
                 } else if (!isMouseInEdgeKnotPointZone(knotEditingCurrentMouseX) && isMouseInHullZone(knotEditingCurrentMouseX)) {
                     poiModeLabel.setText("Deleting Knot Point");
+
+                    double poiX = knotEditingCurrentMouseX - hullGraphicPane.getLayoutX();
+                    double functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
+                    Point2D editableKnotPoint = HullGeometryService.getEditableKnotPoint(functionSpaceX);
+                    if (editableKnotPoint != null && Math.abs(Math.abs(editableKnotPoint.getY()) - Math.abs(hull.getMaxHeight())) < 1e-6)
+                        poiModeLabel.setText("Minimum Knot Point");
+
                     poiInfoLabel.setText("Hold Shift to Drag Knot Point");
                 } else if (isMouseInHullZone(knotEditingCurrentMouseX)) {
                     poiModeLabel.setText("Locked Knot Point");
