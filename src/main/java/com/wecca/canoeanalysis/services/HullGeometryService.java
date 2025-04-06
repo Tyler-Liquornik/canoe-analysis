@@ -529,7 +529,8 @@ public class HullGeometryService {
     /**
      * Returns an editable knot point for a given function-space x coordinate.
      * @param functionSpaceX the x coordinate in function space
-     * @return the editable knot point as a Point2D or null for the first and last ("edge") knots since they are locked (i.e. not editable)
+     * @return the editable knot point as a Point2D
+     *         or null for the first and last ("edge") knots since they are locked (i.e. not editable)
      */
     public static Point2D getEditableKnotPoint(double functionSpaceX) {
         Hull hull = getHull();

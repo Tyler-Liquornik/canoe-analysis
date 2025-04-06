@@ -357,12 +357,13 @@ public class HullBuilderController implements Initializable, ModuleController {
         if (mouseX >= hullGraphicPane.getLayoutX() && mouseX <= hullGraphicPane.getLayoutX() + hullGraphicPane.getWidth()) {
             double poiX = mouseX - hullGraphicPane.getLayoutX();
             double functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
-            Range firstOverlaySection = overlaySections.getFirst();
-            Range lastOverlaySection = overlaySections.getLast();
-            double leftEdgeSectionRx = Math.min(firstOverlaySection.getX(), firstOverlaySection.getRx());
-            double rightEdgeSectionX = Math.max(lastOverlaySection.getX(), lastOverlaySection.getRx());
-            return (0 <= functionSpaceX && functionSpaceX <= leftEdgeSectionRx)
-                    || (rightEdgeSectionX <= functionSpaceX && functionSpaceX <= hull.getLength());
+            double functionSpaceY = (CalculusUtils.getSegmentForX(hull.getSideViewSegments(), functionSpaceX)).value(functionSpaceX);
+            Point2D functionSpacePoint = new Point2D(functionSpaceX, functionSpaceY);
+
+            // There's some more complicated logic in the service for deciding which point is editable when control points 'overlap' in a given bezier segment
+            // By overlap, we mean that the control points that controlX1 is to the right of controlX2, and there's no adding section between
+            // For this reason, we choose to call the service here and derive this piece of state as that math has already been implemented
+            return (HullGeometryService.getEditableKnotPoint(functionSpacePoint.getX()) == null && isMouseInHullZone(knotEditingCurrentMouseX));
         }
         else return false;
     }
@@ -902,7 +903,6 @@ public class HullBuilderController implements Initializable, ModuleController {
                 updateMouseXTrackerLine(knotEditingCurrentMouseX);
                 poiInfoLabel.setText("");
                 hullViewAnchorPane.setCursor(Cursor.CROSSHAIR);
-
                 hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_DRAGGED, this::handleKnotDragMouseDragged);
                 hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_RELEASED, this::handleKnotDragMouseReleased);
             }
@@ -922,26 +922,24 @@ public class HullBuilderController implements Initializable, ModuleController {
                 }
             }
         }
+
         // When Shift is not held, update the UI for adding/deleting mode only
         else {
             updateMouseXTrackerLine(knotEditingCurrentMouseX);
             if (!isMouseInAddingKnotPointZone(knotEditingCurrentMouseX)) {
                 poiModeLabel.setText("Deleting Knot Point");
-                if (!isMouseInEdgeKnotPointZone(knotEditingCurrentMouseX)) {
+                double poiX = knotEditingCurrentMouseX - hullGraphicPane.getLayoutX();
+                double functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
+                Point2D editableKnotPoint = HullGeometryService.getEditableKnotPoint(functionSpaceX);
+                if (editableKnotPoint != null) {
                     if (!isShiftKeyPressed || shiftKeyPressHadMouseInDraggableKnotPointZone)
                         poiInfoLabel.setText("Hold Shift to Drag Knot Point");
-
-                    // Case where mouse is outside the hull (far left or right side of screen)
-                    double poiX = knotEditingCurrentMouseX - hullGraphicPane.getLayoutX();
-                    double functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
-                    Point2D editableKnotPoint = HullGeometryService.getEditableKnotPoint(functionSpaceX);
-                    if (editableKnotPoint == null) {
-                        poiModeLabel.setOpacity(0); // opacity instead of empty string ensures point display text is still centered
-                        poiInfoLabel.setText("");
-                    }
                 }
-                // Edge sections are locked in place (cannot be dragged)
-                else {
+                else if (!isMouseInHullZone(knotEditingCurrentMouseX)) {
+                    poiModeLabel.setOpacity(0);
+                    poiInfoLabel.setText("");
+                }
+                else { // Edge section knot points cannot be dragged (i.e. they are locked in place)
                     poiModeLabel.setText("Locked Knot Point");
                     poiInfoLabel.setText("");
                 }
@@ -1020,7 +1018,7 @@ public class HullBuilderController implements Initializable, ModuleController {
                 Point2D displayKnotPoint = HullGeometryService.getEditableKnotPoint(functionSpacePoint.getX());
 
                 // Edge knot points are not editable so displayKnotPoint is null, but we want to display the point anyway
-                if (isMouseInEdgeKnotPointZone(knotEditingCurrentMouseX)) {
+                if (displayKnotPoint == null && isMouseInHullZone(knotEditingCurrentMouseX)) {
                     boolean isMouseOnLeftHalf = knotEditingCurrentMouseX < hullViewAnchorPane.getPrefWidth() / 2;
                     double functionSpaceX = isMouseOnLeftHalf ? 0 : hull.getLength();
                     double functionSpaceY = 0;
