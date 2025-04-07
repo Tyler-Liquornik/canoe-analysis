@@ -5,7 +5,7 @@ import com.wecca.canoeanalysis.controllers.modules.HullBuilderController;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.canoe.HullProperties;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
-import com.wecca.canoeanalysis.models.function.Range;
+import com.wecca.canoeanalysis.models.function.Zone;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
 import com.wecca.canoeanalysis.utils.SectionPropertyMapEntry;
@@ -528,57 +528,60 @@ public class HullGeometryService {
 
     /**
      * Returns an editable knot point for a given function-space x coordinate.
+     * This point is either: - the point of intersection (circle or x mark on the mouseXTrackerLine) if adding a knot points
+     *                       - the "nearest" (see algorithm for why that's not quite exactly true) knot if deleting a knot
      * @param functionSpaceX the x coordinate in function space
      * @return the editable knot point as a Point2D
      *         or null for the first and last ("edge") knots since they are locked (i.e. not editable)
+     *         also null if the mouse it outside the hull zone (i.e. the mouseXTrackerLine is not covering the hull graphic)
      */
     public static Point2D getEditableKnotPoint(double functionSpaceX) {
         Hull hull = getHull();
         List<CubicBezierFunction> sideViewSegments = hull.getSideViewSegments();
-        List<Range> overlaySections = hullBuilderController.getOverlaySections();
+        List<Zone> overlayZones = hullBuilderController.getOverlayZones();
 
-        for (int i = 0; i < overlaySections.size(); i++) {
-            Range currOverlay = overlaySections.get(i);
+        for (int i = 0; i < overlayZones.size(); i++) {
 
-            // Determine the "deleting section" if one exists.
-            Section deletingSection;
-            if (i != overlaySections.size() - 1) {
-                Range nextOverlay = overlaySections.get(i + 1);
-                double deletingSectionX = (currOverlay.getX() < currOverlay.getRx()) ? currOverlay.getRx() : currOverlay.getX();
-                double deletingSectionRx = (nextOverlay.getX() < nextOverlay.getRx()) ? nextOverlay.getX() : nextOverlay.getRx();
-                deletingSection = new Section(deletingSectionX, deletingSectionRx);
-            } else deletingSection = null;
+            // Setup
+            Zone currOverlayZone = overlayZones.get(i);
+            Section addingKnotPointSection;
+            if (i != overlayZones.size() - 1) {
+                Zone nextOverlayZone = overlayZones.get(i + 1);
+                double addingZoneX = (currOverlayZone.getX() < currOverlayZone.getRx()) ? currOverlayZone.getRx() : currOverlayZone.getX();
+                double addingZoneRx = (nextOverlayZone.getX() < nextOverlayZone.getRx()) ? nextOverlayZone.getX() : nextOverlayZone.getRx();
+                addingKnotPointSection = new Section(addingZoneX, addingZoneRx);
+            } else addingKnotPointSection = null;
 
-            // Use the new model field to extract geometry.
+            // Use the new model fields to extract geometry.
             CubicBezierFunction bezier = sideViewSegments.get(i);
             double lKnotX = bezier.getX1();
             double rKnotX = bezier.getX2();
 
-            // Check if functionSpaceX lies within the knot interval.
-            if (currOverlay.getX() > currOverlay.getRx() && lKnotX <= functionSpaceX && functionSpaceX <= rKnotX) {
+            // Check if functionSpaceX lies in a deleting/dragging zone
+            if (lKnotX <= functionSpaceX && functionSpaceX <= rKnotX && currOverlayZone.getX() > currOverlayZone.getRx()) {
                 double lControlX = bezier.getControlX1();
                 double rControlX = bezier.getControlX2();
                 double midpoint = rControlX + ((lControlX - rControlX) / 2);
-
                 if (functionSpaceX < midpoint) {
-                    if (i == 0) return null; // Cannot delete the first knot.
+                    if (i == 0) return null;
                     double knotY = bezier.value(lKnotX);
                     return new Point2D(lKnotX, knotY);
                 } else {
-                    if (i == overlaySections.size() - 1) return null; // Cannot delete the last knot.
+                    if (i == overlayZones.size() - 1) return null;
                     CubicBezierFunction nextBezier = sideViewSegments.get(i + 1);
                     double knotY = nextBezier.value(rKnotX);
                     return new Point2D(rKnotX, knotY);
                 }
             }
-            // Check if functionSpaceX lies within a deletion zone.
-            else if (deletingSection != null &&
-                    deletingSection.getX() <= functionSpaceX && functionSpaceX <= deletingSection.getRx()) {
+
+            // Check if functionSpaceX lies within an adding zone.
+            else if (addingKnotPointSection != null &&
+                    addingKnotPointSection.getX() <= functionSpaceX && functionSpaceX <= addingKnotPointSection.getRx()) {
                 double knotX = sideViewSegments.stream()
                         .flatMap(seg -> seg.getKnotPoints().stream())
                         .mapToDouble(Point2D::getX)
                         .distinct()
-                        .filter(x -> x >= deletingSection.getX() && x <= deletingSection.getRx())
+                        .filter(x -> x >= addingKnotPointSection.getX() && x <= addingKnotPointSection.getRx())
                         .findFirst()
                         .orElseThrow(() -> new RuntimeException("Cannot find knot point in the section"));
                 double knotY = bezier.value(knotX);

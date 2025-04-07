@@ -11,7 +11,7 @@ import com.wecca.canoeanalysis.components.graphics.hull.CubicBezierSplineHullGra
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
-import com.wecca.canoeanalysis.models.function.Range;
+import com.wecca.canoeanalysis.models.function.Zone;
 import com.wecca.canoeanalysis.models.function.Section;
 import com.wecca.canoeanalysis.services.HullGeometryService;
 import com.wecca.canoeanalysis.services.MarshallingService;
@@ -90,7 +90,7 @@ public class HullBuilderController implements Initializable, ModuleController {
     @Getter @Setter
     private int selectedBezierSegmentIndex;
     @Getter @Setter
-    private List<Range> overlaySections;
+    private List<Zone> overlayZones;
     @Getter @Setter
     private Point2D initialKnotDragKnotPos;
     private Point2D newKnotDragKnotPos;
@@ -251,7 +251,7 @@ public class HullBuilderController implements Initializable, ModuleController {
         // Toggle or update overlay visibility
         boolean enableOverlays = !(hullGraphic.getChildren().getLast() instanceof CurvedGraphic);
         if (!toggleElseUpdate) enableOverlays = enableOverlays && knotEditorEnabled;
-        List<Range> overlaySections = new ArrayList<>();
+        List<Zone> overlayZones = new ArrayList<>();
 
         // Remove all CurvedGraphic overlays by iterating backwards through hullGraphic's children
         if (!enableOverlays) {
@@ -265,13 +265,13 @@ public class HullBuilderController implements Initializable, ModuleController {
             List<CurvedGraphic> overlayCurves = new ArrayList<>();
             for (CubicBezierFunction bezier : hull.getSideViewSegments()) {
                 // Determine the x-range between the control points, which acts as the free section to place a knot point
-                Range overlaySection;
+                Zone overlayZone;
                 double lControlX = bezier.getControlX1();
                 double rControlX = bezier.getControlX2();
                 if (Math.abs(rControlX - lControlX) <= 5e-3 || rControlX - lControlX <= 5e-3)
-                    overlaySection = new Range(lControlX, rControlX);
+                    overlayZone = new Zone(lControlX, rControlX);
                 else {
-                    overlaySection = new Section(lControlX, rControlX);
+                    overlayZone = new Section(lControlX, rControlX);
                     double maxY = bezier.getMaxValue(new Section(lControlX, rControlX));
                     double minY = bezier.getMinValue(new Section(lControlX, rControlX));
                     Rectangle validAddKnotRectangle = new Rectangle(
@@ -285,14 +285,14 @@ public class HullBuilderController implements Initializable, ModuleController {
                     overlayCurve.recolor(true);
                     overlayCurves.add(overlayCurve);
                 }
-                overlaySections.add(overlaySection);
+                overlayZones.add(overlayZone);
             }
             overlayCurves.forEach(overlay -> overlay.setViewOrder(0));
             IntStream.range(0, 2).forEach(i -> hullGraphic.getChildren().get(i).setViewOrder(1));
             IntStream.range(2, hullGraphic.getChildren().size()).forEach(i -> hullGraphic.getChildren().get(i).setViewOrder(-1));
             overlayCurves.forEach(hullGraphic.getChildren()::add);
         }
-        this.overlaySections = overlaySections;
+        this.overlayZones = overlayZones;
     }
 
     /**
@@ -341,7 +341,7 @@ public class HullBuilderController implements Initializable, ModuleController {
         if (mouseX >= hullGraphicPane.getLayoutX() && mouseX <= hullGraphicPane.getLayoutX() + hullGraphicPane.getWidth()) {
             double poiX = mouseX - hullGraphicPane.getLayoutX();
             double functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
-            return overlaySections.stream()
+            return overlayZones.stream()
                     .anyMatch(section -> functionSpaceX >= section.getX() && functionSpaceX <= section.getRx());
         }
         else return false;
@@ -351,10 +351,10 @@ public class HullBuilderController implements Initializable, ModuleController {
      * Check if the mouse is in an x position hovering over the edge knot point while in knot editor mode
      * @param mouseX the x position of the mouse
      */
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean isMouseInEdgeKnotPointZone(double mouseX) {
         if (!knotEditorEnabled) return false;
         if (mouseX >= hullGraphicPane.getLayoutX() && mouseX <= hullGraphicPane.getLayoutX() + hullGraphicPane.getWidth()) {
+            // Pre-computation for next step
             double poiX = mouseX - hullGraphicPane.getLayoutX();
             double functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
             double functionSpaceY = (CalculusUtils.getSegmentForX(hull.getSideViewSegments(), functionSpaceX)).value(functionSpaceX);
@@ -363,7 +363,9 @@ public class HullBuilderController implements Initializable, ModuleController {
             // There's some more complicated logic in the service for deciding which point is editable when control points 'overlap' in a given bezier segment
             // By overlap, we mean that the control points that controlX1 is to the right of controlX2, and there's no adding section between
             // For this reason, we choose to call the service here and derive this piece of state as that math has already been implemented
-            return (HullGeometryService.getEditableKnotPoint(functionSpacePoint.getX()) == null && isMouseInHullZone(knotEditingCurrentMouseX));
+            boolean isMouseInHullZone = isMouseInHullZone(knotEditingCurrentMouseX);
+            boolean isMouseInHullZoneExceptEdgeZones = HullGeometryService.getEditableKnotPoint(functionSpacePoint.getX()) != null;
+            return (isMouseInHullZone && !isMouseInHullZoneExceptEdgeZones);
         }
         else return false;
     }
@@ -373,7 +375,7 @@ public class HullBuilderController implements Initializable, ModuleController {
      * @param mouseX the x position of the mouse
      */
     private boolean isMouseInHullZone(double mouseX) {
-        double poiX = knotEditingCurrentMouseX - hullGraphicPane.getLayoutX();
+        double poiX = mouseX - hullGraphicPane.getLayoutX();
         double functionSpaceX = (poiX / hullGraphicPane.getWidth()) * hull.getLength();
         return functionSpaceX >= 0 && functionSpaceX <= hull.getLength();
     }
