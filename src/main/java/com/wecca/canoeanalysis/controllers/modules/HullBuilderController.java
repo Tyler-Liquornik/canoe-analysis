@@ -1116,11 +1116,9 @@ public class HullBuilderController implements Initializable, ModuleController {
         // If no candidate deletable knot to delete exists, that means we should add a knot point
         Hull updatedHull = null;
         boolean isAddOperation = false;
-        if (editableKnot == null) {
-            if (isMouseInAddingKnotPointZone(mouseX)) {
-                updatedHull = HullGeometryService.addKnotPoint(new Point2D(functionSpaceX, functionSpaceY));
-                isAddOperation = true;
-            }
+        if (editableKnot == null && isMouseInAddingKnotPointZone(mouseX)) {
+            updatedHull = HullGeometryService.addKnotPoint(new Point2D(functionSpaceX, functionSpaceY));
+            isAddOperation = true;
         }
         // Otherwise, if a candidate deletable knot exists and there are enough sections, delete it.
         else if (hull.getSideViewSegments().size() > 2) updatedHull = HullGeometryService.deleteKnotPoint(editableKnot);

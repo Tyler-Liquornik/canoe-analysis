@@ -862,7 +862,7 @@ public class HullGeometryService {
         adjustBezierWithMinKnot(rightSide, globalMinY, splitIndex);
 
         // Split the top–view segment
-        CubicBezierFunction oldTop = oldTopSegments.get(splitIndex);
+        CubicBezierFunction oldTop = CalculusUtils.getSegmentForX(hull.getSideViewSegments(), newX);
         double tTop = oldTop.getT(newX);
         CubicBezierFunction[] splitTop = deCasteljauBezierSplit(oldTop, tTop);
         CubicBezierFunction leftTop = splitTop[0];
