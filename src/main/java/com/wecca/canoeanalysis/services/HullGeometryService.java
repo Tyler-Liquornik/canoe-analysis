@@ -528,12 +528,12 @@ public class HullGeometryService {
 
     /**
      * Returns an editable knot point for a given function-space x coordinate.
-     * This point is either: - the point of intersection (circle or x mark on the mouseXTrackerLine) if adding a knot points
-     *                       - the "nearest" (see algorithm for why that's not quite exactly true) knot if deleting a knot
+     * Note: This corresponds to only deleting and dragging operations, and NOT the add knot point operation
      * @param functionSpaceX the x coordinate in function space
      * @return the editable knot point as a Point2D
+     *         or null if in an add knot point zone
      *         or null for the first and last ("edge") knots since they are locked (i.e. not editable)
-     *         also null if the mouse it outside the hull zone (i.e. the mouseXTrackerLine is not covering the hull graphic)
+     *         also null in the case that the mouse is outside the hull zone (i.e. the mouseXTrackerLine is not covering the hull graphic)
      */
     public static Point2D getEditableKnotPoint(double functionSpaceX) {
         Hull hull = getHull();
@@ -544,21 +544,23 @@ public class HullGeometryService {
 
             // Setup
             Zone currOverlayZone = overlayZones.get(i);
-            Section addingKnotPointSection;
+            Section zoneBetweenOverlayZones;
             if (i != overlayZones.size() - 1) {
                 Zone nextOverlayZone = overlayZones.get(i + 1);
                 double addingZoneX = (currOverlayZone.getX() < currOverlayZone.getRx()) ? currOverlayZone.getRx() : currOverlayZone.getX();
                 double addingZoneRx = (nextOverlayZone.getX() < nextOverlayZone.getRx()) ? nextOverlayZone.getX() : nextOverlayZone.getRx();
-                addingKnotPointSection = new Section(addingZoneX, addingZoneRx);
-            } else addingKnotPointSection = null;
+                zoneBetweenOverlayZones = new Section(addingZoneX, addingZoneRx);
+            } else zoneBetweenOverlayZones = null;
 
             // Use the new model fields to extract geometry.
             CubicBezierFunction bezier = sideViewSegments.get(i);
             double lKnotX = bezier.getX1();
             double rKnotX = bezier.getX2();
 
-            // Check if functionSpaceX lies in a deleting/dragging zone
-            if (lKnotX <= functionSpaceX && functionSpaceX <= rKnotX && currOverlayZone.getX() > currOverlayZone.getRx()) {
+            // Special case of a deleting zone where the adding zone is a deleting/dragging zone instead
+            // This occurs when the control points are overlapped (i.e. currOverlayZone.getX() > currOverlayZone.getRx())
+            // These special zones need to be split up at the midpoint and half the zone is allocated to the knot point on each side
+            if (currOverlayZone.getX() > currOverlayZone.getRx() && lKnotX <= functionSpaceX && functionSpaceX <= rKnotX) {
                 double lControlX = bezier.getControlX1();
                 double rControlX = bezier.getControlX2();
                 double midpoint = rControlX + ((lControlX - rControlX) / 2);
@@ -574,14 +576,14 @@ public class HullGeometryService {
                 }
             }
 
-            // Check if functionSpaceX lies within an adding zone.
-            else if (addingKnotPointSection != null &&
-                    addingKnotPointSection.getX() <= functionSpaceX && functionSpaceX <= addingKnotPointSection.getRx()) {
+            // Check if functionSpaceX lies within a standard deleting zone (between the two control points on opposite ends of a Bezier handle)
+            else if (zoneBetweenOverlayZones != null &&
+                    zoneBetweenOverlayZones.getX() <= functionSpaceX && functionSpaceX <= zoneBetweenOverlayZones.getRx()) {
                 double knotX = sideViewSegments.stream()
                         .flatMap(seg -> seg.getKnotPoints().stream())
                         .mapToDouble(Point2D::getX)
                         .distinct()
-                        .filter(x -> x >= addingKnotPointSection.getX() && x <= addingKnotPointSection.getRx())
+                        .filter(x -> x >= zoneBetweenOverlayZones.getX() && x <= zoneBetweenOverlayZones.getRx())
                         .findFirst()
                         .orElseThrow(() -> new RuntimeException("Cannot find knot point in the section"));
                 double knotY = bezier.value(knotX);

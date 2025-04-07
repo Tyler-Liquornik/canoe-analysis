@@ -333,7 +333,7 @@ public class HullBuilderController implements Initializable, ModuleController {
 
     /**
      * Check if the mouse is in an x position to add a knot point while in knot editor mode
-     * Visually, these (should be assuming all is working properly) the colored section gaps in knot editor mode between non-overlapping bezier handles
+     * Visually, these (should be assuming all is working properly) are the colored section gaps in knot editor mode between non-overlapping bezier handles
      * @param mouseX the x position of the mouse
      */
     private boolean isMouseInAddingKnotPointZone(double mouseX) {
@@ -360,12 +360,11 @@ public class HullBuilderController implements Initializable, ModuleController {
             double functionSpaceY = (CalculusUtils.getSegmentForX(hull.getSideViewSegments(), functionSpaceX)).value(functionSpaceX);
             Point2D functionSpacePoint = new Point2D(functionSpaceX, functionSpaceY);
 
-            // There's some more complicated logic in the service for deciding which point is editable when control points 'overlap' in a given bezier segment
-            // By overlap, we mean that the control points that controlX1 is to the right of controlX2, and there's no adding section between
-            // For this reason, we choose to call the service here and derive this piece of state as that math has already been implemented
+            // If we rule out all other cases, we must be in an edge zone (an edge HullSection in terms of the old model)
             boolean isMouseInHullZone = isMouseInHullZone(knotEditingCurrentMouseX);
-            boolean isMouseInHullZoneExceptEdgeZones = HullGeometryService.getEditableKnotPoint(functionSpacePoint.getX()) != null;
-            return (isMouseInHullZone && !isMouseInHullZoneExceptEdgeZones);
+            boolean isMouseInDeletingZone = (HullGeometryService.getEditableKnotPoint(functionSpacePoint.getX()) != null);
+            boolean isMouseInAddingZone = isMouseInAddingKnotPointZone(mouseX);
+            return (isMouseInHullZone && !isMouseInDeletingZone && !isMouseInAddingZone);
         }
         else return false;
     }
