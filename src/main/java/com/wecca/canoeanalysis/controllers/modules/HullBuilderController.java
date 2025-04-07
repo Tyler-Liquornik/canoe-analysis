@@ -29,6 +29,7 @@ import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Circle;
@@ -153,6 +154,7 @@ public class HullBuilderController implements Initializable, ModuleController {
      * @param event the click event
      */
     private void toggleKnotEditorMode(MouseEvent event) {
+        if (event.getButton() != MouseButton.PRIMARY) return;
         knotEditorEnabled = !knotEditorEnabled;
         nextPressedBefore = false;
         previousPressedBefore = false;
@@ -1075,6 +1077,8 @@ public class HullBuilderController implements Initializable, ModuleController {
      * @param event containing the mouses position for the click
      */
     private void handleKnotEditMousePressed(MouseEvent event) {
+        if (event.getButton() != MouseButton.PRIMARY) return;
+
         // Out-of-bounds check
         double mouseX = event.getX();
         if (mouseX < hullGraphicPane.getLayoutX() || mouseX > hullGraphicPane.getLayoutX() + hullGraphicPane.getWidth())
@@ -1152,6 +1156,8 @@ public class HullBuilderController implements Initializable, ModuleController {
      * Uses HullGeometryService to query for and receive updated graphics as the knot is dragged
      */
     private void handleKnotDragMouseDragged(MouseEvent event) {
+        if (event.getButton() != MouseButton.PRIMARY) return;
+
         // isDraggingKnot should be updated before this handler is attached for use
         if (isDraggingKnot) {
 
@@ -1240,6 +1246,8 @@ public class HullBuilderController implements Initializable, ModuleController {
      * Locks in a new geometry with an edited knot, graphics update to reflect that
      */
     private void handleKnotDragMouseReleased(MouseEvent event) {
+        if (event.getButton() != MouseButton.PRIMARY) return;
+
         // User-action independent state update
         knotEditingMouseButtonDown = false;
 
