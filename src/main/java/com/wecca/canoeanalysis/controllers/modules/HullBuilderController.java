@@ -120,6 +120,7 @@ public class HullBuilderController implements Initializable, ModuleController {
     private final Hull SHARKBAIT_HULL = HullLibrary.generateSharkBaitHullScaled(HullLibrary.SHARK_BAIT_LENGTH);
     private final Hull ON_LOAD_HULL = HullLibrary.generateGirRaftHullScaled(HullLibrary.GIRRAFT_LENGTH);
     private final double ON_LOAD_SIDE_VIEW_PANE_HEIGHT = Math.ceil(45 * (ON_LOAD_HULL.getMaxHeight() / SHARKBAIT_HULL.getMaxHeight()));
+    private final double ON_LOAD_DATA_LABEL_POS = 749;
 
     /**
      * Custom logic to set the hull
@@ -329,7 +330,9 @@ public class HullBuilderController implements Initializable, ModuleController {
     private void updateKnotEditingTitleLabel(boolean adding) {
         if (!knotEditorEnabled) return; // Cannot be adding/deleting a knot if not in knot editor
         String addingOrDeleting = adding ? "Adding" : "Deleting";
-        poiModeLabel.setLayoutX(adding ? 751 : 748);
+        double dataLabelPos = ON_LOAD_DATA_LABEL_POS;
+        if (adding) dataLabelPos += 2;
+        poiModeLabel.setLayoutX(dataLabelPos);
         poiModeLabel.setText(String.format("%s Knot Point", addingOrDeleting));
     }
 
@@ -909,20 +912,17 @@ public class HullBuilderController implements Initializable, ModuleController {
                 hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_DRAGGED, this::handleKnotDragMouseDragged);
                 hullViewAnchorPane.removeEventHandler(MouseEvent.MOUSE_RELEASED, this::handleKnotDragMouseReleased);
             }
-            if (!mousePressWasInAddingKnotPointZone || shiftKeyPressHadMouseInDraggableKnotPointZone
-                    || !isMouseInAddingKnotPointZone(knotEditingCurrentMouseX)) {
-                if (initialKnotDragKnotPos != null) {
-                    // Create the drag indicator line
-                    double knotScreenX = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getX(),
-                            hullGraphicPane.getPrefWidth(), hull.getLength()) + hullGraphicPane.getLayoutX();
-                    double knotScreenY = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getY(),
-                            hullGraphicPane.getPrefHeight(), -Math.abs(hull.getMaxHeight())) + hullGraphicPane.getLayoutY();
-                    dragIndicatorLine.setStartX(event.getX());
-                    dragIndicatorLine.setStartY(event.getY() - 1);
-                    dragIndicatorLine.setEndX(knotScreenX);
-                    dragIndicatorLine.setEndY(knotScreenY);
-                    dragIndicatorLine.setVisible(true);
-                }
+            // Create the drag indicator line
+            if (initialKnotDragKnotPos != null) {
+                double knotScreenX = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getX(),
+                        hullGraphicPane.getPrefWidth(), hull.getLength()) + hullGraphicPane.getLayoutX();
+                double knotScreenY = GraphicsUtils.getScaledFromModelToGraphic(initialKnotDragKnotPos.getY(),
+                        hullGraphicPane.getPrefHeight(), -Math.abs(hull.getMaxHeight())) + hullGraphicPane.getLayoutY();
+                dragIndicatorLine.setStartX(event.getX());
+                dragIndicatorLine.setStartY(event.getY() - 1);
+                dragIndicatorLine.setEndX(knotScreenX);
+                dragIndicatorLine.setEndY(knotScreenY);
+                dragIndicatorLine.setVisible(true);
             }
         }
 
@@ -1254,27 +1254,52 @@ public class HullBuilderController implements Initializable, ModuleController {
         if (isDraggingKnot) {
             // Dragging State & UI Updates
             isDraggingKnot = false;
-            initialKnotDragMousePos = null;
             poiInfoLabel.setText("Click and Hold to Drag");
             hullViewAnchorPane.setCursor(Cursor.OPEN_HAND);
             dragIndicatorLine.setVisible(false);
 
             // Prevent short drags which are likely a misclick from the user, reverting the drag transaction
-            if (System.currentTimeMillis() - dragStartTime <= 400) updateHullIntersectionPointDisplay(initialKnotDragKnotPos, null);
+            if (System.currentTimeMillis() - dragStartTime <= 400) {
+                updateHullIntersectionPointDisplay(initialKnotDragKnotPos, null);
+                initialKnotDragKnotPos = null;
+                initialKnotDragMousePos = null;
+            }
             else {
-                // Commit the transaction by updating hull
+
+                // Before committing the drag, use the original hull's knot list to find the index of the dragged knot.
+                List<Point2D> originalKnots = CalculusUtils.getSplineKnots(hull.getSideViewSegments());
+                int knotIndex = -1;
+                for (int i = 0; i < originalKnots.size(); i++) {
+                    if (originalKnots.get(i).distance(initialKnotDragKnotPos) < 1e-6) {
+                        knotIndex = i;
+                        break;
+                    }
+                }
+                // Retrieve the new knot from the preview hull at the same index
+                if (knotIndex != -1) {
+                    List<Point2D> newKnots = CalculusUtils.getSplineKnots(knotDraggingPreviewHull.getSideViewSegments());
+                    if (knotIndex < newKnots.size()) initialKnotDragKnotPos = newKnots.get(knotIndex);
+                }
+                else throw new RuntimeException("Could not find knot to set up new drag operation");
+
+                // Commit the drag transaction by updating the state and UI
                 hull = knotDraggingPreviewHull;
                 updateHullIntersectionPointDisplay(newKnotDragKnotPos, null);
                 updateMouseXTrackerLine(event.getX());
+                poiDataLabel.setLayoutX(ON_LOAD_DATA_LABEL_POS);
+                mouseXTrackerLine.setOpacity(0);
+                intersectionPoint.setOpacity(0);
+                intersectionXMark.setOpacity(0);
+                isDraggingKnotPreview = true;
+                initialKnotDragMousePos = new Point2D(event.getX(), event.getY());
+                dragIndicatorLine.setVisible(true);
             }
+
+            // More State & UI updates independent of if the atomic drag transaction went through
             renderHullGraphic(hull);
             if (sectionPropertiesSelected) setBlankSectionProperties();
             else setHullProperties(hull);
             toggleOrUpdateKnotEditingHullCurveOverlay(false);
-
-            // More State updates
-            knotDraggingPreviewHull = null;
-            initialKnotDragKnotPos = null;
             newKnotDragKnotPos = null;
 
             // Remove these dynamic handlers for the drag knot feature
