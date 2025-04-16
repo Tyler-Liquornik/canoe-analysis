@@ -539,9 +539,9 @@ public class HullGeometryService {
         Hull hull = getHull();
         List<CubicBezierFunction> sideViewSegments = hull.getSideViewSegments();
         List<Zone> overlayZones = hullBuilderController.getOverlayZones();
+        if (overlayZones == null) return null;
 
         for (int i = 0; i < overlayZones.size(); i++) {
-
             // Setup
             Zone currOverlayZone = overlayZones.get(i);
             Section zoneBetweenOverlayZones;
