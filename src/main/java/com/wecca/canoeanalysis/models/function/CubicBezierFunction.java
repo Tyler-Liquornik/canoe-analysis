@@ -52,7 +52,9 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
     private final double T_MAX = 1.0;
 
 
-    // Constructor for JSON deserialization
+    /**
+     * Constructor for JSON deserialization
+     */
     @JsonCreator
     public CubicBezierFunction(
             @JsonProperty("x1") double x1, @JsonProperty("y1") double y1,
@@ -61,6 +63,17 @@ public class CubicBezierFunction implements ParameterizedBoundedUnivariateFuncti
             @JsonProperty("x2") double x2, @JsonProperty("y2") double y2
     ) {
         initialize(x1, y1, controlX1, controlY1, controlX2, controlY2, x2, y2);
+    }
+
+    /**
+     * Copy constructor for deep cloning.
+     * @param src the source CubicBezierFunction to copy
+     */
+    public CubicBezierFunction(CubicBezierFunction src) {
+        this.x1 = src.x1; this.y1 = src.y1;
+        this.controlX1 = src.controlX1; this.controlY1 = src.controlY1;
+        this.controlX2 = src.controlX2; this.controlY2 = src.controlY2;
+        this.x2 = src.x2; this.y2 = src.y2;
     }
 
     @Override

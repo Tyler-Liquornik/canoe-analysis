@@ -327,7 +327,7 @@ public class MarshallingService {
      * @param marshallableObject The object to deep copy which is integrated with Jackson for YAML marshalling.
      * @return A deep copy of the object, or null if copying fails.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "unused"})
     public static <T> T smileDeepCopy(T marshallableObject) {
         if (marshallableObject == null) return null;
         try {

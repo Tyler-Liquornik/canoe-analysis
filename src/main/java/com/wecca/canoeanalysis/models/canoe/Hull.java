@@ -25,6 +25,8 @@ import org.apache.commons.math3.optim.univariate.*;
 import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 /**
  * The Hull class represents a canoe’s hull using a new model that decouples the side‐view and top‐view
@@ -198,6 +200,24 @@ public class Hull {
                         )
                 )
         );
+    }
+
+    /**
+     * Copy constructor for deep cloning.
+     * @param src the source Hull to copy
+     */
+    public Hull(Hull src) {
+        this.concreteDensity  = src.concreteDensity;
+        this.bulkheadDensity  = src.bulkheadDensity;
+        this.hullProperties   = new HullProperties(src.getHullProperties());
+        this.sideViewSegments = src.sideViewSegments
+                .stream()
+                .map(CubicBezierFunction::new)
+                .collect(Collectors.toCollection(ArrayList::new));
+        this.topViewSegments = src.topViewSegments
+                .stream()
+                .map(CubicBezierFunction::new)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**

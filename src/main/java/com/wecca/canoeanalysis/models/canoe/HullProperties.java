@@ -7,6 +7,7 @@ import com.wecca.canoeanalysis.utils.SectionPropertyMapEntry;
 import lombok.Data;
 import lombok.NonNull;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Encapsulates physical properties for a hull. This includes the material densities
@@ -32,6 +33,19 @@ public class HullProperties {
                           @NonNull @JsonProperty("bulkheadMap") List<SectionPropertyMapEntry> bulkheadMap) {
         this.thicknessMap = thicknessMap;
         this.bulkheadMap = bulkheadMap;
+    }
+
+    /**
+     * Copy constructor for deep cloning.
+     * @param src the source HullProperties to copy
+     */
+    public HullProperties(@NonNull HullProperties src) {
+        this.thicknessMap = src.thicknessMap.stream()
+                .map(e -> new SectionPropertyMapEntry(e.getX(), e.getRx(), e.getValue()))
+                .collect(Collectors.toList());
+        this.bulkheadMap = src.bulkheadMap.stream()
+                .map(e -> new SectionPropertyMapEntry(e.getX(), e.getRx(), e.getValue()))
+                .collect(Collectors.toList());
     }
 
     @JsonIgnore

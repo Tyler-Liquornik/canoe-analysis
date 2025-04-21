@@ -56,7 +56,7 @@ public class HullGeometryService {
     private static Hull getHull() {
         if (hullBuilderController == null)
             throw new IllegalStateException("HullBuilderController is not set");
-        return MarshallingService.deepCopy(hullBuilderController.getHull());
+        return new Hull(hullBuilderController.getHull());
     }
 
     /**

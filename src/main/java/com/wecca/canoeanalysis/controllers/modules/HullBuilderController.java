@@ -723,6 +723,7 @@ public class HullBuilderController implements Initializable, ModuleController {
      * If section properties are selected and a Bezier segment is active,
      * display its properties; otherwise display overall hull properties.
      */
+    @Debounce(ms = 16)
     private void recalculateAndDisplayHullProperties() {
         if (sectionPropertiesSelected && selectedBezierSegment != null) {
             Section selectedSection = new Section(selectedBezierSegment.getX1(), selectedBezierSegment.getX2());
