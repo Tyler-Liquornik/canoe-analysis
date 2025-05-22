@@ -29,7 +29,9 @@ Software: PADDL
 License: MIT
 Licensor: Tyler Liquornik
 
-"Competition Use Restriction Clause" License Condition v1.0
-Notwithstanding any other terms of this License, you may not use the Software, in whole or in part, as a core component in any competition, contest, or challenge where its functionality provides a competitive advantage. 
-Permission to do so must be granted by the licensor to do so and has been given only to WECCA for use in the CNCCC or other similar competitions in may choose to participate in, in the future.
-This restriction applies regardless of whether any monetary reward is involved in the competition.
+"Competition Use Restriction Clause" License Condition v1.1
+Notwithstanding any other terms of this License, you may not use the Software, in whole or in part, as a core component in any competition, contest, or challenge where its functionality provides a competitive advantage. Permission to do so must be granted by the Licensor and has been given only to WECCA for use in the CNCCC or other similar competitions it may choose to participate in, in the future. This restriction applies regardless of whether any monetary reward is involved.
+
+You may also not use the Software, in whole or in part, to train, fine-tune, or otherwise develop machine learning or artificial intelligence models, or to assist in generating, improving, or producing new software, tools, or systems using AI technologies. This includes uploading, incorporating, or referencing the Software or any substantial portion of it in datasets, platforms, or tools used for AI model training, inference, generation, or evaluation, whether for commercial or non-commercial purposes.
+
+Any evidence or reasonable indication that the Software has been used in violation of these restrictions—including for AI/ML purposes, software generation, or in unauthorized competitions (other than WECCA) will be considered a material breach of this License. The Licensor reserves the right to pursue legal action or other remedies in response.
