@@ -54,6 +54,280 @@ public class DiagramService {
 
         return chart;
     }
+    // ===================== NEW CODE START =====================
+
+    /**
+     * Creates and configures a LineChart from a list of arbitrary (x,y) points.
+     * This overload does not require a Canoe and is intended for plotting outlines
+     * such as circles or other closed shapes. It avoids LineChart's X-based sorting
+     * issue by splitting the shape into upper and lower arcs (two series), so no
+     * vertical spikes appear.
+     *
+     * The axes are auto-sized from the provided data with a 10% padding and a
+     * "nice" tick unit for readability.
+     *
+     * @param points   the list of (x,y) points to plot; order can be angular or arbitrary
+     * @param yUnits   units for the Y-axis values (e.g., "m", "kN")
+     * @param yValName descriptive label for the Y-axis values (e.g., "Y", "Force")
+     * @return a configured LineChart displaying the circle outline
+     */
+    public static LineChart<Number, Number> setupChart(List<Point2D> points, String yUnits, String yValName) {
+        // Compute axis ranges from data for both axes
+        Bounds xB = computeAxisBounds(points, true);
+        Bounds yB = computeAxisBounds(points, false);
+
+        NumberAxis xAxis = new NumberAxis(xB.min, xB.max, xB.tickUnit);
+        xAxis.setLabel("X");
+        xAxis.setTickLabelFont(new Font("Georgia", 14));
+        xAxis.setMinorTickVisible(false);
+
+        NumberAxis yAxis = new NumberAxis(yB.min, yB.max, yB.tickUnit);
+        yAxis.setLabel(String.format("%s [%s]", yValName, yUnits));
+        yAxis.setTickLabelFont(new Font("Georgia", 14));
+        yAxis.setMinorTickVisible(false);
+
+        // LineChart (outline only)
+        LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
+        chart.setPrefSize(1125, 750);
+        chart.setLegendVisible(false);
+        chart.setCreateSymbols(false); // clean line only
+        chart.setAnimated(false);      // avoids re-layout artifacts
+
+        // IMPORTANT: add as two series to avoid X-sorting spikes
+        addCircleAsTwoSeries(points, "Circle", chart);
+
+        // Generic Cartesian tooltip (X/Y with units)
+        showMousePositionAsTooltipCartesian(chart, "X", yValName, yUnits);
+
+        return chart;
+    }
+
+    /**
+     * Adds a circle (or closed curve) outline to a LineChart using TWO series:
+     * one for the upper arc and one for the lower arc. Each arc is sorted by X
+     * ascending, which matches LineChart's internal behavior and prevents
+     * vertical connectors between the top and bottom for the same X.
+     *
+     * @param points     circle points (angular order or any order is fine)
+     * @param seriesName base label for the two series ("upper" and "lower" are appended)
+     * @param chart      target LineChart to receive the series
+     */
+    private static void addCircleAsTwoSeries(List<Point2D> points, String seriesName, LineChart<Number, Number> chart) {
+        if (points == null || points.isEmpty()) return;
+
+        // Find vertical midpoint to split upper vs. lower robustly (even if not centered at 0)
+        double minY = Double.POSITIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY;
+        for (Point2D p : points) {
+            if (p.getY() < minY) minY = p.getY();
+            if (p.getY() > maxY) maxY = p.getY();
+        }
+        double yMid = (minY + maxY) / 2.0;
+        double eps = 1e-9;
+
+        List<Point2D> upper = new ArrayList<>();
+        List<Point2D> lower = new ArrayList<>();
+        for (Point2D p : points) {
+            if (p.getY() >= yMid - eps) upper.add(p);  // include midline points on upper
+            else lower.add(p);
+        }
+
+        // Sort both arcs by X so LineChart draws left->right without crossing
+        Comparator<Point2D> byX = Comparator.comparingDouble(Point2D::getX);
+        upper.sort(byX);
+        lower.sort(byX);
+
+        // Build upper arc series
+        XYChart.Series<Number, Number> top = new XYChart.Series<>();
+        top.setName(seriesName + " (upper)");
+        for (Point2D p : upper) top.getData().add(new XYChart.Data<>(p.getX(), p.getY()));
+        // Optional: close the arc visually if endpoints don't meet
+        if (!upper.isEmpty()) {
+            Point2D first = upper.get(0);
+            top.getData().add(new XYChart.Data<>(first.getX(), first.getY()));
+        }
+
+        // Build lower arc series
+        XYChart.Series<Number, Number> bottom = new XYChart.Series<>();
+        bottom.setName(seriesName + " (lower)");
+        for (Point2D p : lower) bottom.getData().add(new XYChart.Data<>(p.getX(), p.getY()));
+        if (!lower.isEmpty()) {
+            Point2D first = lower.get(0);
+            bottom.getData().add(new XYChart.Data<>(first.getX(), first.getY()));
+        }
+
+        chart.getData().addAll(top, bottom);
+    }
+
+    /**
+     * Shows a tooltip for generic Cartesian charts that displays both X and Y with units.
+     * This version works for any XYChart (LineChart/AreaChart) and does not assume "distance".
+     *
+     * @param chart   the XYChart to attach the tooltip to
+     * @param xLabel  label to display for the X value (e.g., "X")
+     * @param yLabel  label to display for the Y value name (e.g., "Y", "Force")
+     * @param yUnits  units for the Y value (e.g., "m", "kN")
+     */
+    private static void showMousePositionAsTooltipCartesian(XYChart<Number, Number> chart,
+                                                            String xLabel,
+                                                            String yLabel,
+                                                            String yUnits) {
+        Tooltip tooltip = new Tooltip();
+        tooltip.setShowDelay(Duration.millis(0));
+        tooltip.setHideDelay(Duration.millis(0));
+        tooltip.setAutoHide(false);
+
+        PauseTransition tooltipDelay = new PauseTransition(Duration.millis(300));
+        tooltipDelay.setOnFinished(event -> {
+            if (!isHoveringOverCircleMap.getOrDefault(toAreaChartKey(chart), false) &&
+                    latestMouseEventMap.containsKey(toAreaChartKey(chart))) {
+                updateTooltipCartesian(latestMouseEventMap.get(toAreaChartKey(chart)), chart, tooltip, xLabel, yLabel, yUnits);
+            }
+        });
+
+        chart.setOnMouseMoved(event -> {
+            latestMouseEventMap.put(toAreaChartKey(chart), event);
+            tooltip.hide();
+            tooltipDelay.playFromStart();
+        });
+
+        chart.setOnMouseExited(event -> {
+            tooltip.hide();
+            tooltipDelay.stop();
+        });
+
+        Tooltip.install(chart, tooltip);
+
+        // Initialize state keys using the chart cast key (see toAreaChartKey)
+        isHoveringOverCircleMap.putIfAbsent(toAreaChartKey(chart), false);
+        lastTooltipXMap.put(toAreaChartKey(chart), -1.0);
+        lastTooltipYMap.put(toAreaChartKey(chart), -1.0);
+    }
+
+    /**
+     * Updates the generic Cartesian tooltip content and position based on mouse movement.
+     * Displays values as: "X: <x>, <yLabel>: <y> <yUnits>".
+     *
+     * @param event    the mouse event captured by the chart
+     * @param chart    the XYChart where the tooltip is displayed
+     * @param tooltip  the tooltip to update
+     * @param xLabel   label for X value
+     * @param yValName descriptive label for Y value
+     * @param yUnits   units for Y value
+     */
+    private static void updateTooltipCartesian(MouseEvent event,
+                                               XYChart<Number, Number> chart,
+                                               Tooltip tooltip,
+                                               String xLabel,
+                                               String yValName,
+                                               String yUnits) {
+        Axis<Number> xAxis = chart.getXAxis();
+        Axis<Number> yAxis = chart.getYAxis();
+
+        double mouseX = event.getX() - xAxis.getLayoutX();
+        double mouseY = event.getY() - yAxis.getLayoutY();
+
+        if (xAxis instanceof ValueAxis<Number> xValueAxis && yAxis instanceof ValueAxis<Number> yValueAxis) {
+            if (mouseX >= 0 && mouseX <= xValueAxis.getWidth() && mouseY >= 0 && mouseY <= yValueAxis.getHeight()) {
+                double xValue = xValueAxis.getValueForDisplay(mouseX).doubleValue();
+                double yValue = yValueAxis.getValueForDisplay(mouseY).doubleValue();
+
+                AreaChart<Number, Number> key = toAreaChartKey(chart); // use a consistent key for state maps
+                double lastX = lastTooltipXMap.getOrDefault(key, -1.0);
+                double lastY = lastTooltipYMap.getOrDefault(key, -1.0);
+
+                if (Math.abs(mouseX - lastX) > TOOLTIP_UPDATE_THRESHOLD ||
+                        Math.abs(mouseY - lastY) > TOOLTIP_UPDATE_THRESHOLD) {
+
+                    String tooltipText = String.format("%s: %.4f, %s: %.4f %s",
+                            xLabel, xValue, yValName, yValue, yUnits);
+                    tooltip.setText(tooltipText);
+                    tooltip.show(chart, event.getScreenX() + 10, event.getScreenY() + 10);
+
+                    lastTooltipXMap.put(key, mouseX);
+                    lastTooltipYMap.put(key, mouseY);
+                }
+            } else {
+                tooltip.hide();
+            }
+        }
+    }
+
+    /**
+     * Small container for axis bounds and a "nice" tick unit.
+     */
+    private static class Bounds {
+        final double min, max, tickUnit;
+        Bounds(double min, double max, double tickUnit) {
+            this.min = min; this.max = max; this.tickUnit = tickUnit;
+        }
+    }
+
+    /**
+     * Computes padded min/max and a readable tick unit from point data.
+     * Adds ~10% padding on each side and selects a tick unit from {1,2,5,10}×10^k.
+     *
+     * @param pts   points to analyze
+     * @param forX  true to compute bounds for X values; false for Y values
+     * @return a Bounds object describing [min, max, tickUnit]
+     */
+    private static Bounds computeAxisBounds(List<Point2D> pts, boolean forX) {
+        double min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY;
+        for (Point2D p : pts) {
+            double v = forX ? p.getX() : p.getY();
+            if (v < min) min = v;
+            if (v > max) max = v;
+        }
+        if (min == Double.POSITIVE_INFINITY) { // empty fallback
+            min = -1; max = 1;
+        }
+        double span = Math.max(1e-9, max - min);
+        double pad = span * 0.10;
+        double lo = min - pad;
+        double hi = max + pad;
+
+        double targetTicks = 8.0;
+        double raw = (hi - lo) / targetTicks;
+        double mag = Math.pow(10, Math.floor(Math.log10(raw)));
+        double norm = raw / mag;
+
+        double nice;
+        if (norm < 1.5)      nice = 1 * mag;
+        else if (norm < 3)   nice = 2 * mag;
+        else if (norm < 7)   nice = 5 * mag;
+        else                 nice = 10 * mag;
+
+        return new Bounds(lo, hi, nice);
+    }
+
+    /**
+     * Utility to provide a consistent key into the existing state maps
+     * (which are typed as AreaChart keys) when we are using a LineChart/XYChart.
+     * We safely cast if the chart is already an AreaChart; otherwise we use a
+     * throwaway tiny AreaChart instance as the map key. This preserves your
+     * existing tooltip state maps without refactoring their types.
+     *
+     * @param chart an XYChart instance (LineChart or AreaChart)
+     * @return an AreaChart to use as the key in state maps
+     */
+    @SuppressWarnings("unchecked")
+    private static AreaChart<Number, Number> toAreaChartKey(XYChart<Number, Number> chart) {
+        if (chart instanceof AreaChart<?, ?> ac) {
+            return (AreaChart<Number, Number>) ac;
+        }
+        // Create a stable per-instance key stored in chart properties to avoid duplicates
+        final String KEY = "ds-area-key";
+        Object existing = chart.getProperties().get(KEY);
+        if (existing instanceof AreaChart<?, ?> ac2) {
+            return (AreaChart<Number, Number>) ac2;
+        }
+        AreaChart<Number, Number> placeholder =
+                new AreaChart<>(new NumberAxis(), new NumberAxis());
+        chart.getProperties().put(KEY, placeholder);
+        return placeholder;
+    }
+
+// ===================== NEW CODE END =====================
+
 
     /**
      * Filters the list of points for those with the largest absolute magnitude

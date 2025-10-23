@@ -40,7 +40,7 @@
             <Label layoutX="213.0" layoutY="233.0" prefHeight="18.0" prefWidth="45.0" text="t=" />
             <JFXTextField fx:id="maxShearStress" layoutX="154.0" layoutY="404.0" />
             <Label layoutX="109.0" layoutY="408.0" prefHeight="18.0" prefWidth="45.0" text="τ       =" />
-            <JFXButton layoutX="129.0" layoutY="490.0" prefHeight="25.0" prefWidth="128.0" styleClass="action-object" text="Generate Diagrams" textAlignment="CENTER" />
+            <JFXButton layoutX="129.0" layoutY="490.0" onAction="#generateDiagrams" prefHeight="25.0" prefWidth="128.0" styleClass="action-object" text="Generate Diagrams" textAlignment="CENTER" />
             <Label layoutX="33.0" layoutY="87.0" prefHeight="2.0" prefWidth="16.0" text="c">
                <font>
                   <Font size="8.0" />
@@ -66,7 +66,7 @@
                   <Font size="8.0" />
                </font>
             </Label>
-            <JFXButton layoutX="138.0" layoutY="325.0" prefHeight="25.0" prefWidth="110.0" styleClass="action-object" text="Calculate values" textAlignment="CENTER" />
+            <JFXButton layoutX="138.0" layoutY="325.0" onAction="#calculateValues" prefHeight="25.0" prefWidth="110.0" styleClass="action-object" text="Calculate values" textAlignment="CENTER" />
             <Label layoutX="114.0" layoutY="278.0" prefHeight="2.0" prefWidth="16.0" text="max">
                <font>
                   <Font size="8.0" />
@@ -86,7 +86,7 @@
                   <Font size="20.0" />
                </font>
             </Label>
-            <AnchorPane layoutX="63.0" layoutY="44.0" prefHeight="159.0" prefWidth="327.0" />
+            <AnchorPane fx:id="chart2AnchorPane" layoutX="124.0" layoutY="44.0" prefHeight="201.0" prefWidth="227.0" />
          </children>
       </AnchorPane>
       <AnchorPane layoutX="410.0" layoutY="15.0" prefHeight="260.0" prefWidth="475.0" styleClass="surface">
@@ -96,7 +96,7 @@
                   <Font size="20.0" />
                </font>
             </Label>
-            <AnchorPane layoutX="54.0" layoutY="87.0" prefHeight="159.0" prefWidth="349.0" />
+            <AnchorPane fx:id="chart1AnchorPane" layoutX="115.0" layoutY="44.0" prefHeight="195.0" prefWidth="233.0" />
          </children>
       </AnchorPane>
       <Label layoutX="36.0" layoutY="142.0" prefHeight="2.0" prefWidth="16.0" text="max">
