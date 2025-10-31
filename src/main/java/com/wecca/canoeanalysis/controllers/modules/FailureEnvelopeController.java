@@ -101,9 +101,9 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
         double sigmaTMax = (Mmax * Yt) / I;
         double tauMax = (Vmax * Qmax) / (I * t);
 
-        maxCompression.setText(String.valueOf(sigmaCMax));
-        maxTension.setText(String.valueOf(sigmaTMax));
-        maxShearStress.setText(String.valueOf(tauMax));
+        maxCompression.setText(String.valueOf(sigmaCMax*(10e-7)));
+        maxTension.setText(String.valueOf(sigmaTMax*(10e-7)));
+        maxShearStress.setText(String.valueOf(tauMax*(10e-7)));
 
     }
 
@@ -149,8 +149,8 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
          */
         List<Point2D> circlePoints = new ArrayList<>();
 
-        double sigma1 = Double.parseDouble(maxTension.getText());
-        double sigma3 = Double.parseDouble(maxCompression.getText());;
+        double sigma1 = (Double.parseDouble(maxTension.getText()));
+        double sigma3 = (Double.parseDouble(maxCompression.getText()));;
         int numPoints = 200; // number of sample points for smoothness
 
         for (int i = 0; i < numPoints; i++) {
@@ -190,13 +190,13 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
     public void generateShearStressVSNormalStress(){
         List<Point2D> circlePoints = new ArrayList<>();
         double Yc = Double.parseDouble(compressionField.getText());
-        double maxTens = Double.parseDouble(maxTension.getText());
+        double maxTens = (Double.parseDouble(maxShearStress.getText()));
         double maxComp = Double.parseDouble(maxCompression.getText());;
         int numPoints = 200; // number of sample points for smoothness
 
         for (int i = 0; i < numPoints; i++) {
             double angle = 2 * Math.PI * i / numPoints;
-            double x = ((Yc)/2) * Math.cos(angle) - Math.abs((Yc)/2);
+            double x = ((Yc)/2) * Math.cos(angle) + Math.abs((Yc)/2);
             double y = ((Yc)/2) * Math.sin(angle);
             circlePoints.add(new Point2D(x, y));
         }
@@ -204,7 +204,7 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
 
         for (int i = 0; i < numPoints; i++) {
             double angle = 2 * Math.PI * i / numPoints;
-            double x = ((maxTens)/2) * Math.cos(angle) + Math.abs((maxTens)/2);
+            double x = ((maxTens)/2) * Math.cos(angle) - Math.abs((maxTens)/2);
             double y = ((maxTens)/2) * Math.sin(angle);
             circlePoints.add(new Point2D(x, y));
         }
@@ -216,30 +216,30 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
         chart.getXAxis().setLabel("Normal Stress (MPa)");
         chart.getYAxis().setLabel("Shear Stress (MPa)");
 
-        double x1 = -Math.abs(Yc) / 2.0;
-        double r1 = Math.abs(Yc) / 2.0;
-        double x2 = Math.abs(maxTens) / 2.0;
-        double r2 = Math.abs(maxTens) / 2.0;
-        double d = x2 - x1;
+        double rLeft = Math.abs(Yc) / 2.0;       // big circle (compression)
+        double rRight = Math.abs(maxTens) / 2.0;  // small circle (tension)
+        double xLeft = -rLeft;                    // left circle center
+        double xRight = rRight;                   // right circle center
+        double d = xRight - xLeft;
 
-        if (d > Math.abs(r2 - r1)) {
-            // slope of external tangent
-            double m = (r2 - r1) / Math.sqrt(d * d - (r2 - r1) * (r2 - r1));
-            // pick the upper tangent (positive above x-axis)
-            double s = Math.sqrt(m * m + 1);
-            double b = r1 * s - m * x1;
+        if (d > Math.abs(rLeft - rRight)) {
+            // slope of the upper external tangent
+            double m = (rRight - rLeft) / Math.sqrt(d * d - (rRight - rLeft) * (rRight - rLeft));
+
+            // intercept of the upper tangent
+            double b = rLeft * Math.sqrt(1 + m * m) - m * xLeft;
 
             // --- draw tangent line ---
             XYChart.Series<Number, Number> tangentSeries = new XYChart.Series<>();
             tangentSeries.setName(String.format("y = %.3fx + %.3f", m, b));
 
-            double xMin = x1 - 1;
-            double xMax = x2 + 1;
+            double xMin = xLeft - 1;
+            double xMax = xRight + 1;
             tangentSeries.getData().add(new XYChart.Data<>(xMin, m * xMin + b));
             tangentSeries.getData().add(new XYChart.Data<>(xMax, m * xMax + b));
             chart.getData().add(tangentSeries);
 
-            System.out.printf("Tangent slope = %.3f, y-intercept = %.3f%n", m, b);
+            System.out.printf("Upper tangent slope = %.3f, intercept = %.3f%n", m, b);
         }
 
         // Anchor chart to fill pane
