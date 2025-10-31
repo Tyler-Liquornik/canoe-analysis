@@ -86,17 +86,17 @@
                   <Font size="20.0" />
                </font>
             </Label>
-            <AnchorPane fx:id="chart2AnchorPane" layoutX="124.0" layoutY="44.0" prefHeight="201.0" prefWidth="227.0" />
+            <AnchorPane fx:id="chart2AnchorPane" layoutX="128.0" layoutY="44.0" prefHeight="220.0" prefWidth="220.0" />
          </children>
       </AnchorPane>
       <AnchorPane layoutX="410.0" layoutY="15.0" prefHeight="260.0" prefWidth="475.0" styleClass="surface">
          <children>
-            <Label layoutX="21.0" layoutY="14.0" prefHeight="30.0" prefWidth="433.0" text="Shear stress vs. Compressive &amp; Tensile Strength">
+            <Label layoutX="21.0" prefHeight="30.0" prefWidth="433.0" text="Shear stress vs. Compressive &amp; Tensile Strength">
                <font>
                   <Font size="20.0" />
                </font>
             </Label>
-            <AnchorPane fx:id="chart1AnchorPane" layoutX="115.0" layoutY="44.0" prefHeight="195.0" prefWidth="233.0" />
+            <AnchorPane fx:id="chart1AnchorPane" layoutX="128.0" layoutY="30.0" prefHeight="220.0" prefWidth="220.0" />
          </children>
       </AnchorPane>
       <Label layoutX="36.0" layoutY="142.0" prefHeight="2.0" prefWidth="16.0" text="max">
