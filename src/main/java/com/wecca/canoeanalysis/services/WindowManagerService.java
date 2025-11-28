@@ -8,6 +8,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.chart.AreaChart;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
@@ -48,19 +50,36 @@ public class WindowManagerService {
         popupStage.getIcons().add(icon);
 
         // Setting up the diagram specifics
-        AreaChart<Number, Number> chart = DiagramService.setupChart(canoe, points, yUnits, yValName);
-        chartPane.getChildren().add(chart);
+        if(canoe != null) {
+            AreaChart<Number, Number> chart = DiagramService.setupChart(canoe, points, yUnits, yValName);
+            chartPane.getChildren().add(chart);
+        }else{
+            LineChart<Number, Number> chart = DiagramService.setupChart(points, yUnits, yValName);
+            chartPane.getChildren().add(chart);
+        }
+
 
         // Setting up the window with a decorator
         JFXDecorator decorator = getDraggableJFXDecorator(popupStage, chartPane);
 
         popupStage.setOnShown(event -> chartPane.requestFocus());
-        Scene scene = new Scene(decorator, 1125, 775);
-        addStyleSheet(scene, "css/chart.css");
+        if(canoe != null){
+            Scene scene = new Scene(decorator, 1125, 775);
+            addStyleSheet(scene, "css/chart.css");
 
-        // Setting the scene and showing the stage
-        popupStage.setScene(scene);
-        popupStage.show();
+            // Setting the scene and showing the stage
+            popupStage.setScene(scene);
+            popupStage.show();
+        }else{
+            Scene scene = new Scene(decorator, 1125, 775);
+            addStyleSheet(scene, "css/chart.css");
+
+            // Setting the scene and showing the stage
+            popupStage.setScene(scene);
+            popupStage.show();
+        }
+
+
     }
 
     /**
@@ -153,4 +172,65 @@ public class WindowManagerService {
         decorator.setOnMouseDragged(event -> moveStage(event, popupStage));
         return decorator;
     }
+
+    public static void openDiagramWindowWithTangent(
+            String title,
+            Canoe canoe,
+            List<Point2D> circlePoints,
+            List<Point2D> tangentPoints,
+            String units,
+            String yAxisLabel
+    ) {
+        // Initialize the stage and main pane (same sizing as openDiagramWindow)
+        Stage popupStage = new Stage();
+        popupStage.setTitle(title);
+        Pane chartPane = new Pane();
+        chartPane.setPrefSize(1125, 750);
+        popupStage.setResizable(false);
+
+        // Adding Logo Icon (same as openDiagramWindow)
+        Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png");
+        popupStage.getIcons().add(icon);
+
+        // Create the base chart (AreaChart if canoe != null, else LineChart),
+        // then attach tangent as an extra series.
+        XYChart<Number, Number> chart;
+
+        if (canoe != null) {
+            AreaChart<Number, Number> areaChart =
+                    DiagramService.setupChart(canoe, circlePoints, units, yAxisLabel);
+            chart = areaChart;
+        } else {
+            LineChart<Number, Number> lineChart =
+                    DiagramService.setupChart(circlePoints, units, yAxisLabel);
+            chart = lineChart;
+        }
+
+        // Add tangent line if provided
+        if (tangentPoints != null && !tangentPoints.isEmpty()) {
+            XYChart.Series<Number, Number> tangentSeries = new XYChart.Series<>();
+            tangentSeries.setName("Tangent");
+
+            for (Point2D pt : tangentPoints) {
+                tangentSeries.getData().add(new XYChart.Data<>(pt.getX(), pt.getY()));
+            }
+
+            chart.getData().add(tangentSeries);
+        }
+
+        chartPane.getChildren().add(chart);
+
+        // Use the same decorator / draggable behavior as other diagram windows
+        JFXDecorator decorator = getDraggableJFXDecorator(popupStage, chartPane);
+        popupStage.setOnShown(event -> chartPane.requestFocus());
+
+        // Build scene with same size + stylesheet as openDiagramWindow
+        Scene scene = new Scene(decorator, 1125, 775);
+        addStyleSheet(scene, "css/chart.css");
+
+        popupStage.setScene(scene);
+        popupStage.show();
+    }
+
+
 }

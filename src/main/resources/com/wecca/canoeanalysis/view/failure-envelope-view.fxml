@@ -23,7 +23,7 @@
             <JFXTextField fx:id="momentOfInertia" layoutX="230.0" layoutY="115.0" />
             <Label layoutX="205.0" layoutY="80.0" prefHeight="18.0" prefWidth="34.0" text="Y  =" />
             <Label layoutX="209.0" layoutY="120.0" prefHeight="18.0" prefWidth="34.0" text="I  =" />
-            <Label layoutX="93.0" layoutY="175.0" prefHeight="30.0" prefWidth="246.0" text="Inputs from other modules">
+            <Label layoutX="82.0" layoutY="197.0" prefHeight="30.0" prefWidth="246.0" text="Inputs from other modules">
                <font>
                   <Font size="20.0" />
                </font>
@@ -77,6 +77,13 @@
                   <Font size="8.0" />
                </font>
             </Label>
+            <JFXTextField fx:id="maxTensile" layoutX="162.0" layoutY="162.0" />
+            <Label layoutX="121.0" layoutY="177.0" prefHeight="2.0" prefWidth="16.0" text="max">
+               <font>
+                  <Font size="8.0" />
+               </font>
+            </Label>
+            <Label layoutX="115.0" layoutY="168.0" prefHeight="18.0" prefWidth="46.0" text="T      =" />
          </children>
       </AnchorPane>
       <AnchorPane layoutX="410.0" layoutY="290.0" prefHeight="260.0" prefWidth="475.0" styleClass="surface">
