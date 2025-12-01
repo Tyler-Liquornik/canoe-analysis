@@ -210,21 +210,23 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
 
         int numPoints = 200; // number of sample points per circle for smoothness
 
-        // ----- Compression circle (you currently draw it on the LEFT) -----
+        // ----- Compression circle (RIGHT) -----
+        // Center at +Yc/2, radius = Yc/2  (same as your original code)
         for (int i = 0; i < numPoints; i++) {
             double angle  = 2.0 * Math.PI * i / numPoints;
             double radius = Math.abs(Yc) / 2.0;
-            double center = -Math.abs(Yc) / 2.0;      // left
+            double center = Math.abs(Yc) / 2.0;        // right side
             double x = radius * Math.cos(angle) + center;
             double y = radius * Math.sin(angle);
             circlePoints.add(new Point2D(x, y));
         }
 
-        // ----- Tension circle (you currently draw it on the RIGHT) -----
+        // ----- Tension circle (LEFT) -----
+        // Center at -maxTens/2, radius = maxTens/2  (same as your original code)
         for (int i = 0; i < numPoints; i++) {
             double angle  = 2.0 * Math.PI * i / numPoints;
             double radius = Math.abs(maxTens) / 2.0;
-            double center =  Math.abs(maxTens) / 2.0; // right
+            double center = -Math.abs(maxTens) / 2.0;  // left side
             double x = radius * Math.cos(angle) + center;
             double y = radius * Math.sin(angle);
             circlePoints.add(new Point2D(x, y));
@@ -238,20 +240,20 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
         chart.getYAxis().setLabel("Shear Stress (MPa)");
 
         // ----- Compute and add upper external tangent between the two circles -----
-        // First, match the *actual* geometry you used when drawing the circles.
-        double cComp = -Math.abs(Yc)      / 2.0;   // compression circle center (as drawn)
+        // Use the SAME centers as used to draw the circles above:
+        double cComp =  Math.abs(Yc)      / 2.0;   // compression circle center (right)
         double rComp =  Math.abs(Yc)      / 2.0;
-        double cTens =  Math.abs(maxTens) / 2.0;   // tension circle center (as drawn)
+        double cTens = -Math.abs(maxTens) / 2.0;   // tension circle center (left)
         double rTens =  Math.abs(maxTens) / 2.0;
 
-        // Work out which circle is actually left/right on the x-axis
+        // Work out which circle is actually left/right on the x-axis (for safety)
         double cLeft, rLeft, cRight, rRight;
-        if (cComp < cTens) {
-            cLeft = cComp;  rLeft = rComp;
-            cRight = cTens; rRight = rTens;
-        } else {
+        if (cTens < cComp) {
             cLeft = cTens;  rLeft = rTens;
             cRight = cComp; rRight = rComp;
+        } else {
+            cLeft = cComp;  rLeft = rComp;
+            cRight = cTens; rRight = rTens;
         }
 
         double d      = cRight - cLeft;           // center-to-center distance (> 0)
@@ -259,17 +261,16 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
         double denom  = d * d - deltaR * deltaR;  // must be > 0 for a real external tangent
 
         if (denom > 0.0) {
-            // Slope of one external tangent (upper one when used with b below)
+            // Slope of the external tangent
             double m = deltaR / Math.sqrt(denom);
 
             // sqrt(1 + m^2) used in distance formula from center to line
             double s = Math.sqrt(1.0 + m * m);
 
-            // For the upper tangent:
+            // For the UPPER tangent:
             // (m * cLeft + b) / sqrt(1 + m^2) = rLeft  -->  b = rLeft * s - m * cLeft
             double b = rLeft * s - m * cLeft;
 
-            // ---- print slope and intercept to console ----
             System.out.println("Mohr envelope tangent: slope m = " + m + ", intercept b = " + b);
 
             XYChart.Series<Number, Number> tangentSeries = new XYChart.Series<>();
@@ -316,8 +317,6 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
         // Add chart to the UI container
         chart2AnchorPane.getChildren().add(chart);
     }
-
-
 
 }
 
