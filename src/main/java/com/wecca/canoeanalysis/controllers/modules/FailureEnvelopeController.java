@@ -26,8 +26,22 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
-
-
+/**
+ * Controller for the Failure Envelope module.
+ * <p>
+ * Responsibilities:
+ * <ul>
+ *     <li>Validate and process user input for stresses and geometry.</li>
+ *     <li>Compute maximum tensile, compressive, and shear stresses.</li>
+ *     <li>Generate Mohr’s circle diagrams:
+ *         <ul>
+ *             <li>A single-circle diagram with labeled x-intercepts (σ₁ and σ₃).</li>
+ *             <li>A two-circle envelope diagram with a common tangent.</li>
+ *         </ul>
+ *     </li>
+ *     <li>Populate anchors with JavaFX LineCharts and open secondary diagram windows.</li>
+ * </ul>
+ */
 public class FailureEnvelopeController implements Initializable, ModuleController {
 
     @FXML
@@ -40,11 +54,24 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
     @FXML
     private AnchorPane chart1AnchorPane;
 
-
+    /**
+     * Reference to the main controller, used for toolbar configuration and shared UI behaviour.
+     */
     @Setter
     private static MainController mainController;
 
-
+    /**
+     * JavaFX lifecycle method called after FXML fields are injected.
+     * <p>
+     * Here we:
+     * <ul>
+     *     <li>Obtain the {@link MainController} instance from the application.</li>
+     *     <li>Reset any toolbar buttons from previously active modules.</li>
+     * </ul>
+     *
+     * @param url            The location used to resolve relative paths for the root object, or {@code null}.
+     * @param resourceBundle The resources used to localize the root object, or {@code null}.
+     */
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setMainController(CanoeAnalysisApplication.getMainController());
@@ -52,13 +79,18 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
     }
 
     /**
-     * Clears the toolbar of buttons from other modules and adds ones from this module
-     * Currently, this provides only a button to open glossary, no upload or download yet
+     * Initializes toolbar buttons specific to the Failure Envelope module.
+     * <p>
+     * Currently:
+     * <ul>
+     *     <li>Clears existing toolbar buttons.</li>
+     *     <li>Adds a "Glossary" (book) icon that opens the glossary window.</li>
+     * </ul>
      */
     public void initModuleToolBarButtons() {
         LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
-        //iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadCanoe());
-        //iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
+        // iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadCanoe());
+        // iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD,   e -> uploadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.BOOK, e -> openGlossary());
 
         mainController.resetToolBarButtons();
@@ -66,18 +98,42 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
     }
 
     /**
-     * Open the glossary window
+     * Opens a glossary window with relevant equations/definitions.
+     * <p>
+     * Implementation is currently commented out as an example (see Punching Shear module).
      */
     public void openGlossary() {
         /*
-         * Here is an example of how we did it in punching shear
+         * Example from Punching Shear:
+         * WindowManagerService.openUtilityWindow(
+         *         "Glossary",
+         *         "/com/wecca/canoeanalysis/view/shear-equations-view.fxml",
+         *         800,
+         *         550
+         * );
          */
-        //WindowManagerService.openUtilityWindow("Glossary", "/com/wecca/canoeanalysis/view/shear-equations-view.fxml", 800, 550);
     }
 
     /**
-     * This method triggers when calculate value button clicked. It uses Input values to
-     * calculate max values, and fill their corresponding textboxs
+     * Calculates maximum tensile, compressive, and shear stresses based on user input.
+     * <p>
+     * Required inputs (all doubles):
+     * <ul>
+     *     <li>Mmax           – maximum bending moment</li>
+     *     <li>Yc             – distance from neutral axis to compression fibre</li>
+     *     <li>Yt             – distance from neutral axis to tension fibre</li>
+     *     <li>I              – second moment of area</li>
+     *     <li>Vmax           – maximum shear force</li>
+     *     <li>Qmax           – first moment of area at location of interest</li>
+     *     <li>t              – thickness at shear location</li>
+     * </ul>
+     * The results are written to:
+     * <ul>
+     *     <li>{@code maxCompression}</li>
+     *     <li>{@code maxTension}</li>
+     *     <li>{@code maxShearStress}</li>
+     * </ul>
+     * If any required field is empty, an information alert is shown and the method returns.
      */
     public void calculateValues() {
         if (maxMoment.getText().isEmpty() || compressionField.getText().isEmpty() ||
@@ -91,6 +147,8 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
             alert.showAndWait();
             return;
         }
+
+        // Parse input values
         double Mmax = Double.parseDouble(maxMoment.getText());
         double Yc = Double.parseDouble(compressionField.getText());
         double Yt = Double.parseDouble(tensionField.getText());
@@ -99,21 +157,24 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
         double Qmax = Double.parseDouble(qMax.getText());
         double t = Double.parseDouble(canoeThickness.getText());
 
+        // Classic flexure and shear formulas
         double sigmaCMax = (Mmax * Yc) / I;
         double sigmaTMax = (Mmax * Yt) / I;
         double tauMax = (Vmax * Qmax) / (I * t);
 
+        // Scale to MPa (assuming original units lead to Pa)
         maxCompression.setText(String.valueOf(sigmaCMax * (10e-7)));
         maxTension.setText(String.valueOf(sigmaTMax * (10e-7)));
         maxShearStress.setText(String.valueOf(tauMax * (10e-7)));
-
     }
 
-
     /**
-     * This method triggers when generate Diagrams button is clicked.
-     * It will use the values to generate the two required diagrams and display
-     * them in their respected sections.
+     * Generates and displays the two Mohr’s circle diagrams if all required inputs are present:
+     * <ol>
+     *     <li>Single-circle diagram with σ₁ and σ₃ labeled on the x-axis.</li>
+     *     <li>Two-circle envelope with a common tangent and labeled contact points.</li>
+     * </ol>
+     * If any required stress fields are empty, an information alert is shown and no diagrams are generated.
      */
     public void generateDiagrams() {
         if (maxTension.getText().isEmpty() || compressionField.getText().isEmpty() ||
@@ -130,49 +191,59 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
     }
 
     /**
-     * This method generates and displays the shear stress vs compressive and tensile strength graph
+     * Generates and displays the Mohr’s circle for shear stress vs. normal stress
+     * using the principal stresses σ₁ and σ₃.
      * <p>
-     * Mohrs circle equation cheat sheet
-     * <p>
-     * Circle 1
-     * x shift comes from half compressive strength (Yc)
-     * radius is also have compressive strength (Yc)
-     * <p>
-     * Circle 2
-     * x shift is half tensile strength (tmax)
-     * radius is half tensile strength (tmax)
-     * <p>
-     * Circle 3
-     * x shift is difference between sigma1 and sigma3 divided by 2
-     * radius is sigma1 and sigma3 added together the divided by 2
-     */
-    /**
-     * This method generates and displays the shear stress vs compressive and tensile strength graph
-     * as a single Mohr circle and labels the x-intercepts (σ3 on the left, σ1 on the right),
-     * using the same pattern as the tangent diagram helper.
+     * Behaviour:
+     * <ul>
+     *     <li>Builds a single Mohr circle from σ₁ (tension) and σ₃ (compression).</li>
+     *     <li>Plots the circle in {@code chart1AnchorPane}.</li>
+     *     <li>Marks and labels the x-intercepts:
+     *         <ul>
+     *             <li>Left intercept: σ₃ (compression)</li>
+     *             <li>Right intercept: σ₁ (tension)</li>
+     *         </ul>
+     *     </li>
+     *     <li>Opens a secondary window via {@link WindowManagerService#openDiagramWindow2}
+     *         and passes the circle and intercept points.</li>
+     * </ul>
+     * Required inputs:
+     * <ul>
+     *     <li>{@code maxTension} (σ₁)</li>
+     *     <li>{@code maxCompression} (σ₃)</li>
+     * </ul>
      */
     public void generateShearStressVSCompressiveAndTensileStrength() {
 
-        List<Point2D> circlePoints   = new ArrayList<>();
+        List<Point2D> circlePoints = new ArrayList<>();
         List<Point2D> interceptPoints = new ArrayList<>();
 
-        double sigma1 = Double.parseDouble(maxTension.getText());      // principal tension
-        double sigma3 = Double.parseDouble(maxCompression.getText());  // principal compression
+        // σ1: principal tensile stress; σ3: principal compressive stress
+        double sigma1 = Double.parseDouble(maxTension.getText());
+        double sigma3 = Double.parseDouble(maxCompression.getText());
         int numPoints = 200; // number of sample points for smoothness
 
-
+        /*
+         * Standard Mohr’s circle construction:
+         * Center = (σ1 + σ3) / 2
+         * Radius = (σ1 - σ3) / 2
+         *
+         * Here we parametrize the circle with angle θ and convert to (σ, τ).
+         */
         for (int i = 0; i < numPoints; i++) {
             double angle = 2 * Math.PI * i / numPoints;
-            double x = ((sigma1 + sigma3) / 2.0) * Math.cos(angle)
-                    - Math.abs((sigma1 - sigma3) / 2.0);
-            double y = ((sigma1 + sigma3) / 2.0) * Math.sin(angle);
+            double center = (sigma1 + sigma3) / 2.0;
+            double radius = (sigma1 - sigma3) / 2.0;
+
+            double x = center + radius * Math.cos(angle);
+            double y = radius * Math.sin(angle);
             circlePoints.add(new Point2D(x, y));
         }
 
-
-        // left intercept at -σ3, right intercept at +σ1
-        double leftX  = -sigma3;
-        double rightX =  sigma1;
+        // Left and right x-intercepts on Mohr’s circle
+        // (σ3 is compressive, so appears on the left; σ1 on the right)
+        double leftX = sigma3;
+        double rightX = sigma1;
 
         interceptPoints.add(new Point2D(leftX, 0.0));
         interceptPoints.add(new Point2D(rightX, 0.0));
@@ -189,12 +260,12 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
         chart.getYAxis().setLabel("Shear Stress (MPa)");
         chart.setLegendVisible(true);
 
-
-        XYChart.Series<Number, Number> leftSeries  = new XYChart.Series<>();
+        // Series for the two x-intercept points
+        XYChart.Series<Number, Number> leftSeries = new XYChart.Series<>();
         XYChart.Series<Number, Number> rightSeries = new XYChart.Series<>();
 
-        leftSeries.setName(String.format("σ3 = %.3f MPa", s3r));
-        rightSeries.setName(String.format("σ1 = %.3f MPa", s1r));
+        leftSeries.setName(String.format("σ₃ = %.3f MPa", s3r));
+        rightSeries.setName(String.format("σ₁ = %.3f MPa", s1r));
 
         leftSeries.getData().add(new XYChart.Data<>(leftX, 0.0));
         rightSeries.getData().add(new XYChart.Data<>(rightX, 0.0));
@@ -202,7 +273,7 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
         chart.getData().add(leftSeries);
         chart.getData().add(rightSeries);
 
-        // ---- Layout ----
+        // Fill the anchor pane
         AnchorPane.setTopAnchor(chart, 0.0);
         AnchorPane.setRightAnchor(chart, 0.0);
         AnchorPane.setBottomAnchor(chart, 0.0);
@@ -214,59 +285,87 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
 
         chart1AnchorPane.getChildren().add(chart);
 
-
+        // Secondary window with the same data
         WindowManagerService.openDiagramWindow2(
                 "Shear Stress vs Normal Stress",
                 null,
                 circlePoints,
-                interceptPoints,   // 2-point list
+                interceptPoints,
                 "MPa",
                 "ShearStress"
         );
     }
 
-
     /**
-     * Generates the Mohr diagram with:
-     *  - tension circle (left) and compression circle (right)
-     *  - common upper tangent between them
-     *  - legend entries for:
-     *        * the tangent line   (y = m x + b)
-     *        * the two contact points
-     *        * the y-intercept
+     * Generates the Mohr diagram with two circles (tension and compression) and a common tangent
+     * that defines the failure envelope.
+     * <p>
+     * Behaviour:
+     * <ul>
+     *     <li>Builds:
+     *         <ul>
+     *             <li>A compression circle with center {@code +Yc/2} and radius {@code Yc/2}.</li>
+     *             <li>A tension circle with center {@code -σt/2} and radius {@code σt/2}.</li>
+     *         </ul>
+     *     </li>
+     *     <li>Determines which circle lies to the left/right on the σ-axis.</li>
+     *     <li>Computes the common upper tangent line between the two circles:
+     *         <ul>
+     *             <li>Finds slope {@code m} and intercept {@code b} of the line.</li>
+     *             <li>Computes contact points on each circle.</li>
+     *             <li>Finds the y-intercept (0, b).</li>
+     *         </ul>
+     *     </li>
+     *     <li>Plots:
+     *         <ul>
+     *             <li>Both circles (via {@link DiagramService#setupChart}).</li>
+     *             <li>The tangent line.</li>
+     *             <li>The two contact points (labeled as tension/compression).</li>
+     *             <li>The y-intercept.</li>
+     *         </ul>
+     *     </li>
+     *     <li>Renders the chart in {@code chart2AnchorPane} and opens a secondary diagram window
+     *         with {@link WindowManagerService#openDiagramWindow2}.</li>
+     * </ul>
+     * Required inputs:
+     * <ul>
+     *     <li>{@code compressionField} – compressive strength (Yc)</li>
+     *     <li>{@code maxTensile}      – tensile strength limit</li>
+     *     <li>{@code maxCompression}  – max compressive stress (currently not directly used)</li>
+     * </ul>
      */
     public void generateShearStressVSNormalStress() {
 
         // Points for both circles (for DiagramService + extra window)
-        List<Point2D> circlePoints  = new ArrayList<>();
+        List<Point2D> circlePoints = new ArrayList<>();
         List<Point2D> tangentPoints = new ArrayList<>();
 
-
-        double Yc      = Double.parseDouble(compressionField.getText());   // compressive strength
-        double maxTens = Double.parseDouble(maxTensile.getText());         // tensile strength
-        double maxComp = Double.parseDouble(maxCompression.getText());     // still available if needed
+        // Input strengths
+        double Yc = Double.parseDouble(compressionField.getText());   // compressive strength
+        double maxTens = Double.parseDouble(maxTensile.getText());    // tensile strength
+        double maxComp = Double.parseDouble(maxCompression.getText()); // still available if needed
 
         int numPoints = 200;
 
-
-
-
-        double cComp =  Math.abs(Yc) / 2.0;
-        double rComp =  Math.abs(Yc) / 2.0;
+        // ===== 1. Build compression circle =====
+        // Center and radius for compression circle (right side of σ-axis)
+        double cComp = Math.abs(Yc) / 2.0;
+        double rComp = Math.abs(Yc) / 2.0;
 
         for (int i = 0; i < numPoints; i++) {
-            double angle  = 2.0 * Math.PI * i / numPoints;
+            double angle = 2.0 * Math.PI * i / numPoints;
             double x = rComp * Math.cos(angle) + cComp;
             double y = rComp * Math.sin(angle);
             circlePoints.add(new Point2D(x, y));
         }
 
-
+        // ===== 1b. Build tension circle =====
+        // Center and radius for tension circle (left side of σ-axis)
         double cTens = -Math.abs(maxTens) / 2.0;
-        double rTens =  Math.abs(maxTens) / 2.0;
+        double rTens = Math.abs(maxTens) / 2.0;
 
         for (int i = 0; i < numPoints; i++) {
-            double angle  = 2.0 * Math.PI * i / numPoints;
+            double angle = 2.0 * Math.PI * i / numPoints;
             double x = rTens * Math.cos(angle) + cTens;
             double y = rTens * Math.sin(angle);
             circlePoints.add(new Point2D(x, y));
@@ -280,49 +379,61 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
         chart.getYAxis().setLabel("Shear Stress (MPa)");
         chart.setLegendVisible(true);
 
-
         // Decide which circle is left/right on the x-axis
-        double cLeft,  rLeft;
+        double cLeft, rLeft;
         double cRight, rRight;
         boolean leftIsTension;
 
         if (cTens < cComp) {
-            cLeft        = cTens;  rLeft  = rTens;
-            cRight       = cComp;  rRight = rComp;
+            cLeft = cTens;
+            rLeft = rTens;
+            cRight = cComp;
+            rRight = rComp;
             leftIsTension = true;
         } else {
-            cLeft        = cComp;  rLeft  = rComp;
-            cRight       = cTens;  rRight = rTens;
+            cLeft = cComp;
+            rLeft = rComp;
+            cRight = cTens;
+            rRight = rTens;
             leftIsTension = false;
         }
 
-        double d      = cRight - cLeft;               // center distance
-        double deltaR = rRight - rLeft;               // radius difference
-        double denom  = d * d - deltaR * deltaR;
+        double d = cRight - cLeft;      // distance between circle centers
+        double deltaR = rRight - rLeft; // difference in radii
+        double denom = d * d - deltaR * deltaR;
 
+        /*
+         * Geometry for common external tangent between two circles:
+         * If d is the center distance and rRight, rLeft are radii, then
+         * the slope of the common external tangent is:
+         *
+         *     m = (rRight - rLeft) / sqrt(d^2 - (rRight - rLeft)^2)
+         *
+         * Once m is known, the tangent line is y = m x + b, and we can
+         * solve for b by enforcing distance from line to circle center
+         * equals the circle radius.
+         */
         if (denom > 0.0) {
             // Slope of tangent
             double m = deltaR / Math.sqrt(denom);
 
-
+            // Distance from line y = m x + b to circle center must equal radius
+            // |A*cx + B*cy + C| / sqrt(A^2 + B^2) = r, where A=m, B=-1, C=b
             double s = Math.sqrt(1.0 + m * m);
-
-
             double b = rLeft * s - m * cLeft;
-
 
             double mDisp = Math.round(m * 1000.0) / 1000.0;
             double bDisp = Math.round(b * 1000.0) / 1000.0;
 
             System.out.println("Mohr envelope tangent: y = " + m + " x + " + b);
 
-
+            // Tangent line series
             XYChart.Series<Number, Number> tangentSeries = new XYChart.Series<>();
             tangentSeries.setName(String.format("Tangent: y = %.3f x + %.3f", mDisp, bDisp));
 
-            double xMin = cLeft  - 1.1 * rLeft;
+            double xMin = cLeft - 1.1 * rLeft;
             double xMax = cRight + 1.1 * rRight;
-            int    numLinePoints = 80;
+            int numLinePoints = 80;
 
             for (int i = 0; i <= numLinePoints; i++) {
                 double x = xMin + (xMax - xMin) * i / (double) numLinePoints;
@@ -331,39 +442,40 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
                 tangentPoints.add(new Point2D(x, y));   // line points
             }
 
-
-            // General line: A x + B y + C = 0 => from y = m x + b -> m x - y + b = 0
+            // General line in form A x + B y + C = 0
+            // From y = m x + b  =>  m x - y + b = 0
             double A = m;
             double B = -1.0;
             double C = b;
             double denAB = A * A + B * B;   // = m^2 + 1
 
-
+            // Function to compute contact point of the line with a circle whose center is at (cx, 0)
             java.util.function.Function<Double, Point2D> contactPoint =
                     (Double cx) -> {
-                        double val   = A * cx + C;             // A*cx + B*0 + C
-                        double xStar = cx - A * val / denAB;
-                        double yStar =      - B * val / denAB; // = val/(m^2+1)
+                        // Distance from center to line projection
+                        double val = A * cx + C;             // A*cx + B*0 + C
+                        double xStar = cx - A * val / denAB; // projected x on line
+                        double yStar = -B * val / denAB;     // projected y on line
                         return new Point2D(xStar, yStar);
                     };
 
-            Point2D leftContact  = contactPoint.apply(cLeft);
+            // Contact points on left and right circles
+            Point2D leftContact = contactPoint.apply(cLeft);
             Point2D rightContact = contactPoint.apply(cRight);
-
 
             tangentPoints.add(leftContact);
             tangentPoints.add(rightContact);
 
-            double lx = Math.round(leftContact.getX()  * 1000.0) / 1000.0; //te
-            double ly = Math.round(leftContact.getY()  * 1000.0) / 1000.0;
+            double lx = Math.round(leftContact.getX() * 1000.0) / 1000.0;
+            double ly = Math.round(leftContact.getY() * 1000.0) / 1000.0;
             double rx = Math.round(rightContact.getX() * 1000.0) / 1000.0;
             double ry = Math.round(rightContact.getY() * 1000.0) / 1000.0;
             double yIntDisp = Math.round(b * 1000.0) / 1000.0;
 
             // Series for contact points + y-intercept (so legend shows coordinates)
-            XYChart.Series<Number, Number> leftContactSeries  = new XYChart.Series<>();
+            XYChart.Series<Number, Number> leftContactSeries = new XYChart.Series<>();
             XYChart.Series<Number, Number> rightContactSeries = new XYChart.Series<>();
-            XYChart.Series<Number, Number> yInterceptSeries   = new XYChart.Series<>();
+            XYChart.Series<Number, Number> yInterceptSeries = new XYChart.Series<>();
 
             if (leftIsTension) {
                 leftContactSeries.setName(String.format("Tension contact (%.3f, %.3f)", lx, ly));
@@ -388,7 +500,7 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
             chart.getData().add(yInterceptSeries);
         }
 
-
+        // Anchor the chart to fill its pane
         AnchorPane.setTopAnchor(chart, 0.0);
         AnchorPane.setRightAnchor(chart, 0.0);
         AnchorPane.setBottomAnchor(chart, 0.0);
@@ -410,12 +522,4 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
 
         chart2AnchorPane.getChildren().add(chart);
     }
-
-
-
-
-
 }
-
-
-
