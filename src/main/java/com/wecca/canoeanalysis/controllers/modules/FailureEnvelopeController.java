@@ -146,161 +146,256 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
      * x shift is difference between sigma1 and sigma3 divided by 2
      * radius is sigma1 and sigma3 added together the divided by 2
      */
+    /**
+     * This method generates and displays the shear stress vs compressive and tensile strength graph
+     * as a single Mohr circle and labels the x-intercepts (σ3 on the left, σ1 on the right),
+     * using the same pattern as the tangent diagram helper.
+     */
     public void generateShearStressVSCompressiveAndTensileStrength() {
-        /*
-         *  Here is example code on how to use diagram service to plot a circle and attach it to the view
-         */
-        List<Point2D> circlePoints = new ArrayList<>();
 
-        double sigma1 = (Double.parseDouble(maxTension.getText()));
-        double sigma3 = (Double.parseDouble(maxCompression.getText()));
-        ;
+        List<Point2D> circlePoints   = new ArrayList<>();
+        List<Point2D> interceptPoints = new ArrayList<>();
+
+        double sigma1 = Double.parseDouble(maxTension.getText());      // principal tension
+        double sigma3 = Double.parseDouble(maxCompression.getText());  // principal compression
         int numPoints = 200; // number of sample points for smoothness
+
 
         for (int i = 0; i < numPoints; i++) {
             double angle = 2 * Math.PI * i / numPoints;
-            double x = ((sigma1 + sigma3) / 2) * Math.cos(angle) - Math.abs((sigma1 - sigma3) / 2);
-            double y = ((sigma1 + sigma3) / 2) * Math.sin(angle);
+            double x = ((sigma1 + sigma3) / 2.0) * Math.cos(angle)
+                    - Math.abs((sigma1 - sigma3) / 2.0);
+            double y = ((sigma1 + sigma3) / 2.0) * Math.sin(angle);
             circlePoints.add(new Point2D(x, y));
         }
 
-        // Create chart
+
+        // left intercept at -σ3, right intercept at +σ1
+        double leftX  = -sigma3;
+        double rightX =  sigma1;
+
+        interceptPoints.add(new Point2D(leftX, 0.0));
+        interceptPoints.add(new Point2D(rightX, 0.0));
+
+        // Rounded for legend text
+        double s3r = Math.round(Math.abs(sigma3) * 1000.0) / 1000.0;
+        double s1r = Math.round(Math.abs(sigma1) * 1000.0) / 1000.0;
+
+        // ---- Create chart ----
         LineChart<Number, Number> chart = DiagramService.setupChart(
                 circlePoints, "MPa", "Normal Stress"
         );
         chart.getXAxis().setLabel("Normal Stress (MPa)");
         chart.getYAxis().setLabel("Shear Stress (MPa)");
+        chart.setLegendVisible(true);
 
-        // Anchor chart to fill pane
+
+        XYChart.Series<Number, Number> leftSeries  = new XYChart.Series<>();
+        XYChart.Series<Number, Number> rightSeries = new XYChart.Series<>();
+
+        leftSeries.setName(String.format("σ3 = %.3f MPa", s3r));
+        rightSeries.setName(String.format("σ1 = %.3f MPa", s1r));
+
+        leftSeries.getData().add(new XYChart.Data<>(leftX, 0.0));
+        rightSeries.getData().add(new XYChart.Data<>(rightX, 0.0));
+
+        chart.getData().add(leftSeries);
+        chart.getData().add(rightSeries);
+
+        // ---- Layout ----
         AnchorPane.setTopAnchor(chart, 0.0);
         AnchorPane.setRightAnchor(chart, 0.0);
         AnchorPane.setBottomAnchor(chart, 0.0);
         AnchorPane.setLeftAnchor(chart, 0.0);
 
-
-        WindowManagerService.openDiagramWindow("Shear Stress vs Normal Stress",
-                null,
-                circlePoints,
-                "(MPa)",
-                "ShearStress");
-        // Apply stylesheet
         chart.getStylesheets().add(
                 ResourceManagerService.getResourceFilePathString("css/chart.css", false)
         );
 
-        // Add chart to container
         chart1AnchorPane.getChildren().add(chart);
+
+
+        WindowManagerService.openDiagramWindow2(
+                "Shear Stress vs Normal Stress",
+                null,
+                circlePoints,
+                interceptPoints,   // 2-point list
+                "MPa",
+                "ShearStress"
+        );
     }
 
+
     /**
-     * This method generates and displays the shear stress vs normal stress graph
-     * with two Mohr circles (tension and compression) and the common upper tangent
-     * from the left circle to the right circle.
+     * Generates the Mohr diagram with:
+     *  - tension circle (left) and compression circle (right)
+     *  - common upper tangent between them
+     *  - legend entries for:
+     *        * the tangent line   (y = m x + b)
+     *        * the two contact points
+     *        * the y-intercept
      */
     public void generateShearStressVSNormalStress() {
 
-        // List of points for both circles (used by DiagramService + window)
-        List<Point2D> circlePoints = new ArrayList<>();
-        List<Point2D> tangentPoints = new ArrayList<>();  // for separate window
+        // Points for both circles (for DiagramService + extra window)
+        List<Point2D> circlePoints  = new ArrayList<>();
+        List<Point2D> tangentPoints = new ArrayList<>();
 
-        // Inputs
+
         double Yc      = Double.parseDouble(compressionField.getText());   // compressive strength
         double maxTens = Double.parseDouble(maxTensile.getText());         // tensile strength
         double maxComp = Double.parseDouble(maxCompression.getText());     // still available if needed
 
-        int numPoints = 200; // number of sample points per circle for smoothness
+        int numPoints = 200;
 
-        // ----- Compression circle (RIGHT) -----
-        // Center at +Yc/2, radius = Yc/2  (same as your original code)
+
+
+
+        double cComp =  Math.abs(Yc) / 2.0;
+        double rComp =  Math.abs(Yc) / 2.0;
+
         for (int i = 0; i < numPoints; i++) {
             double angle  = 2.0 * Math.PI * i / numPoints;
-            double radius = Math.abs(Yc) / 2.0;
-            double center = Math.abs(Yc) / 2.0;        // right side
-            double x = radius * Math.cos(angle) + center;
-            double y = radius * Math.sin(angle);
+            double x = rComp * Math.cos(angle) + cComp;
+            double y = rComp * Math.sin(angle);
             circlePoints.add(new Point2D(x, y));
         }
 
-        // ----- Tension circle (LEFT) -----
-        // Center at -maxTens/2, radius = maxTens/2  (same as your original code)
+
+        double cTens = -Math.abs(maxTens) / 2.0;
+        double rTens =  Math.abs(maxTens) / 2.0;
+
         for (int i = 0; i < numPoints; i++) {
             double angle  = 2.0 * Math.PI * i / numPoints;
-            double radius = Math.abs(maxTens) / 2.0;
-            double center = -Math.abs(maxTens) / 2.0;  // left side
-            double x = radius * Math.cos(angle) + center;
-            double y = radius * Math.sin(angle);
+            double x = rTens * Math.cos(angle) + cTens;
+            double y = rTens * Math.sin(angle);
             circlePoints.add(new Point2D(x, y));
         }
 
-        // ----- Create base chart from circle points -----
+        // ===== 2. Base chart =====
         LineChart<Number, Number> chart = DiagramService.setupChart(
                 circlePoints, "MPa", "Normal Stress"
         );
         chart.getXAxis().setLabel("Normal Stress (MPa)");
         chart.getYAxis().setLabel("Shear Stress (MPa)");
+        chart.setLegendVisible(true);
 
-        // ----- Compute and add upper external tangent between the two circles -----
-        // Use the SAME centers as used to draw the circles above:
-        double cComp =  Math.abs(Yc)      / 2.0;   // compression circle center (right)
-        double rComp =  Math.abs(Yc)      / 2.0;
-        double cTens = -Math.abs(maxTens) / 2.0;   // tension circle center (left)
-        double rTens =  Math.abs(maxTens) / 2.0;
 
-        // Work out which circle is actually left/right on the x-axis (for safety)
-        double cLeft, rLeft, cRight, rRight;
+        // Decide which circle is left/right on the x-axis
+        double cLeft,  rLeft;
+        double cRight, rRight;
+        boolean leftIsTension;
+
         if (cTens < cComp) {
-            cLeft = cTens;  rLeft = rTens;
-            cRight = cComp; rRight = rComp;
+            cLeft        = cTens;  rLeft  = rTens;
+            cRight       = cComp;  rRight = rComp;
+            leftIsTension = true;
         } else {
-            cLeft = cComp;  rLeft = rComp;
-            cRight = cTens; rRight = rTens;
+            cLeft        = cComp;  rLeft  = rComp;
+            cRight       = cTens;  rRight = rTens;
+            leftIsTension = false;
         }
 
-        double d      = cRight - cLeft;           // center-to-center distance (> 0)
-        double deltaR = rRight - rLeft;           // radius difference
-        double denom  = d * d - deltaR * deltaR;  // must be > 0 for a real external tangent
+        double d      = cRight - cLeft;               // center distance
+        double deltaR = rRight - rLeft;               // radius difference
+        double denom  = d * d - deltaR * deltaR;
 
         if (denom > 0.0) {
-            // Slope of the external tangent
+            // Slope of tangent
             double m = deltaR / Math.sqrt(denom);
 
-            // sqrt(1 + m^2) used in distance formula from center to line
+
             double s = Math.sqrt(1.0 + m * m);
 
-            // For the UPPER tangent:
-            // (m * cLeft + b) / sqrt(1 + m^2) = rLeft  -->  b = rLeft * s - m * cLeft
+
             double b = rLeft * s - m * cLeft;
 
-            System.out.println("Mohr envelope tangent: slope m = " + m + ", intercept b = " + b);
+
+            double mDisp = Math.round(m * 1000.0) / 1000.0;
+            double bDisp = Math.round(b * 1000.0) / 1000.0;
+
+            System.out.println("Mohr envelope tangent: y = " + m + " x + " + b);
+
 
             XYChart.Series<Number, Number> tangentSeries = new XYChart.Series<>();
-            tangentSeries.setName("Tangent");
+            tangentSeries.setName(String.format("Tangent: y = %.3f x + %.3f", mDisp, bDisp));
 
-            // Choose an x-range that comfortably spans both circles
             double xMin = cLeft  - 1.1 * rLeft;
             double xMax = cRight + 1.1 * rRight;
-            int numLinePoints = 80;
+            int    numLinePoints = 80;
 
             for (int i = 0; i <= numLinePoints; i++) {
                 double x = xMin + (xMax - xMin) * i / (double) numLinePoints;
                 double y = m * x + b;
-
                 tangentSeries.getData().add(new XYChart.Data<>(x, y));
-                tangentPoints.add(new Point2D(x, y));   // store for separate window
+                tangentPoints.add(new Point2D(x, y));   // line points
             }
 
-            // Add the tangent series to the chart
+
+            // General line: A x + B y + C = 0 => from y = m x + b -> m x - y + b = 0
+            double A = m;
+            double B = -1.0;
+            double C = b;
+            double denAB = A * A + B * B;   // = m^2 + 1
+
+
+            java.util.function.Function<Double, Point2D> contactPoint =
+                    (Double cx) -> {
+                        double val   = A * cx + C;             // A*cx + B*0 + C
+                        double xStar = cx - A * val / denAB;
+                        double yStar =      - B * val / denAB; // = val/(m^2+1)
+                        return new Point2D(xStar, yStar);
+                    };
+
+            Point2D leftContact  = contactPoint.apply(cLeft);
+            Point2D rightContact = contactPoint.apply(cRight);
+
+
+            tangentPoints.add(leftContact);
+            tangentPoints.add(rightContact);
+
+            double lx = Math.round(leftContact.getX()  * 1000.0) / 1000.0;
+            double ly = Math.round(leftContact.getY()  * 1000.0) / 1000.0;
+            double rx = Math.round(rightContact.getX() * 1000.0) / 1000.0;
+            double ry = Math.round(rightContact.getY() * 1000.0) / 1000.0;
+            double yIntDisp = Math.round(b * 1000.0) / 1000.0;
+
+            // Series for contact points + y-intercept (so legend shows coordinates)
+            XYChart.Series<Number, Number> leftContactSeries  = new XYChart.Series<>();
+            XYChart.Series<Number, Number> rightContactSeries = new XYChart.Series<>();
+            XYChart.Series<Number, Number> yInterceptSeries   = new XYChart.Series<>();
+
+            if (leftIsTension) {
+                leftContactSeries.setName(String.format("Tension contact (%.3f, %.3f)", lx, ly));
+                rightContactSeries.setName(String.format("Compression contact (%.3f, %.3f)", rx, ry));
+            } else {
+                leftContactSeries.setName(String.format("Compression contact (%.3f, %.3f)", lx, ly));
+                rightContactSeries.setName(String.format("Tension contact (%.3f, %.3f)", rx, ry));
+            }
+            yInterceptSeries.setName(String.format("y-intercept (0.000, %.3f)", yIntDisp));
+
+            leftContactSeries.getData().add(
+                    new XYChart.Data<>(leftContact.getX(), leftContact.getY()));
+            rightContactSeries.getData().add(
+                    new XYChart.Data<>(rightContact.getX(), rightContact.getY()));
+            yInterceptSeries.getData().add(
+                    new XYChart.Data<>(0.0, b));
+
+            // Add to chart
             chart.getData().add(tangentSeries);
+            chart.getData().add(leftContactSeries);
+            chart.getData().add(rightContactSeries);
+            chart.getData().add(yInterceptSeries);
         }
 
-        // ----- Layout and window setup -----
+
         AnchorPane.setTopAnchor(chart, 0.0);
         AnchorPane.setRightAnchor(chart, 0.0);
         AnchorPane.setBottomAnchor(chart, 0.0);
         AnchorPane.setLeftAnchor(chart, 0.0);
 
-        // Open separate diagram window with circles + tangent
-        WindowManagerService.openDiagramWindowWithTangent(
+        // Open secondary window that will also plot tangent & label it
+        WindowManagerService.openDiagramWindow2(
                 "Mohr’s Circle Diagram",
                 null,
                 circlePoints,
@@ -309,14 +404,16 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
                 "Shear Stress vs Normal Stress"
         );
 
-        // Apply stylesheet
         chart.getStylesheets().add(
                 ResourceManagerService.getResourceFilePathString("css/chart.css", false)
         );
 
-        // Add chart to the UI container
         chart2AnchorPane.getChildren().add(chart);
     }
+
+
+
+
 
 }
 

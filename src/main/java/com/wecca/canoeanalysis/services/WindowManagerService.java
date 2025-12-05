@@ -173,7 +173,7 @@ public class WindowManagerService {
         return decorator;
     }
 
-    public static void openDiagramWindowWithTangent(
+    public static void openDiagramWindow2(
             String title,
             Canoe canoe,
             List<Point2D> circlePoints,
@@ -181,21 +181,19 @@ public class WindowManagerService {
             String units,
             String yAxisLabel
     ) {
-        // Initialize the stage and main pane (same sizing as openDiagramWindow)
+        // Initialize stage and pane
         Stage popupStage = new Stage();
         popupStage.setTitle(title);
         Pane chartPane = new Pane();
         chartPane.setPrefSize(1125, 750);
         popupStage.setResizable(false);
 
-        // Adding Logo Icon (same as openDiagramWindow)
+        // Icon
         Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png");
         popupStage.getIcons().add(icon);
 
-        // Create the base chart (AreaChart if canoe != null, else LineChart),
-        // then attach tangent as an extra series.
+        // Base chart
         XYChart<Number, Number> chart;
-
         if (canoe != null) {
             AreaChart<Number, Number> areaChart =
                     DiagramService.setupChart(canoe, circlePoints, units, yAxisLabel);
@@ -205,32 +203,110 @@ public class WindowManagerService {
                     DiagramService.setupChart(circlePoints, units, yAxisLabel);
             chart = lineChart;
         }
+        chart.setLegendVisible(true);
 
-        // Add tangent line if provided
-        if (tangentPoints != null && !tangentPoints.isEmpty()) {
-            XYChart.Series<Number, Number> tangentSeries = new XYChart.Series<>();
-            tangentSeries.setName("Tangent");
 
-            for (Point2D pt : tangentPoints) {
-                tangentSeries.getData().add(new XYChart.Data<>(pt.getX(), pt.getY()));
+        if (tangentPoints != null && tangentPoints.size() >= 2) {
+
+            if (tangentPoints.size() == 2) {
+                // single circle
+                Point2D pA = tangentPoints.get(0);
+                Point2D pB = tangentPoints.get(1);
+
+                // sort so left has smaller x
+                Point2D left  = (pA.getX() <= pB.getX()) ? pA : pB;
+                Point2D right = (pA.getX() <= pB.getX()) ? pB : pA;
+
+                double s3 = Math.abs(left.getX());
+                double s1 = Math.abs(right.getX());
+
+                double s3r = Math.round(s3 * 1000.0) / 1000.0;
+                double s1r = Math.round(s1 * 1000.0) / 1000.0;
+
+                XYChart.Series<Number, Number> leftSeries  = new XYChart.Series<>();
+                XYChart.Series<Number, Number> rightSeries = new XYChart.Series<>();
+
+                leftSeries.setName(String.format("σ3 = %.3f MPa", -s3r));
+                rightSeries.setName(String.format("σ1 = %.3f MPa", s1r));
+
+                leftSeries.getData().add(new XYChart.Data<>(left.getX(), left.getY()));
+                rightSeries.getData().add(new XYChart.Data<>(right.getX(), right.getY()));
+
+                chart.getData().add(leftSeries);
+                chart.getData().add(rightSeries);
+
+            } else {
+                //  two-circle envelope
+                int n = tangentPoints.size();
+                boolean hasContacts = (n >= 4);
+
+                int lineEndIndex = hasContacts ? n - 2 : n;
+
+                Point2D p0 = tangentPoints.get(0);
+                Point2D p1 = tangentPoints.get(lineEndIndex - 1);
+
+                double dx = p1.getX() - p0.getX();
+                double dy = p1.getY() - p0.getY();
+                double m  = dy / dx;
+                double b  = p0.getY() - m * p0.getX();
+
+                double mDisp = Math.round(m * 1000.0) / 1000.0;
+                double bDisp = Math.round(b * 1000.0) / 1000.0;
+
+                XYChart.Series<Number, Number> tangentSeries = new XYChart.Series<>();
+                tangentSeries.setName(String.format("Tangent: y = %.3f x + %.3f", mDisp, bDisp));
+
+                for (int i = 0; i < lineEndIndex; i++) {
+                    Point2D pt = tangentPoints.get(i);
+                    tangentSeries.getData().add(new XYChart.Data<>(pt.getX(), pt.getY()));
+                }
+                chart.getData().add(tangentSeries);
+
+                // contact points
+                if (hasContacts) {
+                    Point2D cp1 = tangentPoints.get(n - 2);
+                    Point2D cp2 = tangentPoints.get(n - 1);
+
+                    double cp1x = Math.round(cp1.getX() * 1000.0) / 1000.0;
+                    double cp1y = Math.round(cp1.getY() * 1000.0) / 1000.0;
+                    double cp2x = Math.round(cp2.getX() * 1000.0) / 1000.0;
+                    double cp2y = Math.round(cp2.getY() * 1000.0) / 1000.0;
+
+                    XYChart.Series<Number, Number> cp1Series = new XYChart.Series<>();
+                    XYChart.Series<Number, Number> cp2Series = new XYChart.Series<>();
+
+                    cp1Series.setName(String.format("Contact 1 (%.3f, %.3f)", cp1x, cp1y));
+                    cp2Series.setName(String.format("Contact 2 (%.3f, %.3f)", cp2x, cp2y));
+
+                    cp1Series.getData().add(new XYChart.Data<>(cp1.getX(), cp1.getY()));
+                    cp2Series.getData().add(new XYChart.Data<>(cp2.getX(), cp2.getY()));
+
+                    chart.getData().add(cp1Series);
+                    chart.getData().add(cp2Series);
+                }
+
+                // y-intercept marker
+                double yIntDisp = Math.round(b * 1000.0) / 1000.0;
+                XYChart.Series<Number, Number> yIntSeries = new XYChart.Series<>();
+                yIntSeries.setName(String.format("y-intercept (0.000, %.3f)", yIntDisp));
+                yIntSeries.getData().add(new XYChart.Data<>(0.0, b));
+                chart.getData().add(yIntSeries);
             }
-
-            chart.getData().add(tangentSeries);
         }
 
         chartPane.getChildren().add(chart);
 
-        // Use the same decorator / draggable behavior as other diagram windows
         JFXDecorator decorator = getDraggableJFXDecorator(popupStage, chartPane);
         popupStage.setOnShown(event -> chartPane.requestFocus());
 
-        // Build scene with same size + stylesheet as openDiagramWindow
         Scene scene = new Scene(decorator, 1125, 775);
         addStyleSheet(scene, "css/chart.css");
 
         popupStage.setScene(scene);
         popupStage.show();
     }
+
+
 
 
 }
