@@ -238,7 +238,7 @@ public class WindowManagerService {
             } else {
                 //  two-circle envelope
                 int n = tangentPoints.size();
-                boolean hasContacts = (n >= 4);
+                boolean hasContacts = (n >= 4); // te
 
                 int lineEndIndex = hasContacts ? n - 2 : n;
 

@@ -354,7 +354,7 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
             tangentPoints.add(leftContact);
             tangentPoints.add(rightContact);
 
-            double lx = Math.round(leftContact.getX()  * 1000.0) / 1000.0;
+            double lx = Math.round(leftContact.getX()  * 1000.0) / 1000.0; //te
             double ly = Math.round(leftContact.getY()  * 1000.0) / 1000.0;
             double rx = Math.round(rightContact.getX() * 1000.0) / 1000.0;
             double ry = Math.round(rightContact.getY() * 1000.0) / 1000.0;
