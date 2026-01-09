@@ -14,7 +14,6 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
-import javafx.scene.control.Alert;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import lombok.Setter;
@@ -26,22 +25,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
-/**
- * Controller for the Failure Envelope module.
- * <p>
- * Responsibilities:
- * <ul>
- *     <li>Validate and process user input for stresses and geometry.</li>
- *     <li>Compute maximum tensile, compressive, and shear stresses.</li>
- *     <li>Generate Mohr’s circle diagrams:
- *         <ul>
- *             <li>A single-circle diagram with labeled x-intercepts (σ₁ and σ₃).</li>
- *             <li>A two-circle envelope diagram with a common tangent.</li>
- *         </ul>
- *     </li>
- *     <li>Populate anchors with JavaFX LineCharts and open secondary diagram windows.</li>
- * </ul>
- */
 public class FailureEnvelopeController implements Initializable, ModuleController {
 
     @FXML
@@ -54,38 +37,18 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
     @FXML
     private AnchorPane chart1AnchorPane;
 
-    /**
-     * Reference to the main controller, used for toolbar configuration and shared UI behaviour.
-     */
     @Setter
     private static MainController mainController;
 
-    /**
-     * JavaFX lifecycle method called after FXML fields are injected.
-     * <p>
-     * Here we:
-     * <ul>
-     *     <li>Obtain the {@link MainController} instance from the application.</li>
-     *     <li>Reset any toolbar buttons from previously active modules.</li>
-     * </ul>
-     *
-     * @param url            The location used to resolve relative paths for the root object, or {@code null}.
-     * @param resourceBundle The resources used to localize the root object, or {@code null}.
-     */
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setMainController(CanoeAnalysisApplication.getMainController());
         mainController.resetToolBarButtons();
+        initModuleToolBarButtons();
     }
 
     /**
-     * Initializes toolbar buttons specific to the Failure Envelope module.
-     * <p>
-     * Currently:
-     * <ul>
-     *     <li>Clears existing toolbar buttons.</li>
-     *     <li>Adds a "Glossary" (book) icon that opens the glossary window.</li>
-     * </ul>
+     * Initializes toolbar buttons for the module.
      */
     public void initModuleToolBarButtons() {
         LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
@@ -99,41 +62,25 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
 
     /**
      * Opens a glossary window with relevant equations/definitions.
-     * <p>
-     * Implementation is currently commented out as an example (see Punching Shear module).
      */
     public void openGlossary() {
-        /*
-         * Example from Punching Shear:
-         * WindowManagerService.openUtilityWindow(
-         *         "Glossary",
-         *         "/com/wecca/canoeanalysis/view/shear-equations-view.fxml",
-         *         800,
-         *         550
-         * );
-         */
+         WindowManagerService.openUtilityWindow(
+                  "Glossary",
+                  "/com/wecca/canoeanalysis/view/failure-envelope-glossary.fxml",
+                  747,
+                  403
+          );
     }
 
     /**
      * Calculates maximum tensile, compressive, and shear stresses based on user input.
-     * <p>
-     * Required inputs (all doubles):
-     * <ul>
-     *     <li>Mmax           – maximum bending moment</li>
-     *     <li>Yc             – distance from neutral axis to compression fibre</li>
-     *     <li>Yt             – distance from neutral axis to tension fibre</li>
-     *     <li>I              – second moment of area</li>
-     *     <li>Vmax           – maximum shear force</li>
-     *     <li>Qmax           – first moment of area at location of interest</li>
-     *     <li>t              – thickness at shear location</li>
-     * </ul>
-     * The results are written to:
-     * <ul>
-     *     <li>{@code maxCompression}</li>
-     *     <li>{@code maxTension}</li>
-     *     <li>{@code maxShearStress}</li>
-     * </ul>
-     * If any required field is empty, an information alert is shown and the method returns.
+     *  Mmax – maximum bending moment
+     *  Yc – compression force
+     *  Yt – tension force
+     *  I  – moment of inertia
+     *  Vmax – maximum shear force
+     *  Qmax – first moment of area at location of interest
+     *  t – thickness at shear location
      */
     public void calculateValues() {
         if (maxMoment.getText().isEmpty() || compressionField.getText().isEmpty() ||
@@ -141,10 +88,7 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
                 qMax.getText().isEmpty() || maxShear.getText().isEmpty() ||
                 canoeThickness.getText().isEmpty()) {
 
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("MISSING INPUT");
-            alert.setContentText("Text field missing input please fill in with double");
-            alert.showAndWait();
+            mainController.showSnackbar("Please fill all the fields with valid numeric values.");
             return;
         }
 
@@ -157,33 +101,28 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
         double Qmax = Double.parseDouble(qMax.getText());
         double t = Double.parseDouble(canoeThickness.getText());
 
-        // Classic flexure and shear formulas
+        // Formulas
         double sigmaCMax = (Mmax * Yc) / I;
         double sigmaTMax = (Mmax * Yt) / I;
         double tauMax = (Vmax * Qmax) / (I * t);
 
-        // Scale to MPa (assuming original units lead to Pa)
+        // Convert to MPa
         maxCompression.setText(String.valueOf(sigmaCMax * (10e-7)));
         maxTension.setText(String.valueOf(sigmaTMax * (10e-7)));
         maxShearStress.setText(String.valueOf(tauMax * (10e-7)));
     }
 
     /**
-     * Generates and displays the two Mohr’s circle diagrams if all required inputs are present:
-     * <ol>
-     *     <li>Single-circle diagram with σ₁ and σ₃ labeled on the x-axis.</li>
-     *     <li>Two-circle envelope with a common tangent and labeled contact points.</li>
-     * </ol>
-     * If any required stress fields are empty, an information alert is shown and no diagrams are generated.
+     * Generates and displays the two Mohr’s circle diagrams:
+     *
+     * Single-circle diagram with σ₁ and σ₃ labeled on the x-axis.
+     * Two-circle envelope with a common tangent and labeled contact points.
      */
     public void generateDiagrams() {
         if (maxTension.getText().isEmpty() || compressionField.getText().isEmpty() ||
                 tensionField.getText().isEmpty() || maxCompression.getText().isEmpty()) {
 
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("MISSING INPUT");
-            alert.setContentText("Text field missing input please fill in with double");
-            alert.showAndWait();
+            mainController.showSnackbar("Please fill all the fields with valid numeric values.");
             return;
         }
         generateShearStressVSCompressiveAndTensileStrength();
