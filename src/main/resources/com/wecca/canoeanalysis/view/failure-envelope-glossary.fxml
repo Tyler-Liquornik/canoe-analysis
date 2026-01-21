@@ -4,7 +4,6 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.text.Font?>
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="373.0" prefWidth="747.0" style="-fx-border-color: #FFFFFF#FFFFFF; -fx-border-width: 1px;" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>
@@ -15,16 +14,16 @@
             <TableColumn prefWidth="225.0" text="Value" />
          </columns>
       </TableView>
-      <TextField layoutX="2.0" layoutY="30.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #121212;" text="Y" />
-      <TextField layoutX="2.0" layoutY="60.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #282828#282828;" text="Yt" />
-      <TextField layoutX="2.0" layoutY="90.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #121212;" text="Qmax" />
+      <TextField layoutX="1.0" layoutY="30.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #121212;" text="Yc" />
+      <TextField layoutX="2.0" layoutY="60.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #282828#282828;" text="Yₜ" />
+      <TextField layoutX="2.0" layoutY="90.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #121212;" text="Qₘₐₓ" />
       <TextField layoutX="2.0" layoutY="120.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #282828#282828;" text="I" />
-      <TextField layoutX="2.0" layoutY="150.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #121212;" text="Tmax" />
-      <TextField layoutX="2.0" layoutY="180.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #282828#282828;" text="Mmax" />
+      <TextField layoutX="2.0" layoutY="150.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #121212;" text="Tₘₐₓ" />
+      <TextField layoutX="2.0" layoutY="180.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #282828#282828;" text="Mₘₐₓ" />
       <TextField layoutX="2.0" layoutY="210.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #121212;" text="t" />
-      <TextField layoutX="2.0" layoutY="240.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #282828#282828;" text="Vmax" />
-      <TextField layoutX="2.0" layoutY="270.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #121212;" text="σc,max" />
-      <TextField layoutX="2.0" layoutY="300.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #282828#282828;" text="σt,max" />
+      <TextField layoutX="2.0" layoutY="240.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #282828#282828;" text="Vₘₐₓ" />
+      <TextField layoutX="2.0" layoutY="270.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #121212;" text="σc, ₘₐₓ" />
+      <TextField layoutX="2.0" layoutY="300.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #282828#282828;" text="σₜ, ₘₐₓ" />
       <TextField layoutX="2.0" layoutY="330.0" prefHeight="40.0" prefWidth="220.0" style="-fx-background-color: #121212;" text="τ" />
       <TextField layoutX="220.0" layoutY="30.0" prefHeight="40.0" prefWidth="300.0" style="-fx-background-color: #121212;" text="Compressive Strength (MPa)" />
       <TextField layoutX="220.0" layoutY="60.0" prefHeight="40.0" prefWidth="300.0" style="-fx-background-color: #282828#282828;" text="Tensile Strength (MPa)" />
@@ -39,20 +38,15 @@
       <TextField layoutX="220.0" layoutY="330.0" prefHeight="40.0" prefWidth="300.0" style="-fx-background-color: #121212;" text="Shear stress (MPa)" />
       <TextField layoutX="520.0" layoutY="30.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #121212;" text="Input/From Hull Builder" />
       <TextField layoutX="520.0" layoutY="60.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #282828#282828;" text="Input/From Hull Builder" />
-      <TextField layoutX="520.0" layoutY="90.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #121212;" text="Computed" />
-      <TextField layoutX="520.0" layoutY="120.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #282828#282828;" text="Computed" />
+      <TextField layoutX="520.0" layoutY="90.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #121212;" text="Input" />
+      <TextField layoutX="520.0" layoutY="120.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #282828#282828;" text="Input" />
       <TextField layoutX="520.0" layoutY="150.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #121212;" text="Yc" />
-      <TextField layoutX="520.0" layoutY="150.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #121212;" text="(Vmax*Qmax)/(I*t)" />
-      <TextField layoutX="520.0" layoutY="180.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #282828#282828;" text="Computed" />
+      <TextField layoutX="520.0" layoutY="150.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #121212;" text="(Vₘₐₓ*Qₘₐₓ)/(I*t)" />
+      <TextField layoutX="520.0" layoutY="180.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #282828#282828;" text="Input/From Beam" />
       <TextField layoutX="520.0" layoutY="210.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #121212;" text="Input/From Hull Builder" />
-      <TextField layoutX="520.0" layoutY="240.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #282828#282828;" text="Computed" />
-      <TextField layoutX="520.0" layoutY="270.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #121212;" text="Mmax*Yc/I" />
-      <TextField layoutX="520.0" layoutY="300.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #282828#282828;" text="Mmax*Yt/I" />
+      <TextField layoutX="520.0" layoutY="240.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #282828#282828;" text="Input/From Punching Shear" />
+      <TextField layoutX="520.0" layoutY="270.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #121212;" text="Mₘₐₓ*Yc/I" />
+      <TextField layoutX="520.0" layoutY="300.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #282828#282828;" text="Mₘₐₓ*Yₜ/I" />
       <TextField layoutX="520.0" layoutY="330.0" prefHeight="40.0" prefWidth="225.0" style="-fx-background-color: #121212;" text="(V*Q)/(I*t)" />
-      <TextField layoutX="14.0" layoutY="44.0" text="c">
-         <font>
-            <Font size="6.0" />
-         </font>
-      </TextField>
    </children>
 </AnchorPane>
