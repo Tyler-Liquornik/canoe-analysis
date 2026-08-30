@@ -3,9 +3,16 @@ package com.wecca.canoeanalysis.components.controls;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.SVGPath;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
 import lombok.Getter;
 import lombok.Setter;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -20,7 +27,7 @@ import java.util.function.Consumer;
 @Setter
 public class IconButton extends Button {
 
-    private FontAwesomeIcon icon;
+    private Node icon;
     private FontAwesomeIcon badge;
     private double iconSize;
 
@@ -39,7 +46,7 @@ public class IconButton extends Button {
                        Consumer<MouseEvent> onClickFunction,
                        @Nullable Consumer<MouseEvent> onReleaseFunction,
                        @Nullable List<String> cssClasses, double iconSize) {
-        FontAwesomeIcon icon = createIcon(iconGlyphName, iconSize);
+        Node icon = createIcon(iconGlyphName, iconSize);
         this.icon = icon;
         this.iconSize = iconSize;
         this.setGraphic(icon);
@@ -60,12 +67,76 @@ public class IconButton extends Button {
      * @param size the size of the icon button
      * @return the icon to go in the button
      */
-    private FontAwesomeIcon createIcon(IconGlyphType iconGlyphName, double size) {
+    private Node createIcon(IconGlyphType iconGlyphName, double size) {
+        if (iconGlyphName == IconGlyphType.CANOE) {
+            return createCanoeIcon(size);
+        }
+
+        return createFontAwesomeIcon(iconGlyphName, size);
+    }
+
+    /** Creates a normal FontAwesome glyph for all non-canoe buttons. */
+    private FontAwesomeIcon createFontAwesomeIcon(IconGlyphType iconGlyphName, double size) {
         FontAwesomeIcon icon = new FontAwesomeIcon();
         icon.setFill(ColorPaletteService.getColor("white"));
         icon.setGlyphName(iconGlyphName.getGlyphName());
         icon.setSize(String.valueOf(size));
         return icon;
+    }
+
+    /**
+     * Draws a compact two-paddler canoe inspired by the supplied team artwork.
+     * Vector strokes keep the toolbar graphic crisp on both standard and
+     * high-DPI Windows/macOS displays.
+     */
+    private Node createCanoeIcon(double size) {
+        Color strokeColor = ColorPaletteService.getColor("white");
+
+        // The upper curve is the gunwale and the lower curve forms the hull.
+        SVGPath hull = strokedPath(
+                "M1.5,13 C5.0,15.0 20.0,15.0 23.5,13 "
+                        + "M1.5,13 C2.6,18.2 5.2,20.2 12.5,20.2 "
+                        + "C19.8,20.2 22.4,18.2 23.5,13",
+                strokeColor,
+                1.7);
+
+        // Simple body, arm, and paddle strokes remain readable at 25 pixels.
+        SVGPath paddlers = strokedPath(
+                "M6.8,9.2 C5.8,10.3 5.8,12.2 6.2,14.1 "
+                        + "M9.0,9.3 L11.0,11.1 M10.8,9.2 L7.6,18.0 "
+                        + "M15.8,9.2 C14.8,10.3 14.8,12.2 15.2,14.1 "
+                        + "M18.0,9.3 L20.0,11.1 M19.8,9.2 L16.8,18.0",
+                strokeColor,
+                1.45);
+
+        Circle bowPaddlerHead = outlinedCircle(7.9, 6.5, 1.8, strokeColor);
+        Circle sternPaddlerHead = outlinedCircle(16.9, 6.5, 1.8, strokeColor);
+
+        Group canoe = new Group(hull, paddlers, bowPaddlerHead, sternPaddlerHead);
+        double scale = size / 25.0;
+        canoe.setScaleX(scale);
+        canoe.setScaleY(scale);
+        return canoe;
+    }
+
+    /** Creates one transparent, rounded vector path for the canoe artwork. */
+    private SVGPath strokedPath(String content, Color strokeColor, double strokeWidth) {
+        SVGPath path = new SVGPath();
+        path.setContent(content);
+        path.setFill(Color.TRANSPARENT);
+        path.setStroke(strokeColor);
+        path.setStrokeWidth(strokeWidth);
+        path.setStrokeLineCap(StrokeLineCap.ROUND);
+        path.setStrokeLineJoin(StrokeLineJoin.ROUND);
+        return path;
+    }
+
+    /** Creates an outlined head circle matching the canoe's line-art style. */
+    private Circle outlinedCircle(double centerX, double centerY, double radius, Color strokeColor) {
+        Circle circle = new Circle(centerX, centerY, radius, Color.TRANSPARENT);
+        circle.setStroke(strokeColor);
+        circle.setStrokeWidth(1.45);
+        return circle;
     }
 
     /**
@@ -141,7 +212,7 @@ public class IconButton extends Button {
      * @param cssClasses styles if needed
      */
     public void setBadgeIcon(IconGlyphType badgeGlyphType, @Nullable List<String> cssClasses) {
-        FontAwesomeIcon badgeIcon = createIcon(badgeGlyphType, this.iconSize / 2);
+        FontAwesomeIcon badgeIcon = createFontAwesomeIcon(badgeGlyphType, this.iconSize / 2);
         badgeIcon.setGlyphName(badgeGlyphType.getGlyphName());
         badgeIcon.setFill(ColorPaletteService.getColor("white"));
         if (cssClasses != null && !cssClasses.isEmpty()) badgeIcon.getStyleClass().addAll(cssClasses);

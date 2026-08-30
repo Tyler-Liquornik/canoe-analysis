@@ -51,7 +51,17 @@ public class PiecewiseContinuousLoadDistribution extends LoadDistribution {
             sections.add(sec);
             pieces.add(new BoundedUnivariateFunction() {
                 @Override
-                public double value(double x) {return weightFunc.value(x);}
+                public double value(double x) {
+                    // Hull property-map sections share their endpoints. At a thickness or
+                    // bulkhead transition the global function therefore has an ambiguous
+                    // value at the exact knot. Evaluate each load piece using its one-sided
+                    // interior value so an intentional step remains at the boundary rather
+                    // than appearing as a discontinuity inside the following piece.
+                    double interiorX = x;
+                    if (x <= sec.getX()) interiorX = Math.nextUp(sec.getX());
+                    else if (x >= sec.getRx()) interiorX = Math.nextDown(sec.getRx());
+                    return weightFunc.value(interiorX);
+                }
                 @Override
                 public double getMaxValue(Section s) {return weightFunc.getMaxValue(s);}
                 @Override

@@ -18,6 +18,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Objects;
 
 public class CanoeAnalysisApplication extends Application {
 
@@ -55,8 +56,10 @@ public class CanoeAnalysisApplication extends Application {
         scene.getStylesheets().add(ResourceManagerService.getResourceFilePathString("css/style.css", false));
         ColorManagerService.registerForRecoloringFromStylesheet(scene, "css/style.css");
 
-        // Adding Logo Icon
-        Image icon = new Image("file:src/main/resources/com/wecca/canoeanalysis/images/canoe.png");
+        // Resolve the icon from the classpath so it works from both the IDE and
+        // the JAR embedded inside native Windows/macOS packages.
+        Image icon = new Image(Objects.requireNonNull(
+                CanoeAnalysisApplication.class.getResource("images/canoe.png")).toExternalForm());
         stage.getIcons().add(icon);
 
         // Load the color from the previous session or the default orange "#F96C37" on first load

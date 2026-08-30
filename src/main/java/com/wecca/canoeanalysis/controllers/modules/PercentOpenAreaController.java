@@ -4,13 +4,18 @@ import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXColorPicker;
 import com.jfoenix.controls.JFXTextField;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.controllers.MainController;
+import com.wecca.canoeanalysis.controllers.popups.CanoePresetPopupController;
+import com.wecca.canoeanalysis.utils.CanoePreset;
 import com.wecca.canoeanalysis.utils.ColorUtils;
 import com.wecca.canoeanalysis.utils.InputParsingUtils;
+import com.wecca.canoeanalysis.utils.RaftPunkPreset;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
@@ -18,6 +23,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Setter;
@@ -30,9 +36,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.URL;
+import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
 public class PercentOpenAreaController implements Initializable, ModuleController {
 
@@ -162,6 +170,40 @@ public class PercentOpenAreaController implements Initializable, ModuleControlle
             mainController.showSnackbar("Cannot analyze before uploading image");
     }
 
+    /** Load Raft Punk's recorded mesh result and the competition threshold. */
+    private void loadRaftPunkPreset() {
+        // A stored numeric result has no source image to recolor or reanalyze,
+        // so clear any previous upload before displaying the preset values.
+        deleteImage();
+        passingPOATextField.setText(String.format("%.2f", RaftPunkPreset.PASSING_OPEN_AREA_PERCENT));
+        resultTextField.setText(String.format("%.2f", RaftPunkPreset.PADDL_OPEN_AREA_PERCENT));
+        passLabel.setVisible(RaftPunkPreset.PADDL_OPEN_AREA_PERCENT >= RaftPunkPreset.PASSING_OPEN_AREA_PERCENT);
+        failLabel.setVisible(!passLabel.isVisible());
+        mainController.showSnackbar("Loaded Raft Punk percent-open-area result");
+    }
+
+    /** Opens the shared yearly-canoe preset chooser. */
+    public void openCanoePresetPopup() {
+        CanoePresetPopupController.open(mainController, this::loadCanoePreset);
+    }
+
+    /** Routes a popup selection to the matching stored mesh result. */
+    private void loadCanoePreset(CanoePreset preset) {
+        switch (preset) {
+            case GIRRAFT_2025 -> mainController.showSnackbar("Not yet implemented");
+            case RAFT_PUNK_2026 -> loadRaftPunkPreset();
+        }
+    }
+
+    /** Installs the shared canoe preset control without moving form controls. */
+    private void initModuleToolBarButtons() {
+        LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> buttons = new LinkedHashMap<>();
+        buttons.put(IconGlyphType.CANOE, event -> openCanoePresetPopup());
+        mainController.resetToolBarButtons();
+        mainController.setIconToolBarButtons(buttons);
+        mainController.getModuleToolBarButtons().getFirst().setTooltip(new Tooltip("Canoe presets"));
+    }
+
     private double getPoaFromImage(File file) {
         Color color = colorPicker.getValue();
         int r = (int) (color.getRed() * 255);//get the RGB color of the ColorPicker
@@ -276,7 +318,7 @@ public class PercentOpenAreaController implements Initializable, ModuleControlle
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setMainController(CanoeAnalysisApplication.getMainController());
-        mainController.resetToolBarButtons();
+        initModuleToolBarButtons();
         passingPOATextField.setText("40.00");
         colorPicker.setValue(Color.web("#FFFFFF"));
         colorPicker.setDisable(true);

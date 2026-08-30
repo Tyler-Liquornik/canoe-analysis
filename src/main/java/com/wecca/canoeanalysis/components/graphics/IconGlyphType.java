@@ -20,6 +20,8 @@ public enum IconGlyphType {
     PLUS("PLUS"),
     MINUS("MINUS"),
     WRENCH("WRENCH"),
+    // CANOE is rendered as a custom vector in IconButton, not by FontAwesome.
+    CANOE("CANOE"),
     PENCIL("PENCIL"),
     DOWNLOAD("ARROW_CIRCLE_O_DOWN"),
     UPLOAD("ARROW_CIRCLE_O_UP"),

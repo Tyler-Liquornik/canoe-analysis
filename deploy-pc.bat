@@ -15,11 +15,15 @@ rem ------ ENVIRONMENT --------------------------------------------------------
 rem Environment variables must be set properly for this script to work.
 rem A generic example:
 rem $env:PROJECT_VERSION="1.0-SNAPSHOT"
-rem $env:APP_VERSION="1.0.0"
+rem $env:APP_VERSION="1.0.2"
 rem $env:JAVA_HOME="$env:USERPROFILE\.jdks\openjdk-21.0.2"
 rem $env:PATH="$env:JAVA_HOME\bin;$env:PATH"
 
 set JAVA_VERSION=21
+rem Keep the packaging script runnable when the optional environment variables
+rem have not been set explicitly in the current PowerShell session.
+IF "%PROJECT_VERSION%"=="" set PROJECT_VERSION=1.0-SNAPSHOT
+IF "%APP_VERSION%"=="" set APP_VERSION=1.0.2
 set MAIN_JAR=CanoeAnalysis-%PROJECT_VERSION%.jar
 set INSTALLER_TYPE=msi
 set APP_NAME=PADDL

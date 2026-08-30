@@ -80,6 +80,17 @@ public class CubicBezierSplineHullGraphic extends HullGraphic {
     }
 
     /**
+     * Shows or hides the Bézier knot/control handles without removing them.
+     * Preset hulls can therefore render as a clean outline until the user
+     * explicitly selects a section or enables knot editing.
+     *
+     * @param visible whether the construction handles should be visible
+     */
+    public void setBezierHandlesVisible(boolean visible) {
+        slopeGraphics.forEach(handle -> handle.getNode().setVisible(visible));
+    }
+
+    /**
      * Recolors all slope graphics based on the given boolean flag.
      * If true, all points are colored. If false, all points are uncolored.
      */

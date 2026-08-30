@@ -215,7 +215,8 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version>
+                <!-- This release supports the Java 21 runtime used by the native packages. -->
+                <version>3.2.5</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -247,6 +248,16 @@
                             <noManPages>true</noManPages>
                             <stripDebug>true</stripDebug>
                             <noHeaderFiles>true</noHeaderFiles>
+                            <!-- JFoenix still accesses these JavaFX internals; expose only
+                                 the packages required by the existing controls at runtime. -->
+                            <options>
+                                <option>--add-opens=java.base/java.lang.reflect=com.jfoenix</option>
+                                <option>--add-exports=javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix</option>
+                                <option>--add-exports=javafx.graphics/com.sun.javafx.stage=com.jfoenix</option>
+                                <option>--add-exports=javafx.base/com.sun.javafx.event=com.jfoenix</option>
+                                <option>--add-exports=javafx.base/com.sun.javafx.binding=com.jfoenix</option>
+                                <option>--add-exports=javafx.controls/com.sun.javafx.scene.control=com.jfoenix</option>
+                            </options>
                         </configuration>
                     </execution>
                 </executions>

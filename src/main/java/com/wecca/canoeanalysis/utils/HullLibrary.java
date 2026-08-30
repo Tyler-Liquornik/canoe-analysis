@@ -1,6 +1,7 @@
 package com.wecca.canoeanalysis.utils;
 
 import com.wecca.canoeanalysis.models.canoe.Hull;
+import com.wecca.canoeanalysis.models.canoe.HullProperties;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.services.HullGeometryService;
 import java.util.*;
@@ -16,7 +17,106 @@ public class HullLibrary {
 
     public static final double SHARK_BAIT_LENGTH = 6.0;
     public static final double GIRRAFT_LENGTH = 5.71;
+    public static final double RAFT_PUNK_LENGTH = 5.90;
     public static double scalingFactor = 1.0;
+
+    /**
+     * Generate the as-built Raft Punk hull preset from the final SolidWorks profile.
+     *
+     * The longitudinal side and top profiles were extracted from
+     * "0.21.07.02F (Final Profile)" and fitted to C1-continuous cubic Bezier
+     * curves. The report records a 12.9 mm as-built hull thickness. Five
+     * 60 mm-wide transverse ribs are represented by a 42.9 mm combined section
+     * (12.9 mm hull plus the reported 30 mm rib radius).
+     * The converging 30 mm tip sections use a 7 mm effective thickness because
+     * PADDL models them as walls rather than the solid end caps in the CAD file.
+     *
+     * The cured concrete density is the report's measured 832.11 kg/m^3. The
+     * bulkhead-density argument is unused because Raft Punk has no bulkheads.
+     *
+     * @return Raft Punk's full-size 5.90 m hull
+     */
+    public static Hull generateRaftPunkHull() {
+        scalingFactor = RAFT_PUNK_LENGTH / SHARK_BAIT_LENGTH;
+
+        // Each row stores one cubic Bezier segment as endpoint/control-point
+        // coordinates in metres. Adjacent rows share knot coordinates so the
+        // assembled side profile remains continuous along the full canoe.
+        List<CubicBezierFunction> sideViewSegments = List.of(
+                new CubicBezierFunction(0.000000, 0.000000000, 0.010000000, -0.088811360, 0.020000000, -0.283764319, 0.030000, -0.297937014),
+                new CubicBezierFunction(0.030000, -0.297937014, 0.053333333, -0.331006635, 0.076666667, -0.328453006, 0.100000, -0.329279013),
+                new CubicBezierFunction(0.100000, -0.329279013, 0.166666667, -0.331639032, 0.233333333, -0.333959477, 0.300000, -0.336335358),
+                new CubicBezierFunction(0.300000, -0.336335358, 0.450000000, -0.341681089, 0.600000000, -0.346735819, 0.750000, -0.350693698),
+                new CubicBezierFunction(0.750000, -0.350693698, 0.866666667, -0.353772049, 0.983333333, -0.355216782, 1.100000, -0.357737371),
+                new CubicBezierFunction(1.100000, -0.357737371, 1.120000000, -0.358169472, 1.140000000, -0.358416332, 1.160000, -0.358687549),
+                new CubicBezierFunction(1.160000, -0.358687549, 1.273333333, -0.360224447, 1.386666667, -0.359888723, 1.500000, -0.359951289),
+                new CubicBezierFunction(1.500000, -0.359951289, 1.670000000, -0.360045138, 1.840000000, -0.360361264, 2.010000, -0.359936020),
+                new CubicBezierFunction(2.010000, -0.359936020, 2.030000000, -0.359885991, 2.050000000, -0.359870993, 2.070000, -0.359839057),
+                new CubicBezierFunction(2.070000, -0.359839057, 2.213333333, -0.359610186, 2.356666667, -0.359766356, 2.500000, -0.359785181),
+                new CubicBezierFunction(2.500000, -0.359785181, 2.640000000, -0.359803569, 2.780000000, -0.360015349, 2.920000, -0.360107287),
+                new CubicBezierFunction(2.920000, -0.360107287, 2.940000000, -0.360120421, 2.960000000, -0.360146275, 2.980000, -0.360158598),
+                new CubicBezierFunction(2.980000, -0.360158598, 3.120000000, -0.360244857, 3.260000000, -0.360402278, 3.400000, -0.360375542),
+                new CubicBezierFunction(3.400000, -0.360375542, 3.543333333, -0.360348169, 3.686666667, -0.360422068, 3.830000, -0.360103853),
+                new CubicBezierFunction(3.830000, -0.360103853, 3.850000000, -0.360059451, 3.870000000, -0.360082987, 3.890000, -0.360056450),
+                new CubicBezierFunction(3.890000, -0.360056450, 4.026666667, -0.359875115, 4.163333333, -0.359365738, 4.300000, -0.358566426),
+                new CubicBezierFunction(4.300000, -0.358566426, 4.446666667, -0.357708627, 4.593333333, -0.354957276, 4.740000, -0.353317381),
+                new CubicBezierFunction(4.740000, -0.353317381, 4.760000000, -0.353093759, 4.780000000, -0.352083304, 4.800000, -0.351667781),
+                new CubicBezierFunction(4.800000, -0.351667781, 4.933333333, -0.348897625, 5.066666667, -0.344973872, 5.200000, -0.339626318),
+                new CubicBezierFunction(5.200000, -0.339626318, 5.333333333, -0.334278764, 5.466666667, -0.330160035, 5.600000, -0.323299441),
+                new CubicBezierFunction(5.600000, -0.323299441, 5.666666667, -0.319869144, 5.733333333, -0.320193290, 5.800000, -0.313008070),
+                new CubicBezierFunction(5.800000, -0.313008070, 5.823333333, -0.310493242, 5.846666667, -0.330987213, 5.870000, -0.172469284),
+                new CubicBezierFunction(5.870000, -0.172469284, 5.880000000, -0.104533029, 5.890000000, -0.062249629, 5.900000, 0.000000000)
+        );
+
+        // PADDL stores the top view as half-width from the centreline. The
+        // renderer mirrors these positive ordinates to display the full hull.
+        List<CubicBezierFunction> topViewSegments = List.of(
+                new CubicBezierFunction(0.000000, 0.000000000, 0.010000000, 0.011784633, 0.020000000, 0.006083055, 0.030000, 0.007946495),
+                new CubicBezierFunction(0.030000, 0.007946495, 0.053333333, 0.012294520, 0.076666667, 0.012943334, 0.100000, 0.017884618),
+                new CubicBezierFunction(0.100000, 0.017884618, 0.166666667, 0.032002574, 0.233333333, 0.045243674, 0.300000, 0.058911467),
+                new CubicBezierFunction(0.300000, 0.058911467, 0.450000000, 0.089664001, 0.600000000, 0.118264216, 0.750000, 0.147295623),
+                new CubicBezierFunction(0.750000, 0.147295623, 0.866666667, 0.169875607, 0.983333333, 0.190223145, 1.100000, 0.209749221),
+                new CubicBezierFunction(1.100000, 0.209749221, 1.120000000, 0.213096549, 1.140000000, 0.216810539, 1.160000, 0.219838260),
+                new CubicBezierFunction(1.160000, 0.219838260, 1.273333333, 0.236995347, 1.386666667, 0.255938083, 1.500000, 0.269535559),
+                new CubicBezierFunction(1.500000, 0.269535559, 1.670000000, 0.289931771, 1.840000000, 0.311915689, 2.010000, 0.323504985),
+                new CubicBezierFunction(2.010000, 0.323504985, 2.030000000, 0.324868432, 2.050000000, 0.326014459, 2.070000, 0.327945860),
+                new CubicBezierFunction(2.070000, 0.327945860, 2.213333333, 0.341787565, 2.356666667, 0.345433916, 2.500000, 0.352166664),
+                new CubicBezierFunction(2.500000, 0.352166664, 2.640000000, 0.358742836, 2.780000000, 0.357494729, 2.920000, 0.360835341),
+                new CubicBezierFunction(2.920000, 0.360835341, 2.940000000, 0.361312572, 2.960000000, 0.360813886, 2.980000, 0.360491147),
+                new CubicBezierFunction(2.980000, 0.360491147, 3.120000000, 0.358231974, 3.260000000, 0.359066250, 3.400000, 0.352584154),
+                new CubicBezierFunction(3.400000, 0.352584154, 3.543333333, 0.345947722, 3.686666667, 0.342001515, 3.830000, 0.327941066),
+                new CubicBezierFunction(3.830000, 0.327941066, 3.850000000, 0.325979143, 3.870000000, 0.324893898, 3.890000, 0.323635944),
+                new CubicBezierFunction(3.890000, 0.323635944, 4.026666667, 0.315039924, 4.163333333, 0.296822469, 4.300000, 0.281787809),
+                new CubicBezierFunction(4.300000, 0.281787809, 4.446666667, 0.265653052, 4.593333333, 0.242548693, 4.740000, 0.219833143),
+                new CubicBezierFunction(4.740000, 0.219833143, 4.760000000, 0.216735568, 4.780000000, 0.212926826, 4.800000, 0.209656433),
+                new CubicBezierFunction(4.800000, 0.209656433, 4.933333333, 0.187853807, 5.066666667, 0.163392403, 5.200000, 0.137480667),
+                new CubicBezierFunction(5.200000, 0.137480667, 5.333333333, 0.111568931, 5.466666667, 0.085956808, 5.600000, 0.058384510),
+                new CubicBezierFunction(5.600000, 0.058384510, 5.666666667, 0.044598362, 5.733333333, 0.030760445, 5.800000, 0.018084518),
+                new CubicBezierFunction(5.800000, 0.018084518, 5.823333333, 0.013647944, 5.846666667, 0.013557721, 5.870000, 0.008291283),
+                new CubicBezierFunction(5.870000, 0.008291283, 5.880000000, 0.006034239, 5.890000000, 0.012135214, 5.900000, 0.000000000)
+        );
+
+        // The short segment beginning at each listed x-position represents a
+        // transverse rib. Tip segments receive their separate effective wall
+        // thickness, while every other segment uses the measured shell value.
+        Set<Double> ribStarts = Set.of(1.10, 2.01, 2.92, 3.83, 4.74);
+        List<SectionPropertyMapEntry> thicknessMap = sideViewSegments.stream()
+                .map(segment -> new SectionPropertyMapEntry(
+                        segment.getX1(), segment.getX2(),
+                        String.valueOf(
+                                segment.getX1() == 0.0 || segment.getX2() == RAFT_PUNK_LENGTH ? 0.007
+                                        : ribStarts.contains(segment.getX1()) ? 0.0429 : 0.0129)))
+                .toList();
+        // Raft Punk is an open hull, so no longitudinal section is modeled as
+        // containing a closed bulkhead.
+        List<SectionPropertyMapEntry> bulkheadMap = sideViewSegments.stream()
+                .map(segment -> new SectionPropertyMapEntry(segment.getX1(), segment.getX2(), "false"))
+                .toList();
+
+        HullProperties hullProperties = new HullProperties(thicknessMap, bulkheadMap);
+        return new Hull(RaftPunkPreset.CURED_DENSITY_KG_PER_M3, 28.82,
+                hullProperties, sideViewSegments, topViewSegments);
+    }
 
     /**
      * Generate the hull for 2025's GirRaft canoe scaled to the specified length (from GIRRAFT_LENGTH = 5.71m)

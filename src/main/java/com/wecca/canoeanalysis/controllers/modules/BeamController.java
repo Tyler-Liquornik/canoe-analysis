@@ -168,8 +168,10 @@ public class BeamController implements Initializable, ModuleController {
         deleteLoadButton.setDisable(true);
         clearLoadsButton.setDisable(true);
         disableLoadingControls(true);
-        // mainController.disableModuleToolBarButton(true, 2);
         mainController.disableAllModuleToolbarButtons(true);
+        // Presets provide their own length, so the chooser must remain usable
+        // after Reset Canoe without requiring Set Length first.
+        mainController.disableModuleToolBarButton(false, 2);
         setCanoeLengthButton.setText("Set Length");
         setCanoeLengthButton.setOnAction(e -> setLength());
         resetInputFields();
@@ -250,6 +252,28 @@ public class BeamController implements Initializable, ModuleController {
             else mainController.showSnackbar("Length must be at between 2m and 10m");
         }
         else mainController.showSnackbar("One or more entered values are not valid numbers");
+    }
+
+    /**
+     * Replaces only the hull geometry for a yearly preset. Existing manual
+     * loads remain available, the support choice is unchanged, and the user
+     * retains control of the normal Solve System workflow.
+     *
+     * @param presetHull fresh hull instance selected from the preset popup
+     */
+    public void applyHullPreset(@NonNull Hull presetHull) {
+        canoe.setHull(presetHull);
+        canoe.setSolveType(SolveType.UNSOLVED);
+
+        // Keep the displayed length synchronized when a fixed-size preset such
+        // as Raft Punk replaces the initial beam/default hull.
+        canoeLengthComboBox.getSelectionModel().select("m");
+        canoeLengthTextField.setText(String.format(Locale.US, "%.2f", presetHull.getLength()));
+
+        setCanoe(canoe);
+        disableLoadingControls(false);
+        solveSystemButton.setText("Solve System");
+        solveSystemButton.setOnAction(e -> solveSystem());
     }
 
     /**
@@ -877,13 +901,25 @@ public class BeamController implements Initializable, ModuleController {
         mainController.showSnackbar(message);
     }
 
+    /** Opens the shared yearly-canoe preset chooser. */
+    public void openHullPresetPopup() {
+        CanoePresetPopupController.open(mainController, this::loadCanoePreset);
+    }
+
     /**
-     * Open the hull builder submodule (just a utility window for now until fully developed)
+     * Applies only the selected canoe's hull. GirRaft preserves the original
+     * wrench behavior when a length already exists and otherwise uses its
+     * full-size preset. Raft Punk always uses its fixed 5.90 m geometry.
      */
-    public void openHullBuilderPopup() {
-        HullBuilderPopupController.setMainController(mainController);
-        HullBuilderPopupController.setBeamController(this);
-        WindowManagerService.openUtilityWindow("Hull Builder Beta", "view/hull-builder-popup-view.fxml", 350, 230);
+    private void loadCanoePreset(CanoePreset preset) {
+        Hull presetHull;
+        if (preset == CanoePreset.GIRRAFT_2025 && canoe.getHull() != null) {
+            presetHull = HullLibrary.generateGirRaftHullScaled(canoe.getHull().getLength());
+        } else {
+            presetHull = preset.createFullSizeHull();
+        }
+        applyHullPreset(presetHull);
+        mainController.showSnackbar("Loaded " + preset.getDisplayName() + " hull");
     }
 
     /**
@@ -894,10 +930,14 @@ public class BeamController implements Initializable, ModuleController {
         LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> iconGlyphToFunctionMap = new LinkedHashMap<>();
         iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
-        iconGlyphToFunctionMap.put(IconGlyphType.WRENCH, e -> openHullBuilderPopup());
+        iconGlyphToFunctionMap.put(IconGlyphType.CANOE, e -> openHullPresetPopup());
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
+        mainController.getModuleToolBarButtons().get(2).setTooltip(new Tooltip("Canoe presets"));
         mainController.disableAllModuleToolbarButtons(true);
+        // Download/upload still require a canoe, but a preset can create one
+        // before the user manually enters a beam length.
+        mainController.disableModuleToolBarButton(false, 2);
     }
 
     /**

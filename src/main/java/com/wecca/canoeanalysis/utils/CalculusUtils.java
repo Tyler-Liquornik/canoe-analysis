@@ -120,7 +120,10 @@ public class CalculusUtils
             double curr = endpoints.get(i);
             double next = endpoints.get(i + 1);
 
-            if (next - curr < 0.01)
+            // Accept an intended 0.01 m interval even when binary floating
+            // point representation places it a few ulps below 0.01 (for
+            // example, 2.01 - 2.00). Genuinely shorter sections still fail.
+            if (next - curr < 0.01 - 1e-9)
                 throw new IllegalArgumentException("All sections must be of width at least 0.01m");
 
             sections.add(new Section(curr, next));

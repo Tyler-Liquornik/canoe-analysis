@@ -14,11 +14,11 @@ import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.services.color.ColorManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.animation.*;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.effect.DropShadow;
@@ -300,7 +300,9 @@ public class MainController implements Initializable {
 
         // Setup drop shadow on button
         Button button = moduleToolBarButtons.get(index);
-        FontAwesomeIcon icon = (FontAwesomeIcon) button.getGraphic();
+        // Toolbar graphics may be a FontAwesome glyph or PADDL's custom canoe
+        // vector; both are JavaFX Nodes and support the same effect animation.
+        Node icon = button.getGraphic();
         DropShadow dropShadow = new DropShadow();
         dropShadow.setColor(ColorPaletteService.getColor("above-surface"));
         dropShadow.setRadius(0);

@@ -9,6 +9,7 @@ import com.wecca.canoeanalysis.components.graphics.CurvedGraphic;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.components.graphics.hull.CubicBezierSplineHullGraphic;
 import com.wecca.canoeanalysis.controllers.MainController;
+import com.wecca.canoeanalysis.controllers.popups.CanoePresetPopupController;
 import com.wecca.canoeanalysis.models.canoe.Hull;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
 import com.wecca.canoeanalysis.models.function.Zone;
@@ -18,6 +19,7 @@ import com.wecca.canoeanalysis.services.MarshallingService;
 import com.wecca.canoeanalysis.services.WindowManagerService;
 import com.wecca.canoeanalysis.services.color.ColorPaletteService;
 import com.wecca.canoeanalysis.utils.CalculusUtils;
+import com.wecca.canoeanalysis.utils.CanoePreset;
 import com.wecca.canoeanalysis.utils.GraphicsUtils;
 import com.wecca.canoeanalysis.utils.HullLibrary;
 import javafx.beans.value.ChangeListener;
@@ -28,6 +30,7 @@ import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -132,6 +135,40 @@ public class HullBuilderController implements Initializable, ModuleController {
         toggleOrUpdateKnotEditingHullCurveOverlay(false);
     }
 
+    /** Opens the shared yearly-canoe preset chooser. */
+    public void openCanoePresetPopup() {
+        CanoePresetPopupController.open(mainController, this::loadCanoePreset);
+    }
+
+    /** Loads a fresh full-size yearly hull into the existing editor workflow. */
+    private void loadCanoePreset(CanoePreset preset) {
+        // GirRaft is currently supported only by the Beam module. Keep the
+        // shared chooser consistent without introducing unverified builder data.
+        if (preset == CanoePreset.GIRRAFT_2025) {
+            mainController.showSnackbar("Not yet implemented");
+            return;
+        }
+
+        // Clear any selection/editor state tied to the previously displayed
+        // hull before replacing the model and its property panel.
+        selectedBezierSegment = null;
+        selectedBezierSegmentIndex = -1;
+        previousPressedBefore = false;
+        nextPressedBefore = false;
+        sectionPropertiesSelected = false;
+        propertiesPanelTitleLabel.setText("Canoe Properties");
+
+        // Keep a separate deep copy for knot-drag previews, matching the normal
+        // hull-builder initialization path and preventing edits to the source preset.
+        Hull presetHull = preset.createFullSizeHull();
+        setHull(presetHull);
+        // Preset geometry remains inspectable immediately, including every
+        // knot and control-point dot used by the Hull Builder editor.
+        hullGraphic.setBezierHandlesVisible(true);
+        knotDraggingPreviewHull = MarshallingService.deepCopy(presetHull);
+        mainController.showSnackbar("Loaded " + preset.getDisplayName() + " hull preset");
+    }
+
     /**
      * Clears the toolbar of buttons from other modules and adds ones from this module
      */
@@ -140,8 +177,11 @@ public class HullBuilderController implements Initializable, ModuleController {
         iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> downloadHull());
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadHull());
         iconGlyphToFunctionMap.put(IconGlyphType.PENCIL, this::toggleKnotEditorMode);
+        // Keep the pencil at index 2 because toggleKnotEditorMode replaces it in place.
+        iconGlyphToFunctionMap.put(IconGlyphType.CANOE, e -> openCanoePresetPopup());
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
+        mainController.getModuleToolBarButtons().get(3).setTooltip(new Tooltip("Canoe presets"));
     }
 
     public void dummyOnClick(MouseEvent event) {
@@ -156,6 +196,7 @@ public class HullBuilderController implements Initializable, ModuleController {
     private void toggleKnotEditorMode(MouseEvent event) {
         if (event.getButton() != MouseButton.PRIMARY) return;
         knotEditorEnabled = !knotEditorEnabled;
+        if (knotEditorEnabled) hullGraphic.setBezierHandlesVisible(true);
         nextPressedBefore = false;
         previousPressedBefore = false;
         selectedBezierSegmentIndex = -1;
@@ -458,6 +499,9 @@ public class HullBuilderController implements Initializable, ModuleController {
      * @param isNext if true, selects the next segment; if false, selects the previous segment.
      */
     private void selectSegment(boolean isNext) {
+        // Section navigation is an explicit editing action, so keep every
+        // construction handle visible while selecting a segment.
+        hullGraphic.setBezierHandlesVisible(true);
         int delta = isNext ? 1 : -1;
         unlockKnobsOnFirstSectionSelect();
         if (!isNext) {

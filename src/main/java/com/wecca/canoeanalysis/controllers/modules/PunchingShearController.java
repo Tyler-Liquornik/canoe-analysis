@@ -4,18 +4,22 @@ import com.jfoenix.controls.JFXTextField;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.controllers.MainController;
+import com.wecca.canoeanalysis.controllers.popups.CanoePresetPopupController;
 import com.wecca.canoeanalysis.models.canoe.Canoe;
 import com.wecca.canoeanalysis.models.canoe.FloatingSolution;
 import com.wecca.canoeanalysis.models.data.SolveType;
 import com.wecca.canoeanalysis.models.load.PiecewiseContinuousLoadDistribution;
 import com.wecca.canoeanalysis.services.*;
 import com.wecca.canoeanalysis.utils.InputParsingUtils;
+import com.wecca.canoeanalysis.utils.CanoePreset;
+import com.wecca.canoeanalysis.utils.RaftPunkPreset;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import lombok.Setter;
@@ -63,6 +67,82 @@ public class PunchingShearController implements Initializable, ModuleController 
      */
     public void maxShearToVf(){
         oneWayVfTextField.setText(maxShearTextField.getText());
+    }
+
+    /**
+     * Populates all editable punching-shear inputs, restores the associated
+     * floating-canoe diagram, and calculates both result panels.
+     */
+    private void loadRaftPunkPreset() {
+        // Use the module's original canoe-loading path so the preset restores
+        // the shear diagram as well as the scalar calculation inputs.
+        reset();
+        setValues(RaftPunkPreset.createGoverningPunchingShearCanoe());
+
+        // Use the nominal shell dimensions rather than the thicker structural zones.
+        hullThicknessTextField.setText(String.format(Locale.US, "%.2f", RaftPunkPreset.structuralThicknessMm()));
+        hullWidthTextField.setText(String.format(Locale.US, "%.2f", RaftPunkPreset.nominalMaximumWidthMm()));
+        compressiveStrengthTextField.setText(String.format(Locale.US, "%.2f", RaftPunkPreset.COMPRESSIVE_STRENGTH_MPA));
+        maxShearTextField.setText(String.format(Locale.US, "%.2f", RaftPunkPreset.maximumShearN()));
+        maxShearToVf();
+        calculateRaftPunkPresetResults();
+        mainController.showSnackbar("Loaded Raft Punk punching-shear values");
+    }
+
+    /** Opens the shared yearly-canoe preset chooser. */
+    public void openCanoePresetPopup() {
+        CanoePresetPopupController.open(mainController, this::loadCanoePreset);
+    }
+
+    /** Routes a popup selection to the matching punching-shear data set. */
+    private void loadCanoePreset(CanoePreset preset) {
+        switch (preset) {
+            case GIRRAFT_2025 -> mainController.showSnackbar("Not yet implemented");
+            case RAFT_PUNK_2026 -> loadRaftPunkPreset();
+        }
+    }
+
+    /** Calculates preset outputs without altering the module's manual button workflows. */
+    private void calculateRaftPunkPresetResults() {
+        // One-way capacity is a force, so it can be compared directly with the
+        // Vf field after both have been expressed in newtons.
+        PunchingShearService.OneWayResult oneWay = PunchingShearService.calculateOneWay(
+                Double.parseDouble(hullThicknessTextField.getText()),
+                Double.parseDouble(hullWidthTextField.getText()),
+                Double.parseDouble(compressiveStrengthTextField.getText()));
+        oneWayVcTextField.setText(String.format(Locale.US, "%.2f", oneWay.capacityN()));
+        oneWayVcTextField.setStyle(oneWayVcTextField.getStyle() + " -fx-opacity: 1");
+        safetyTest1();
+
+        // Two-way demand and capacity are stresses in MPa. Retain extra decimal
+        // places for the three candidate capacities so their minimum is visible.
+        PunchingShearService.TwoWayResult twoWay = PunchingShearService.calculateTwoWay(
+                Double.parseDouble(hullThicknessTextField.getText()),
+                Double.parseDouble(compressiveStrengthTextField.getText()),
+                Double.parseDouble(maxShearTextField.getText()),
+                RaftPunkPreset.PADDLER_CONTACT_AREA_MM2);
+
+        twoWayPCritTextField.setText(String.format(Locale.US, "%.2f", twoWay.criticalPerimeterMm()));
+        twoWayACritTextField.setText(String.format(Locale.US, "%.2f", twoWay.criticalAreaMm2()));
+        twoWayVfTextField.setText(String.format(Locale.US, "%.2f", twoWay.demandMpa()));
+        twoWayVc1TextField.setText(String.format(Locale.US, "%.4f", twoWay.capacityXMpa()));
+        twoWayVc2TextField.setText(String.format(Locale.US, "%.4f", twoWay.capacityYMpa()));
+        twoWayVc3TextField.setText(String.format(Locale.US, "%.4f", twoWay.capacityZMpa()));
+        twoWayVcMinTextField.setText(String.format(Locale.US, "%.4f", twoWay.governingCapacityMpa()));
+
+        // Calculated JFoenix fields are disabled in the legacy view; restoring
+        // opacity keeps the preset results readable without changing editability.
+        for (TextField field : List.of(
+                twoWayPCritTextField,
+                twoWayACritTextField,
+                twoWayVfTextField,
+                twoWayVc1TextField,
+                twoWayVc2TextField,
+                twoWayVc3TextField,
+                twoWayVcMinTextField)) {
+            field.setStyle(field.getStyle() + " -fx-opacity: 1");
+        }
+        safetyTest2();
     }
 
     /**
@@ -214,8 +294,10 @@ public class PunchingShearController implements Initializable, ModuleController 
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.BOOK, e -> openGlossary());
         iconGlyphToFunctionMap.put(IconGlyphType.RESET, e -> reset());
+        iconGlyphToFunctionMap.put(IconGlyphType.CANOE, e -> openCanoePresetPopup());
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
+        mainController.getModuleToolBarButtons().get(3).setTooltip(new Tooltip("Canoe presets"));
     }
 
     /**
