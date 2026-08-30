@@ -39,7 +39,7 @@ public class IconButton extends Button {
      * @param onClickFunction The action to perform when the button is pressed.
      * @param onReleaseFunction The action to perform when the button is released (optional).
      * @param cssClasses The initial CSS classes to apply to the button (optional)
-     * @param iconSize The size of the icon
+     * @param iconSize The size  of the icon
      */
     private IconButton(IconGlyphType iconGlyphName,
                        @Nullable IconGlyphType badgeGlyphName,
