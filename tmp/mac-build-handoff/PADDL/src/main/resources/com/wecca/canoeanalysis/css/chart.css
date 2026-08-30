@@ -1,0 +1,57 @@
+@import url("style.css");
+
+.chart {
+    -fx-background-color: -fx-background;
+    -fx-border-width: 1px;
+}
+
+.chart-plot-background {
+    -fx-background-color: -fx-surface;
+}
+
+.chart-area-symbol {
+    -fx-background-radius: 1px;
+    -fx-padding: 0px;
+}
+
+.axis-label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.axis.x {
+    -fx-translate-y: -10;
+}
+
+.axis-tick-label {
+    -fx-font-size: 11px;
+    -fx-rotate: 0;
+    -fx-alignment: center-left;
+}
+
+.chart-title {
+    -fx-font-weight: bold;
+}
+
+.chart-series-area-line {
+    -fx-stroke: -fx-primary;
+    -fx-stroke-width: 2px;
+}
+
+.chart-series-area-fill {
+    -fx-fill: -fx-primary;
+    -fx-opacity: 0.4;
+}
+
+.chart-series-area-fill:hover {
+    -fx-fill: -fx-primary;
+    -fx-opacity: 0.6;
+}
+
+.axis:bottom > .axis-label,
+.axis:right > .axis-label,
+.axis-tick-mark,
+.axis-minor-tick-mark {
+    -fx-fill: white;
+}
+
