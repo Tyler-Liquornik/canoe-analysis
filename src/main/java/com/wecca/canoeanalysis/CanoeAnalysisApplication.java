@@ -2,6 +2,7 @@ package com.wecca.canoeanalysis;
 
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.controllers.modules.ModuleSelectorController;
+import com.wecca.canoeanalysis.aop.Debouncer;
 import com.wecca.canoeanalysis.models.data.Settings;
 import com.wecca.canoeanalysis.services.LoggerService;
 import com.wecca.canoeanalysis.services.ResourceManagerService;
@@ -66,6 +67,17 @@ public class CanoeAnalysisApplication extends Application {
         ColorManagerService.putColorPalette("primary", MarshallingService
                         .loadYamlData(Settings.class, new Settings("#F96C37"), MarshallingService.SETTINGS_FILE_PATH)
                         .getPrimaryColor());
+    }
+
+    /**
+     * Release background services and file-backed logging when the final
+     * JavaFX window closes. Without this cleanup, a hidden PADDL process can
+     * survive and block a later Windows installer from replacing debug.txt.
+     */
+    @Override
+    public void stop() {
+        Debouncer.shutdown();
+        LoggerService.shutdown();
     }
 
     public static void main(String[] args) {

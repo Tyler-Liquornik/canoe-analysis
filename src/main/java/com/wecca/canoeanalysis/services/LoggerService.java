@@ -1,11 +1,14 @@
 package com.wecca.canoeanalysis.services;
 
 import ch.qos.logback.core.PropertyDefinerBase;
+import ch.qos.logback.classic.LoggerContext;
 import com.wecca.canoeanalysis.models.function.Section;
 import javafx.geometry.Point2D;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import com.wecca.canoeanalysis.models.function.CubicBezierFunction;
+import org.slf4j.ILoggerFactory;
+import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
@@ -94,6 +97,18 @@ public class LoggerService {
                     throw new RuntimeException("Could not create log directory", e);
                 }
             }
+        }
+    }
+
+    /**
+     * Flush and close Logback appenders when PADDL exits. In packaged builds,
+     * this releases the debug log before a Windows installer upgrades or
+     * removes the application directory.
+     */
+    public static void shutdown() {
+        ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
+        if (loggerFactory instanceof LoggerContext loggerContext) {
+            loggerContext.stop();
         }
     }
 

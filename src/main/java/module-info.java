@@ -15,6 +15,7 @@ module com.wecca.canoeanalysis {
     requires org.slf4j;
     requires org.aspectj.weaver;
     requires ch.qos.logback.core;
+    requires ch.qos.logback.classic;
     requires javaGeom;
     requires jama;
     requires com.fasterxml.jackson.dataformat.smile;

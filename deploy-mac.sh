@@ -15,7 +15,7 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
 fi
 
 PROJECT_VERSION="${PROJECT_VERSION:-1.0-SNAPSHOT}"
-APP_VERSION="${APP_VERSION:-1.0.2}"
+APP_VERSION="${APP_VERSION:-1.0.4}"
 APP_NAME="PADDL"
 MAIN_JAR="CanoeAnalysis-${PROJECT_VERSION}.jar"
 
