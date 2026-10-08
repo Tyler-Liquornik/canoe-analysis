@@ -39,6 +39,11 @@
                   <FontAwesomeIcon fx:id="poaIcon" fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
                </graphic>
             </JFXButton>
+            <JFXButton layoutY="340.0" maxHeight="40.0" maxWidth="175.0" minHeight="40.0" minWidth="175.0" onAction="#clickStlLoaderButton" prefHeight="40.0" prefWidth="175.0" text="STL Loader" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+               <graphic>
+                  <FontAwesomeIcon fx:id="stlLoaderIcon" fill="WHITE" glyphName="ANGLE_RIGHT" wrappingWidth="15.0" />
+               </graphic>
+            </JFXButton>
             <JFXButton layoutY="508.0" maxHeight="40.0" maxWidth="175.0" minHeight="40.0" minWidth="175.0" onAction="#clickSettingsButton" prefHeight="40.0" prefWidth="175.0" text=" Settings" AnchorPane.bottomAnchor="40.0">
                <graphic>
                   <FontAwesomeIcon fill="WHITE" glyphName="GEAR" wrappingWidth="15.0" />

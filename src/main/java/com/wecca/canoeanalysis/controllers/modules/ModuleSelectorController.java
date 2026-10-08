@@ -20,7 +20,8 @@ import java.util.ResourceBundle;
 public class ModuleSelectorController implements Initializable {
 
     @FXML
-    private FontAwesomeIcon hullBuilderIcon, beamIcon, punchingShearIcon, criticalSectionsIcon, failureEnvelopeIcon, poaIcon;
+    private FontAwesomeIcon hullBuilderIcon, beamIcon, punchingShearIcon, criticalSectionsIcon,
+            failureEnvelopeIcon, poaIcon, stlLoaderIcon;
 
     public static ModuleController selectedModuleController;
     public static Module selectedModule;
@@ -36,7 +37,8 @@ public class ModuleSelectorController implements Initializable {
         PUNCHING_SHEAR("punching-shear-view"),
         CRITICAL_SECTIONS("critical-sections-view"),
         FAILURE_ENVELOPE("failure-envelope-view"),
-        PERCENT_OPEN_AREA("percent-open-area-view");
+        PERCENT_OPEN_AREA("percent-open-area-view"),
+        STL_LOADER("stl-loader-view");
 
         private final String viewName;
 
@@ -52,6 +54,7 @@ public class ModuleSelectorController implements Initializable {
     public void clickCriticalSectionsButton() throws IOException {selectModule(Module.CRITICAL_SECTIONS, false);}
     public void clickFailureEnvelopeButton() throws IOException {selectModule(Module.FAILURE_ENVELOPE, false);}
     public void clickPoaButton() throws IOException {selectModule(Module.PERCENT_OPEN_AREA, false);}
+    public void clickStlLoaderButton() throws IOException {selectModule(Module.STL_LOADER, false);}
 
     // Auxiliary button handlers
     public void clickSettingsButton() {
@@ -59,7 +62,7 @@ public class ModuleSelectorController implements Initializable {
     }
 
     public void clickAboutButton() {
-        WindowManagerService.openUtilityWindow("About Me", "view/about-view.fxml", 550, 325);
+        WindowManagerService.openUtilityWindow("About PADDL", "view/about-view.fxml", 760, 465);
     }
 
     /**
@@ -108,7 +111,8 @@ public class ModuleSelectorController implements Initializable {
                 Module.PUNCHING_SHEAR, punchingShearIcon,
                 Module.CRITICAL_SECTIONS, criticalSectionsIcon,
                 Module.FAILURE_ENVELOPE, failureEnvelopeIcon,
-                Module.PERCENT_OPEN_AREA, poaIcon
-        );;
+                Module.PERCENT_OPEN_AREA, poaIcon,
+                Module.STL_LOADER, stlLoaderIcon
+        );
     }
 }
