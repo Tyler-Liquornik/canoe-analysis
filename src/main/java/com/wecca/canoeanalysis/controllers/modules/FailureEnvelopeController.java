@@ -2,6 +2,8 @@ package com.wecca.canoeanalysis.controllers.modules;
 
 import com.jfoenix.controls.JFXTextField;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.services.CalculationReport;
+import com.wecca.canoeanalysis.services.CalculationReportWindow;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.controllers.popups.CanoePresetPopupController;
@@ -73,21 +75,25 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
     @FXML
     private JFXTextField maxTensile;
     @FXML
+    private JFXTextField compressiveStrengthField;
+    @FXML
+    private JFXTextField shearInertiaField;
+    @FXML
     private JFXTextField maxShearStress;
 
     // Host pane whose dimensions drive the single combined chart canvas.
     @FXML
     private Pane chartPane;
 
+    private CalculationReport calculationReport;
+
     @Setter
     private static MainController mainController;
 
-    // Current chart state. The two preset-only strengths are cleared as soon
-    // as the user edits an input so manual calculations cannot retain them.
+    // Current chart and calculation snapshot.
     private Canvas chartCanvas;
     private Analysis currentAnalysis;
-    private Double presetShearMomentOfInertia;
-    private Double presetCompressiveStrength;
+
 
     /** Wires field validation and keeps the chart canvas synchronized with its pane. */
     @Override
@@ -103,8 +109,7 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
 
         inputFields().forEach(field -> field.textProperty().addListener((observable, oldValue, newValue) -> {
             field.getStyleClass().remove("invalid-input");
-            presetShearMomentOfInertia = null;
-            presetCompressiveStrength = null;
+            calculationReport = null;
         }));
 
         Platform.runLater(this::resizeAndDrawChart);
@@ -119,11 +124,7 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
         inputFields().forEach(field -> field.getStyleClass().remove("invalid-input"));
         SectionInputs inputs = readSectionInputs();
         Double tensileStrength = readNumber(maxTensile, false);
-        Double compressiveStrength = inputs == null
-                ? null
-                : presetCompressiveStrength == null
-                        ? inputs.compressionEdgeDistance()
-                        : presetCompressiveStrength;
+        Double compressiveStrength = readNumber(compressiveStrengthField, false);
         if (inputs == null || compressiveStrength == null || tensileStrength == null) {
             mainController.showSnackbar("Please fill every input with a valid number before generating the diagram.");
             return;
@@ -137,14 +138,20 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
                     inputs.tensionEdgeDistance(),
                     inputs.firstMoment(),
                     inputs.bendingSecondMoment(),
-                    presetShearMomentOfInertia == null
-                            ? inputs.bendingSecondMoment()
-                            : presetShearMomentOfInertia,
+                    inputs.shearSecondMoment(),
                     inputs.thickness(),
                     inputs.maximumMoment(),
                     inputs.maximumShear());
+            captureStressReport(inputs);
+            calculationReport.add("m", "(ft − fc) / (2 × √(fc × ft))", "(" + tensileStrength + " − " + compressiveStrength + ") / (2 × √(" + compressiveStrength + " × " + tensileStrength + "))", currentAnalysis.envelope().slope(), "");
+            calculationReport.add("b", "√(fc × ft) / 2", "√(" + compressiveStrength + " × " + tensileStrength + ") / 2", currentAnalysis.envelope().interceptMpa(), "MPa");
+            addCircleReport("b", currentAnalysis.bendingStressCircle(), currentAnalysis.envelope(), currentAnalysis.envelopeUtilization());
+            addCircleReport("s", currentAnalysis.shearStressCircle(), currentAnalysis.envelope(), currentAnalysis.shearUtilization());
+            calculationReport.add("u", "max(ub, us)", "max(" + currentAnalysis.envelopeUtilization() + ", " + currentAnalysis.shearUtilization() + ")", currentAnalysis.governingUtilization(), "");
+            calculationReport.add("FOS", "1 / u", "1 / " + currentAnalysis.governingUtilization(), currentAnalysis.factorOfSafety(), "");
             displayCalculatedStresses(currentAnalysis.stresses());
             drawChart();
+            CalculationReportWindow.show(mainController.getPrimaryStage(), calculationReport);
         } catch (IllegalArgumentException exception) {
             mainController.showSnackbar(exception.getMessage());
         }
@@ -161,21 +168,28 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
         }
 
         try {
-            FailureEnvelopeService.StressResults stresses = FailureEnvelopeService.calculateSectionStresses(
-                    inputs.compressionEdgeDistance(),
-                    inputs.tensionEdgeDistance(),
-                    inputs.firstMoment(),
-                    inputs.bendingSecondMoment(),
-                    presetShearMomentOfInertia == null
-                            ? inputs.bendingSecondMoment()
-                            : presetShearMomentOfInertia,
-                    inputs.thickness(),
-                    inputs.maximumMoment(),
-                    inputs.maximumShear());
+            FailureEnvelopeService.StressResults stresses = captureStressReport(inputs);
             displayCalculatedStresses(stresses);
+            CalculationReportWindow.show(mainController.getPrimaryStage(), calculationReport);
         } catch (IllegalArgumentException exception) {
             mainController.showSnackbar(exception.getMessage());
         }
+    }
+
+    private void addCircleReport(String suffix, MohrCircle circle, EnvelopeLine envelope, double utilization) {
+        calculationReport.add("u" + suffix, "(|m × C| + R × √(1 + m × m)) / b",
+                "(|" + CalculationReport.number(envelope.slope()) + " × " + CalculationReport.number(circle.centerMpa())
+                + "| + " + CalculationReport.number(circle.radiusMpa()) + " × √(1 + "
+                + CalculationReport.number(envelope.slope()) + " × " + CalculationReport.number(envelope.slope())
+                + ")) / " + CalculationReport.number(envelope.interceptMpa()), utilization, "");
+    }
+
+    private FailureEnvelopeService.StressResults captureStressReport(SectionInputs inputs) {
+        calculationReport = new CalculationReport("Failure envelope — section stresses (kN, m → MPa)");
+        return FailureEnvelopeService.calculateSectionStresses(inputs.compressionEdgeDistance(),
+                inputs.tensionEdgeDistance(), inputs.firstMoment(), inputs.bendingSecondMoment(),
+                inputs.shearSecondMoment(),
+                inputs.thickness(), inputs.maximumMoment(), inputs.maximumShear(), calculationReport);
     }
 
     /** Populate the report inputs and generate Raft Punk's combined envelope. */
@@ -190,13 +204,9 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
         canoeThickness.setText(String.format(Locale.US, "%.3f", RaftPunkPreset.NOMINAL_STRUCTURAL_THICKNESS_M));
         maxTensile.setText(String.format(Locale.US, "%.2f", RaftPunkPreset.TENSILE_STRENGTH_MPA));
 
-        // The shear-critical section uses a different inertia, and compressive
-        // strength has no dedicated legacy text field. Preserve both as preset
-        // metadata until a user edit switches the form back to manual mode.
-        presetShearMomentOfInertia = RaftPunkPreset.SHEAR_SECOND_MOMENT_OF_AREA_M4;
-        presetCompressiveStrength = RaftPunkPreset.COMPRESSIVE_STRENGTH_MPA;
+        shearInertiaField.setText(Double.toString(RaftPunkPreset.SHEAR_SECOND_MOMENT_OF_AREA_M4));
+        compressiveStrengthField.setText(Double.toString(RaftPunkPreset.COMPRESSIVE_STRENGTH_MPA));
 
-        calculateValues();
         generateDiagrams();
         mainController.showSnackbar("Loaded Raft Punk failure-envelope values");
     }
@@ -218,12 +228,14 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
     private void initModuleToolBarButtons() {
         LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> buttons = new LinkedHashMap<>();
         buttons.put(IconGlyphType.CANOE, event -> openCanoePresetPopup());
+        buttons.put(IconGlyphType.DOWNLOAD, event -> CalculationReportWindow.show(mainController.getPrimaryStage(), calculationReport));
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(buttons);
+        mainController.getModuleToolBarButtons().get(1).setTooltip(new Tooltip("Report algebra: preview, copy or export"));
         mainController.getModuleToolBarButtons().getFirst().setTooltip(new Tooltip("Canoe presets"));
     }
 
-    /** @return every editable field that invalidates preset-only metadata when changed */
+    /** @return every editable calculation input */
     private List<JFXTextField> inputFields() {
         return List.of(
                 compressionField,
@@ -233,7 +245,9 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
                 maxMoment,
                 canoeThickness,
                 maxShear,
-                maxTensile);
+                maxTensile,
+                compressiveStrengthField,
+                shearInertiaField);
     }
 
     /** @return the geometry and action fields required for stress calculation */
@@ -245,7 +259,8 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
                 momentOfInertia,
                 maxMoment,
                 canoeThickness,
-                maxShear);
+                maxShear,
+                shearInertiaField);
     }
 
     /**
@@ -258,6 +273,8 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
         Double tensionEdgeDistance = readNumber(tensionField, false);
         Double firstMoment = readNumber(qMax, false);
         Double bendingSecondMoment = readNumber(momentOfInertia, false);
+        Double shearSecondMoment = shearInertiaField.getText().isBlank()
+                ? bendingSecondMoment : readNumber(shearInertiaField, false);
         Double thickness = readNumber(canoeThickness, false);
         Double maximumMoment = readNumber(maxMoment, true);
         Double maximumShear = readNumber(maxShear, true);
@@ -266,6 +283,7 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
                 || tensionEdgeDistance == null
                 || firstMoment == null
                 || bendingSecondMoment == null
+                || shearSecondMoment == null
                 || thickness == null
                 || maximumMoment == null
                 || maximumShear == null) {
@@ -276,6 +294,7 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
                 tensionEdgeDistance,
                 firstMoment,
                 bendingSecondMoment,
+                shearSecondMoment,
                 thickness,
                 maximumMoment,
                 maximumShear);
@@ -593,6 +612,7 @@ public class FailureEnvelopeController implements Initializable, ModuleControlle
             double tensionEdgeDistance,
             double firstMoment,
             double bendingSecondMoment,
+            double shearSecondMoment,
             double thickness,
             double maximumMoment,
             double maximumShear) {

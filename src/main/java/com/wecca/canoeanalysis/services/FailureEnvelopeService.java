@@ -195,6 +195,18 @@ public final class FailureEnvelopeService {
             double thicknessM,
             double maximumMomentKnM,
             double maximumShearKn) {
+        return calculateSectionStresses(compressionEdgeDistanceM, tensionEdgeDistanceM, firstMomentOfAreaM3, bendingSecondMomentOfAreaM4, shearSecondMomentOfAreaM4, thicknessM, maximumMomentKnM, maximumShearKn, null);
+    }
+
+    public static StressResults calculateSectionStresses(
+            double compressionEdgeDistanceM,
+            double tensionEdgeDistanceM,
+            double firstMomentOfAreaM3,
+            double bendingSecondMomentOfAreaM4,
+            double shearSecondMomentOfAreaM4,
+            double thicknessM,
+            double maximumMomentKnM,
+            double maximumShearKn, CalculationReport report) {
 
         requirePositive("Compression edge distance", compressionEdgeDistanceM);
         requirePositive("Tension edge distance", tensionEdgeDistanceM);
@@ -209,10 +221,13 @@ public final class FailureEnvelopeService {
         // 1,000,000 gives the compact forms below in MPa.
         double compressionMpa = maximumMomentKnM * compressionEdgeDistanceM
                 / (1_000.0 * bendingSecondMomentOfAreaM4);
+        if (report != null) report.add("σc", "M × yc / (1000 × Ib)", CalculationReport.number(maximumMomentKnM) + " × " + CalculationReport.number(compressionEdgeDistanceM) + " / (1000 × " + CalculationReport.number(bendingSecondMomentOfAreaM4) + ")", compressionMpa, "MPa");
         double tensionMpa = maximumMomentKnM * tensionEdgeDistanceM
                 / (1_000.0 * bendingSecondMomentOfAreaM4);
+        if (report != null) report.add("σt", "M × yt / (1000 × Ib)", CalculationReport.number(maximumMomentKnM) + " × " + CalculationReport.number(tensionEdgeDistanceM) + " / (1000 × " + CalculationReport.number(bendingSecondMomentOfAreaM4) + ")", tensionMpa, "MPa");
         double shearMpa = maximumShearKn * firstMomentOfAreaM3
                 / (1_000.0 * shearSecondMomentOfAreaM4 * thicknessM);
+        if (report != null) report.add("τ", "V × Q / (1000 × Is × t)", CalculationReport.number(maximumShearKn) + " × " + CalculationReport.number(firstMomentOfAreaM3) + " / (1000 × " + CalculationReport.number(shearSecondMomentOfAreaM4) + " × " + CalculationReport.number(thicknessM) + ")", shearMpa, "MPa");
 
         return new StressResults(compressionMpa, tensionMpa, shearMpa);
     }

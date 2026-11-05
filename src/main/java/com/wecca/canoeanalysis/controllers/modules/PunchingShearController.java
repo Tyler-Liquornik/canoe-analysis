@@ -2,6 +2,8 @@ package com.wecca.canoeanalysis.controllers.modules;
 
 import com.jfoenix.controls.JFXTextField;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.services.CalculationReport;
+import com.wecca.canoeanalysis.services.CalculationReportWindow;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.controllers.popups.CanoePresetPopupController;
@@ -46,6 +48,8 @@ public class PunchingShearController implements Initializable, ModuleController 
     @FXML
     private AnchorPane chartContainer;
 
+    private CalculationReport calculationReport;
+
     @Setter
     private static MainController mainController;
 
@@ -55,7 +59,7 @@ public class PunchingShearController implements Initializable, ModuleController 
     private final double squareColumn = 1;
     private final double concrete = 0.65;
     private final double kneeDiameter = 30;
-    private final double punchingShearForce = 625.3875;
+
 
     // Variables to store user inputs
     private double canoeThickness;
@@ -104,12 +108,13 @@ public class PunchingShearController implements Initializable, ModuleController 
 
     /** Calculates preset outputs without altering the module's manual button workflows. */
     private void calculateRaftPunkPresetResults() {
+        calculationReport = new CalculationReport("Punching shear — preset equations");
         // One-way capacity is a force, so it can be compared directly with the
         // Vf field after both have been expressed in newtons.
         PunchingShearService.OneWayResult oneWay = PunchingShearService.calculateOneWay(
                 Double.parseDouble(hullThicknessTextField.getText()),
                 Double.parseDouble(hullWidthTextField.getText()),
-                Double.parseDouble(compressiveStrengthTextField.getText()));
+                Double.parseDouble(compressiveStrengthTextField.getText()), calculationReport);
         oneWayVcTextField.setText(String.format(Locale.US, "%.2f", oneWay.capacityN()));
         oneWayVcTextField.setStyle(oneWayVcTextField.getStyle() + " -fx-opacity: 1");
         safetyTest1();
@@ -120,7 +125,7 @@ public class PunchingShearController implements Initializable, ModuleController 
                 Double.parseDouble(hullThicknessTextField.getText()),
                 Double.parseDouble(compressiveStrengthTextField.getText()),
                 Double.parseDouble(maxShearTextField.getText()),
-                RaftPunkPreset.PADDLER_CONTACT_AREA_MM2);
+                RaftPunkPreset.PADDLER_CONTACT_AREA_MM2, calculationReport);
 
         twoWayPCritTextField.setText(String.format(Locale.US, "%.2f", twoWay.criticalPerimeterMm()));
         twoWayACritTextField.setText(String.format(Locale.US, "%.2f", twoWay.criticalAreaMm2()));
@@ -143,6 +148,7 @@ public class PunchingShearController implements Initializable, ModuleController 
             field.setStyle(field.getStyle() + " -fx-opacity: 1");
         }
         safetyTest2();
+        showCalculationReport();
     }
 
     /**
@@ -193,16 +199,33 @@ public class PunchingShearController implements Initializable, ModuleController 
      * Displays the calculated value in the UI.
      */
     public void calculateOneWay() {
-        if (InputParsingUtils.allTextFieldsAreDouble(Arrays.asList(hullThicknessTextField, hullWidthTextField, compressiveStrengthTextField))) {
+        if (positiveInputs(hullThicknessTextField, hullWidthTextField, compressiveStrengthTextField)) {
+            calculationReport = new CalculationReport("Punching shear — manual one-way equations");
             canoeThickness = Double.parseDouble(hullThicknessTextField.getText());
             hullWidth = Double.parseDouble(hullWidthTextField.getText());
             compressiveStrength = Double.parseDouble(compressiveStrengthTextField.getText());
             double vc = concrete * lowDensityConcrete * squareColumn * Math.sqrt(compressiveStrength) * hullWidth * canoeThickness;
+            calculationReport.add("Vc", "0.65 × 0.75 × 1 × √(f′c) × b × h", "" + CalculationReport.number(concrete) + " × " + CalculationReport.number(lowDensityConcrete) + " × " + CalculationReport.number(squareColumn) + " × √(" + CalculationReport.number(compressiveStrength) + ") × " + CalculationReport.number(hullWidth) + " × " + CalculationReport.number(canoeThickness) + "", vc, "N");
             oneWayVcTextField.setText(String.format("%.2f", vc));
             oneWayVcTextField.setStyle(oneWayVcTextField.getStyle() + " -fx-opacity: 1");
             safetyTest1();
+            showCalculationReport();
         }
         else mainController.showSnackbar("Please fill all the fields with valid numeric values.");
+    }
+
+    private boolean positiveInputs(TextField... fields) {
+        for (TextField field : fields) {
+            try {
+                double value = Double.parseDouble(field.getText());
+                if (!Double.isFinite(value) || value <= 0) return false;
+            } catch (NumberFormatException exception) { return false; }
+        }
+        return true;
+    }
+
+    private void showCalculationReport() {
+        CalculationReportWindow.show(mainController.getPrimaryStage(), calculationReport);
     }
 
     /**
@@ -220,38 +243,48 @@ public class PunchingShearController implements Initializable, ModuleController 
      * Displays the calculated values in the UI.
      */
     public void calculateTwoWay() {
-        if (InputParsingUtils.allTextFieldsAreDouble(Arrays.asList(hullThicknessTextField, compressiveStrengthTextField))) {
+        if (positiveInputs(hullThicknessTextField, compressiveStrengthTextField, maxShearTextField)) {
+            calculationReport = new CalculationReport("Punching shear — manual two-way equations");
             canoeThickness = Double.parseDouble(hullThicknessTextField.getText());
             compressiveStrength = Double.parseDouble(compressiveStrengthTextField.getText());
 
             // Calculate and set two-way shear output values
             List<TextField> tfs = new ArrayList<>();
             double pCrit = 4 * (kneeDiameter + (2 * (canoeThickness / 2)));
+            calculationReport.add("b₀", "4 × (a + (2 × (h / 2)))", "4 × (" + CalculationReport.number(kneeDiameter) + " + (2 × (" + CalculationReport.number(canoeThickness) + " / 2)))", pCrit, "mm");
             twoWayPCritTextField.setText(String.format("%.2f", pCrit));
             tfs.add(twoWayPCritTextField);
             double aCrit = pCrit * canoeThickness;
+            calculationReport.add("Acrit", "b₀ × h", "" + CalculationReport.number(pCrit) + " × " + CalculationReport.number(canoeThickness) + "", aCrit, "mm²");
             twoWayACritTextField.setText(String.format("%.2f", aCrit));
             tfs.add(twoWayACritTextField);
+            double punchingShearForce = Double.parseDouble(maxShearTextField.getText());
             double vf = punchingShearForce / aCrit;
+            calculationReport.add("vf", "Vf / Acrit", "" + CalculationReport.number(punchingShearForce) + " / " + CalculationReport.number(aCrit) + "", vf, "MPa");
             twoWayVfTextField.setText(String.format("%.2f", vf));
             tfs.add(twoWayVfTextField);
             double vc1 = ((1 + (2 / squareColumn)) * 0.19 * lowDensityConcrete * concrete * Math.sqrt(compressiveStrength));
+            calculationReport.add("vc₁", "((1 + (2 / 1)) × 0.19 × 0.75 × 0.65 × √(f′c))", "((1 + (2 / " + CalculationReport.number(squareColumn) + ")) × 0.19 × " + CalculationReport.number(lowDensityConcrete) + " × " + CalculationReport.number(concrete) + " × √(" + CalculationReport.number(compressiveStrength) + "))", vc1, "MPa");
             twoWayVc1TextField.setText(String.format("%.4f", vc1));
             tfs.add(twoWayVc1TextField);
             double vc2 = (0.19 + ((internalColumn * canoeThickness) / pCrit)) * lowDensityConcrete * concrete * Math.sqrt(compressiveStrength);
+            calculationReport.add("vc₂", "(0.19 + ((αs × h) / b₀)) × 0.75 × 0.65 × √(f′c)", "(0.19 + ((" + CalculationReport.number(internalColumn) + " × " + CalculationReport.number(canoeThickness) + ") / " + CalculationReport.number(pCrit) + ")) × " + CalculationReport.number(lowDensityConcrete) + " × " + CalculationReport.number(concrete) + " × √(" + CalculationReport.number(compressiveStrength) + ")", vc2, "MPa");
             twoWayVc2TextField.setText(String.format("%.4f", vc2));
             tfs.add(twoWayVc2TextField);
             double vc3 = 2 * 0.19 * lowDensityConcrete * concrete * Math.sqrt(compressiveStrength);
+            calculationReport.add("vc₃", "2 × 0.19 × 0.75 × 0.65 × √(f′c)", "2 × 0.19 × " + CalculationReport.number(lowDensityConcrete) + " × " + CalculationReport.number(concrete) + " × √(" + CalculationReport.number(compressiveStrength) + ")", vc3, "MPa");
             twoWayVc3TextField.setText(String.format("%.4f", vc3));
             tfs.add(twoWayVc3TextField);
             twoWayVcMinTextField.setText(String.format("%.4f", Math.min(vc1, Math.min(vc2, vc3))));
             tfs.add(twoWayVcMinTextField);
+            calculationReport.add("vc,min", "min(vc₁, vc₂, vc₃)", "min(" + CalculationReport.number(vc1) + ", " + CalculationReport.number(vc2) + ", " + CalculationReport.number(vc3) + ")", Math.min(vc1, Math.min(vc2, vc3)), "MPa");
             safetyTest2();
 
             // Fix opacity for all text fields
             for (TextField tf : tfs) {
                 tf.setStyle(tf.getStyle() + " -fx-opacity: 1");
             }
+            showCalculationReport();
         }
         else mainController.showSnackbar("Please fill all the fields with valid numeric values.");
     }
@@ -275,6 +308,7 @@ public class PunchingShearController implements Initializable, ModuleController 
      * Resets all fields and labels in both one-way and two-way shear tests to their default state.
      */
     public void reset() {
+        calculationReport = null;
         hullThicknessTextField.clear();
         hullWidthTextField.clear();
         compressiveStrengthTextField.clear();
@@ -295,8 +329,10 @@ public class PunchingShearController implements Initializable, ModuleController 
         iconGlyphToFunctionMap.put(IconGlyphType.BOOK, e -> openGlossary());
         iconGlyphToFunctionMap.put(IconGlyphType.RESET, e -> reset());
         iconGlyphToFunctionMap.put(IconGlyphType.CANOE, e -> openCanoePresetPopup());
+        iconGlyphToFunctionMap.put(IconGlyphType.DOWNLOAD, e -> CalculationReportWindow.show(mainController.getPrimaryStage(), calculationReport));
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
+        mainController.getModuleToolBarButtons().get(4).setTooltip(new Tooltip("Report algebra: preview, copy or export"));
         mainController.getModuleToolBarButtons().get(3).setTooltip(new Tooltip("Canoe presets"));
     }
 

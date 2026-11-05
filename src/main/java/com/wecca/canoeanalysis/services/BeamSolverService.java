@@ -29,6 +29,10 @@ public class BeamSolverService {
      * @return the resulting point loads.
      */
     public static List<PointLoad> solveStandSystem(Canoe canoe) {
+        return solveStandSystem(canoe, null);
+    }
+
+    public static List<PointLoad> solveStandSystem(Canoe canoe, CalculationReport report) {
         List<PointLoad> pointLoads = new ArrayList<>();
         // Transform the distributed loads into point loads
         if (canoe.getHull() != null && canoe.getHull().getSelfWeightDistribution() != null)
@@ -47,6 +51,21 @@ public class BeamSolverService {
         // Resulting forces combine to counteract the moments and total combined point load
         double forceEnd = -1 * momentSum / canoe.getHull().getLength();
         double forceStart = -1 * sumOfPointLoads - forceEnd;
+        if (report != null) {
+            StringBuilder forces = new StringBuilder(), moments = new StringBuilder();
+            for (PointLoad load : pointLoads) {
+                if (!forces.isEmpty()) { forces.append(" + "); moments.append(" + "); }
+                forces.append("(").append(CalculationReport.number(load.getMaxSignedValue())).append(")");
+                moments.append("(").append(CalculationReport.number(load.getMaxSignedValue())).append(" × ")
+                        .append(CalculationReport.number(load.getX())).append(")");
+            }
+            report.add("ΣF", "ΣFi", forces.isEmpty() ? "0" : forces.toString(), sumOfPointLoads, "kN");
+            report.add("ΣM₀", "Σ(Fi × xi)", moments.isEmpty() ? "0" : moments.toString(), momentSum, "kN·m");
+            report.add("RB", "−ΣM₀ / L", "−(" + CalculationReport.number(momentSum) + ") / "
+                    + CalculationReport.number(canoe.getHull().getLength()), forceEnd, "kN");
+            report.add("RA", "−ΣF − RB", "−(" + CalculationReport.number(sumOfPointLoads) + ") − ("
+                    + CalculationReport.number(forceEnd) + ")", forceStart, "kN");
+        }
 
         // Create and return resulting loads
         PointLoad pLoadStart = new PointLoad(LoadType.POINT_LOAD_SUPPORT, forceStart, 0, true);

@@ -480,7 +480,10 @@ public class BeamController implements Initializable, ModuleController {
      * Handler for the "solve system" button.
      * Distributes call to appropriate method and re-renders loads.
      */
+    private CalculationReport calculationReport;
+
     public void solveSystem() {
+        calculationReport = null;
         // System solve with upward net force makes no sense
         if (canoe.getNetForce() > 0) {
             mainController.showSnackbar("Cannot solve the system with upward net force. Remove some loads and try again");
@@ -524,6 +527,7 @@ public class BeamController implements Initializable, ModuleController {
                 .mapToDouble(point -> Math.abs(point.getY()))
                 .max()
                 .orElseThrow(() -> new IllegalArgumentException("List of points is empty")));
+        if (calculationReport != null) CalculationReportWindow.show(mainController.getPrimaryStage(), calculationReport);
     }
 
     /**
@@ -531,7 +535,8 @@ public class BeamController implements Initializable, ModuleController {
      * This entails two supports at each end of the canoe, symmetrically offset from the beam bounds
      */
     private void solveStandSystem() {
-        List<PointLoad> supportLoads = BeamSolverService.solveStandSystem(canoe);
+        calculationReport = new CalculationReport("Beam reactions — stands (upward force positive)");
+        List<PointLoad> supportLoads = BeamSolverService.solveStandSystem(canoe, calculationReport);
         for (PointLoad supportLoad : supportLoads) {
             canoe.addLoad(supportLoad);
             renderSupportGraphic(supportLoad.getX());
@@ -932,7 +937,9 @@ public class BeamController implements Initializable, ModuleController {
         iconGlyphToFunctionMap.put(IconGlyphType.UPLOAD, e -> uploadCanoe());
         iconGlyphToFunctionMap.put(IconGlyphType.CANOE, e -> openHullPresetPopup());
         mainController.resetToolBarButtons();
+        iconGlyphToFunctionMap.put(IconGlyphType.BOOK, e -> CalculationReportWindow.show(mainController.getPrimaryStage(), calculationReport));
         mainController.setIconToolBarButtons(iconGlyphToFunctionMap);
+        mainController.getModuleToolBarButtons().get(3).setTooltip(new Tooltip("Report algebra: preview, copy or export"));
         mainController.getModuleToolBarButtons().get(2).setTooltip(new Tooltip("Canoe presets"));
         mainController.disableAllModuleToolbarButtons(true);
         // Download/upload still require a canoe, but a preset can create one

@@ -31,6 +31,12 @@ The origin of this module was to address concerns that a model for 2024's Shark 
 
 In the first photo, we can see the user using the knob to pull on the "handles" (points that determine the construction of the hull's curve). In the second, we see them adding points to the construction of the hull's curvature for further customization.
 
+### The STL Loader Module (Beta)
+
+The STL Loader accepts ASCII and binary STL meshes, converts the selected source units to metres, detects the canoe's length, width, and height axes, and previews sampled side and top outlines. It can save those geometry samples as a local YAML preset draft for review.
+
+To use the beta, open **STL Loader**, select the units used when the STL was exported, choose the `.stl` file, review the dimensions and preview, then enter a canoe name and year before selecting **Save local preset draft**. The draft is deliberately marked `beta-unvalidated` and is not automatically added to PADDL's preset menu. Wall thickness, densities, bulkheads, structural values, and the detected axis orientation must be checked before a developer promotes it to a production preset.
+
 ### The Punching Shear Module
 
 We model punching shear forces on our canoe as the force it experiences when a paddler's knee presses down on the bottom of the hull wall where they sit. It is important that our concrete can withstand these forces for structural integrity. The punching shear module acts as an intuitive calculator for this, making it easy to work with different load cases to find the critical case, ensuring the canoe will have structural integrity in all possible races and load cases.

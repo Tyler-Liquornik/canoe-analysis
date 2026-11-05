@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-/** Navigation wiring checks for the intentionally blank STL Loader module. */
+/** Navigation wiring checks for the STL Loader beta module. */
 class StlLoaderModuleTest {
 
     @Test

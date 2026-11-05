@@ -4,6 +4,8 @@ import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXColorPicker;
 import com.jfoenix.controls.JFXTextField;
 import com.wecca.canoeanalysis.CanoeAnalysisApplication;
+import com.wecca.canoeanalysis.services.CalculationReport;
+import com.wecca.canoeanalysis.services.CalculationReportWindow;
 import com.wecca.canoeanalysis.components.graphics.IconGlyphType;
 import com.wecca.canoeanalysis.controllers.MainController;
 import com.wecca.canoeanalysis.controllers.popups.CanoePresetPopupController;
@@ -44,6 +46,8 @@ import java.util.function.Consumer;
 
 public class PercentOpenAreaController implements Initializable, ModuleController {
 
+    private CalculationReport calculationReport;
+
     @Setter
     private static MainController mainController;
     @FXML
@@ -73,6 +77,7 @@ public class PercentOpenAreaController implements Initializable, ModuleControlle
     }
 
     public void deleteImage() {
+        calculationReport = null;
         cloud.setOpacity(1);
         cloudBackground.setOpacity(1);
         dragAndDropLabel.setText("Drag & Drop to Upload Image");
@@ -164,6 +169,7 @@ public class PercentOpenAreaController implements Initializable, ModuleControlle
                 boolean pass = poa >= passingPoa;
                 passLabel.setVisible(pass);
                 failLabel.setVisible(!pass);
+                CalculationReportWindow.show(mainController.getPrimaryStage(), calculationReport);
             } else
                 mainController.showSnackbar("Please enter a valid passing POA percentage");
         } else
@@ -199,8 +205,10 @@ public class PercentOpenAreaController implements Initializable, ModuleControlle
     private void initModuleToolBarButtons() {
         LinkedHashMap<IconGlyphType, Consumer<MouseEvent>> buttons = new LinkedHashMap<>();
         buttons.put(IconGlyphType.CANOE, event -> openCanoePresetPopup());
+        buttons.put(IconGlyphType.DOWNLOAD, event -> CalculationReportWindow.show(mainController.getPrimaryStage(), calculationReport));
         mainController.resetToolBarButtons();
         mainController.setIconToolBarButtons(buttons);
+        mainController.getModuleToolBarButtons().get(1).setTooltip(new Tooltip("Report algebra: preview, copy or export"));
         mainController.getModuleToolBarButtons().getFirst().setTooltip(new Tooltip("Canoe presets"));
     }
 
@@ -250,7 +258,10 @@ public class PercentOpenAreaController implements Initializable, ModuleControlle
             openArea += rt.getValue("Area", i);
         }
         double totalArea = img.getWidth() * img.getHeight();
-        return (count / totalArea) * 100;
+        double poa = (count / totalArea) * 100;
+        calculationReport = new CalculationReport("Percent open area — RGB distance ≤ 80");
+        calculationReport.add("POA", "Nopen / Ntotal × 100", count + " / " + CalculationReport.number(totalArea) + " × 100", poa, "%");
+        return poa;
     }
 
     public Color getSecondMostProminentColor(Map<Integer, Integer> colorFrequencyMap) {

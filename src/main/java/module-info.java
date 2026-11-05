@@ -6,6 +6,7 @@ module com.wecca.canoeanalysis {
     requires com.fasterxml.jackson.databind;
     requires fontawesomefx;
     requires java.desktop;
+    requires java.xml;
     requires com.fasterxml.jackson.dataformat.yaml;
     requires com.google.common;
     requires commons.math3;
